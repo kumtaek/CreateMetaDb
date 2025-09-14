@@ -132,7 +132,14 @@ def main():
         
         from xml_loading import XmlLoadingEngine
         
-        xml_engine = XmlLoadingEngine(project_name)
+        # SQL Content 기능 활성화 여부 확인
+        sql_content_enabled = arg_utils.get_sql_content()
+        if sql_content_enabled:
+            info("SQL Content 기능이 활성화되었습니다")
+        else:
+            info("SQL Content 기능이 비활성화되었습니다 (--sql-content 옵션으로 활성화 가능)")
+        
+        xml_engine = XmlLoadingEngine(project_name, sql_content_enabled)
         success = xml_engine.execute_xml_loading()
         
         if success:

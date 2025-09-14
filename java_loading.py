@@ -775,7 +775,7 @@ class JavaLoadingEngine:
 
                     # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
                     if src_component_id == dst_component_id:
-                        warning(f"자기 참조 CALL_METHOD 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
+                        debug(f"자기 참조 CALL_METHOD 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
                         continue
 
                     # 관계 데이터 생성

@@ -1,0 +1,12 @@
+2025-09-15 00:47:33,672 - SourceAnalyzer - INFO - create_report.py:141 - === SourceAnalyzer 리포트 생성 도구 시작 ===
+2025-09-15 00:47:33,678 - SourceAnalyzer - INFO - create_report.py:77 - 프로젝트 유효성 검증 완료: sampleSrc
+2025-09-15 00:47:33,679 - SourceAnalyzer - INFO - create_report.py:93 - 출력 디렉토리 준비 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\report
+2025-09-15 00:47:33,679 - SourceAnalyzer - INFO - create_report.py:103 - CallChain Report 생성 시작
+2025-09-15 00:47:33,681 - SourceAnalyzer - INFO - callchain_report_generator.py:60 - CallChain Report 생성 시작: sampleSrc
+2025-09-15 00:47:33,688 - SourceAnalyzer - INFO - callchain_report_generator.py:355 - 리포트 파일 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\report\sampleSrc_CallChainReport_20250915_004733.html
+2025-09-15 00:47:33,689 - SourceAnalyzer - INFO - callchain_report_generator.py:77 - CallChain Report 생성 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\report\sampleSrc_CallChainReport_20250915_004733.html
+2025-09-15 00:47:33,690 - SourceAnalyzer - INFO - create_report.py:109 - CallChain Report 생성 완료
+2025-09-15 00:47:33,690 - SourceAnalyzer - INFO - create_report.py:171 - === 리포트 생성 완료 ===
+2025-09-15 00:47:33,690 - SourceAnalyzer - INFO - create_report.py:172 - 성공: 1/1
+2025-09-15 00:47:33,690 - SourceAnalyzer - INFO - create_report.py:173 - 출력 디렉토리: D:\Analyzer\CreateMetaDb\projects\sampleSrc\report
+2025-09-15 00:47:33,690 - SourceAnalyzer - INFO - create_report.py:176 - 모든 리포트가 성공적으로 생성되었습니다.

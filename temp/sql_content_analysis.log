@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/SqlContent.db'); cursor = conn.cursor(); cursor.execute('SELECT component_name, query_type, LENGTH(sql_content_compressed) as size FROM sql_contents'); rows = cursor.fetchall(); print('SQL Content 저장된 데이터:'); for row in rows: print(f'  - {row[0]} ({row[1]}) - {row[2]} bytes'); conn.close()
+                                                                                                                                                                                                                                                                                ^^^
+SyntaxError: invalid syntax

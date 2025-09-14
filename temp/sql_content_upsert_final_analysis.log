@@ -1,0 +1,126 @@
+SQL Content 저장된 데이터:
+총 56건 저장됨
+--------------------------------------------------------------------------------
+  - findUsers (SQL_SELECT) - 392 bytes
+    file_id: 4, component_id: 514, created: 2025-09-15 00:22:56
+  - findUsersWithAnsiJoin (SQL_SELECT) - 411 bytes
+    file_id: 4, component_id: 100, created: 2025-09-15 00:22:56
+  - findUsersWithAliasOmission (SQL_SELECT) - 230 bytes
+    file_id: 4, component_id: 515, created: 2025-09-15 00:22:56
+  - findUsersWithMixedJoins (SQL_SELECT) - 274 bytes
+    file_id: 4, component_id: 516, created: 2025-09-15 00:22:56
+  - findComplexJoins (SQL_SELECT) - 273 bytes
+    file_id: 4, component_id: 517, created: 2025-09-15 00:22:56
+  - findUsersWithScatteredConditions (SQL_SELECT) - 332 bytes
+    file_id: 4, component_id: 518, created: 2025-09-15 00:22:56
+  - findOrdersWithScatteredJoins (SQL_SELECT) - 399 bytes
+    file_id: 4, component_id: 519, created: 2025-09-15 00:22:56
+  - findComplexScatteredJoins (SQL_SELECT) - 462 bytes
+    file_id: 4, component_id: 520, created: 2025-09-15 00:22:56
+  - getUsersWithTypes (SQL_SELECT) - 164 bytes
+    file_id: 35, component_id: 521, created: 2025-09-15 00:22:56
+  - getProductsWithCategoryAndBrand (SQL_SELECT) - 219 bytes
+    file_id: 35, component_id: 522, created: 2025-09-15 00:22:56
+  - getOrdersWithUsers (SQL_SELECT) - 210 bytes
+    file_id: 35, component_id: 523, created: 2025-09-15 00:22:56
+  - getComplexJoin (SQL_SELECT) - 242 bytes
+    file_id: 35, component_id: 524, created: 2025-09-15 00:22:56
+  - getMixedJoin (SQL_SELECT) - 249 bytes
+    file_id: 35, component_id: 525, created: 2025-09-15 00:22:56
+  - selectAll (SQL_SELECT) - 143 bytes
+    file_id: 35, component_id: 526, created: 2025-09-15 00:22:56
+  - selectById (SQL_SELECT) - 144 bytes
+    file_id: 35, component_id: 527, created: 2025-09-15 00:22:56
+  - selectByName (SQL_SELECT) - 204 bytes
+    file_id: 35, component_id: 528, created: 2025-09-15 00:22:56
+  - insert (SQL_INSERT) - 148 bytes
+    file_id: 35, component_id: 529, created: 2025-09-15 00:22:56
+  - update (SQL_UPDATE) - 217 bytes
+    file_id: 35, component_id: 530, created: 2025-09-15 00:22:56
+  - delete (SQL_DELETE) - 75 bytes
+    file_id: 35, component_id: 531, created: 2025-09-15 00:22:56
+  - searchUsers (SQL_SELECT) - 256 bytes
+    file_id: 35, component_id: 532, created: 2025-09-15 00:22:56
+  - countUsers (SQL_SELECT) - 92 bytes
+    file_id: 35, component_id: 533, created: 2025-09-15 00:22:56
+  - getUserWithDetails (SQL_SELECT) - 223 bytes
+    file_id: 35, component_id: 534, created: 2025-09-15 00:22:56
+  - selectFromNonExistentTable (SQL_SELECT) - 151 bytes
+    file_id: 35, component_id: 535, created: 2025-09-15 00:22:56
+  - selectWithNonExistentColumn (SQL_SELECT) - 156 bytes
+    file_id: 35, component_id: 536, created: 2025-09-15 00:22:56
+  - selectComplexError (SQL_SELECT) - 198 bytes
+    file_id: 35, component_id: 537, created: 2025-09-15 00:22:56
+  - selectProductById (SQL_SELECT) - 143 bytes
+    file_id: 35, component_id: 538, created: 2025-09-15 00:22:56
+  - selectProductsByCondition (SQL_SELECT) - 264 bytes
+    file_id: 35, component_id: 539, created: 2025-09-15 00:22:56
+  - selectProductsByAdvancedCondition (SQL_SELECT) - 433 bytes
+    file_id: 35, component_id: 540, created: 2025-09-15 00:22:56
+  - selectProductsByCategory (SQL_SELECT) - 160 bytes
+    file_id: 35, component_id: 541, created: 2025-09-15 00:22:56
+  - updateProductStock (SQL_UPDATE) - 126 bytes
+    file_id: 35, component_id: 542, created: 2025-09-15 00:22:56
+  - updateProductDynamic (SQL_UPDATE) - 334 bytes
+    file_id: 35, component_id: 543, created: 2025-09-15 00:22:56
+  - insertProductDynamic (SQL_INSERT) - 421 bytes
+    file_id: 35, component_id: 544, created: 2025-09-15 00:22:56
+  - deleteProductsByCondition (SQL_DELETE) - 251 bytes
+    file_id: 35, component_id: 545, created: 2025-09-15 00:22:56
+  - countProductsByCondition (SQL_SELECT) - 254 bytes
+    file_id: 35, component_id: 546, created: 2025-09-15 00:22:56
+  - selectUserById (SQL_SELECT) - 135 bytes
+    file_id: 35, component_id: 547, created: 2025-09-15 00:22:56
+  - selectUsersByCondition (SQL_SELECT) - 234 bytes
+    file_id: 35, component_id: 548, created: 2025-09-15 00:22:56
+  - selectUsersByAdvancedCondition (SQL_SELECT) - 412 bytes
+    file_id: 35, component_id: 549, created: 2025-09-15 00:22:56
+  - selectUsersByType (SQL_SELECT) - 151 bytes
+    file_id: 35, component_id: 550, created: 2025-09-15 00:22:56
+  - updateUserDynamic (SQL_UPDATE) - 267 bytes
+    file_id: 35, component_id: 551, created: 2025-09-15 00:22:56
+  - insertUserDynamic (SQL_INSERT) - 392 bytes
+    file_id: 35, component_id: 552, created: 2025-09-15 00:22:56
+  - deleteUsersByCondition (SQL_DELETE) - 222 bytes
+    file_id: 35, component_id: 553, created: 2025-09-15 00:22:56
+  - countUsersByCondition (SQL_SELECT) - 221 bytes
+    file_id: 35, component_id: 554, created: 2025-09-15 00:22:56
+  - getUserStatistics (SQL_SELECT) - 422 bytes
+    file_id: 35, component_id: 555, created: 2025-09-15 00:22:56
+  - getUserAgeDistribution (SQL_SELECT) - 352 bytes
+    file_id: 35, component_id: 556, created: 2025-09-15 00:22:56
+  - getUserActivityAnalysis (SQL_SELECT) - 395 bytes
+    file_id: 35, component_id: 557, created: 2025-09-15 00:22:56
+  - searchUsersAdvanced (SQL_SELECT) - 757 bytes
+    file_id: 35, component_id: 558, created: 2025-09-15 00:22:56
+  - getUserGroupStatistics (SQL_SELECT) - 330 bytes
+    file_id: 35, component_id: 559, created: 2025-09-15 00:22:56
+  - getUserWithPreferences (SQL_SELECT) - 240 bytes
+    file_id: 35, component_id: 560, created: 2025-09-15 00:22:56
+  - getUserWithPreferencesAndType (SQL_SELECT) - 255 bytes
+    file_id: 35, component_id: 561, created: 2025-09-15 00:22:56
+  - getUserActivityLog (SQL_SELECT) - 207 bytes
+    file_id: 35, component_id: 562, created: 2025-09-15 00:22:56
+  - getUserSettings (SQL_SELECT) - 187 bytes
+    file_id: 35, component_id: 563, created: 2025-09-15 00:22:56
+  - updateUserPreferences (SQL_UPDATE) - 189 bytes
+    file_id: 35, component_id: 564, created: 2025-09-15 00:22:56
+  - insertUserPreferences (SQL_INSERT) - 207 bytes
+    file_id: 35, component_id: 565, created: 2025-09-15 00:22:56
+  - getUserWithNewTable (SQL_SELECT) - 185 bytes
+    file_id: 35, component_id: 566, created: 2025-09-15 00:22:56
+  - mergeUserStatistics (SQL_MERGE) - 286 bytes
+    file_id: 35, component_id: 567, created: 2025-09-15 00:22:56
+  - mergeUserActivityLog (SQL_MERGE) - 305 bytes
+    file_id: 35, component_id: 568, created: 2025-09-15 00:22:56
+
+메인 메타데이터베이스의 SQL 컴포넌트:
+  - SQL_DELETE: 3개
+  - SQL_INSERT: 4개
+  - SQL_MERGE: 2개
+  - SQL_SELECT: 41개
+  - SQL_UPDATE: 5개
+
+총 SQL 컴포넌트: 55개
+SQL Content 저장: 56개
+저장률: 101.8%

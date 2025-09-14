@@ -891,7 +891,7 @@ class JavaParser:
                 for match in matches:
                     method_name = match.group(1)
                     match_count += 1
-                    info(f"패턴 {i+1}에서 메서드 발견: {method_name}")
+                    debug(f"패턴 {i+1}에서 메서드 발견: {method_name}")
 
                     # USER RULES: 제어문 키워드 필터링 적용 (METHOD 컴포넌트로 잘못 파싱 방지)
                     if self._is_control_keyword(method_name):

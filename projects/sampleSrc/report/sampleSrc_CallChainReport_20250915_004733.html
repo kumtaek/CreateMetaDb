@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallChain Report - sampleSrc</title>
+    <style>
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 1.0em;
+        }
+        th {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: top;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .chain-id, .jsp-file, .class-name, .method-name, .xml-file, .query-id, .query-type, .tables {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .filter-controls {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .filter-controls input, .filter-controls select {
+            margin: 5px;
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .filter-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .filter-controls button:hover {
+            background: #2980b9;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 500px;
+            background-color: #2c3e50;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -250px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-family: monospace;
+            font-size: 1.0em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #2c3e50 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .content {
+                padding: 20px;
+            }
+            table {
+                font-size: 0.8em;
+            }
+            th, td {
+                padding: 8px 5px;
+            }
+            .tooltip .tooltiptext {
+                width: 300px;
+                margin-left: -150px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CallChain Report</h1>
+            <div class="subtitle">JSP-Class-Method-XML-Query-Table 연계 정보</div>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-09-15 00:47:33</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Java 클래스</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">25</div>
+                <div class="stat-label">데이터베이스 테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">XML 파일</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7</div>
+                <div class="stat-label">JSP 파일</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">28</div>
+                <div class="stat-label">JOIN 관계</div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>필터 및 검색</h2>
+                
+        <div class="filter-controls">
+            <input type="text" id="searchInput" placeholder="JSP파일, 클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
+            <select id="tableFilter">
+                <option value="">모든 테이블</option>
+                <option value="BRANDS">BRANDS</option><option value="CATEGORIES">CATEGORIES</option><option value="CUSTOMERS">CUSTOMERS</option><option value="DEPARTMENTS">DEPARTMENTS</option><option value="DISCOUNTS">DISCOUNTS</option><option value="DYNAMIC_DATA">DYNAMIC_DATA</option><option value="INVENTORIES">INVENTORIES</option><option value="NEW_TEST_TABLE">NEW_TEST_TABLE</option><option value="NONEXISTENT_TABLE">NONEXISTENT_TABLE</option><option value="ORDERS">ORDERS</option><option value="ORDER_ITEMS">ORDER_ITEMS</option><option value="PRODUCTS">PRODUCTS</option><option value="PRODUCT_REVIEWS">PRODUCT_REVIEWS</option><option value="RELATED_DATA">RELATED_DATA</option><option value="ROLES">ROLES</option><option value="SUPPLIERS">SUPPLIERS</option><option value="USERS">USERS</option><option value="USER_ACTIVITY_LOG">USER_ACTIVITY_LOG</option><option value="USER_PREFERENCES">USER_PREFERENCES</option><option value="USER_PROFILES">USER_PROFILES</option><option value="USER_ROLE">USER_ROLE</option><option value="USER_ROLES">USER_ROLES</option><option value="USER_SETTINGS">USER_SETTINGS</option><option value="USER_TYPES">USER_TYPES</option><option value="WAREHOUSES">WAREHOUSES</option>
+            </select>
+            <select id="queryTypeFilter">
+                <option value="">모든 쿼리 타입</option>
+                <option value="QUERY">QUERY</option><option value="DELETE">DELETE</option><option value="INSERT">INSERT</option><option value="MERGE">MERGE</option><option value="SELECT">SELECT</option><option value="UPDATE">UPDATE</option>
+            </select>
+            <button onclick="filterTable()">필터 적용</button>
+            <button onclick="clearFilters()">필터 초기화</button>
+            <button onclick="exportToCSV()">CSV 내보내기</button>
+        </div>
+            </div>
+            <div class="section">
+                <h2>완전한 연계 경로</h2>
+                <div class="table-container">
+                    <table id="chainTable">
+                        <thead>
+                            <tr>
+                                <th>연계ID</th>
+                                <th>JSP파일</th>
+                                <th>클래스</th>
+                                <th>메서드</th>
+                                <th>XML파일</th>
+                                <th>쿼리ID</th>
+                                <th>쿼리종류</th>
+                                <th>관련테이블들</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // 오프라인 환경 지원을 위한 JavaScript
+        // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
+        
+        // 검색 기능
+        function filterTable() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const tableFilter = document.getElementById('tableFilter').value;
+            const queryTypeFilter = document.getElementById('queryTypeFilter').value;
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let shouldShow = true;
+                
+                // 텍스트 검색
+                if (searchInput) {
+                    let found = false;
+                    for (let j = 0; j < cells.length; j++) {
+                        if (cells[j].textContent.toLowerCase().indexOf(searchInput) !== -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) shouldShow = false;
+                }
+                
+                // 테이블 필터
+                if (tableFilter && shouldShow) {
+                    const tablesCell = cells[7];
+                    if (tablesCell.textContent.indexOf(tableFilter) === -1) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // 쿼리 타입 필터
+                if (queryTypeFilter && shouldShow) {
+                    const queryTypeCell = cells[6];
+                    if (queryTypeCell.textContent.indexOf(queryTypeFilter) === -1) {
+                        shouldShow = false;
+                    }
+                }
+                
+                row.style.display = shouldShow ? '' : 'none';
+            }
+        }
+        
+        // 필터 초기화
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('tableFilter').value = '';
+            document.getElementById('queryTypeFilter').value = '';
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
+        }
+        
+        // CSV 내보내기 (정제된 SQL 내용 포함)
+        function exportToCSV() {
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            let csv = [];
+            
+            // 헤더 추가
+            csv.push('연계ID,JSP파일,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0 && rows[i].style.display !== 'none') {
+                    let row = [];
+                    for (let j = 0; j < cells.length; j++) {
+                        let cellText = cells[j].textContent.replace(/"/g, '""');
+                        
+                        // 쿼리종류 컬럼(인덱스 6)의 경우 정제된 SQL 내용도 포함
+                        if (j === 6) {
+                            const queryTypeSpan = cells[j].querySelector('.query-type');
+                            if (queryTypeSpan && queryTypeSpan.classList.contains('tooltip')) {
+                                const sqlContent = queryTypeSpan.getAttribute('data-query') || '';
+                                row.push('"' + cellText + '"'); // 쿼리종류
+                                row.push('"' + sqlContent.replace(/"/g, '""') + '"'); // 정제된 SQL 내용
+                            } else {
+                                row.push('"' + cellText + '"'); // 쿼리종류
+                                row.push('""'); // 빈 정제된 SQL 내용
+                            }
+                        } else {
+                            row.push('"' + cellText + '"');
+                        }
+                    }
+                    csv.push(row.join(','));
+                }
+            }
+            
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'CallChainReport_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 이벤트 리스너 등록
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterTable();
+            }
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', function() {
+            filterTable();
+        });
+        
+        document.getElementById('tableFilter').addEventListener('change', function() {
+            filterTable();
+        });
+        
+        document.getElementById('queryTypeFilter').addEventListener('change', function() {
+            filterTable();
+        });
+        
+        // 툴팁 기능 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // query-type 요소에 툴팁 이벤트 리스너 추가
+            const queryTypeElements = document.querySelectorAll('.query-type.tooltip');
+            queryTypeElements.forEach(function(element) {
+                element.addEventListener('mouseenter', function() {
+                    const tooltip = this.querySelector('.tooltiptext');
+                    if (tooltip) {
+                        tooltip.style.visibility = 'visible';
+                        tooltip.style.opacity = '1';
+                    }
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    const tooltip = this.querySelector('.tooltiptext');
+                    if (tooltip) {
+                        tooltip.style.visibility = 'hidden';
+                        tooltip.style.opacity = '0';
+                    }
+                });
+            });
+        });
+        
+    </script>
+</body>
+</html>

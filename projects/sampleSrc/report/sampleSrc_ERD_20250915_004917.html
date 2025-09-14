@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD Report - sampleSrc</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .diagram-controls {
+            margin-bottom: 20px;
+        }
+        .diagram-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .diagram-controls button:hover {
+            background: #2980b9;
+        }
+        .diagram-container {
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            background: #fafafa;
+            min-height: 600px;
+        }
+        .mermaid {
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .content {
+                padding: 20px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ERD Report</h1>
+            <div class="subtitle">Entity Relationship Diagram</div>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-09-15 00:49:17</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">25</div>
+                <div class="stat-label">전체 테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">108</div>
+                <div class="stat-label">전체 컬럼</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">17</div>
+                <div class="stat-label">Primary Key</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Foreign Key</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1408</div>
+                <div class="stat-label">관계</div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>데이터베이스 ERD</h2>
+                <div class="diagram-controls">
+                    <button onclick="zoomIn()">확대</button>
+                    <button onclick="zoomOut()">축소</button>
+                    <button onclick="resetZoom()">원래 크기</button>
+                </div>
+                <div class="diagram-container">
+                    
+        <div class="mermaid">
+            erDiagram
+    BRANDS {
+        VARCHAR2 BRAND_ID PK "NOT NULL"
+        VARCHAR2 BRAND_CODE "NOT NULL"
+        VARCHAR2 BRAND_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    CATEGORIES {
+        VARCHAR2 CATEGORY_ID PK "NOT NULL"
+        VARCHAR2 CATEGORY_CODE "NOT NULL"
+        VARCHAR2 CATEGORY_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN ID
+    }
+    CUSTOMERS {
+        VARCHAR2 CUSTOMER_ID PK "NOT NULL"
+        VARCHAR2 CUSTOMER_NAME "NOT NULL"
+        VARCHAR2 EMAIL
+        VARCHAR2 PHONE
+        VARCHAR2 ADDRESS
+        date CREATED_DATE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    DEPARTMENTS {
+        UNKNOWN DEPT_ID
+    }
+    DISCOUNTS {
+        VARCHAR2 DISCOUNT_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER DISCOUNT_RATE "NOT NULL"
+        date START_DATE "NOT NULL"
+        date END_DATE "NOT NULL"
+        CHAR ACTIVE_YN "NOT NULL"
+    }
+    DYNAMIC_DATA {
+        NUMBER ID PK "NOT NULL"
+        VARCHAR2 NAME "NOT NULL"
+        VARCHAR2 STATUS
+    }
+    INVENTORIES {
+        VARCHAR2 INVENTORY_ID "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER CURRENT_STOCK "NOT NULL"
+        date UPDATED_DATE "NOT NULL"
+    }
+    NEW_TEST_TABLE {
+        UNKNOWN USER_ID
+    }
+    NONEXISTENT_TABLE {
+        UNKNOWN USER_ID
+    }
+    ORDERS {
+        VARCHAR2 ORDER_ID PK "NOT NULL"
+        VARCHAR2 CUSTOMER_ID PK "NOT NULL"
+        date ORDER_DATE "NOT NULL"
+        VARCHAR2 STATUS "NOT NULL"
+        NUMBER TOTAL_AMOUNT "NOT NULL"
+        NUMBER DISCOUNT_AMOUNT
+        NUMBER TAX_AMOUNT
+        date CREATED_DATE "NOT NULL"
+        date UPDATED_DATE
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN USER_ID
+    }
+    ORDER_ITEMS {
+        VARCHAR2 ORDER_ITEM_ID PK "NOT NULL"
+        VARCHAR2 ORDER_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER QUANTITY "NOT NULL"
+        NUMBER UNIT_PRICE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    PRODUCTS {
+        VARCHAR2 PRODUCT_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_NAME "NOT NULL"
+        CLOB DESCRIPTION
+        NUMBER PRICE "NOT NULL"
+        NUMBER STOCK_QUANTITY "NOT NULL"
+        VARCHAR2 STATUS "NOT NULL"
+        VARCHAR2 CATEGORY_ID
+        VARCHAR2 BRAND_ID
+        VARCHAR2 SUPPLIER_ID
+        VARCHAR2 WAREHOUSE_ID
+        date CREATED_DATE "NOT NULL"
+        date UPDATED_DATE
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN CREATED_BY
+    }
+    PRODUCT_REVIEWS {
+        VARCHAR2 REVIEW_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        VARCHAR2 CUSTOMER_ID "NOT NULL"
+        NUMBER RATING "NOT NULL"
+        CLOB REVIEW_TEXT
+        date CREATED_DATE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    RELATED_DATA {
+        NUMBER ID PK "NOT NULL"
+        NUMBER RELATED_ID PK "NOT NULL"
+        VARCHAR2 VALUE
+    }
+    ROLES {
+        UNKNOWN ID
+    }
+    SUPPLIERS {
+        VARCHAR2 SUPPLIER_ID PK "NOT NULL"
+        VARCHAR2 SUPPLIER_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    USERS {
+        NUMBER ID PK "NOT NULL"
+        VARCHAR2 USERNAME "NOT NULL"
+        VARCHAR2 EMAIL "NOT NULL"
+        VARCHAR2 PASSWORD "NOT NULL"
+        VARCHAR2 NAME
+        NUMBER AGE
+        VARCHAR2 STATUS
+        VARCHAR2 USER_TYPE
+        VARCHAR2 PHONE
+        VARCHAR2 ADDRESS
+        date CREATED_DATE
+        date UPDATED_DATE
+        UNKNOWN DEPT_ID
+        UNKNOWN USER_ID
+        UNKNOWN TYPE_ID
+    }
+    USER_ACTIVITY_LOG {
+        UNKNOWN USER_ID
+    }
+    USER_PREFERENCES {
+        UNKNOWN USER_ID
+    }
+    USER_PROFILES {
+        UNKNOWN USER_ID
+    }
+    USER_ROLE {
+        NUMBER USER_ID "NOT NULL"
+        NUMBER ROLE_ID "NOT NULL"
+    }
+    USER_ROLES {
+        UNKNOWN ROLE_ID
+        UNKNOWN USER_ID
+    }
+    USER_SETTINGS {
+        UNKNOWN USER_ID
+    }
+    USER_TYPES {
+        VARCHAR2 TYPE_CODE PK "NOT NULL"
+        VARCHAR2 TYPE_NAME "NOT NULL"
+        VARCHAR2 DESCRIPTION
+        UNKNOWN ID
+    }
+    WAREHOUSES {
+        VARCHAR2 WAREHOUSE_ID PK "NOT NULL"
+        VARCHAR2 WAREHOUSE_NAME "NOT NULL"
+        VARCHAR2 LOCATION
+        CHAR DEL_YN "NOT NULL"
+    }
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> ADDRESS"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> CREATED_DATE"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> CUSTOMER_ID"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> CUSTOMER_NAME"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> DEL_YN"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> EMAIL"
+    ORDERS }o--o{ CUSTOMERS : "CUSTOMER_ID -> PHONE"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> ADDRESS"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> CREATED_DATE"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> CUSTOMER_ID"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> CUSTOMER_NAME"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> DEL_YN"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> EMAIL"
+    ORDERS }o--o{ CUSTOMERS : "ORDER_ID -> PHONE"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> ADDRESS"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> AGE"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> CREATED_DATE"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> DEPT_ID"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> EMAIL"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> ID"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> NAME"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> PASSWORD"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> PHONE"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> STATUS"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> TYPE_ID"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> UPDATED_DATE"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> USERNAME"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> USER_ID"
+    ORDERS }o--o{ USERS : "CUSTOMER_ID -> USER_TYPE"
+    ORDERS }o--o{ USERS : "ORDER_ID -> ADDRESS"
+    ORDERS }o--o{ USERS : "ORDER_ID -> AGE"
+    ORDERS }o--o{ USERS : "ORDER_ID -> CREATED_DATE"
+    ORDERS }o--o{ USERS : "ORDER_ID -> DEPT_ID"
+    ORDERS }o--o{ USERS : "ORDER_ID -> EMAIL"
+    ORDERS }o--o{ USERS : "ORDER_ID -> ID"
+    ORDERS }o--o{ USERS : "ORDER_ID -> NAME"
+    ORDERS }o--o{ USERS : "ORDER_ID -> PASSWORD"
+    ORDERS }o--o{ USERS : "ORDER_ID -> PHONE"
+    ORDERS }o--o{ USERS : "ORDER_ID -> STATUS"
+    ORDERS }o--o{ USERS : "ORDER_ID -> TYPE_ID"
+    ORDERS }o--o{ USERS : "ORDER_ID -> UPDATED_DATE"
+    ORDERS }o--o{ USERS : "ORDER_ID -> USERNAME"
+    ORDERS }o--o{ USERS : "ORDER_ID -> USER_ID"
+    ORDERS }o--o{ USERS : "ORDER_ID -> USER_TYPE"
+    PRODUCTS }o--o{ BRANDS : "PRODUCT_ID -> BRAND_CODE"
+    PRODUCTS }o--o{ BRANDS : "PRODUCT_ID -> BRAND_ID"
+    PRODUCTS }o--o{ BRANDS : "PRODUCT_ID -> BRAND_NAME"
+    PRODUCTS }o--o{ BRANDS : "PRODUCT_ID -> DEL_YN"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_CODE"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_ID"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_NAME"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> DEL_YN"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> ID"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_CODE"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_ID"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> CATEGORY_NAME"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> DEL_YN"
+    PRODUCTS }o--o{ CATEGORIES : "PRODUCT_ID -> ID"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> ADDRESS"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> AGE"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> CREATED_DATE"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> DEPT_ID"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> EMAIL"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> ID"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> NAME"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> PASSWORD"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> PHONE"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> STATUS"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> TYPE_ID"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> UPDATED_DATE"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> USERNAME"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> USER_ID"
+    PRODUCTS }o--o{ USERS : "PRODUCT_ID -> USER_TYPE"
+    USERS }o--o{ DEPARTMENTS : "ID -> DEPT_ID"
+    USERS }o--o{ DEPARTMENTS : "ID -> DEPT_ID"
+    USERS }o--o{ NEW_TEST_TABLE : "ID -> USER_ID"
+    USERS }o--o{ NONEXISTENT_TABLE : "ID -> USER_ID"
+    USERS }o--o{ USER_ACTIVITY_LOG : "ID -> USER_ID"
+    USERS }o--o{ USER_PREFERENCES : "ID -> USER_ID"
+    USERS }o--o{ USER_PROFILES : "ID -> USER_ID"
+    USERS }o--o{ USER_ROLES : "ID -> ROLE_ID"
+    USERS }o--o{ USER_ROLES : "ID -> USER_ID"
+    USERS }o--o{ USER_SETTINGS : "ID -> USER_ID"
+    USERS }o--o{ USER_TYPES : "ID -> DESCRIPTION"
+    USERS }o--o{ USER_TYPES : "ID -> ID"
+    USERS }o--o{ USER_TYPES : "ID -> TYPE_CODE"
+    USERS }o--o{ USER_TYPES : "ID -> TYPE_NAME"
+    USERS }o--o{ USER_TYPES : "ID -> DESCRIPTION"
+    USERS }o--o{ USER_TYPES : "ID -> ID"
+    USERS }o--o{ USER_TYPES : "ID -> TYPE_CODE"
+    USERS }o--o{ USER_TYPES : "ID -> TYPE_NAME"
+        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                diagramPadding: 20
+            }
+        });
+        
+        // 확대 기능
+        function zoomIn() {
+            const diagram = document.querySelector('.mermaid');
+            if (diagram) {
+                const currentTransform = diagram.style.transform || 'scale(1)';
+                const currentScale = parseFloat(currentTransform.match(/scale\((\d+(?:\.\d+)?)\)/)?.[1] || '1');
+                const newScale = Math.min(currentScale * 1.2, 3);
+                diagram.style.transform = `scale(${newScale})`;
+            }
+        }
+        
+        // 축소 기능
+        function zoomOut() {
+            const diagram = document.querySelector('.mermaid');
+            if (diagram) {
+                const currentTransform = diagram.style.transform || 'scale(1)';
+                const currentScale = parseFloat(currentTransform.match(/scale\((\d+(?:\.\d+)?)\)/)?.[1] || '1');
+                const newScale = Math.max(currentScale / 1.2, 0.5);
+                diagram.style.transform = `scale(${newScale})`;
+            }
+        }
+        
+        // 원래 크기로 리셋
+        function resetZoom() {
+            const diagram = document.querySelector('.mermaid');
+            if (diagram) {
+                diagram.style.transform = 'scale(1)';
+            }
+        }
+        
+    </script>
+</body>
+</html>

@@ -27,23 +27,38 @@ from util.sql_content_manager import SqlContentManager
 class XmlLoadingEngine:
     """XML 로딩 엔진 - 3단계 통합 처리"""
     
-    def __init__(self, project_name: str):
+    def __init__(self, project_name: str, sql_content_enabled: bool = False):
         """
         XML 로딩 엔진 초기화
         
         Args:
             project_name: 프로젝트명
+            sql_content_enabled: SQL Content 기능 활성화 여부
         """
         self.project_name = project_name
         self.project_source_path = get_project_source_path(project_name)
         self.metadata_db_path = get_project_metadata_db_path(project_name)
         self.db_utils = None
+        self.sql_content_enabled = sql_content_enabled
         
         # XML 파서 초기화 (USER RULES: 공통함수 사용, 전역 프로젝트 정보 활용)
         self.xml_parser = XmlParser()
         
-        # SQL Content Manager 초기화
-        self.sql_content_manager = SqlContentManager(project_name)
+        # SQL Content Manager 초기화 (부속 기능 - 에러 시 무시)
+        if self.sql_content_enabled:
+            try:
+                self.sql_content_manager = SqlContentManager(project_name)
+                if self.sql_content_manager.initialized:
+                    info("SQL Content Manager 초기화 완료")
+                else:
+                    warning("SQL Content Manager 초기화 실패 (무시하고 계속 진행)")
+                    self.sql_content_manager = None
+            except Exception as e:
+                warning(f"SQL Content Manager 초기화 중 오류 발생 (무시하고 계속 진행): {str(e)}")
+                self.sql_content_manager = None
+        else:
+            info("SQL Content 기능이 비활성화되어 있습니다")
+            self.sql_content_manager = None
         
         # SQL Content Processor 초기화 (보류 상태)
         # self.sql_content_processor = None
@@ -174,7 +189,27 @@ class XmlLoadingEngine:
                     handle_error(e, f"XML 파일 처리 실패: {xml_file}")
                     return False
             
-            # 3. 통계 정보 출력
+            # 3. 삭제된 SQL Content 정리 (부속 기능 - 에러 시 무시)
+            try:
+                if self.sql_content_manager and self.sql_content_manager.initialized:
+                    project_id = self._get_project_id()
+                    if project_id:
+                        # 현재 존재하는 SQL 컴포넌트 ID 목록 조회
+                        current_sql_components_query = """
+                            SELECT component_id FROM components 
+                            WHERE project_id = ? AND component_type LIKE 'SQL_%' AND del_yn = 'N'
+                        """
+                        current_sql_components = self.db_utils.execute_query(current_sql_components_query, (project_id,))
+                        current_component_ids = [row['component_id'] for row in current_sql_components] if current_sql_components else []
+                        
+                        # 삭제된 SQL Content 정리
+                        deleted_count = self.sql_content_manager.cleanup_deleted_sql_contents(project_id, current_component_ids)
+                        if deleted_count > 0:
+                            info(f"삭제된 SQL Content 정리 완료: {deleted_count}개")
+            except Exception as e:
+                warning(f"SQL Content 정리 중 오류 발생 (무시): {str(e)}")
+            
+            # 4. 통계 정보 출력
             self._print_xml_loading_statistics()
             
             info("=== XML 로딩 완료 ===")
@@ -189,9 +224,13 @@ class XmlLoadingEngine:
             if self.db_utils:
                 self.db_utils.disconnect()
             
-            # SQL Content Manager 연결 해제
-            if hasattr(self, 'sql_content_manager'):
-                self.sql_content_manager.close()
+            # SQL Content Manager 연결 해제 (부속 기능 - 에러 시 무시)
+            if hasattr(self, 'sql_content_manager') and self.sql_content_manager:
+                try:
+                    self.sql_content_manager.close()
+                    debug("SQL Content Manager 연결 해제 완료")
+                except Exception as e:
+                    debug(f"SQL Content Manager 연결 해제 중 오류 발생 (무시): {str(e)}")
             
             # SQL Content Processor 정리 (보류 상태)
             # if hasattr(self, 'sql_content_processor') and self.sql_content_processor:
@@ -285,6 +324,32 @@ class XmlLoadingEngine:
                     if component_id:
                         success_count += 1
                         debug(f"SQL 컴포넌트 저장 성공: {sql_id} (component_id: {component_id})")
+                        
+                        # SQL Content Manager에 정제된 SQL 내용 저장 (부속 기능)
+                        try:
+                            if self.sql_content_manager and self.sql_content_manager.initialized:
+                                # 정제된 SQL 내용 저장
+                                sql_content_success = self.sql_content_manager.save_sql_content(
+                                    sql_content=sql_content,
+                                    project_id=project_id,
+                                    file_id=file_id,
+                                    component_id=component_id,
+                                    query_type=component_type,
+                                    file_path='',  # XML 파일에서는 파일 경로 정보가 제한적
+                                    component_name=sql_id,
+                                    file_name='',  # XML 파일에서는 파일명 정보가 제한적
+                                    line_start=1,
+                                    line_end=1,
+                                    hash_value='-',
+                                    error_message=None
+                                )
+                                if sql_content_success:
+                                    info(f"SQL Content 저장 성공: {sql_id}")
+                                else:
+                                    error(f"SQL Content 저장 실패: {sql_id} (무시하고 계속 진행)")
+                        except Exception as e:
+                            # SQL Content 저장 실패는 무시하고 계속 진행
+                            error(f"SQL Content 저장 중 오류 발생 (무시): {sql_id} - {str(e)}")
                     else:
                         handle_error(f"SQL 컴포넌트 저장 실패: {sql_id}")
                         
@@ -896,29 +961,40 @@ class XmlLoadingEngine:
             info(f"생성된 inferred 컬럼: {self.stats['inferred_columns_created']}개")
             info(f"오류 발생: {self.stats['errors']}개")
             
-            # SQL Content 통계 출력
-            project_id = self._get_project_id()
-            if project_id:
-                sql_content_stats = self.sql_content_manager.get_stats(project_id)
-                if sql_content_stats and sql_content_stats.get('total_stats'):
-                    total = sql_content_stats['total_stats']
-                    if total and isinstance(total, dict):
-                        info("=== SQL Content 통계 ===")
-                        info(f"저장된 SQL 내용: {total.get('total_sql_contents', 0)}개")
-                        info(f"총 압축 크기: {total.get('total_compressed_size', 0)} bytes")
-                        avg_size = total.get('avg_compressed_size', 0)
-                        if avg_size is not None:
-                            info(f"평균 압축 크기: {avg_size:.2f} bytes")
+            # SQL Content 통계 출력 (부속 기능 - 에러 시 무시)
+            try:
+                if self.sql_content_manager and self.sql_content_manager.initialized:
+                    project_id = self._get_project_id()
+                    if project_id:
+                        sql_content_stats = self.sql_content_manager.get_stats(project_id)
+                        if sql_content_stats and sql_content_stats.get('total_stats'):
+                            total = sql_content_stats['total_stats']
+                            if total and isinstance(total, dict):
+                                info("=== SQL Content 통계 ===")
+                                info(f"저장된 SQL 내용: {total.get('total_sql_contents', 0)}개")
+                                info(f"총 압축 크기: {total.get('total_compressed_size', 0)} bytes")
+                                avg_size = total.get('avg_compressed_size', 0)
+                                if avg_size is not None:
+                                    info(f"평균 압축 크기: {avg_size:.2f} bytes")
+                                else:
+                                    info(f"평균 압축 크기: 0.00 bytes")
+                                info(f"최대 압축 크기: {total.get('max_compressed_size', 0)} bytes")
+                                info(f"최소 압축 크기: {total.get('min_compressed_size', 0)} bytes")
+                            else:
+                                info("=== SQL Content 통계 ===")
+                                info("저장된 SQL 내용이 없습니다.")
                         else:
-                            info(f"평균 압축 크기: 0.00 bytes")
-                        info(f"최대 압축 크기: {total.get('max_compressed_size', 0)} bytes")
-                        info(f"최소 압축 크기: {total.get('min_compressed_size', 0)} bytes")
+                            info("=== SQL Content 통계 ===")
+                            info("SQL Content 통계 정보가 없습니다.")
                     else:
                         info("=== SQL Content 통계 ===")
-                        info("저장된 SQL 내용이 없습니다.")
+                        info("프로젝트 ID를 찾을 수 없어 SQL Content 통계를 출력할 수 없습니다.")
                 else:
                     info("=== SQL Content 통계 ===")
-                    info("SQL Content 통계 정보가 없습니다.")
+                    info("SQL Content Manager가 초기화되지 않았습니다.")
+            except Exception as e:
+                info("=== SQL Content 통계 ===")
+                info(f"SQL Content 통계 출력 중 오류 발생 (무시): {str(e)}")
             
         except Exception as e:
             handle_error(e, "통계 출력 실패")

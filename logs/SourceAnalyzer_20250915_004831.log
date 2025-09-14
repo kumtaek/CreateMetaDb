@@ -1,0 +1,22 @@
+2025-09-15 00:48:31,970 - SourceAnalyzer - INFO - create_report.py:141 - === SourceAnalyzer 리포트 생성 도구 시작 ===
+2025-09-15 00:48:31,977 - SourceAnalyzer - INFO - create_report.py:77 - 프로젝트 유효성 검증 완료: sampleSrc
+2025-09-15 00:48:31,977 - SourceAnalyzer - INFO - create_report.py:93 - 출력 디렉토리 준비 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\report
+2025-09-15 00:48:31,977 - SourceAnalyzer - INFO - create_report.py:122 - ERD Report 생성 시작
+2025-09-15 00:48:31,979 - SourceAnalyzer - INFO - erd_report_generator.py:59 - ERD Report 생성 시작: sampleSrc
+2025-09-15 00:48:31,981 - SourceAnalyzer - ERROR - database_utils.py:143 - 데이터베이스 연결 오류: no such column: r.project_id
+2025-09-15 00:48:31,985 - SourceAnalyzer - ERROR - logger.py:207 - FATAL ERROR at D:\Analyzer\CreateMetaDb\util\database_utils.py:167 in execute_query()
+Code: cursor.execute(query, params)
+Message: 데이터베이스 연결 오류: no such column: r.project_id
+Exception: OperationalError: no such column: r.project_id
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\util\database_utils.py", line 141, in get_connection
+    yield conn
+  File "D:\Analyzer\CreateMetaDb\util\database_utils.py", line 167, in execute_query
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: r.project_id
+
+2025-09-15 00:48:31,985 - SourceAnalyzer - ERROR - logger.py:210 - 
+[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: 1)
+2025-09-15 00:48:31,985 - SourceAnalyzer - ERROR - logger.py:211 - 자세한 내용은 로그 파일을 확인하세요: logs/SourceAnalyzer_20250915_004831.log
