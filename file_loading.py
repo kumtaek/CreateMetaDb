@@ -277,8 +277,8 @@ class FileLoadingEngine:
             if normalized_path in ['metadata.db', 'metadata.db-shm', 'metadata.db-wal']:
                 return False
             
-            # config/* 파일들 제외
-            if normalized_path.startswith('config/'):
+            # config/* 파일들 제외 (크로스플랫폼 대응)
+            if normalized_path.startswith('config' + os.sep) or normalized_path.startswith('config/'):
                 return False
             
             # db_schema의 특정 CSV 파일만 포함 (하드코딩)
@@ -358,13 +358,13 @@ class FileLoadingEngine:
         try:
             from util.config_utils import load_yaml_config
             
-            # 1. 프로젝트별 설정 우선 적용
-            project_config_path = os.path.join(self.project_source_path, 'config', 'target_source_config.yaml')
+            # 1. 프로젝트별 설정 우선 적용 (크로스플랫폼 대응)
+            project_config_path = self.path_utils.join_path(self.project_source_path, 'config', 'target_source_config.yaml')
             if os.path.exists(project_config_path):
                 return load_yaml_config(project_config_path)
             
-            # 2. 기본 설정 적용
-            default_config_path = os.path.join(self.path_utils.project_root, 'config', 'target_source_config.yaml')
+            # 2. 기본 설정 적용 (크로스플랫폼 대응)
+            default_config_path = self.path_utils.get_config_path('target_source_config.yaml')
             if os.path.exists(default_config_path):
                 return load_yaml_config(default_config_path)
             

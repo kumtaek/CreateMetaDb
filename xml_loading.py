@@ -5,7 +5,7 @@ XML 로딩 모듈
 - 데이터베이스 저장 및 통계 관리
 
 USER RULES:
-- 하드코딩 금지: config/parser/sql_keyword.yaml 사용
+- 하드코딩 금지: path_utils.get_parser_config_path("sql") 사용 (크로스플랫폼 대응)
 - Exception 처리: handle_error() 공통함수 사용
 - 공통함수 사용: util 모듈 활용
 - 메뉴얼 기반: parser/manual/04_mybatis 참고

@@ -37,8 +37,10 @@ class SourceAnalyzerLogger:
     def _setup_logger(self):
         """로거 설정 - 중앙 집중식 설정 파일 사용"""
         try:
-            # 로깅 설정 파일 로드
-            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'logging.yaml')
+            # 로깅 설정 파일 로드 (크로스플랫폼 대응)
+            from util import PathUtils
+            path_utils = PathUtils()
+            config_path = path_utils.get_config_path("logging.yaml")
             if os.path.exists(config_path):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = yaml.safe_load(f)

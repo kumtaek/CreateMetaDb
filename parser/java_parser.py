@@ -5,7 +5,7 @@ Java 파서 모듈
 - Classes 테이블 + Components 테이블 완전 지원
 
 USER RULES:
-- 하드코딩 금지: config/parser/java_keyword.yaml 사용
+- 하드코딩 금지: path_utils.get_parser_config_path("java") 사용 (크로스플랫폼 대응)
 - Exception 처리: handle_error() 공통함수 사용
 - 공통함수 사용: util 모듈 활용
 - 메뉴얼 기반: parser/manual/01_java 참고
@@ -44,8 +44,10 @@ class JavaParser:
             self.project_id = None
 
         if config_path is None:
-            # USER RULES: 하드코딩 지양 - 설정 파일 경로
-            java_config_path = "config/parser/java_keyword.yaml"
+            # USER RULES: 하드코딩 지양 - 공통함수 사용 (크로스플랫폼 대응)
+            from util import PathUtils
+            path_utils = PathUtils()
+            java_config_path = path_utils.get_parser_config_path("java")
             self.config = self._load_config(java_config_path)
         else:
             self.config_path = config_path

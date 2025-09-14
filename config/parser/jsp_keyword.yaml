@@ -282,7 +282,7 @@ jsp_tag_attributes:
   - "default"
   - "escapeXml"
 
-# JSP 정규식 패턴
+# JSP 정규식 패턴 (관계 도출 중심)
 jsp_patterns:
   # 지시어 패턴
   directive_patterns:
@@ -319,6 +319,35 @@ jsp_patterns:
   comment_patterns:
     - "<!--.*?-->"
     - "<%--.*?--%>"
+
+# 관계 도출을 위한 패턴 (매뉴얼 기반 추가)
+jsp_include_patterns:
+  - r'file\s*=\s*["\']([^"\']+)["\']'  # include file 속성
+  - r'page\s*=\s*["\']([^"\']+)["\']'  # include page 속성
+
+jsp_forward_patterns:
+  - r'page\s*=\s*["\']([^"\']+)["\']'  # forward page 속성
+
+jsp_bean_patterns:
+  - r'class\s*=\s*["\']([^"\']+)["\']'  # useBean class 속성
+  - r'id\s*=\s*["\']([^"\']+)["\']'  # useBean id 속성
+
+jsp_taglib_patterns:
+  - r'uri\s*=\s*["\']([^"\']+)["\']'  # taglib uri 속성
+  - r'prefix\s*=\s*["\']([^"\']+)["\']'  # taglib prefix 속성
+
+jsp_sql_patterns:
+  - r'<sql:query[^>]*>(.*?)</sql:query>'  # SQL 쿼리 내용
+  - r'<sql:update[^>]*>(.*?)</sql:update>'  # SQL 업데이트 내용
+
+jsp_xml_patterns:
+  - r'xml\s*=\s*["\']([^"\']+)["\']'  # XML 데이터 속성
+  - r'<x:parse[^>]*>(.*?)</x:parse>'  # XML 파싱 내용
+
+# Java 메서드 호출 패턴
+java_method_call_patterns:
+  - r'(\w+)\.(\w+)\s*\('  # object.method()
+  - r'(\w+)\s*\([^)]*\)'  # method()
 
 # JSP 예외 처리
 jsp_exception_handling:

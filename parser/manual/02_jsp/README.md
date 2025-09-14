@@ -19,6 +19,6 @@ JSP(JavaServer Pages) 코드 분석을 위한 공식 메뉴얼 및 스펙 문서
 - EL(Expression Language) 분석
 
 ## 관련 설정 파일
-- `config/jsp_keyword.yaml`
-- `config/jsp_keywords.yaml`
-- `utils/jsp_keyword_config.py`
+- `path_utils.get_parser_config_path("jsp")` (크로스플랫폼 대응)
+- 공통함수 사용으로 하드코딩 금지 및 경로 구분자 문제 해결
+- `utils\jsp_keyword_config.py` (추가 권장)

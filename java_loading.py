@@ -5,7 +5,7 @@ Java 로딩 모듈 - 4단계 통합 처리
 - 데이터베이스 저장 및 통계 관리
 
 USER RULES:
-- 하드코딩 금지: config/parser/java_keyword.yaml 사용
+- 하드코딩 금지: path_utils.get_parser_config_path("java") 사용 (크로스플랫폼 대응)
 - 파싱 에러 처리: has_error='Y', error_message 저장 후 계속 실행
 - 시스템 에러 처리: handle_error() 공통함수 사용
 - 공통함수 사용: util 모듈 활용

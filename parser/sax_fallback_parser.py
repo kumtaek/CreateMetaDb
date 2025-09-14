@@ -5,7 +5,7 @@ SAX Fallback 파서 모듈
 - RecursionError 해결을 위한 이벤트 기반 파싱
 
 USER RULES:
-- 하드코딩 금지: config/parser/mybatis_keyword.yaml 사용
+- 하드코딩 금지: path_utils.get_config_path("parser/mybatis_keyword.yaml") 사용 (크로스플랫폼 대응)
 - Exception 처리: 파싱에러는 has_error='Y', error_message 저장 후 계속 실행
 - 공통함수 사용: util 모듈 활용
 - 메뉴얼 기반: parser/manual/04_mybatis 참고

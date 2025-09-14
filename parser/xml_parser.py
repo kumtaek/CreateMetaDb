@@ -5,7 +5,7 @@ XML 파서 모듈
 - 메모리 최적화 (스트리밍 처리)
 
 USER RULES:
-- 하드코딩 금지: config/parser/sql_keyword.yaml 사용
+- 하드코딩 금지: path_utils.get_parser_config_path("sql") 사용 (크로스플랫폼 대응)
 - Exception 처리: handle_error() 공통함수 사용
 - 공통함수 사용: util 모듈 활용
 - 메뉴얼 기반: parser/manual/04_mybatis 참고
@@ -46,9 +46,12 @@ class XmlParser:
             self.project_id = None
 
         if config_path is None:
-            sql_config_path = "config/parser/sql_keyword.yaml"
-            xml_config_path = "config/parser/xml_parser_config.yaml"
-            dom_rules_path = "config/parser/mybatis_dom_rules.yaml"
+            # USER RULES: 하드코딩 지양 - 공통함수 사용 (크로스플랫폼 대응)
+            from util import PathUtils
+            path_utils = PathUtils()
+            sql_config_path = path_utils.get_parser_config_path("sql")
+            xml_config_path = path_utils.get_config_path("parser/xml_parser_config.yaml")
+            dom_rules_path = path_utils.get_config_path("parser/mybatis_dom_rules.yaml")
             sql_config = self._load_config(sql_config_path)
             xml_config = self._load_config(xml_config_path)
             self.dom_rules = self._load_config(dom_rules_path)
@@ -452,7 +455,7 @@ class XmlParser:
                 # Fallback으로 기존 7단계 로직 실행
 
             # 기존 7단계 로직 실행 (Fallback)
-            # USER RULES: D:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml에서 패턴 가져오기
+            # USER RULES: path_utils.get_parser_config_path("sql")에서 패턴 가져오기 (크로스플랫폼 대응)
             analysis_patterns = self.config.get('sql_analysis_patterns', {})
             join_type_mapping = self.config.get('join_type_mapping', {})
             dynamic_patterns = self.config.get('dynamic_sql_patterns', {})

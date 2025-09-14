@@ -89,9 +89,11 @@ class ConfigUtils:
         Returns:
             설정 딕셔너리 또는 None (실패시)
         """
-        # 프로젝트별 설정 파일 경로
-        project_config_path = f"projects/{project_name}/config/{config_filename}"
-        base_config_path = f"{self.base_config_path}/{config_filename}"
+        # 프로젝트별 설정 파일 경로 (크로스플랫폼 대응)
+        from util import PathUtils
+        path_utils = PathUtils()
+        project_config_path = path_utils.join_path("projects", project_name, "config", config_filename)
+        base_config_path = path_utils.join_path(self.base_config_path, config_filename)
         
         # 프로젝트별 설정이 있으면 우선 사용
         if os.path.exists(project_config_path):
