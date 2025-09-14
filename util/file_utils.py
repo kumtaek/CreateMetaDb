@@ -9,6 +9,7 @@ SourceAnalyzer 파일 처리 공통 유틸리티 모듈
 import os
 import hashlib
 import mimetypes
+import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from .logger import app_logger, handle_error, info
@@ -307,6 +308,64 @@ class FileUtils:
         except ValueError:
             # 다른 드라이브에 있는 경우 절대 경로 반환
             return file_path
+    
+    @staticmethod
+    def cleanup_old_log_files(log_directory: str, hours_threshold: int = 24) -> int:
+        """
+        24시간(또는 지정된 시간) 지난 로그 파일들을 삭제
+        
+        Args:
+            log_directory: 로그 디렉토리 경로
+            hours_threshold: 삭제 기준 시간 (시간 단위, 기본값: 24)
+            
+        Returns:
+            삭제된 파일 수
+        """
+        deleted_count = 0
+        current_time = time.time()
+        threshold_seconds = hours_threshold * 3600  # 시간을 초로 변환
+        
+        try:
+            if not os.path.exists(log_directory):
+                info(f"로그 디렉토리가 존재하지 않습니다: {log_directory}")
+                return 0
+            
+            for filename in os.listdir(log_directory):
+                file_path = os.path.join(log_directory, filename)
+                
+                # 파일인지 확인
+                if not os.path.isfile(file_path):
+                    continue
+                
+                # .log 확장자 파일만 처리
+                if not filename.endswith('.log'):
+                    continue
+                
+                try:
+                    # 파일의 수정 시간 확인
+                    file_mtime = os.path.getmtime(file_path)
+                    file_age = current_time - file_mtime
+                    
+                    # 지정된 시간보다 오래된 파일 삭제
+                    if file_age > threshold_seconds:
+                        os.remove(file_path)
+                        deleted_count += 1
+                        info(f"오래된 로그 파일 삭제: {filename} (생성일: {time.ctime(file_mtime)})")
+                        
+                except Exception as e:
+                    app_logger.warning(f"로그 파일 삭제 실패: {filename}, 오류: {str(e)}")
+                    continue
+            
+            if deleted_count > 0:
+                info(f"총 {deleted_count}개의 오래된 로그 파일을 삭제했습니다")
+            else:
+                info("삭제할 오래된 로그 파일이 없습니다")
+                
+            return deleted_count
+            
+        except Exception as e:
+            handle_error(e, f"로그 파일 정리 실패: {log_directory}")
+            return 0
 
 
 # 편의 함수들
@@ -333,3 +392,8 @@ def get_file_hash(file_path: str) -> Optional[str]:
 def get_content_hash(content: str) -> str:
     """내용 해시 계산 편의 함수"""
     return FileUtils.get_content_hash(content)
+
+
+def cleanup_old_log_files(log_directory: str, hours_threshold: int = 24) -> int:
+    """오래된 로그 파일 삭제 편의 함수"""
+    return FileUtils.cleanup_old_log_files(log_directory, hours_threshold)

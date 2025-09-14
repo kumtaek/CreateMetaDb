@@ -1,2 +1,0 @@
-2025-09-12 16:18:22,441 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
-2025-09-12 16:18:22,443 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db

@@ -3,7 +3,7 @@ SourceAnalyzer 공통 유틸리티 모듈
 """
 
 from .logger import SourceAnalyzerLogger, app_logger, debug, info, warning, error, critical, get_log_file_path, handle_error
-from .file_utils import FileUtils, read_file, write_file, get_file_type, get_file_hash, get_content_hash
+from .file_utils import FileUtils, read_file, write_file, get_file_type, get_file_hash, get_content_hash, cleanup_old_log_files
 from .database_utils import DatabaseUtils, create_database_connection, execute_sql_script
 from .config_utils import ConfigUtils, load_yaml_config, load_project_config, get_config_value
 from .hash_utils import HashUtils, generate_md5, generate_sha256, generate_file_hash, is_file_changed
@@ -38,6 +38,7 @@ __all__ = [
     'get_file_type',
     'get_file_hash',
     'get_content_hash',
+    'cleanup_old_log_files',
     
     # Database Utils
     'DatabaseUtils',

@@ -9,7 +9,7 @@ import os
 from util import (
     ArgUtils, validate_and_get_project_name, print_usage_and_exit,
     PathUtils, get_project_source_path, project_exists,
-    app_logger, info, error, handle_error
+    app_logger, info, error, handle_error, cleanup_old_log_files
 )
 
 # recursion limit 설정 (XML 파싱 오류 방지)  
@@ -20,6 +20,15 @@ info(f"Recursion limit set to: {sys.getrecursionlimit()}")
 def main():
     """메인 함수"""
     try:
+        # 0. 오래된 로그 파일 정리 (24시간 지난 파일 삭제)
+        log_directory = os.path.join(os.path.dirname(__file__), 'logs')
+        info("오래된 로그 파일 정리 시작")
+        deleted_count = cleanup_old_log_files(log_directory, 24)
+        if deleted_count > 0:
+            info(f"로그 파일 정리 완료: {deleted_count}개 파일 삭제")
+        else:
+            info("삭제할 오래된 로그 파일이 없습니다")
+        
         # 1. 명령행 인자 처리
         info("SourceAnalyzer 시작")
         

@@ -1,4 +1,0 @@
-2025-09-12 13:53:59,589 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/xml_parser_config.yaml
-2025-09-12 13:53:59,593 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/xml_parser_config.yaml
-2025-09-12 13:53:59,594 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
-2025-09-12 13:53:59,599 - SourceAnalyzer - DEBUG - logger.py:64 - 3단계 XML 쿼리 ID와 내용 추출 완료: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml, 22개 쿼리

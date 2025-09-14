@@ -1,3 +1,0 @@
-2025-09-14 15:06:59,874 - SourceAnalyzer - INFO - logger.py:73 - Recursion limit set to: 50
-2025-09-14 15:06:59,874 - SourceAnalyzer - INFO - logger.py:73 - SourceAnalyzer 시작
-2025-09-14 15:06:59,881 - SourceAnalyzer - ERROR - logger.py:84 - 명령행 인자 오류
