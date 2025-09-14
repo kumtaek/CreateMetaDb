@@ -1,0 +1,4 @@
+2025-09-15 00:02:00,398 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-15 00:02:00,399 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP test.jsp에서 14개 메서드 호출 발견
+2025-09-15 00:02:00,399 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP test.jsp에서 4개 JSP 관계 발견
+2025-09-15 00:02:00,401 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP test.jsp에서 25개 고도화 관계 발견

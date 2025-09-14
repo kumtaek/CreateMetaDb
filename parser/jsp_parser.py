@@ -93,23 +93,25 @@ class JspParser:
 
     def parse_jsp_file(self, jsp_file: str) -> Dict[str, Any]:
         """
-        JSP 파일에서 컴포넌트 정보 추출 및 Java 메서드 관계 분석
+        JSP 파일에서 컴포넌트 정보 추출 및 관계 분석
 
         Args:
             jsp_file: JSP 파일 경로
 
         Returns:
-            Dict[str, Any]: JSP 컴포넌트 정보와 Java 메서드 관계 정보
+            Dict[str, Any]: JSP 컴포넌트 정보와 모든 관계 정보
         """
         try:
             # JSP 파일 읽기
             file_utils = FileUtils()
             jsp_content = file_utils.read_file(jsp_file)
-            
+
             if not jsp_content:
                 return {
                     'jsp_component': None,
                     'java_method_relationships': [],
+                    'jsp_relationships': [],
+                    'advanced_relationships': {},
                     'file_path': jsp_file,
                     'has_error': 'Y',
                     'error_message': 'JSP 파일 읽기 실패'
@@ -117,13 +119,21 @@ class JspParser:
 
             # JSP 컴포넌트 정보 추출
             jsp_component = self._extract_jsp_component_info(jsp_content, jsp_file)
-            
-            # Java 메서드 호출 분석 (Phase 1 MVP: 스크립틀릿, 표현식만)
+
+            # Phase 1: Java 메서드 호출 분석 (스크립틀릿, 표현식)
             java_method_relationships = self._analyze_java_method_calls(jsp_content, jsp_component['jsp_name'])
+
+            # Phase 2: JSP 간 관계 분석
+            jsp_relationships = self._analyze_jsp_relationships(jsp_content, jsp_component['jsp_name'])
+
+            # Phase 3: 고도화 관계 분석 (EL, JSTL, Java Bean, 태그 라이브러리)
+            advanced_relationships = self._analyze_advanced_relationships(jsp_content, jsp_component['jsp_name'])
 
             return {
                 'jsp_component': jsp_component,
                 'java_method_relationships': java_method_relationships,
+                'jsp_relationships': jsp_relationships,
+                'advanced_relationships': advanced_relationships,
                 'file_path': jsp_file,
                 'has_error': 'N',
                 'error_message': None
@@ -134,6 +144,8 @@ class JspParser:
             return {
                 'jsp_component': None,
                 'java_method_relationships': [],
+                'jsp_relationships': [],
+                'advanced_relationships': {},
                 'file_path': jsp_file,
                 'has_error': 'Y',
                 'error_message': f'JSP 파일 파싱 실패: {str(e)}'
@@ -529,16 +541,796 @@ class JspParser:
         try:
             seen = set()
             unique_calls = []
-            
+
             for call in method_calls:
                 # 중복 확인 키 생성
                 key = (call['jsp_name'], call['class_name'], call['method_name'], call['line_number'])
-                
+
                 if key not in seen:
                     seen.add(key)
                     unique_calls.append(call)
-            
+
             return unique_calls
 
         except Exception as e:
             handle_error(e, "중복 메서드 호출 제거 실패")
+
+    # Phase 2: JSP 간 관계 분석 메서드들
+    def _analyze_jsp_relationships(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        JSP 파일에서 다른 JSP와의 관계 분석 (Phase 2)
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: JSP 관계 정보
+        """
+        try:
+            jsp_relationships = []
+
+            # 1. <%@ include %> 디렉티브 분석
+            include_relationships = self._analyze_include_directives(jsp_content, jsp_name)
+            jsp_relationships.extend(include_relationships)
+
+            # 2. <jsp:include>, <jsp:forward> 액션 분석
+            action_relationships = self._analyze_jsp_actions(jsp_content, jsp_name)
+            jsp_relationships.extend(action_relationships)
+
+            # 중복 제거
+            jsp_relationships = self._remove_duplicate_jsp_relationships(jsp_relationships)
+
+            info(f"JSP {jsp_name}에서 {len(jsp_relationships)}개 JSP 관계 발견")
+            return jsp_relationships
+
+        except Exception as e:
+            handle_error(e, f"JSP 관계 분석 실패: {jsp_name}")
+
+    def _analyze_include_directives(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        <%@ include %> 디렉티브 분석
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: include 디렉티브 관계 정보
+        """
+        try:
+            relationships = []
+
+            # include 디렉티브 패턴 (설정 파일에서 로드)
+            include_patterns = self.config.get('jsp_include_patterns', [])
+
+            # 기본 패턴
+            if not include_patterns:
+                include_patterns = [
+                    r'<%@\s*include\s+file\s*=\s*["\']([^"\']+)["\']',
+                    r'<%@include\s+file\s*=\s*["\']([^"\']+)["\']'
+                ]
+
+            for pattern in include_patterns:
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    included_file = match.group(1)
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+
+                    # 경로 정규화
+                    included_file = self._normalize_jsp_path(included_file)
+
+                    relationship = {
+                        'src_jsp': jsp_name,
+                        'dst_jsp': included_file,
+                        'relationship_type': 'INCLUDE_DIRECTIVE',
+                        'line_number': line_number
+                    }
+                    relationships.append(relationship)
+
+            return relationships
+
+        except Exception as e:
+            handle_error(e, f"include 디렉티브 분석 실패: {jsp_name}")
+
+    def _analyze_jsp_actions(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        <jsp:include>, <jsp:forward> 액션 분석
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: JSP 액션 관계 정보
+        """
+        try:
+            relationships = []
+
+            # JSP 액션 패턴 (설정 파일에서 로드)
+            action_patterns = self.config.get('jsp_action_patterns', {})
+
+            # 기본 패턴
+            if not action_patterns:
+                action_patterns = {
+                    'include': r'<jsp:include\s+page\s*=\s*["\']([^"\']+)["\']',
+                    'forward': r'<jsp:forward\s+page\s*=\s*["\']([^"\']+)["\']'
+                }
+
+            for action_type, pattern in action_patterns.items():
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    target_page = match.group(1)
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+
+                    # 경로 정규화
+                    target_page = self._normalize_jsp_path(target_page)
+
+                    relationship = {
+                        'src_jsp': jsp_name,
+                        'dst_jsp': target_page,
+                        'relationship_type': f'JSP_{action_type.upper()}',
+                        'line_number': line_number
+                    }
+                    relationships.append(relationship)
+
+            return relationships
+
+        except Exception as e:
+            handle_error(e, f"JSP 액션 분석 실패: {jsp_name}")
+
+    def _normalize_jsp_path(self, jsp_path: str) -> str:
+        """
+        JSP 파일 경로 정규화
+
+        Args:
+            jsp_path: JSP 파일 경로
+
+        Returns:
+            str: 정규화된 JSP 파일 경로
+        """
+        try:
+            # 절대 경로를 상대 경로로 변환
+            if jsp_path.startswith('/'):
+                jsp_path = jsp_path[1:]
+
+            # 역슬래시를 슬래시로 변환
+            jsp_path = jsp_path.replace('\\', '/')
+
+            # JSP 확장자가 없으면 추가
+            if not jsp_path.lower().endswith('.jsp'):
+                jsp_path = jsp_path + '.jsp'
+
+            return jsp_path
+
+        except Exception as e:
+            handle_error(e, f"JSP 경로 정규화 실패: {jsp_path}")
+
+    def _remove_duplicate_jsp_relationships(self, relationships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        중복 JSP 관계 제거
+
+        Args:
+            relationships: JSP 관계 리스트
+
+        Returns:
+            List[Dict[str, Any]]: 중복 제거된 JSP 관계 리스트
+        """
+        try:
+            seen = set()
+            unique_relationships = []
+
+            for rel in relationships:
+                # 중복 확인 키 생성
+                key = (rel['src_jsp'], rel['dst_jsp'], rel['relationship_type'])
+
+                if key not in seen:
+                    seen.add(key)
+                    unique_relationships.append(rel)
+
+            return unique_relationships
+
+        except Exception as e:
+            handle_error(e, "중복 JSP 관계 제거 실패")
+
+    def generate_jsp_dependency_graph(self, jsp_files: List[str]) -> Dict[str, Any]:
+        """
+        JSP 의존성 그래프 생성
+
+        Args:
+            jsp_files: JSP 파일 경로 리스트
+
+        Returns:
+            Dict[str, Any]: JSP 의존성 그래프 정보
+        """
+        try:
+            # JSP 의존성 그래프 구조
+            dependency_graph = {
+                'nodes': {},  # JSP 파일 노드
+                'edges': [],  # JSP 간 의존성 관계
+                'circular_dependencies': [],  # 순환 의존성
+                'isolated_nodes': [],  # 독립 노드 (의존성 없음)
+                'entry_points': [],  # 진입점 (다른 JSP에서 참조되지 않음)
+                'leaf_nodes': []  # 리프 노드 (다른 JSP를 참조하지 않음)
+            }
+
+            # 1. 모든 JSP 파일 분석하여 노드와 엣지 구성
+            all_relationships = []
+            for jsp_file in jsp_files:
+                result = self.parse_jsp_file(jsp_file)
+
+                if result['has_error'] == 'N' and result['jsp_relationships']:
+                    jsp_name = result['jsp_component']['jsp_name']
+
+                    # 노드 추가
+                    dependency_graph['nodes'][jsp_name] = {
+                        'file_path': jsp_file,
+                        'outgoing_dependencies': [],
+                        'incoming_dependencies': []
+                    }
+
+                    # 관계 수집
+                    all_relationships.extend(result['jsp_relationships'])
+
+            # 2. 엣지 구성 및 의존성 연결
+            for rel in all_relationships:
+                src_jsp = rel['src_jsp']
+                dst_jsp = rel['dst_jsp']
+                rel_type = rel['relationship_type']
+
+                edge = {
+                    'source': src_jsp,
+                    'target': dst_jsp,
+                    'type': rel_type,
+                    'line_number': rel.get('line_number', 0)
+                }
+                dependency_graph['edges'].append(edge)
+
+                # 노드별 의존성 관계 업데이트
+                if src_jsp in dependency_graph['nodes']:
+                    if dst_jsp not in dependency_graph['nodes'][src_jsp]['outgoing_dependencies']:
+                        dependency_graph['nodes'][src_jsp]['outgoing_dependencies'].append(dst_jsp)
+
+                if dst_jsp not in dependency_graph['nodes']:
+                    # 참조되는 JSP가 분석 대상에 없는 경우 노드 생성
+                    dependency_graph['nodes'][dst_jsp] = {
+                        'file_path': None,  # 외부 파일
+                        'outgoing_dependencies': [],
+                        'incoming_dependencies': []
+                    }
+
+                if src_jsp not in dependency_graph['nodes'][dst_jsp]['incoming_dependencies']:
+                    dependency_graph['nodes'][dst_jsp]['incoming_dependencies'].append(src_jsp)
+
+            # 3. 순환 의존성 탐지
+            dependency_graph['circular_dependencies'] = self._detect_circular_dependencies(dependency_graph['nodes'])
+
+            # 4. 특별한 노드들 식별
+            dependency_graph['isolated_nodes'] = self._find_isolated_nodes(dependency_graph['nodes'])
+            dependency_graph['entry_points'] = self._find_entry_points(dependency_graph['nodes'])
+            dependency_graph['leaf_nodes'] = self._find_leaf_nodes(dependency_graph['nodes'])
+
+            info(f"JSP 의존성 그래프 생성 완료: 노드 {len(dependency_graph['nodes'])}개, 엣지 {len(dependency_graph['edges'])}개")
+
+            if dependency_graph['circular_dependencies']:
+                warning(f"순환 의존성 발견: {len(dependency_graph['circular_dependencies'])}개")
+
+            return dependency_graph
+
+        except Exception as e:
+            handle_error(e, "JSP 의존성 그래프 생성 실패")
+
+    def _detect_circular_dependencies(self, nodes: Dict[str, Dict]) -> List[List[str]]:
+        """
+        순환 의존성 탐지
+
+        Args:
+            nodes: JSP 노드 딕셔너리
+
+        Returns:
+            List[List[str]]: 순환 의존성 경로 리스트
+        """
+        try:
+            circular_deps = []
+            visited = set()
+            rec_stack = set()
+
+            def dfs_detect_cycle(node: str, path: List[str]) -> bool:
+                if node in rec_stack:
+                    # 순환 의존성 발견
+                    cycle_start = path.index(node)
+                    cycle = path[cycle_start:] + [node]
+                    circular_deps.append(cycle)
+                    return True
+
+                if node in visited:
+                    return False
+
+                visited.add(node)
+                rec_stack.add(node)
+
+                if node in nodes:
+                    for dependency in nodes[node]['outgoing_dependencies']:
+                        if dfs_detect_cycle(dependency, path + [node]):
+                            return True
+
+                rec_stack.remove(node)
+                return False
+
+            for node in nodes:
+                if node not in visited:
+                    dfs_detect_cycle(node, [])
+
+            return circular_deps
+
+        except Exception as e:
+            handle_error(e, "순환 의존성 탐지 실패")
+
+    def _find_isolated_nodes(self, nodes: Dict[str, Dict]) -> List[str]:
+        """
+        독립 노드 찾기 (의존성이 없는 JSP)
+
+        Args:
+            nodes: JSP 노드 딕셔너리
+
+        Returns:
+            List[str]: 독립 노드 리스트
+        """
+        try:
+            isolated = []
+            for node_name, node_data in nodes.items():
+                if (not node_data['outgoing_dependencies'] and
+                    not node_data['incoming_dependencies']):
+                    isolated.append(node_name)
+            return isolated
+
+        except Exception as e:
+            handle_error(e, "독립 노드 탐지 실패")
+
+    def _find_entry_points(self, nodes: Dict[str, Dict]) -> List[str]:
+        """
+        진입점 찾기 (다른 JSP에서 참조되지 않는 JSP)
+
+        Args:
+            nodes: JSP 노드 딕셔너리
+
+        Returns:
+            List[str]: 진입점 리스트
+        """
+        try:
+            entry_points = []
+            for node_name, node_data in nodes.items():
+                if (not node_data['incoming_dependencies'] and
+                    node_data['outgoing_dependencies']):
+                    entry_points.append(node_name)
+            return entry_points
+
+        except Exception as e:
+            handle_error(e, "진입점 탐지 실패")
+
+    def _find_leaf_nodes(self, nodes: Dict[str, Dict]) -> List[str]:
+        """
+        리프 노드 찾기 (다른 JSP를 참조하지 않는 JSP)
+
+        Args:
+            nodes: JSP 노드 딕셔너리
+
+        Returns:
+            List[str]: 리프 노드 리스트
+        """
+        try:
+            leaf_nodes = []
+            for node_name, node_data in nodes.items():
+                if (not node_data['outgoing_dependencies'] and
+                    node_data['incoming_dependencies']):
+                    leaf_nodes.append(node_name)
+            return leaf_nodes
+
+        except Exception as e:
+            handle_error(e, "리프 노드 탐지 실패")
+
+    # Phase 3: 고도화 관계 분석 메서드들
+    def _analyze_advanced_relationships(self, jsp_content: str, jsp_name: str) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        고도화 관계 분석 (EL, JSTL, Java Bean, 태그 라이브러리)
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            Dict[str, List[Dict[str, Any]]]: 고도화 관계 정보
+        """
+        try:
+            advanced_relationships = {
+                'el_expressions': [],  # EL 표현식 관계
+                'jstl_tags': [],  # JSTL 태그 관계
+                'java_beans': [],  # Java Bean 관계
+                'tag_libraries': []  # 태그 라이브러리 관계
+            }
+
+            # 1. EL 표현식 분석
+            el_relationships = self._analyze_el_expressions(jsp_content, jsp_name)
+            advanced_relationships['el_expressions'] = el_relationships
+
+            # 2. JSTL 태그 분석
+            jstl_relationships = self._analyze_jstl_tags(jsp_content, jsp_name)
+            advanced_relationships['jstl_tags'] = jstl_relationships
+
+            # 3. Java Bean 관계 분석
+            bean_relationships = self._analyze_java_beans(jsp_content, jsp_name)
+            advanced_relationships['java_beans'] = bean_relationships
+
+            # 4. 태그 라이브러리 관계 분석
+            taglib_relationships = self._analyze_tag_libraries(jsp_content, jsp_name)
+            advanced_relationships['tag_libraries'] = taglib_relationships
+
+            total_relations = sum(len(v) for v in advanced_relationships.values())
+            info(f"JSP {jsp_name}에서 {total_relations}개 고도화 관계 발견")
+
+            return advanced_relationships
+
+        except Exception as e:
+            handle_error(e, f"고도화 관계 분석 실패: {jsp_name}")
+
+    def _analyze_el_expressions(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        EL 표현식 (${...}) 분석
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: EL 표현식 관계 정보
+        """
+        try:
+            el_relationships = []
+
+            # EL 표현식 패턴 (설정 파일에서 로드)
+            el_patterns = self.config.get('jsp_el_patterns', [])
+
+            # 기본 패턴
+            if not el_patterns:
+                el_patterns = [
+                    r'\$\{([^}]+)\}',  # ${...}
+                    r'#\{([^}]+)\}'    # #{...}
+                ]
+
+            for pattern in el_patterns:
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    el_expression = match.group(1).strip()
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+
+                    # EL 표현식에서 Bean 속성 및 메서드 추출
+                    bean_relations = self._parse_el_expression(el_expression, jsp_name, line_number)
+                    el_relationships.extend(bean_relations)
+
+            return el_relationships
+
+        except Exception as e:
+            handle_error(e, f"EL 표현식 분석 실패: {jsp_name}")
+
+    def _parse_el_expression(self, el_expression: str, jsp_name: str, line_number: int) -> List[Dict[str, Any]]:
+        """
+        EL 표현식 파싱하여 Bean 관계 추출
+
+        Args:
+            el_expression: EL 표현식 내용
+            jsp_name: JSP 파일명
+            line_number: 라인 번호
+
+        Returns:
+            List[Dict[str, Any]]: EL 관계 정보
+        """
+        try:
+            relationships = []
+
+            # Bean 속성 접근 패턴
+            bean_property_patterns = [
+                r'(\w+)\.(\w+)',  # bean.property
+                r'(\w+)\[\'([^\']+)\'\]',  # bean['property']
+                r'(\w+)\["([^"]+)"\]'  # bean["property"]
+            ]
+
+            # 메서드 호출 패턴
+            method_call_patterns = [
+                r'(\w+)\.(\w+)\s*\(',  # bean.method()
+            ]
+
+            for pattern in bean_property_patterns:
+                matches = re.finditer(pattern, el_expression, re.IGNORECASE)
+
+                for match in matches:
+                    bean_name = match.group(1)
+                    property_name = match.group(2)
+
+                    relationship = {
+                        'jsp_name': jsp_name,
+                        'bean_name': bean_name,
+                        'property_or_method': property_name,
+                        'access_type': 'PROPERTY',
+                        'el_expression': el_expression,
+                        'line_number': line_number
+                    }
+                    relationships.append(relationship)
+
+            for pattern in method_call_patterns:
+                matches = re.finditer(pattern, el_expression, re.IGNORECASE)
+
+                for match in matches:
+                    bean_name = match.group(1)
+                    method_name = match.group(2)
+
+                    relationship = {
+                        'jsp_name': jsp_name,
+                        'bean_name': bean_name,
+                        'property_or_method': method_name,
+                        'access_type': 'METHOD',
+                        'el_expression': el_expression,
+                        'line_number': line_number
+                    }
+                    relationships.append(relationship)
+
+            return relationships
+
+        except Exception as e:
+            handle_error(e, f"EL 표현식 파싱 실패: {el_expression}")
+
+    def _analyze_jstl_tags(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        JSTL 태그 분석
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: JSTL 태그 관계 정보
+        """
+        try:
+            jstl_relationships = []
+
+            # JSTL 태그 패턴 (설정 파일에서 로드)
+            jstl_patterns = self.config.get('jsp_jstl_patterns', {})
+
+            # 기본 패턴
+            if not jstl_patterns:
+                jstl_patterns = {
+                    'forEach': r'<c:forEach\s+([^>]+)>',
+                    'if': r'<c:if\s+([^>]+)>',
+                    'choose': r'<c:choose\s*>',
+                    'when': r'<c:when\s+([^>]+)>',
+                    'otherwise': r'<c:otherwise\s*>',
+                    'set': r'<c:set\s+([^>]+)>',
+                    'out': r'<c:out\s+([^>]+)>'
+                }
+
+            for tag_type, pattern in jstl_patterns.items():
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+
+                    if match.groups():
+                        attributes = match.group(1)
+                    else:
+                        attributes = ''
+
+                    # 태그 속성에서 Bean 관계 추출
+                    bean_relations = self._parse_jstl_attributes(attributes, tag_type, jsp_name, line_number)
+                    jstl_relationships.extend(bean_relations)
+
+            return jstl_relationships
+
+        except Exception as e:
+            handle_error(e, f"JSTL 태그 분석 실패: {jsp_name}")
+
+    def _parse_jstl_attributes(self, attributes: str, tag_type: str, jsp_name: str, line_number: int) -> List[Dict[str, Any]]:
+        """
+        JSTL 태그 속성에서 Bean 관계 추출
+
+        Args:
+            attributes: 태그 속성
+            tag_type: 태그 타입
+            jsp_name: JSP 파일명
+            line_number: 라인 번호
+
+        Returns:
+            List[Dict[str, Any]]: JSTL 관계 정보
+        """
+        try:
+            relationships = []
+
+            # 속성에서 Bean 참조 패턴
+            bean_ref_patterns = [
+                r'var\s*=\s*["\']([^"\']+)["\']',  # var="beanName"
+                r'items\s*=\s*["\']?\$\{([^}"\']+)\}["\']?',  # items="${beanList}"
+                r'test\s*=\s*["\']?\$\{([^}"\']+)\}["\']?',  # test="${condition}"
+                r'value\s*=\s*["\']?\$\{([^}"\']+)\}["\']?'  # value="${bean.property}"
+            ]
+
+            for pattern in bean_ref_patterns:
+                matches = re.finditer(pattern, attributes, re.IGNORECASE)
+
+                for match in matches:
+                    bean_reference = match.group(1)
+
+                    relationship = {
+                        'jsp_name': jsp_name,
+                        'jstl_tag': tag_type,
+                        'bean_reference': bean_reference,
+                        'attributes': attributes,
+                        'line_number': line_number
+                    }
+                    relationships.append(relationship)
+
+            return relationships
+
+        except Exception as e:
+            handle_error(e, f"JSTL 속성 파싱 실패: {attributes}")
+
+    def _analyze_java_beans(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        Java Bean 관계 분석 (<jsp:useBean>)
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: Java Bean 관계 정보
+        """
+        try:
+            bean_relationships = []
+
+            # Java Bean 패턴 (설정 파일에서 로드)
+            bean_patterns = self.config.get('jsp_bean_patterns', [])
+
+            # 기본 패턴
+            if not bean_patterns:
+                bean_patterns = [
+                    r'<jsp:useBean\s+([^>]+)>',
+                    r'<jsp:getProperty\s+([^>]+)>',
+                    r'<jsp:setProperty\s+([^>]+)>'
+                ]
+
+            for pattern in bean_patterns:
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    attributes = match.group(1)
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+                    tag_name = match.group(0).split()[0][1:]  # 태그명 추출
+
+                    # Bean 정보 추출
+                    bean_info = self._parse_bean_attributes(attributes, tag_name, jsp_name, line_number)
+                    if bean_info:
+                        bean_relationships.append(bean_info)
+
+            return bean_relationships
+
+        except Exception as e:
+            handle_error(e, f"Java Bean 분석 실패: {jsp_name}")
+
+    def _parse_bean_attributes(self, attributes: str, tag_name: str, jsp_name: str, line_number: int) -> Optional[Dict[str, Any]]:
+        """
+        Bean 태그 속성 파싱
+
+        Args:
+            attributes: 태그 속성
+            tag_name: 태그명
+            jsp_name: JSP 파일명
+            line_number: 라인 번호
+
+        Returns:
+            Optional[Dict[str, Any]]: Bean 관계 정보
+        """
+        try:
+            # Bean 속성 추출
+            id_match = re.search(r'id\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+            class_match = re.search(r'class\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+            name_match = re.search(r'name\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+            property_match = re.search(r'property\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+
+            bean_id = id_match.group(1) if id_match else None
+            bean_class = class_match.group(1) if class_match else None
+            bean_name = name_match.group(1) if name_match else bean_id
+            bean_property = property_match.group(1) if property_match else None
+
+            if bean_name or bean_class:
+                return {
+                    'jsp_name': jsp_name,
+                    'tag_type': tag_name,
+                    'bean_id': bean_id,
+                    'bean_name': bean_name,
+                    'bean_class': bean_class,
+                    'bean_property': bean_property,
+                    'line_number': line_number
+                }
+
+            return None
+
+        except Exception as e:
+            handle_error(e, f"Bean 속성 파싱 실패: {attributes}")
+
+    def _analyze_tag_libraries(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        태그 라이브러리 관계 분석 (<%@ taglib %>)
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: 태그 라이브러리 관계 정보
+        """
+        try:
+            taglib_relationships = []
+
+            # 태그 라이브러리 패턴 (설정 파일에서 로드)
+            taglib_patterns = self.config.get('jsp_taglib_patterns', [])
+
+            # 기본 패턴
+            if not taglib_patterns:
+                taglib_patterns = [
+                    r'<%@\s*taglib\s+([^>]+)>',
+                    r'<%@taglib\s+([^>]+)>'
+                ]
+
+            for pattern in taglib_patterns:
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+
+                for match in matches:
+                    attributes = match.group(1)
+                    line_number = jsp_content[:match.start()].count('\n') + 1
+
+                    # 태그 라이브러리 정보 추출
+                    taglib_info = self._parse_taglib_attributes(attributes, jsp_name, line_number)
+                    if taglib_info:
+                        taglib_relationships.append(taglib_info)
+
+            return taglib_relationships
+
+        except Exception as e:
+            handle_error(e, f"태그 라이브러리 분석 실패: {jsp_name}")
+
+    def _parse_taglib_attributes(self, attributes: str, jsp_name: str, line_number: int) -> Optional[Dict[str, Any]]:
+        """
+        태그 라이브러리 속성 파싱
+
+        Args:
+            attributes: 태그 라이브러리 속성
+            jsp_name: JSP 파일명
+            line_number: 라인 번호
+
+        Returns:
+            Optional[Dict[str, Any]]: 태그 라이브러리 관계 정보
+        """
+        try:
+            # 태그 라이브러리 속성 추출
+            uri_match = re.search(r'uri\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+            prefix_match = re.search(r'prefix\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+            tagdir_match = re.search(r'tagdir\s*=\s*["\']([^"\']+)["\']', attributes, re.IGNORECASE)
+
+            uri = uri_match.group(1) if uri_match else None
+            prefix = prefix_match.group(1) if prefix_match else None
+            tagdir = tagdir_match.group(1) if tagdir_match else None
+
+            if uri or tagdir:
+                return {
+                    'jsp_name': jsp_name,
+                    'taglib_uri': uri,
+                    'taglib_prefix': prefix,
+                    'taglib_dir': tagdir,
+                    'line_number': line_number
+                }
+
+            return None
+
+        except Exception as e:
+            handle_error(e, f"태그 라이브러리 속성 파싱 실패: {attributes}")
