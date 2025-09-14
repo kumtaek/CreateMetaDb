@@ -108,6 +108,7 @@ class XmlLoadingEngine:
                             if self._save_sql_components_to_database(analysis_result['sql_queries']):
                                 self.stats['sql_components_created'] += len(analysis_result['sql_queries'])
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"SQL 컴포넌트 저장 실패: {xml_file}")
                             return False
                         
@@ -117,6 +118,7 @@ class XmlLoadingEngine:
                                 if self._save_join_relationships_to_database(analysis_result['join_relationships']):
                                     self.stats['join_relationships_created'] += len(analysis_result['join_relationships'])
                             except Exception as e:
+                                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                                 handle_error(e, f"JOIN 관계 저장 실패: {xml_file}")
                                 return False
                     
@@ -127,6 +129,7 @@ class XmlLoadingEngine:
                     del analysis_result
                     
                 except Exception as e:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                     # 시스템 에러 (데이터베이스, 메모리 등) - 프로그램 종료
                     handle_error(e, f"XML 파일 처리 실패: {xml_file}")
                     return False
@@ -138,6 +141,7 @@ class XmlLoadingEngine:
             return True
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "XML 로딩 실행 실패")
             return False
         finally:
@@ -182,6 +186,7 @@ class XmlLoadingEngine:
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
             project_id = self._get_project_id()
             if not project_id:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "SQL 컴포넌트 저장 실패")
                 return False
             
@@ -207,6 +212,7 @@ class XmlLoadingEngine:
             # 기존 방식으로 SQL 컴포넌트 저장 (SQL Content Processor 보류 상태)
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "SQL 컴포넌트 저장 실패")
             return False
     
@@ -229,6 +235,7 @@ class XmlLoadingEngine:
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
             project_id = self._get_project_id()
             if not project_id:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "JOIN 관계 저장 실패")
                 return False
             
@@ -288,6 +295,7 @@ class XmlLoadingEngine:
                         relationship_data_list.append(relationship_data)
                     
                 except Exception as e:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                     handle_error(e, "JOIN 관계 데이터 변환 실패")
                     continue
             
@@ -299,6 +307,7 @@ class XmlLoadingEngine:
                     info(f"JOIN 관계 저장 완료: {processed_count}개")
                     return True
                 else:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                     handle_error(Exception("JOIN 관계 저장 실패"), "JOIN 관계 저장 실패")
                     return False
             else:
@@ -306,6 +315,7 @@ class XmlLoadingEngine:
                 return True
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "JOIN 관계 저장 실패")
             return False
 

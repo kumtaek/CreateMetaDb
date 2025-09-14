@@ -161,6 +161,7 @@ def main():
         info("사용자에 의해 중단됨")
         sys.exit(0)
     except Exception as e:
+        # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
         handle_error(e, "프로그램 실행 중 오류 발생")
 
 

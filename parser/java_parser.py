@@ -230,6 +230,7 @@ class JavaParser:
                 project_path = path_utils.get_project_source_path(self.project_name)
 
             if not project_path:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 # USER RULES: Exception 발생시 handle_error()로 exit()
                 handle_error(Exception("프로젝트 경로가 지정되지 않았습니다"), "Java 파일 수집 실패")
 
@@ -245,6 +246,7 @@ class JavaParser:
             return java_files
 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, "Java 파일 수집 실패")
             return []
@@ -1401,6 +1403,7 @@ class JavaParser:
                 return self._get_default_config()
             return config
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, f"설정 파일 로드 실패: {config_path}")
             return self._get_default_config()

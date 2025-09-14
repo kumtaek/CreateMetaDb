@@ -109,6 +109,7 @@ class DatabaseUtils:
             return True
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"데이터베이스 연결 실패: {self.db_path}")
             return False
     
@@ -174,6 +175,7 @@ class DatabaseUtils:
                 return results
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"쿼리 실행 실패: {query[:50]}...")
             return []
     

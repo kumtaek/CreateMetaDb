@@ -271,6 +271,7 @@ def handle_error(error: Exception,
         custom_message: 추가 메시지
         exit_code: 종료 코드
     """
+    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
     app_logger.handle_error(error, custom_message, exit_code)
 
 

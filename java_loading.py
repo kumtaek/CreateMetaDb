@@ -109,6 +109,7 @@ class JavaLoadingEngine:
                                 if total_methods > 0:
                                     self.stats['methods_extracted'] += total_methods
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"클래스 저장 실패: {java_file}")
                             return False
 
@@ -118,6 +119,7 @@ class JavaLoadingEngine:
                             if self._save_inheritance_relationships_to_database(analysis_result['inheritance_relationships']):
                                 self.stats['inheritance_relationships_created'] += len(analysis_result['inheritance_relationships'])
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"상속 관계 저장 실패: {java_file}")
                             return False
 
@@ -127,6 +129,7 @@ class JavaLoadingEngine:
                             if self._save_call_query_relationships_to_database(analysis_result['call_query_relationships']):
                                 self.stats['call_query_relationships_created'] += len(analysis_result['call_query_relationships'])
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"CALL_QUERY 관계 저장 실패: {java_file}")
                             return False
 
@@ -135,6 +138,7 @@ class JavaLoadingEngine:
                             if self._save_call_method_relationships_to_database(analysis_result['call_method_relationships']):
                                 self.stats['call_method_relationships_created'] += len(analysis_result['call_method_relationships'])
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"CALL_METHOD 관계 저장 실패: {java_file}")
                             return False
 
@@ -143,6 +147,7 @@ class JavaLoadingEngine:
                             if self._save_use_table_relationships_to_database(analysis_result['use_table_relationships']):
                                 self.stats['use_table_relationships_created'] += len(analysis_result['use_table_relationships'])
                         except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"USE_TABLE 관계 저장 실패: {java_file}")
                             return False
 
@@ -152,6 +157,7 @@ class JavaLoadingEngine:
                     del analysis_result
 
                 except Exception as e:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                     # 시스템 에러 (데이터베이스, 메모리 등) - 프로그램 종료
                     handle_error(e, f"Java 파일 처리 실패: {java_file}")
                     return False
@@ -164,6 +170,7 @@ class JavaLoadingEngine:
             return True
 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "Java 로딩 실행 실패")
             return False
         finally:

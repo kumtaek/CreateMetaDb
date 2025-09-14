@@ -148,6 +148,7 @@ class MyBatisSaxParser:
             
             self.config = config_utils.load_yaml_config(config_path)
             if not self.config:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 # USER RULES: Exception 발생시 handle_error()로 exit()
                 handle_error(Exception(f"설정 파일을 로드할 수 없습니다: {config_path}"), "SAX 파서 설정 로드 실패")
                 return
@@ -161,6 +162,7 @@ class MyBatisSaxParser:
             }
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, f"SAX 파서 초기화 실패: {config_path}")
 

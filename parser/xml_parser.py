@@ -84,6 +84,7 @@ class XmlParser:
         elif self.project_id is not None:
             return self.project_id
         else:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(Exception("프로젝트 ID가 설정되지 않았습니다"), "프로젝트 ID 획득 실패")
 
@@ -94,11 +95,13 @@ class XmlParser:
             path = config_path or self.config_path
             config = config_utils.load_yaml_config(path)
             if not config:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 # USER RULES: Exception 발생시 handle_error()로 exit()
                 handle_error(Exception(f"설정 파일을 로드할 수 없습니다: {path}"), "설정 파일 로드 실패")
                 return self._get_default_config()
             return config
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, f"설정 파일 로드 실패: {config_path or self.config_path}")
             return self._get_default_config()

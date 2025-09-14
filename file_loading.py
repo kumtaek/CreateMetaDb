@@ -87,6 +87,7 @@ class FileLoadingEngine:
             return True
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "메타데이터베이스 초기화 실패")
             return False
     
@@ -119,6 +120,7 @@ class FileLoadingEngine:
             return success
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "프로젝트 정보 추가 실패")
             return False
     
@@ -185,6 +187,7 @@ class FileLoadingEngine:
             return scanned_files
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "프로젝트 파일 스캔 실패")
             return []
     
@@ -234,6 +237,7 @@ class FileLoadingEngine:
             }
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # 파일 정보 수집 실패 시 오류로 처리
             handle_error(e, f"파일 정보 수집 실패: {file_path}")
             try:
@@ -478,6 +482,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "파일 정보 저장 실패")
             return False
     
@@ -543,6 +548,7 @@ class FileLoadingEngine:
             return csv_data
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"CSV 파일 로드 실패: {csv_path}")
             return []
     
@@ -642,6 +648,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "테이블 정보 저장 실패")
             return False
     
@@ -759,6 +766,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "컬럼 정보 저장 실패")
             return False
     
@@ -829,6 +837,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "테이블 컴포넌트 생성 실패")
             return False
     
@@ -908,6 +917,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "컬럼 컴포넌트 생성 실패")
             return False
     
@@ -961,6 +971,7 @@ class FileLoadingEngine:
                 return False
                 
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "컬럼 component_id 업데이트 실패")
             return False
     
@@ -988,6 +999,7 @@ class FileLoadingEngine:
             return None
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
             return None
     
@@ -1025,6 +1037,7 @@ class FileLoadingEngine:
             return None
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"테이블 component_id 조회 실패: {table_name}")
             return None
 
@@ -1052,6 +1065,7 @@ class FileLoadingEngine:
             return None
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"CSV 파일 ID 조회 실패: {filename}")
             return None
     
@@ -1080,6 +1094,7 @@ class FileLoadingEngine:
             return None
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"테이블 ID 조회 실패: {owner}.{table_name}")
             return None
     
@@ -1147,6 +1162,7 @@ class FileLoadingEngine:
             return True
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "파일 스캔 실행 실패")
             return False
         finally:
@@ -1197,6 +1213,7 @@ class FileLoadingEngine:
             return True
             
         except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "데이터베이스 로딩 실행 실패")
             return False
         finally:
