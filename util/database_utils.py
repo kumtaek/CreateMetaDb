@@ -141,6 +141,7 @@ class DatabaseUtils:
             yield conn
         except Exception as e:
             app_logger.error(f"데이터베이스 연결 오류: {str(e)}")
+            handle_error(e, f"데이터베이스 연결 오류: {str(e)}")
             raise
         finally:
             # 연결은 클래스 레벨에서 관리하므로 여기서는 닫지 않음
@@ -405,7 +406,7 @@ class DatabaseUtils:
     
     def insert_or_replace(self, table_name: str, data: Dict[str, Any]) -> bool:
         """
-        INSERT OR REPLACE 실행 (기존 레코드 교체)
+        UPSERT 실행 (기존 레코드 교체) - 데이터베이스 호환성을 위해 upsert 로직 사용
         
         Args:
             table_name: 테이블명
@@ -415,25 +416,29 @@ class DatabaseUtils:
             성공 여부 (True/False)
         """
         try:
-            columns = list(data.keys())
-            placeholders = ', '.join(['?' for _ in columns])
-            values = tuple(data.values())
+            # upsert 로직 사용 (데이터베이스 호환성)
+            # 테이블별 unique_columns 설정
+            if table_name == 'components':
+                unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+            elif table_name == 'tables':
+                unique_columns = ['project_id', 'table_name', 'table_owner']
+            elif table_name == 'columns':
+                unique_columns = ['table_id', 'column_name']
+            elif table_name == 'relationships':
+                unique_columns = ['src_id', 'dst_id', 'rel_type']
+            else:
+                unique_columns = ['project_id']  # 기본값
             
-            query = f"""
-            INSERT OR REPLACE INTO {table_name} ({', '.join(columns)})
-            VALUES ({placeholders})
-            """
-            
-            affected_rows = self.execute_update(query, values)
-            return affected_rows > 0
+            result = self.upsert(table_name, data, unique_columns)
+            return result is not None
             
         except Exception as e:
-            app_logger.error(f"INSERT OR REPLACE 실패: {table_name}, 오류: {str(e)}")
+            app_logger.error(f"UPSERT 실패: {table_name}, 오류: {str(e)}")
             return False
     
     def batch_insert_or_replace(self, table_name: str, data_list: List[Dict[str, Any]]) -> int:
         """
-        배치 INSERT OR IGNORE 실행 (외래키 제약조건 문제 해결)
+        배치 UPSERT 실행 (데이터베이스 호환성)
         
         Args:
             table_name: 테이블명
@@ -446,19 +451,29 @@ class DatabaseUtils:
             return 0
         
         try:
-            columns = list(data_list[0].keys())
-            placeholders = ', '.join(['?' for _ in columns])
+            # 테이블별 unique_columns 설정
+            if table_name == 'components':
+                unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+            elif table_name == 'tables':
+                unique_columns = ['project_id', 'table_name', 'table_owner']
+            elif table_name == 'columns':
+                unique_columns = ['table_id', 'column_name']
+            elif table_name == 'relationships':
+                unique_columns = ['src_id', 'dst_id', 'rel_type']
+            else:
+                unique_columns = ['project_id']  # 기본값
             
-            query = f"""
-            INSERT OR IGNORE INTO {table_name} ({', '.join(columns)})
-            VALUES ({placeholders})
-            """
+            processed_count = 0
+            for data in data_list:
+                result = self.upsert(table_name, data, unique_columns)
+                if result:
+                    processed_count += 1
             
-            params_list = [tuple(data[col] for col in columns) for data in data_list]
-            return self.execute_many(query, params_list)
+            return processed_count
             
         except Exception as e:
-            app_logger.error(f"배치 INSERT OR IGNORE 실패: {table_name}, 오류: {str(e)}")
+            app_logger.error(f"배치 UPSERT 실패: {table_name}, 오류: {str(e)}")
+            handle_error(e, f"배치 UPSERT 실패: {table_name}, 오류: {str(e)}")
             return 0
     
     def update_record(self, table_name: str, update_data: Dict[str, Any], where_conditions: Dict[str, Any]) -> bool:
@@ -599,21 +614,91 @@ class DatabaseUtils:
                         
                         app_logger.debug(f"INSERT 실행 완료: component_id = {component_id}")
                         return component_id
+                        
+                elif table_name == 'classes':
+                    # classes 테이블용 upsert 구현
+                    # UNIQUE INDEX: (class_name, file_id, project_id)
+                    
+                    app_logger.debug(f"Classes upsert 시작: {data.get('class_name')}")
+                    
+                    # 1. 기존 레코드 존재 여부 확인
+                    select_query = """
+                    SELECT class_id FROM classes 
+                    WHERE project_id = ? AND class_name = ? AND file_id = ?
+                    """
+                    select_params = (data.get('project_id'), data.get('class_name'), data.get('file_id'))
+                    
+                    app_logger.debug(f"기존 레코드 확인 쿼리: {select_query}")
+                    app_logger.debug(f"쿼리 파라미터: {select_params}")
+                    
+                    cursor.execute(select_query, select_params)
+                    existing = cursor.fetchone()
+                    
+                    app_logger.debug(f"기존 레코드 조회 결과: {existing}")
+                    
+                    if existing:
+                        # 2. 기존 레코드가 있으면 UPDATE
+                        class_id = existing[0]
+                        update_columns = [col for col in data.keys() if col not in ['project_id', 'class_name', 'file_id']]
+                        update_set = ', '.join([f"{col} = ?" for col in update_columns])
+                        update_values = [data[col] for col in update_columns] + [class_id]
+                        
+                        update_query = f"""
+                        UPDATE classes SET {update_set}
+                        WHERE class_id = ?
+                        """
+                        
+                        app_logger.debug(f"UPDATE 쿼리: {update_query}")
+                        app_logger.debug(f"UPDATE 파라미터: {update_values}")
+                        
+                        cursor.execute(update_query, update_values)
+                        
+                        app_logger.debug(f"UPDATE 실행 완료: class_id = {class_id}")
+                        return class_id
+                    else:
+                        # 3. 기존 레코드가 없으면 INSERT
+                        columns = list(data.keys())
+                        placeholders = ', '.join(['?' for _ in columns])
+                        values = tuple(data.values())
+                        
+                        insert_query = f"""
+                        INSERT INTO {table_name} ({', '.join(columns)})
+                        VALUES ({placeholders})
+                        """
+                        
+                        app_logger.debug(f"INSERT 쿼리: {insert_query}")
+                        app_logger.debug(f"INSERT 파라미터: {values}")
+                        
+                        cursor.execute(insert_query, values)
+                        class_id = cursor.lastrowid
+                        
+                        app_logger.debug(f"INSERT 실행 완료: class_id = {class_id}")
+                        return class_id
                 else:
                     # 다른 테이블용 기본 구현
                     columns = list(data.keys())
                     placeholders = ', '.join(['?' for _ in columns])
                     values = tuple(data.values())
                     
-                    query = f"""
-                    INSERT OR REPLACE INTO {table_name} ({', '.join(columns)})
-                    VALUES ({placeholders})
-                    """
-                    cursor.execute(query, values)
-                    return cursor.lastrowid
+                    # upsert 로직 사용 (데이터베이스 호환성)
+                    # 테이블별 unique_columns 설정
+                    if table_name == 'components':
+                        unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+                    elif table_name == 'tables':
+                        unique_columns = ['project_id', 'table_name', 'table_owner']
+                    elif table_name == 'columns':
+                        unique_columns = ['table_id', 'column_name']
+                    elif table_name == 'relationships':
+                        unique_columns = ['src_id', 'dst_id', 'rel_type']
+                    else:
+                        unique_columns = ['project_id']  # 기본값
+                    
+                    result = self.upsert(table_name, data, unique_columns)
+                    return result if result else 0
                 
         except Exception as e:
             app_logger.error(f"Upsert 실패: {table_name}, 오류: {str(e)}")
+            handle_error(e, f"Upsert 실패: {table_name}, 오류: {str(e)}")
             return 0
     
     def begin_transaction(self):

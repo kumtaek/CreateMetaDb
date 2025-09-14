@@ -1,0 +1,6 @@
+2025-09-14 23:27:39,666 - SourceAnalyzer - INFO - main.py:17 - Recursion limit set to: 50
+2025-09-14 23:27:39,666 - SourceAnalyzer - INFO - main.py:25 - 오래된 로그 파일 정리 시작
+2025-09-14 23:27:39,667 - SourceAnalyzer - INFO - file_utils.py:362 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-14 23:27:39,667 - SourceAnalyzer - INFO - main.py:30 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-14 23:27:39,667 - SourceAnalyzer - INFO - main.py:33 - SourceAnalyzer 시작
+2025-09-14 23:27:39,672 - SourceAnalyzer - ERROR - arg_utils.py:165 - 명령행 인자 오류

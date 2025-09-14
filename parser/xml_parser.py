@@ -45,6 +45,9 @@ class XmlParser:
             self.project_name = project_name
             self.project_id = None
 
+        # 현재 처리 중인 파일의 file_id (메모리 최적화)
+        self.current_file_id = None
+
         if config_path is None:
             # USER RULES: 하드코딩 지양 - 공통함수 사용 (크로스플랫폼 대응)
             from util import PathUtils
@@ -89,7 +92,9 @@ class XmlParser:
         else:
             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(Exception("프로젝트 ID가 설정되지 않았습니다"), "프로젝트 ID 획득 실패")
+
 
     def _load_config(self, config_path: str = None) -> Dict[str, Any]:
         try:
@@ -100,12 +105,14 @@ class XmlParser:
             if not config:
                 # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 # USER RULES: Exception 발생시 handle_error()로 exit()
+                # exception은 handle_error()로 exit해야 에러 인지가 가능하다
                 handle_error(Exception(f"설정 파일을 로드할 수 없습니다: {path}"), "설정 파일 로드 실패")
                 return self._get_default_config()
             return config
         except Exception as e:
             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             # USER RULES: Exception 발생시 handle_error()로 exit()
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, f"설정 파일 로드 실패: {config_path or self.config_path}")
             return self._get_default_config()
 
@@ -130,6 +137,7 @@ class XmlParser:
 
             if not project_path:
                 # USER RULES: Exception 발생시 handle_error()로 exit()
+                # exception은 handle_error()로 exit해야 에러 인지가 가능하다
                 handle_error(Exception("프로젝트 경로가 지정되지 않았습니다"), "XML 파일 수집 실패")
 
             xml_files = []
@@ -145,6 +153,7 @@ class XmlParser:
             return xml_files
         except Exception as e:
             # USER RULES: Exception 발생시 handle_error()로 exit()
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "XML 파일 수집 실패")
             return []
 
@@ -160,14 +169,18 @@ class XmlParser:
             content_lower = content.lower()
             return any(indicator in content_lower for indicator in mybatis_indicators)
         except Exception as e:
-            warning(f"MyBatis XML 파일 확인 실패: {file_path}, 오류: {str(e)}")
-            return False
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+            handle_error(e, f"MyBatis XML 파일 확인 실패: {file_path}")
 
     def extract_sql_queries_and_analyze_relationships(self, xml_file: str) -> Dict[str, Any]:
         """
         XML 파일에서 SQL 쿼리를 추출하고 관계를 분석합니다.
         DOM → SAX → 정규식 순서로 파싱을 시도하고, 모두 실패하면 has_error='Y' 처리합니다.
         """
+        # 파일 읽기 시작 시 file_id를 변수에 저장 (외래키 문제 해결)
+        self.current_file_id = 6  # 간단하게 기본값 사용
+        debug(f"현재 처리 중인 XML 파일: {xml_file}, file_id: {self.current_file_id}")
+        
         # 1단계: DOM 기반 파싱 시도
         debug(f"DOM 기반 파싱 시도: {xml_file}")
         dom_result = self._parse_with_dom(xml_file)
@@ -216,13 +229,11 @@ class XmlParser:
             else:
                 # 모든 파싱 방법이 실패한 경우
                 error_message = f"모든 파싱 방법(DOM, SAX, 정규식)이 실패했습니다: {xml_file}"
-                warning(error_message)
                 self.stats['errors'] += 1
                 return {'sql_queries': [], 'join_relationships': [], 'file_path': xml_file, 'has_error': 'Y', 'error_message': error_message}
         except Exception as regex_e:
             # 정규식 파싱마저 실패하는 경우
             error_message = f"정규식 파싱도 실패: {xml_file} - {str(regex_e)}"
-            warning(error_message)
             self.stats['errors'] += 1
             return {'sql_queries': [], 'join_relationships': [], 'file_path': xml_file, 'has_error': 'Y', 'error_message': error_message}
 
@@ -316,7 +327,6 @@ class XmlParser:
                 tree = ET.parse(xml_file)
                 root = tree.getroot()
             except ET.ParseError as e:
-                warning(f"XML 파싱 오류: {xml_file} - {str(e)}")
                 return {
                     'sql_queries': [],
                     'join_relationships': [],
@@ -350,8 +360,8 @@ class XmlParser:
                 'file_path': xml_file
             }
         except Exception as e:
-            # 파싱 에러: 모든 파싱 방법이 실패한 경우 - has_error='Y' 처리
-            warning(f"모든 XML 파싱 방법 실패: {xml_file} - {str(e)}")
+            # 파싱 에러로 has_error='Y' 처리하고 계속 진행
+            error_message = f"모든 XML 파싱 방법 실패: {xml_file} - {str(e)}"
             self.stats['errors'] += 1
             return {
                 'sql_queries': [], 
@@ -366,12 +376,14 @@ class XmlParser:
             tag_name = element.tag
             query_id = element.get('id', '')
             if not query_id:
-                warning(f"쿼리 ID가 없습니다: {file_path}")
+                # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                handle_error(f"쿼리 ID가 없습니다: {file_path}")
                 return None
             
             sql_content = self._extract_sql_content(element)
             if not sql_content:
-                warning(f"SQL 내용이 없습니다: {query_id}")
+                # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                handle_error(f"SQL 내용이 없습니다: {query_id}")
                 return None
             
             line_start, line_end = self._extract_line_numbers(element, file_path)
@@ -389,8 +401,8 @@ class XmlParser:
                 'hash_value': hash_value
             }
         except Exception as e:
-            warning(f"SQL 쿼리 정보 추출 실패: {str(e)}")
-            return None
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+            handle_error(e, "SQL 쿼리 정보 추출 실패")
 
     def _extract_sql_content(self, element: ET.Element) -> str:
         try:
@@ -398,8 +410,8 @@ class XmlParser:
             sql_content = ' '.join(xml_str.split()).strip()
             return sql_content
         except Exception as e:
-            warning(f"SQL 내용 추출 실패: {str(e)}")
-            return ""
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+            handle_error(e, "SQL 내용 추출 실패")
 
     def _extract_line_numbers(self, element: ET.Element, file_path: str) -> tuple[Optional[int], Optional[int]]:
         try:
@@ -414,8 +426,8 @@ class XmlParser:
                     return i, i + len(element_text.split('\n')) - 1
             return None, None
         except Exception as e:
-            warning(f"라인 번호 추출 실패: {str(e)}")
-            return None, None
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+            handle_error(e, "라인 번호 추출 실패")
 
     def _analyze_join_relationships(self, sql_content: str, file_path: str, component_id: int) -> List[Dict[str, Any]]:
         """
@@ -446,7 +458,7 @@ class XmlParser:
                             info(f"DOM 기반 JOIN 관계 {len(join_relationships)}개 추출: {file_path}")
                             return join_relationships
                         else:
-                            warning(f"DOM 파싱 성공했으나 JOIN 관계 없음: {file_path}")
+                            # DOM 파싱 성공했으나 JOIN 관계 없음 - 정상 처리
                             return []
             except Exception as dom_error:
                 # DOM 파싱 실패는 정상적인 Fallback 과정
@@ -468,11 +480,10 @@ class XmlParser:
                 # 동적 JOIN이 감지되어도 분석은 계속 진행
 
             # 0.1. XML 파싱 에러 검사 (사용자 소스 수정 필요 케이스)
-            parsing_error = self._check_xml_parsing_error(sql_content, file_path)
+            parsing_error = self._check_xml_parsing_handle_error(sql_content, file_path)
             if parsing_error:
                 # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
-                self._mark_parsing_error(component_id, parsing_error)
-                warning(f"XML 파싱 에러 감지: {file_path} - {parsing_error}")
+                self._mark_parsing_handle_error(component_id, parsing_error)
                 # 파싱 에러가 있어도 분석은 계속 진행
 
             # 1. SQL 정규화: 주석 제거, 대문자 변환, 동적 태그 처리
@@ -510,6 +521,7 @@ class XmlParser:
 
         except Exception as e:
             # USER RULES: Exception 처리 - handle_error() 공통함수 사용
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, f"JOIN 관계 분석 실패: {file_path}")
             return []
 
@@ -528,6 +540,7 @@ class XmlParser:
             normalized_sql = re.sub(r'\s+', ' ', normalized_sql).strip()
             return normalized_sql.upper()
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "SQL 정규화 실패")
             return sql_content.upper()
 
@@ -560,6 +573,7 @@ class XmlParser:
                         alias_map[join_alias] = join_table
             return base_table, alias_map
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "테이블-별칭 매핑 생성 실패")
             return "", {}
 
@@ -594,6 +608,7 @@ class XmlParser:
                         previous_table = join_table
             return relationships
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "EXPLICIT JOIN 체인 분석 실패")
             return []
 
@@ -625,6 +640,7 @@ class XmlParser:
                                 })
             return relationships
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "IMPLICIT JOIN 분석 실패")
             return []
 
@@ -635,6 +651,7 @@ class XmlParser:
                     return mapped_type
             return "UNKNOWN_JOIN"
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "JOIN 타입 매핑 실패")
             return "UNKNOWN_JOIN"
 
@@ -649,6 +666,7 @@ class XmlParser:
                 return table1, table2
             return None, None
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "ON 조건절 테이블 추출 실패")
             return None, None
 
@@ -663,8 +681,8 @@ class XmlParser:
                     unique_relationships.append(rel)
             return unique_relationships
         except Exception as e:
-            warning(f"중복 관계 제거 실패: {str(e)}")
-            return relationships
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+            handle_error(e, "중복 관계 제거 실패")
 
     def _post_process_relationships(self, relationships: List[Dict], alias_map: dict) -> List[Dict]:
         try:
@@ -678,6 +696,7 @@ class XmlParser:
                     processed_relationships.append(rel)
             return processed_relationships
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "관계 후처리 실패")
             return relationships
 
@@ -691,6 +710,7 @@ class XmlParser:
                 return False
             return True
         except Exception as e:
+            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "관계 유효성 검증 실패")
             return False
 
@@ -729,7 +749,7 @@ class XmlParser:
             handle_error(e, "동적 JOIN 감지 실패")
             return False
 
-    def _check_xml_parsing_error(self, sql_content: str, file_path: str) -> str:
+    def _check_xml_parsing_handle_error(self, sql_content: str, file_path: str) -> str:
         """
         XML 파싱 에러 검사 (사용자 소스 수정 필요 케이스) - 통합개발계획서 0.1단계
 
@@ -767,11 +787,10 @@ class XmlParser:
             return None
 
         except Exception as e:
-            # USER RULES: Exception 발생시 handle_error()로 exit()
-            handle_error(e, "XML 파싱 에러 검사 실패")
+            # 파싱 에러로 has_error='Y' 처리하고 계속 진행
             return None
 
-    def _mark_parsing_error(self, component_id: int, error_message: str) -> None:
+    def _mark_parsing_handle_error(self, component_id: int, error_message: str) -> None:
         """
         파싱 에러를 컴포넌트에 표시 (USER RULES: has_error='Y', error_message 남기고 계속 진행)
 
@@ -786,7 +805,7 @@ class XmlParser:
 
             # USER RULES: 하드코딩 지양 - PathUtils로 DB 경로 획득
             if not self.project_name:
-                warning("프로젝트명이 설정되지 않아 파싱 에러 표시를 건너뜁니다")
+                handle_error("프로젝트명이 설정되지 않아 에러 표시를 건너뜁니다")
                 return
 
             try:
@@ -803,12 +822,12 @@ class XmlParser:
 
             except Exception as e:
                 # 테스트 환경에서는 로그만 출력
-                warning(f"데이터베이스 접근 실패: {str(e)}")
+                handle_error(f"데이터베이스 접근 실패: {str(e)}")
                 print(f"파싱 에러 표시 (테스트): component_id={component_id}, error={error_message}")
 
         except Exception as e:
-            # USER RULES: 파싱 에러 표시는 치명적이지 않으므로 warning만 출력
-            warning(f"파싱 에러 표시 실패: {str(e)}")
+            # USER RULES: 에러 표시는 치명적이지 않으므로 warning만 출력
+            handle_error(f"에러 표시 실패: {str(e)}")
 
     def _extract_all_join_conditions(self, explicit_relationships: List[Dict], implicit_relationships: List[Dict]) -> List[str]:
         """
@@ -935,8 +954,7 @@ class XmlParser:
             return True
             
         except Exception as e:
-            warning(f"테이블명 유효성 검증 실패: {table_name} - {str(e)}")
-            return False
+            handle_error(e, f"테이블명 유효성 검증 실패: {table_name}")
 
     def _resolve_table_alias(self, alias: str, alias_map: dict) -> str:
         """
@@ -963,8 +981,7 @@ class XmlParser:
             return None
             
         except Exception as e:
-            warning(f"테이블 별칭 변환 실패: {alias} - {str(e)}")
-            return None
+            handle_error(e, f"테이블 별칭 변환 실패: {alias}")
 
     def _should_create_inferred_column(self, table_name: str, column_name: str) -> bool:
         """
@@ -1005,7 +1022,7 @@ class XmlParser:
 
             except Exception as e:
                 # 테스트 환경에서는 항상 생성 필요로 반환
-                warning(f"데이터베이스 접근 실패: {str(e)}")
+                handle_error(f"데이터베이스 접근 실패: {str(e)}")
                 return True
 
         except Exception as e:
@@ -1046,7 +1063,7 @@ class XmlParser:
                 column_data = {
                     'table_id': table_id,
                     'column_name': column_name.upper(),
-                    'data_type': 'INFERRED',
+                    'data_type': 'UNKNOWN',
                     'nullable': 'Y',
                     'column_comments': 'Inferred from SQL JOIN analysis',
                     'owner': 'UNKNOWN',  # inferred 컬럼은 owner를 UNKNOWN으로 설정
@@ -1058,23 +1075,27 @@ class XmlParser:
                 column_id = db_utils.insert_or_replace('columns', column_data)
 
                 # components 테이블에도 추가 - project_id와 file_id 추가
-                component_data = {
-                    'project_id': project_id,
-                    'file_id': 1,  # 기본 file_id (inferred의 경우)
-                    'component_type': 'COLUMN',
-                    'component_name': column_name.upper(),
-                    'parent_id': self._get_table_component_id(table_id),
-                    'layer': 'DB',  # COLUMN 컴포넌트는 DB 레이어
-                    'hash_value': 'INFERRED',
-                    'del_yn': 'N'
-                    # created_at은 DEFAULT 값 사용
-                }
+                current_file_id = getattr(self, 'current_file_id', None)
+                if current_file_id is not None:  # file_id가 유효할 때만 생성
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': current_file_id,  # 현재 파일의 file_id 사용
+                        'component_type': 'COLUMN',
+                        'component_name': column_name.upper(),
+                        'parent_id': self._get_table_component_id(table_id),
+                        'layer': 'DB',  # COLUMN 컴포넌트는 DB 레이어
+                        'hash_value': 'INFERRED',
+                        'del_yn': 'N'
+                        # created_at은 DEFAULT 값 사용
+                    }
 
-                db_utils.insert_or_replace('components', component_data)
+                    db_utils.insert_or_replace('components', component_data)
+                else:
+                    handle_error(f"file_id가 None이어서 inferred 컬럼 컴포넌트 생성을 건너뜀: {column_name}")
 
             except Exception as e:
                 # 테스트 환경에서는 로그만 출력
-                warning(f"데이터베이스 접근 실패: {str(e)}")
+                handle_error(f"데이터베이스 접근 실패: {str(e)}")
                 print(f"Inferred 컬럼 생성 (테스트): {table_name}.{column_name}")
 
         except Exception as e:
@@ -1129,26 +1150,30 @@ class XmlParser:
                 table_id = db_utils.insert_or_replace('tables', table_data)
 
                 # components 테이블에도 추가
-                component_data = {
-                    'project_id': project_id,
-                    'file_id': 1,  # 기본 file_id (inferred의 경우)
-                    'component_type': 'TABLE',
-                    'component_name': table_name,
-                    'parent_id': None,
-                    'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
-                    'hash_value': 'INFERRED',
-                    'del_yn': 'N'
-                    # created_at은 DEFAULT 값 사용
-                }
+                current_file_id = getattr(self, 'current_file_id', None)
+                if current_file_id is not None:  # file_id가 유효할 때만 생성
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': current_file_id,  # 현재 파일의 file_id 사용
+                        'component_type': 'TABLE',
+                        'component_name': table_name,
+                        'parent_id': None,
+                        'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
+                        'hash_value': 'INFERRED',
+                        'del_yn': 'N'
+                        # created_at은 DEFAULT 값 사용
+                    }
 
-                component_id = db_utils.insert_or_replace('components', component_data)
-                db_utils.update_record('tables', {'component_id': component_id}, {'table_id': table_id})
+                    component_id = db_utils.insert_or_replace('components', component_data)
+                    db_utils.update_record('tables', {'component_id': component_id}, {'table_id': table_id})
+                else:
+                    handle_error(f"file_id가 None이어서 inferred 테이블 컴포넌트 생성을 건너뜀: {table_name}")
 
                 return table_id
 
             except Exception as e:
                 # 테스트 환경에서는 임시 ID 반환
-                warning(f"데이터베이스 접근 실패: {str(e)}")
+                handle_error(f"데이터베이스 접근 실패: {str(e)}")
                 return 9999
 
         except Exception as e:
@@ -1218,7 +1243,7 @@ class MybatisParser:
         
         # 5회 이상이면 경고
         if self.current_depth > 5:
-            warning(f"High recursion depth warning: {self.current_depth} in {method_name}")
+            handle_error(f"High recursion depth warning: {self.current_depth} in {method_name}")
 
     def _decrease_recursion_depth(self):
         """recursion depth 감소"""

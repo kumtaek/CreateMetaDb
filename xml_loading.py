@@ -72,7 +72,7 @@ class XmlLoadingEngine:
             # 데이터베이스 연결 (USER RULES: 공통함수 사용)
             self.db_utils = DatabaseUtils(self.metadata_db_path)
             if not self.db_utils.connect():
-                error("메타데이터베이스 연결 실패")
+                handle_error("메타데이터베이스 연결 실패")
                 return False
             
             # SQL Content Processor 초기화 (보류 상태)
@@ -87,12 +87,52 @@ class XmlLoadingEngine:
             # 1. MyBatis XML 파일 수집
             xml_files = self.xml_parser.get_filtered_xml_files(self.project_source_path)
             if not xml_files:
-                warning("MyBatis XML 파일이 없습니다")
+                handle_error("MyBatis XML 파일이 없습니다")
                 return True
             
             # 2. XML 파일별 통합 처리 (메모리 최적화)
             for xml_file in xml_files:
                 try:
+                    # 현재 파일의 file_id 조회
+                    try:
+                        # PathUtils로 상대경로 변환 (디렉토리 경로만 추출)
+                        from util.path_utils import PathUtils
+                        import os
+                        path_utils = PathUtils()
+                        relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
+                        # Windows 경로 구분자로 통일 (files 테이블과 일치시키기 위해)
+                        relative_path = relative_path.replace('/', '\\')
+                        # 디렉토리 경로만 추출 (files 테이블에는 디렉토리 경로만 저장됨)
+                        relative_path = os.path.dirname(relative_path)
+                        
+                        # 로그: 경로 정보 출력
+                        info(f"XML 파일: {xml_file}")
+                        info(f"디렉토리 경로: {relative_path}")
+                        
+                        # 파일 ID 조회
+                        file_query = """
+                            SELECT file_id FROM files 
+                            WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?)
+                            AND file_path = ?
+                            AND del_yn = 'N'
+                        """
+                        
+                        file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
+                        info(f"SQL 쿼리 결과: {len(file_results) if file_results else 0}개")
+                        
+                        if file_results:
+                            file_id = file_results[0]['file_id']
+                            info(f"file_id 조회 성공: {file_id}")
+                        else:
+                            handle_error(f"파일 ID를 찾을 수 없음: {xml_file} (상대경로: {relative_path})")
+                    except Exception as e:
+                        handle_error(f"파일 ID 조회 실패: {xml_file}, 오류: {e}")
+                    
+                    debug(f"현재 처리 중인 XML 파일: {xml_file}, file_id: {file_id}")
+                    
+                    # XML 파서에 file_id 설정
+                    self.xml_parser.current_file_id = file_id
+                    
                     # 3~4단계 통합 처리: SQL 추출 + JOIN 분석
                     analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
                     
@@ -105,7 +145,7 @@ class XmlLoadingEngine:
                     if analysis_result['sql_queries']:
                         # 3단계: SQL 컴포넌트 저장
                         try:
-                            if self._save_sql_components_to_database(analysis_result['sql_queries']):
+                            if self._save_sql_components_to_database(analysis_result['sql_queries'], file_id):
                                 self.stats['sql_components_created'] += len(analysis_result['sql_queries'])
                         except Exception as e:
                             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
@@ -157,7 +197,7 @@ class XmlLoadingEngine:
             # if hasattr(self, 'sql_content_processor') and self.sql_content_processor:
             #     self.sql_content_processor.close()
     
-    def _save_sql_components_to_database(self, sql_queries: List[Dict[str, Any]]) -> bool:
+    def _save_sql_components_to_database(self, sql_queries: List[Dict[str, Any]], file_id: int) -> bool:
         """
         SQL 컴포넌트를 데이터베이스에 저장 (3단계)
         
@@ -180,7 +220,7 @@ class XmlLoadingEngine:
                 info(f"XML에서 추출된 SQL 쿼리 타입별 통계: {query_types}")
             
             if not sql_queries:
-                warning("저장할 SQL 쿼리가 없습니다")
+                handle_error("저장할 SQL 쿼리가 없습니다")
                 return True
             
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
@@ -210,6 +250,49 @@ class XmlLoadingEngine:
             #     return False
             
             # 기존 방식으로 SQL 컴포넌트 저장 (SQL Content Processor 보류 상태)
+            success_count = 0
+            
+            for sql_query in sql_queries:
+                try:
+                    # SQL 쿼리 정보 추출
+                    sql_id = sql_query.get('query_id', '') or sql_query.get('sql_id', '')
+                    sql_content = sql_query.get('sql_content', '')
+                    tag_name = sql_query.get('tag_name', 'select')
+                    
+                    if not sql_id or not sql_content:
+                        handle_error(f"SQL 쿼리 정보가 불완전함: id={sql_id}, content={sql_content[:50]}...")
+                    
+                    # 컴포넌트 타입 결정
+                    component_type = f"SQL_{tag_name.upper()}"
+                    
+                    # 컴포넌트 데이터 구성
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': file_id,
+                        'component_type': component_type,
+                        'component_name': sql_id,
+                        'line_start': 1,  # XML에서는 정확한 라인 번호 추출이 어려움
+                        'line_end': 1,
+                        'has_error': 'N',
+                        'error_message': None,
+                        'hash_value': '-',
+                        'del_yn': 'N'
+                    }
+                    
+                    # components 테이블에 저장
+                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
+                    
+                    if component_id:
+                        success_count += 1
+                        debug(f"SQL 컴포넌트 저장 성공: {sql_id} (component_id: {component_id})")
+                    else:
+                        handle_error(f"SQL 컴포넌트 저장 실패: {sql_id}")
+                        
+                except Exception as e:
+                    handle_error(f"SQL 쿼리 저장 중 오류: {sql_id}, 오류: {e}")
+            
+            info(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
+            return success_count > 0
                 
         except Exception as e:
             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
@@ -229,7 +312,7 @@ class XmlLoadingEngine:
         """
         try:
             if not join_relationships:
-                warning("저장할 JOIN 관계가 없습니다")
+                handle_error("저장할 JOIN 관계가 없습니다")
                 return True
             
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
@@ -266,7 +349,7 @@ class XmlLoadingEngine:
                             self.stats['inferred_tables_created'] += 1
                             info(f"inferred 테이블 생성 성공: {source_table} (ID: {src_component_id})")
                         else:
-                            error(f"inferred 테이블 생성 실패: {source_table}")
+                            handle_error(f"inferred 테이블 생성 실패: {source_table}")
                     
                     # 대상 테이블 컴포넌트 ID 조회
                     dst_component_id = self._get_table_component_id(project_id, target_table)
@@ -278,9 +361,13 @@ class XmlLoadingEngine:
                             self.stats['inferred_tables_created'] += 1
                             info(f"inferred 테이블 생성 성공: {target_table} (ID: {dst_component_id})")
                         else:
-                            error(f"inferred 테이블 생성 실패: {target_table}")
+                            handle_error(Exception(f"inferred 테이블 생성 실패: {target_table}"), f"inferred 테이블 생성 실패: {target_table}")
                     
                     if src_component_id and dst_component_id:
+                        # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                        if src_component_id == dst_component_id:
+                            handle_error(f"자기 참조 JOIN 관계 스킵: {source_table} → {target_table} (src_id == dst_id)")
+                        
                         # 관계 데이터 생성
                         relationship_data = {
                             'src_id': src_component_id,
@@ -297,9 +384,8 @@ class XmlLoadingEngine:
                 except Exception as e:
                     # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                     handle_error(e, "JOIN 관계 데이터 변환 실패")
-                    continue
             
-            # 배치 INSERT OR REPLACE (USER RULES: 공통함수 사용)
+            # 배치 UPSERT (USER RULES: 공통함수 사용)
             if relationship_data_list:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
                 
@@ -311,7 +397,7 @@ class XmlLoadingEngine:
                     handle_error(Exception("JOIN 관계 저장 실패"), "JOIN 관계 저장 실패")
                     return False
             else:
-                warning("저장할 유효한 JOIN 관계가 없습니다")
+                handle_error("저장할 유효한 JOIN 관계가 없습니다")
                 return True
                 
         except Exception as e:
@@ -354,7 +440,7 @@ class XmlLoadingEngine:
             return True
             
         except Exception as e:
-            warning(f"테이블명 유효성 검증 실패: {table_name} - {str(e)}")
+            handle_error(e, f"테이블명 유효성 검증 실패: {table_name}")
             return False
     
     def _get_project_id(self) -> Optional[int]:
@@ -364,44 +450,6 @@ class XmlLoadingEngine:
         except Exception as e:
             # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
             handle_error(e, "프로젝트 ID 조회 실패")
-            return None
-    
-    def _get_file_id(self, file_path: str) -> Optional[int]:
-        """
-        파일 ID 조회 (USER RULES: 공통함수 사용)
-        
-        Args:
-            file_path: 파일 경로
-            
-        Returns:
-            파일 ID
-        """
-        try:
-            # USER RULES: 공통함수 사용 - PathUtils로 상대경로 변환
-            path_utils = PathUtils()
-            # 프로젝트 소스 경로 기준으로 상대경로 생성
-            relative_path = path_utils.get_relative_path(file_path, self.project_source_path)
-            
-            # 파일 ID 조회
-            file_query = """
-                SELECT file_id FROM files 
-                WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?)
-                AND file_path = ?
-                AND del_yn = 'N'
-            """
-            
-            file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
-            
-            if file_results:
-                return file_results[0]['file_id']
-            else:
-                # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error(f"파일 ID를 찾을 수 없습니다: {relative_path} (원본: {file_path}). 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
-                return None
-                
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "파일 ID 조회 실패")
             return None
     
     def _get_table_component_id(self, project_id: int, table_name: str) -> Optional[int]:
@@ -449,7 +497,7 @@ class XmlLoadingEngine:
                 return file_id
             else:
                 # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error("XML 파일이 files 테이블에 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                handle_error("XML 파일이 files 테이블에 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
                 return None
                 
         except Exception as e:
@@ -475,33 +523,10 @@ class XmlLoadingEngine:
             inferred_file_id = self._get_inferred_file_id(project_id)
             if not inferred_file_id:
                 # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error(f"inferred 테이블용 file_id를 찾을 수 없습니다: {table_name}. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                handle_error(f"inferred 테이블용 file_id를 찾을 수 없습니다: {table_name}. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
                 return None
             
-            # inferred 테이블을 tables 테이블에 생성
-            table_data = {
-                'project_id': project_id,
-                'component_id': None,
-                'table_name': table_name,
-                'table_owner': 'UNKNOWN',
-                'table_comments': 'Inferred from SQL analysis',
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': 'INFERRED',
-                'del_yn': 'N'
-            }
-            
-            # 테이블 생성 (USER RULES: 공통함수 사용)
-            info(f"tables 테이블에 데이터 삽입 시도: {table_data}")
-            table_id = self.db_utils.insert_or_replace_with_id('tables', table_data)
-            info(f"tables 테이블 삽입 결과: {table_id}")
-            
-            if not table_id:
-                # 파싱 에러: tables 테이블 삽입 실패 - 계속 진행
-                warning(f"tables 테이블 삽입 실패: {table_name}")
-                return None
-            
-            # 컴포넌트 생성
+            # 먼저 components 테이블에 컴포넌트 생성
             component_data = {
                 'project_id': project_id,
                 'component_type': 'TABLE',
@@ -522,29 +547,42 @@ class XmlLoadingEngine:
             component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
             info(f"components 테이블 삽입 결과: {component_id}")
             
-            if component_id:
-                # tables 테이블의 component_id 업데이트 (USER RULES: 공통함수 사용)
-                update_data = {'component_id': component_id}
-                where_conditions = {'table_id': table_id}
-                info(f"tables 테이블 업데이트 시도: component_id={component_id}, table_id={table_id}")
-                success = self.db_utils.update_record('tables', update_data, where_conditions)
-                if success:
-                    info(f"tables 테이블 업데이트 완료")
-                    
-                    # 🔥 새로 추가: inferred 컬럼 생성
-                    if join_relationships:
-                        inferred_columns_created = self._create_inferred_columns(
-                            project_id, table_name, component_id, join_relationships
-                        )
-                        self.stats['inferred_columns_created'] += inferred_columns_created
-                        if inferred_columns_created > 0:
-                            info(f"inferred 컬럼 생성 완료: {table_name}, {inferred_columns_created}개")
-                else:
-                    # 파싱 에러: tables 테이블 업데이트 실패 - 계속 진행
-                    warning(f"tables 테이블 업데이트 실패: {table_name}")
-            else:
-                # 파싱 에러: components 테이블 삽입 실패 - 계속 진행
-                warning(f"components 테이블 삽입 실패: {table_name}")
+            if not component_id:
+                # 데이터베이스 저장 에러: components 테이블 삽입 실패 - handle_error()로 종료
+                handle_error(Exception(f"components 테이블 삽입 실패: {table_name}"), f"components 테이블 삽입 실패: {table_name}")
+                return None
+            
+            # 이제 tables 테이블에 component_id 포함해서 삽입
+            table_data = {
+                'project_id': project_id,
+                'component_id': component_id,  # FK 제약조건을 만족하는 유효한 component_id
+                'table_name': table_name,
+                'table_owner': 'UNKNOWN',
+                'table_comments': 'Inferred from SQL analysis',
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+            
+            # 테이블 생성 (USER RULES: 공통함수 사용)
+            info(f"tables 테이블에 데이터 삽입 시도: {table_data}")
+            table_id = self.db_utils.insert_or_replace_with_id('tables', table_data)
+            info(f"tables 테이블 삽입 결과: {table_id}")
+            
+            if not table_id:
+                # 데이터베이스 저장 에러: tables 테이블 삽입 실패 - handle_error()로 종료
+                handle_error(Exception(f"tables 테이블 삽입 실패: {table_name}"), f"tables 테이블 삽입 실패: {table_name}")
+                return None
+            
+            # inferred 컬럼 생성
+            if join_relationships:
+                inferred_columns_created = self._create_inferred_columns(
+                    project_id, table_name, component_id, join_relationships
+                )
+                self.stats['inferred_columns_created'] += inferred_columns_created
+                if inferred_columns_created > 0:
+                    info(f"inferred 컬럼 생성 완료: {table_name}, {inferred_columns_created}개")
             
             info(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
             return component_id
@@ -666,13 +704,13 @@ class XmlLoadingEngine:
             # 2. inferred 테이블용 file_id 조회
             inferred_file_id = self._get_inferred_file_id(project_id)
             if not inferred_file_id:
-                warning(f"inferred 컬럼용 file_id를 찾을 수 없습니다: {table_name}")
+                handle_error(f"inferred 컬럼용 file_id를 찾을 수 없습니다: {table_name}")
                 return 0
             
             # 3. 테이블 ID 조회
             table_id = self._get_table_id_by_component_id(table_component_id)
             if not table_id:
-                warning(f"테이블 ID를 찾을 수 없습니다: {table_name}, component_id={table_component_id}")
+                handle_error(f"테이블 ID를 찾을 수 없습니다: {table_name}, component_id={table_component_id}")
                 return 0
             
             created_count = 0
@@ -698,15 +736,14 @@ class XmlLoadingEngine:
                                 created_count += 1
                                 info(f"inferred 컬럼 생성 성공: {table_name}.{column_info['column_name']} (ID: {component_id})")
                             else:
-                                warning(f"inferred 컬럼 component_id 업데이트 실패: {table_name}.{column_info['column_name']}")
+                                handle_error(Exception(f"inferred 컬럼 component_id 업데이트 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 component_id 업데이트 실패: {table_name}.{column_info['column_name']}")
                         else:
-                            warning(f"inferred 컬럼 컴포넌트 생성 실패: {table_name}.{column_info['column_name']}")
+                            handle_error(Exception(f"inferred 컬럼 컴포넌트 생성 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 컴포넌트 생성 실패: {table_name}.{column_info['column_name']}")
                     else:
-                        warning(f"inferred 컬럼 테이블 생성 실패: {table_name}.{column_info['column_name']}")
+                        handle_error(Exception(f"inferred 컬럼 테이블 생성 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 테이블 생성 실패: {table_name}.{column_info['column_name']}")
                         
                 except Exception as e:
-                    warning(f"inferred 컬럼 생성 중 오류: {table_name}.{column_info['column_name']} - {str(e)}")
-                    continue
+                    handle_error(f"inferred 컬럼 생성 중 오류: {table_name}.{column_info['column_name']} - {str(e)}")
             
             if created_count > 0:
                 info(f"inferred 컬럼 생성 완료: {table_name}, {created_count}개 컬럼")

@@ -1,0 +1,28 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== JSP 메서드 호출 추출 디버깅 (1건 샘플) ===
+2025-09-14 23:14:32,186 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+JSP 파서 초기화 성공
+2025-09-14 23:14:32,227 - SourceAnalyzer - INFO - jsp_parser.py:86 - JSP 파일 수집 완료: 9개
+분석 대상: projects/sampleSrc/src/main/webapp/user/list.jsp
+파일 크기: 11378 문자
+
+=== 1. 스크립틀릿 추출 테스트 ===
+스크립틀릿 패턴: ["r'<%([^%]+)%>'", "r'<%=([^%]+)%>'"]
+
+패턴 1: r'<%([^%]+)%>'
+  스크립틀릿 매치 없음
+
+패턴 2: r'<%=([^%]+)%>'
+  스크립틀릿 매치 없음
+
+=== 2. 표현식 추출 테스트 ===
+
+패턴 2: r'<%=([^%]+)%>'
+  표현식 매치 없음
+
+=== 3. JSP 파서 실제 호출 테스트 ===
+2025-09-14 23:14:32,228 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP list.jsp에서 0개 메서드 호출 발견
+파싱 결과:
+  has_error: N
+  error_message: None
+  Java 메서드 관계: 0개

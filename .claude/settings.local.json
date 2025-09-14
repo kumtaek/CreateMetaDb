@@ -4,7 +4,9 @@
       "Bash(python:*)",
       "Bash(del test_dom_parser.py)",
       "Bash(dir:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(sqlite3:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

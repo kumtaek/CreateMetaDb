@@ -154,11 +154,11 @@ class SqlContentProcessor:
             
             print(f"PRINT: SQL 쿼리 처리 루프 시작 전")
             for i, query_info in enumerate(sql_queries):
-                print(f"PRINT: SQL 쿼리 처리 루프 시작: {i+1}/{len(sql_queries)}")
-                app_logger.debug(f"SQL 쿼리 처리 루프 시작: {i+1}/{len(sql_queries)}")
+                # print(f"PRINT: SQL 쿼리 처리 루프 시작: {i+1}/{len(sql_queries)}")  # 루프 로그 제거
+                # app_logger.debug(f"SQL 쿼리 처리 루프 시작: {i+1}/{len(sql_queries)}")  # 루프 로그 제거
                 try:
                     # 디버그 로그 추가
-                    app_logger.debug(f"SQL 쿼리 처리 시작: {query_info.get('query_id', 'unknown')} ({query_info.get('tag_name', 'unknown')})")
+                    # app_logger.debug(f"SQL 쿼리 처리 시작: {query_info.get('query_id', 'unknown')} ({query_info.get('tag_name', 'unknown')})")  # 루프 로그 제거
                     
                     # 메모리에서 파일 ID 조회 (성능 최적화)
                     file_id = self._get_file_id_from_memory(query_info['file_path'])
@@ -175,11 +175,11 @@ class SqlContentProcessor:
                         handle_error(Exception(f"파일 ID 조회 실패: {query_info['file_path']}"), "SQL 컴포넌트 등록 실패")
                         return False
                     
-                    app_logger.debug(f"파일 ID 조회 성공: {file_id}")
+                    # app_logger.debug(f"파일 ID 조회 성공: {file_id}")  # 루프 로그 제거
                     
                     # 컴포넌트 저장 및 component_id 획득
                     component_id = self._save_component(query_info, project_id, file_id)
-                    app_logger.debug(f"컴포넌트 저장 결과: component_id = {component_id}")
+                    # app_logger.debug(f"컴포넌트 저장 결과: component_id = {component_id}")  # 루프 로그 제거
                     
                     if component_id:
                         component_id_map[query_info['query_id']] = component_id
@@ -187,22 +187,22 @@ class SqlContentProcessor:
                         # SQL Content 저장
                         self._save_sql_content(query_info, project_id, file_id, component_id)
                         processed_count += 1
-                        app_logger.debug(f"SQL 쿼리 처리 완료: {query_info.get('query_id', 'unknown')}")
+                        # app_logger.debug(f"SQL 쿼리 처리 완료: {query_info.get('query_id', 'unknown')}")  # 루프 로그 제거
                     else:
                         app_logger.error(f"컴포넌트 저장 실패로 건너뜀: {query_info.get('query_id', 'unknown')}")
                         skipped_count += 1
                     
                 except Exception as e:
                     # 답변파일 제안: 예외 처리 강화 - exc_info=True로 스택 트레이스 확인
-                    print(f"PRINT: SQL 쿼리 처리 예외 발생: {query_info.get('query_id', 'unknown')}, {str(e)}")
+                    # print(f"PRINT: SQL 쿼리 처리 예외 발생: {query_info.get('query_id', 'unknown')}, {str(e)}")  # 루프 로그 제거
                     app_logger.error(f"SQL 쿼리 처리 예외: {query_info.get('query_id', 'unknown')}, {str(e)}", exc_info=True)
                     skipped_count += 1
                     continue
             
-            app_logger.info(f"=== SQL 쿼리 처리 완료 ===")
-            app_logger.info(f"처리된 쿼리 수: {processed_count}")
-            app_logger.info(f"건너뜀 쿼리 수: {skipped_count}")
-            app_logger.info(f"컴포넌트 ID 매핑 크기: {len(component_id_map)}")
+            # app_logger.info(f"=== SQL 쿼리 처리 완료 ===")  # 로그 제거
+            # app_logger.info(f"처리된 쿼리 수: {processed_count}")  # 로그 제거
+            # app_logger.info(f"건너뜀 쿼리 수: {skipped_count}")  # 로그 제거
+            # app_logger.info(f"컴포넌트 ID 매핑 크기: {len(component_id_map)}")  # 로그 제거
             
             if component_id_map:
                 info(f"SQL 컴포넌트 저장 완료: {processed_count}개 (건너뜀: {skipped_count}개)")

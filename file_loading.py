@@ -141,7 +141,7 @@ class FileLoadingEngine:
             스캔된 파일 정보 리스트
         """
         try:
-            info(f"프로젝트 파일 스캔 시작: {self.project_source_path}")
+            # info(f"프로젝트 파일 스캔 시작: {self.project_source_path}")  # 로그 제거
             
             # 프로젝트 존재 여부 확인
             if not validate_directory_exists(self.project_source_path):
@@ -182,7 +182,7 @@ class FileLoadingEngine:
                     continue
             
             self.stats['total_files'] = len(scanned_files)
-            info(f"파일 스캔 완료: 총 {self.stats['total_files']}개 파일")
+            # info(f"파일 스캔 완료: 총 {self.stats['total_files']}개 파일")  # 로그 제거
             
             return scanned_files
             
@@ -471,7 +471,7 @@ class FileLoadingEngine:
                     processed_count += 1
             
             if processed_count > 0:
-                info(f"파일 정보 저장 완료: {processed_count}개 파일")
+                # info(f"파일 정보 저장 완료: {processed_count}개 파일")  # 로그 제거
                 
                 # 프로젝트의 총 파일 수 업데이트
                 self._update_project_total_files(project_id, processed_count)
@@ -1135,7 +1135,7 @@ class FileLoadingEngine:
             실행 성공 여부
         """
         try:
-            info("=== 파일 스캔 시작: 파일 정보 저장 ===")
+            # info("=== 파일 스캔 시작: 파일 정보 저장 ===")  # 로그 제거
             
             # 1. 메타데이터베이스 초기화
             if not self.initialize_database(clear_metadb):
@@ -1223,24 +1223,24 @@ class FileLoadingEngine:
     
     def _print_statistics(self):
         """통계 정보 출력"""
-        info("=== 파일 스캔 통계 ===")
-        info(f"총 파일 수: {self.stats['total_files']}")
-        info(f"성공 스캔: {self.stats['scanned_files']}")
-        info(f"오류 파일: {self.stats['error_files']}")
-        info(f"Java 파일: {self.stats['java_files']}")
-        info(f"XML 파일: {self.stats['xml_files']}")
-        info(f"JSP 파일: {self.stats['jsp_files']}")
-        info(f"SQL 파일: {self.stats['sql_files']}")
-        info(f"CSV 파일: {self.stats['csv_files']}")
-        info(f"기타 파일: {self.stats['other_files']}")
+        # info("=== 파일 스캔 통계 ===")  # 로그 제거
+        # info(f"총 파일 수: {self.stats['total_files']}")  # 로그 제거
+        # info(f"성공 스캔: {self.stats['scanned_files']}")  # 로그 제거
+        # info(f"오류 파일: {self.stats['error_files']}")  # 로그 제거
+        # info(f"Java 파일: {self.stats['java_files']}")  # 로그 제거
+        # info(f"XML 파일: {self.stats['xml_files']}")  # 로그 제거
+        # info(f"JSP 파일: {self.stats['jsp_files']}")  # 로그 제거
+        # info(f"SQL 파일: {self.stats['sql_files']}")  # 로그 제거
+        # info(f"CSV 파일: {self.stats['csv_files']}")  # 로그 제거
+        # info(f"기타 파일: {self.stats['other_files']}")  # 로그 제거
     
     def _print_db_loading_statistics(self):
         """데이터베이스 로딩 통계 정보 출력"""
-        info("=== 데이터베이스 구조 저장 통계 ===")
-        info(f"테이블 로드: {self.stats['tables_loaded']} (오류: {self.stats['tables_with_errors']})")
-        info(f"컬럼 로드: {self.stats['columns_loaded']} (오류: {self.stats['columns_with_errors']})")
-        info(f"컴포넌트 생성: {self.stats['components_created']} (오류: {self.stats['components_with_errors']})")
-        info(f"inferred 컬럼 생성: {self.stats['inferred_columns_created']}")
+        # info("=== 데이터베이스 구조 저장 통계 ===")  # 로그 제거
+        # info(f"테이블 로드: {self.stats['tables_loaded']} (오류: {self.stats['tables_with_errors']})")  # 로그 제거
+        # info(f"컬럼 로드: {self.stats['columns_loaded']} (오류: {self.stats['columns_with_errors']})")  # 로그 제거
+        # info(f"컴포넌트 생성: {self.stats['components_created']} (오류: {self.stats['components_with_errors']})")  # 로그 제거
+        # info(f"inferred 컬럼 생성: {self.stats['inferred_columns_created']}")  # 로그 제거
         
         # 오류 요약
         total_errors = (self.stats['tables_with_errors'] + 
@@ -1248,8 +1248,8 @@ class FileLoadingEngine:
                        self.stats['components_with_errors'])
         if total_errors > 0:
             warning(f"총 오류 발생: {total_errors}개")
-        else:
-            info("오류 없이 완료")
+        # else:
+        #     info("오류 없이 완료")  # 로그 제거
 
 
 # 편의 함수

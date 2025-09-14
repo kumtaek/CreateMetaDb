@@ -131,7 +131,6 @@ CREATE TABLE IF NOT EXISTS relationships (
     confidence FLOAT DEFAULT 1.0,
     has_error CHAR(1) DEFAULT 'N',                 -- 오류 여부 (Y/N)
     error_message TEXT,                            -- 오류 메시지
-    hash_value VARCHAR(64) NOT NULL,                        -- 변경 감지용
     created_at DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn CHAR(1) DEFAULT 'N',                    -- 삭제 여부 (Y/N) - COALESCE(UPPER(DEL_YN),'N') = 'N'

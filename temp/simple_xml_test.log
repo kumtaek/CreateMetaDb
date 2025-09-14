@@ -1,0 +1,36 @@
+=== 간단한 XML 파싱 테스트 ===
+
+--- ProductMapper.xml ---
+루트 태그: mapper
+네임스페이스: com.example.mapper.ProductMapper
+  select 태그: 5개
+    1. selectProductById
+    2. selectProductsByCondition
+    3. selectProductsByAdvancedCondition
+  insert 태그: 1개
+    1. insertProductDynamic
+  update 태그: 2개
+    1. updateProductStock
+    2. updateProductDynamic
+  delete 태그: 1개
+    1. deleteProductsByCondition
+총 SQL 쿼리 수: 9개
+전체 자식 요소 수: 9
+
+--- UserMapper.xml ---
+루트 태그: mapper
+네임스페이스: com.example.mapper.UserMapper
+  select 태그: 15개
+    1. selectUserById
+    2. selectUsersByCondition
+    3. selectUsersByAdvancedCondition
+  insert 태그: 2개
+    1. insertUserDynamic
+    2. insertUserPreferences
+  update 태그: 2개
+    1. updateUserDynamic
+    2. updateUserPreferences
+  delete 태그: 1개
+    1. deleteUsersByCondition
+총 SQL 쿼리 수: 20개
+전체 자식 요소 수: 22

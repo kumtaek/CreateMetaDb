@@ -90,8 +90,8 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE)
                     self.compiled_class_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"클래스 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                    handle_error(f"클래스 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 메서드 추출 패턴 컴파일
             method_patterns = self.config.get('method_extraction_patterns', [])
@@ -102,8 +102,8 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE)
                     self.compiled_method_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"메서드 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                    handle_error(f"메서드 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 복잡한 메서드 필터링 패턴 컴파일
             complex_filtering = self.config.get('complex_method_filtering', {})
@@ -117,8 +117,8 @@ class JavaParser:
                             compiled_pattern = re.compile(pattern, re.IGNORECASE)
                             self.compiled_business_patterns[pattern_type].append(compiled_pattern)
                         except re.error as e:
-                            warning(f"비즈니스 패턴 컴파일 실패: {pattern} - {str(e)}")
-                            continue
+                            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                            handle_error(f"비즈니스 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 패키지 추출 패턴 컴파일
             package_patterns = self.config.get('package_extraction_patterns', [])
@@ -129,8 +129,8 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern)
                     self.compiled_package_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"패키지 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                    handle_error(f"패키지 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 상속 관계 패턴 컴파일
             inheritance_config = self.config.get('inheritance_analysis', {})
@@ -142,8 +142,8 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE)
                     self.compiled_extends_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"상속 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    # exception은 handle_error()로 exit해야 에러 인지가 가능하다
+                    handle_error(f"상속 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 5단계 관계 분석 패턴 컴파일
             relationship_config = self.config.get('relationship_analysis', {})
@@ -156,8 +156,7 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
                     self.compiled_call_query_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"CALL_QUERY 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    handle_error(f"CALL_QUERY 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # CALL_METHOD 패턴 컴파일
             call_method_patterns = relationship_config.get('call_method_patterns', [])
@@ -167,8 +166,7 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE)
                     self.compiled_call_method_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"CALL_METHOD 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    handle_error(f"CALL_METHOD 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # USE_TABLE 패턴 컴파일
             use_table_patterns = relationship_config.get('use_table_patterns', [])
@@ -178,8 +176,7 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
                     self.compiled_use_table_patterns.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"USE_TABLE 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    handle_error(f"USE_TABLE 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             # 제외할 메서드 패턴 컴파일
             exclude_methods = relationship_config.get('exclude_methods', [])
@@ -189,8 +186,7 @@ class JavaParser:
                     compiled_pattern = re.compile(pattern, re.IGNORECASE)
                     self.compiled_exclude_methods.append(compiled_pattern)
                 except re.error as e:
-                    warning(f"제외 메서드 패턴 컴파일 실패: {pattern} - {str(e)}")
-                    continue
+                    handle_error(f"제외 메서드 패턴 컴파일 실패: {pattern} - {str(e)}")
 
             info(f"정규식 패턴 컴파일 완료: 클래스 {len(self.compiled_class_patterns)}개, "
                  f"메서드 {len(self.compiled_method_patterns)}개, "
@@ -201,7 +197,7 @@ class JavaParser:
                  f"USE_TABLE {len(self.compiled_use_table_patterns)}개")
 
         except Exception as e:
-            warning(f"정규식 패턴 컴파일 실패: {str(e)}")
+            handle_error(f"정규식 패턴 컴파일 실패: {str(e)}")
             self.compiled_class_patterns = []
             self.compiled_method_patterns = []
             self.compiled_business_patterns = {}
@@ -275,7 +271,7 @@ class JavaParser:
             return any(indicator in content_lower for indicator in java_indicators)
 
         except Exception as e:
-            warning(f"Java 파일 확인 실패: {file_path}, 오류: {str(e)}")
+            handle_error(f"Java 파일 확인 실패: {file_path}, 오류: {str(e)}")
             return False
 
     def parse_java_file(self, java_file: str) -> Dict[str, Any]:
@@ -358,8 +354,8 @@ class JavaParser:
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
             error_message = f"Java 파싱 중 예외 발생: {str(e)}"
-            error(f"parse_java_file에서 예외 발생: {java_file} - {str(e)}")
-            warning(f"{error_message} - {java_file}")
+            handle_error(f"parse_java_file에서 예외 발생: {java_file} - {str(e)}")
+            handle_error(f"{error_message} - {java_file}")
             self.stats['errors'] += 1
             return {
                 'classes': [],
@@ -386,7 +382,7 @@ class JavaParser:
                 return {'strategy': 'chunk', 'chunk_size': 512}
 
         except Exception as e:
-            warning(f"처리 전략 결정 실패: {str(e)}")
+            handle_error(f"처리 전략 결정 실패: {str(e)}")
             return {'strategy': 'memory', 'chunk_size': None}
 
     def _preprocess_java_content_safe(self, java_content: str) -> tuple:
@@ -409,7 +405,7 @@ class JavaParser:
             return processed_content, string_map
 
         except Exception as e:
-            warning(f"Java 파일 전처리 실패: {str(e)}")
+            handle_error(f"Java 파일 전처리 실패: {str(e)}")
             return java_content, {}
 
     def _remove_block_comments_safe(self, content: str) -> str:
@@ -438,7 +434,7 @@ class JavaParser:
             return ''.join(result)
 
         except Exception as e:
-            warning(f"블록 주석 제거 실패: {str(e)}")
+            handle_error(f"블록 주석 제거 실패: {str(e)}")
             return content
 
     def _remove_line_comments_safe(self, content: str) -> str:
@@ -465,7 +461,7 @@ class JavaParser:
             return '\n'.join(processed_lines)
 
         except Exception as e:
-            warning(f"라인 주석 제거 실패: {str(e)}")
+            handle_error(f"라인 주석 제거 실패: {str(e)}")
             return content
 
     def _remove_line_comments_with_string_protection(self, line: str) -> str:
@@ -494,7 +490,7 @@ class JavaParser:
             return line
 
         except Exception as e:
-            warning(f"문자열 보호 라인 주석 제거 실패: {str(e)}")
+            handle_error(f"문자열 보호 라인 주석 제거 실패: {str(e)}")
             return line
 
     def _protect_string_literals(self, content: str) -> tuple:
@@ -528,7 +524,7 @@ class JavaParser:
             return content, string_placeholders
 
         except Exception as e:
-            warning(f"문자열 리터럴 보호 실패: {str(e)}")
+            handle_error(f"문자열 리터럴 보호 실패: {str(e)}")
             return content, {}
 
     def _extract_class_info_safe(self, java_content: str, file_path: str, original_content: str) -> List[Dict[str, Any]]:
@@ -550,7 +546,7 @@ class JavaParser:
 
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
-            warning(f"클래스 정보 추출 실패: {str(e)}")
+            handle_error(f"클래스 정보 추출 실패: {str(e)}")
             return []
 
     def _parse_class_match_safe(self, match: re.Match, java_content: str, file_path: str, original_content: str) -> Optional[Dict[str, Any]]:
@@ -608,7 +604,7 @@ class JavaParser:
             }
 
         except Exception as e:
-            warning(f"클래스 매치 파싱 실패: {str(e)}")
+            # 파싱 에러로 has_error='Y' 처리하고 계속 진행
             return None
 
     def _extract_methods_for_class(self, java_content: str, class_name: str, class_start: int, class_end_line: int) -> List[Dict[str, Any]]:
@@ -656,7 +652,7 @@ class JavaParser:
             return methods
             
         except Exception as e:
-            warning(f"클래스 메서드 추출 실패: {class_name} - {str(e)}")
+            handle_error(f"클래스 메서드 추출 실패: {class_name} - {str(e)}")
             return []
 
     def _extract_content_by_line_range(self, content: str, start_line: int, end_line: int) -> str:
@@ -668,7 +664,7 @@ class JavaParser:
             
             return '\n'.join(lines[start_line-1:end_line])
         except Exception as e:
-            warning(f"라인 범위 추출 실패: {str(e)}")
+            handle_error(f"라인 범위 추출 실패: {str(e)}")
             return content
 
     def _is_method_in_class(self, class_content: str, method_name: str, class_name: str) -> bool:
@@ -694,7 +690,7 @@ class JavaParser:
             return open_braces > close_braces
             
         except Exception as e:
-            warning(f"메서드 소속 확인 실패: {method_name} - {str(e)}")
+            handle_error(f"메서드 소속 확인 실패: {method_name} - {str(e)}")
             return False
 
     def _associate_methods_with_classes(self, classes: List[Dict[str, Any]], methods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -727,7 +723,7 @@ class JavaParser:
             return classes
             
         except Exception as e:
-            warning(f"메서드-클래스 연결 실패: {str(e)}")
+            handle_error(f"메서드-클래스 연결 실패: {str(e)}")
             return classes
 
     def _determine_class_type(self, class_declaration: str) -> str:
@@ -786,7 +782,7 @@ class JavaParser:
             return self.config.get('method_complexity', {}).get('default_package', 'default')
 
         except Exception as e:
-            warning(f"패키지명 추출 실패: {str(e)}")
+            handle_error(f"패키지명 추출 실패: {str(e)}")
             return self.config.get('method_complexity', {}).get('default_package', 'default')
 
     def _extract_package_from_content(self, java_content: str) -> Optional[str]:
@@ -810,7 +806,7 @@ class JavaParser:
             return None
 
         except Exception as e:
-            warning(f"Java 파일에서 패키지명 추출 실패: {str(e)}")
+            handle_error(f"Java 파일에서 패키지명 추출 실패: {str(e)}")
             return None
 
     def _find_class_end_line_safe(self, java_content: str, class_start_pos: int) -> int:
@@ -855,7 +851,7 @@ class JavaParser:
             return java_content.count('\n') + 1
 
         except Exception as e:
-            warning(f"클래스 종료 라인 찾기 실패: {str(e)}")
+            handle_error(f"클래스 종료 라인 찾기 실패: {str(e)}")
             return java_content.count('\n') + 1
 
     def _extract_class_content_safe(self, java_content: str, start_pos: int, end_line: int) -> str:
@@ -873,7 +869,7 @@ class JavaParser:
             return java_content[start_pos:]
 
         except Exception as e:
-            warning(f"클래스 내용 추출 실패: {str(e)}")
+            handle_error(f"클래스 내용 추출 실패: {str(e)}")
             return ""
 
     def _extract_method_info_safe(self, java_content: str, file_path: str, original_content: str) -> List[Dict[str, Any]]:
@@ -925,8 +921,8 @@ class JavaParser:
 
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
-            error(f"_extract_method_info_safe에서 예외 발생: {str(e)}")
-            warning(f"메서드 정보 추출 실패: {str(e)}")
+            handle_error(f"_extract_method_info_safe에서 예외 발생: {str(e)}")
+            handle_error(f"메서드 정보 추출 실패: {str(e)}")
             return []
 
     def _extract_method_body(self, java_content: str, method_start_pos: int) -> str:
@@ -973,7 +969,7 @@ class JavaParser:
             return ""
 
         except Exception as e:
-            warning(f"메서드 본문 추출 실패: {str(e)}")
+            handle_error(f"메서드 본문 추출 실패: {str(e)}")
             return ""
 
     def _classify_method_complexity(self, method_name: str, method_body: str) -> str:
@@ -1009,7 +1005,7 @@ class JavaParser:
             return include_complexity  # 기본적으로 포함
 
         except Exception as e:
-            warning(f"메서드 복잡도 분류 실패: {str(e)}")
+            handle_error(f"메서드 복잡도 분류 실패: {str(e)}")
             return complexity_config.get('include_complexity', 'include')
 
     def _is_simple_getter_setter(self, method_name: str, method_body: str) -> bool:
@@ -1038,7 +1034,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"단순 getter/setter 확인 실패: {str(e)}")
+            handle_error(f"단순 getter/setter 확인 실패: {str(e)}")
             return False
 
     def _is_basic_object_method(self, method_name: str) -> bool:
@@ -1078,7 +1074,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"복잡한 비즈니스 메서드 확인 실패: {str(e)}")
+            handle_error(f"복잡한 비즈니스 메서드 확인 실패: {str(e)}")
             return False
 
     def _is_method_body_complex(self, method_body: str) -> bool:
@@ -1106,7 +1102,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"메서드 본문 복잡도 확인 실패: {str(e)}")
+            handle_error(f"메서드 본문 복잡도 확인 실패: {str(e)}")
             return False
 
     def _is_constructor_or_main(self, method_name: str) -> bool:
@@ -1139,7 +1135,7 @@ class JavaParser:
             
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
-            warning(f"제어문 키워드 확인 실패: {method_name} - {str(e)}")
+            handle_error(f"제어문 키워드 확인 실패: {method_name} - {str(e)}")
             return False
 
     def _find_class_for_method(self, java_content: str, method_pos: int) -> Optional[str]:
@@ -1164,7 +1160,7 @@ class JavaParser:
             return last_class
 
         except Exception as e:
-            warning(f"메서드의 클래스 찾기 실패: {str(e)}")
+            handle_error(f"메서드의 클래스 찾기 실패: {str(e)}")
             return None
 
     def _create_method_info_safe(self, match: re.Match, java_content: str, file_path: str, class_name: str, complexity: str) -> Optional[Dict[str, Any]]:
@@ -1193,7 +1189,7 @@ class JavaParser:
             }
 
         except Exception as e:
-            warning(f"메서드 정보 생성 실패: {str(e)}")
+            handle_error(f"메서드 정보 생성 실패: {str(e)}")
             return None
 
     def _find_method_end_line_safe(self, java_content: str, method_start_pos: int) -> int:
@@ -1238,7 +1234,7 @@ class JavaParser:
             return java_content.count('\n') + 1
 
         except Exception as e:
-            warning(f"메서드 종료 라인 찾기 실패: {str(e)}")
+            handle_error(f"메서드 종료 라인 찾기 실패: {str(e)}")
             return java_content.count('\n') + 1
 
     def _extract_method_content_safe(self, java_content: str, start_pos: int, end_line: int) -> str:
@@ -1256,7 +1252,7 @@ class JavaParser:
             return java_content[start_pos:]
 
         except Exception as e:
-            warning(f"메서드 내용 추출 실패: {str(e)}")
+            handle_error(f"메서드 내용 추출 실패: {str(e)}")
             return ""
 
     def _analyze_inheritance_relationships_safe(self, java_content: str) -> List[Dict[str, Any]]:
@@ -1285,7 +1281,7 @@ class JavaParser:
 
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
-            warning(f"상속 관계 분석 실패: {str(e)}")
+            handle_error(f"상속 관계 분석 실패: {str(e)}")
             return []
 
     def _validate_parsing_results(self, parsed_data: List[Dict], original_content: str) -> List[Dict]:
@@ -1309,7 +1305,7 @@ class JavaParser:
             return validated_results
 
         except Exception as e:
-            warning(f"파싱 결과 검증 실패: {str(e)}")
+            # 파싱 에러로 has_error='Y' 처리하고 계속 진행
             return parsed_data
 
     def _is_inside_comment_check(self, content: str, line_number: int) -> bool:
@@ -1351,7 +1347,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"주석 확인 실패: {str(e)}")
+            handle_error(f"주석 확인 실패: {str(e)}")
             return False
 
     def _is_inside_string_literal_check(self, content: str, line_number: int) -> bool:
@@ -1371,7 +1367,7 @@ class JavaParser:
             return (quote_count % 2 == 1) or (single_quote_count % 2 == 1)
 
         except Exception as e:
-            warning(f"문자열 리터럴 확인 실패: {str(e)}")
+            handle_error(f"문자열 리터럴 확인 실패: {str(e)}")
             return False
 
     def _is_valid_java_syntax(self, item: Dict) -> bool:
@@ -1389,7 +1385,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"Java 구문 유효성 확인 실패: {str(e)}")
+            handle_error(f"Java 구문 유효성 확인 실패: {str(e)}")
             return True  # 확실하지 않으면 포함
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
@@ -1401,7 +1397,7 @@ class JavaParser:
             config_utils = ConfigUtils()
             config = config_utils.load_yaml_config(config_path)
             if not config:
-                warning(f"설정 파일을 로드할 수 없습니다: {config_path}")
+                handle_error(f"설정 파일을 로드할 수 없습니다: {config_path}")
                 return self._get_default_config()
             return config
         except Exception as e:
@@ -1471,11 +1467,11 @@ class JavaParser:
                         return i + 1
 
             # 찾지 못한 경우 1 반환 (기본값)
-            warning(f"클래스 선언문 라인을 찾을 수 없음: {class_name}")
+            handle_error(f"클래스 선언문 라인을 찾을 수 없음: {class_name}")
             return 1
 
         except Exception as e:
-            warning(f"라인 번호 계산 실패: {str(e)}")
+            handle_error(f"라인 번호 계산 실패: {str(e)}")
             return 1
 
     def _analyze_call_query_relationships_safe(self, java_content: str, methods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -1513,13 +1509,12 @@ class JavaParser:
                                 call_query_relationships.append(relationship)
 
                 except Exception as e:
-                    warning(f"CALL_QUERY 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
-                    continue
+                    handle_error(f"CALL_QUERY 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
 
             return call_query_relationships
 
         except Exception as e:
-            warning(f"CALL_QUERY 관계 분석 실패: {str(e)}")
+            handle_error(f"CALL_QUERY 관계 분석 실패: {str(e)}")
             return []
 
     def _analyze_call_method_relationships_safe(self, java_content: str, methods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -1557,13 +1552,12 @@ class JavaParser:
                                 call_method_relationships.append(relationship)
 
                 except Exception as e:
-                    warning(f"CALL_METHOD 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
-                    continue
+                    handle_error(f"CALL_METHOD 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
 
             return call_method_relationships
 
         except Exception as e:
-            warning(f"CALL_METHOD 관계 분석 실패: {str(e)}")
+            handle_error(f"CALL_METHOD 관계 분석 실패: {str(e)}")
             return []
 
     def _analyze_use_table_relationships_safe(self, java_content: str, methods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -1603,13 +1597,12 @@ class JavaParser:
                                     use_table_relationships.append(relationship)
 
                 except Exception as e:
-                    warning(f"USE_TABLE 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
-                    continue
+                    handle_error(f"USE_TABLE 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
 
             return use_table_relationships
 
         except Exception as e:
-            warning(f"USE_TABLE 관계 분석 실패: {str(e)}")
+            handle_error(f"USE_TABLE 관계 분석 실패: {str(e)}")
             return []
 
     def _extract_method_body_from_lines(self, java_content: str, line_start: int, line_end: int) -> str:
@@ -1623,7 +1616,7 @@ class JavaParser:
             return '\n'.join(method_lines)
 
         except Exception as e:
-            warning(f"메서드 본문 추출 실패: {str(e)}")
+            handle_error(f"메서드 본문 추출 실패: {str(e)}")
             return ""
 
     def _extract_query_id_from_match(self, match: re.Match, method_body: str) -> Optional[str]:
@@ -1652,7 +1645,7 @@ class JavaParser:
             return None
 
         except Exception as e:
-            warning(f"쿼리 ID 추출 실패: {str(e)}")
+            handle_error(f"쿼리 ID 추출 실패: {str(e)}")
             return None
 
     def _extract_called_method_from_match(self, match: re.Match) -> Optional[str]:
@@ -1679,7 +1672,7 @@ class JavaParser:
             return None
 
         except Exception as e:
-            warning(f"호출된 메서드 추출 실패: {str(e)}")
+            handle_error(f"호출된 메서드 추출 실패: {str(e)}")
             return None
 
     def _extract_table_name_from_match(self, match: re.Match) -> Optional[str]:
@@ -1690,7 +1683,7 @@ class JavaParser:
             return None
 
         except Exception as e:
-            warning(f"테이블명 추출 실패: {str(e)}")
+            handle_error(f"테이블명 추출 실패: {str(e)}")
             return None
 
     def _should_exclude_method(self, method_name: str) -> bool:
@@ -1702,7 +1695,7 @@ class JavaParser:
             return False
 
         except Exception as e:
-            warning(f"메서드 제외 확인 실패: {str(e)}")
+            handle_error(f"메서드 제외 확인 실패: {str(e)}")
             return False
 
     def _clean_table_name(self, table_name: str) -> Optional[str]:
@@ -1736,7 +1729,7 @@ class JavaParser:
             return None
 
         except Exception as e:
-            warning(f"테이블명 정제 실패: {str(e)}")
+            handle_error(f"테이블명 정제 실패: {str(e)}")
             return None
 
     def _find_line_in_method_body(self, method_body: str, position: int) -> int:
@@ -1745,5 +1738,5 @@ class JavaParser:
             return method_body[:position].count('\n') + 1
 
         except Exception as e:
-            warning(f"라인 번호 찾기 실패: {str(e)}")
+            handle_error(f"라인 번호 찾기 실패: {str(e)}")
             return 1

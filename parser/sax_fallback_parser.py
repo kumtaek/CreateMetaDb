@@ -46,7 +46,7 @@ class MyBatisSaxHandler(xml.sax.ContentHandler):
                 self.sql_tags = default_sql_tags
             else:
                 # 최후의 수단으로만 하드코딩 사용
-                warning("설정에서 SQL 태그를 찾을 수 없어 기본값 사용")
+                handle_error("설정에서 SQL 태그를 찾을 수 없어 기본값 사용")
                 self.sql_tags = ['select', 'insert', 'update', 'delete']
         
         # 상태 관리 변수
@@ -180,7 +180,7 @@ class MyBatisSaxParser:
             # USER RULES: 공통함수 사용 지향 - 경로 검증
             if not os.path.exists(xml_file_path):
                 error_message = f"XML 파일이 존재하지 않습니다: {xml_file_path}"
-                warning(error_message)
+                handle_error(error_message)
                 return {
                     'has_error': 'Y', 
                     'error_message': error_message,
@@ -247,7 +247,7 @@ class MyBatisSaxParser:
         except xml.sax.SAXParseException as e:
             # USER RULES: 파싱에러는 has_error='Y', error_message 저장 후 계속 실행
             error_message = f"SAX 파싱 실패 (XML 문법 오류): {xml_file_path} - {str(e)}"
-            warning(error_message)
+            handle_error(error_message)
             self.stats['errors'] += 1
             return {
                 'has_error': 'Y', 
@@ -260,7 +260,7 @@ class MyBatisSaxParser:
         except Exception as e:
             # USER RULES: 파싱에러는 has_error='Y', error_message 저장 후 계속 실행
             error_message = f"SAX 파싱 중 예상치 못한 오류: {xml_file_path} - {str(e)}"
-            warning(error_message)
+            handle_error(error_message)
             self.stats['errors'] += 1
             return {
                 'has_error': 'Y', 
@@ -318,7 +318,7 @@ class MyBatisSaxParser:
             
         except Exception as e:
             # USER RULES: 파싱에러는 has_error='Y', error_message 저장 후 계속 실행
-            warning(f"SAX JOIN 분석 실패: {str(e)}")
+            handle_error(f"SAX JOIN 분석 실패: {str(e)}")
             return []
 
     def get_stats(self) -> Dict[str, int]:

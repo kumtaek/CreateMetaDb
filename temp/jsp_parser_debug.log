@@ -1,0 +1,24 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== JSP 파서 디버깅 ===
+2025-09-14 23:03:15,380 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+JSP 파서 초기화 성공
+2025-09-14 23:03:15,420 - SourceAnalyzer - INFO - jsp_parser.py:86 - JSP 파일 수집 완료: 9개
+JSP 파일 수집 성공: 9개
+  - D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\test.jsp
+  - D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\error\syntaxError.jsp
+  - D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\mixed\partialError.jsp
+
+=== D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\test.jsp 파싱 테스트 ===
+2025-09-14 23:03:15,421 - SourceAnalyzer - INFO - jsp_parser.py:202 - JSP test.jsp에서 0개 메서드 호출 발견
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\temp\debug_jsp_parser.py", line 62, in debug_jsp_parser
+    jsp_loader = JspLoadingEngine()
+TypeError: JspLoadingEngine.__init__() missing 1 required positional argument: 'project_name'
+JSP 파싱 성공
+  has_error: N
+  error_message: None
+  JSP 컴포넌트: test.jsp
+  Java 메서드 관계: 0개
+
+=== JSP 로딩 엔진 테스트 ===
+JSP 로딩 엔진 초기화 실패: JspLoadingEngine.__init__() missing 1 required positional argument: 'project_name'

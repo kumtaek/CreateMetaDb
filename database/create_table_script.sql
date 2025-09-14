@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS files (
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn CHAR(1) DEFAULT 'N',                    -- 삭제 여부 (Y/N) - COALESCE(UPPER(DEL_YN),'N') = 'N'
     line_count INTEGER,
+    file_size INTEGER,
     FOREIGN KEY (project_id) REFERENCES projects(project_id)
 );
 CREATE UNIQUE INDEX ix_files_01 ON files (file_name, file_path, project_id);

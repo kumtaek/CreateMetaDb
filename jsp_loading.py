@@ -1,0 +1,473 @@
+"""
+JSP 로딩 모듈 - 5단계 Phase 1 MVP
+- JSP 파일에서 JSP 컴포넌트 추출 및 Java 메서드 관계 분석
+- 메모리 최적화 (스트리밍 처리)
+- 데이터베이스 저장 및 통계 관리
+
+USER RULES:
+- 하드코딩 금지: path_utils.get_parser_config_path("jsp") 사용 (크로스플랫폼 대응)
+- 파싱 에러 처리: has_error='Y', error_message 저장 후 계속 실행
+- 시스템 에러 처리: handle_error() 공통함수 사용
+- 공통함수 사용: util 모듈 활용
+- 메뉴얼 기반: parser/manual/02_jsp 참고
+"""
+
+import os
+from typing import List, Dict, Any, Optional
+from util import (
+    DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
+    app_logger, info, error, debug, warning, handle_error,
+    get_project_source_path, get_project_metadata_db_path
+)
+# USER RULES: 공통함수 사용, 하드코딩 금지
+from parser.jsp_parser import JspParser
+
+
+class JspLoadingEngine:
+    """JSP 로딩 엔진 - 5단계 Phase 1 MVP"""
+
+    def __init__(self, project_name: str):
+        """
+        JSP 로딩 엔진 초기화
+
+        Args:
+            project_name: 프로젝트명
+        """
+        self.project_name = project_name
+        self.project_source_path = get_project_source_path(project_name)
+        self.metadata_db_path = get_project_metadata_db_path(project_name)
+        self.db_utils = None
+
+        # JSP 파서 초기화 (USER RULES: 공통함수 사용)
+        self.jsp_parser = JspParser()
+
+        # 현재 처리 중인 파일의 file_id (메모리 최적화)
+        self.current_file_id = None
+
+        # 통계 정보 (5단계 Phase 1 MVP)
+        self.stats = {
+            'jsp_files_processed': 0,
+            'jsp_components_created': 0,
+            'jsp_method_relationships_created': 0,
+            'errors': 0,
+            'processing_time': 0.0
+        }
+
+    def execute_jsp_loading(self) -> bool:
+        """
+        JSP 로딩 실행: 5단계 Phase 1 MVP
+
+        Returns:
+            실행 성공 여부
+        """
+        import time
+        start_time = time.time()
+
+        try:
+            info("=== JSP 로딩 시작: 5단계 Phase 1 MVP ===")
+
+            # 데이터베이스 연결 (USER RULES: 공통함수 사용)
+            self.db_utils = DatabaseUtils(self.metadata_db_path)
+            if not self.db_utils.connect():
+                error("메타데이터베이스 연결 실패")
+                return False
+
+            # 1. JSP 파일 수집
+            jsp_files = self.jsp_parser.get_filtered_jsp_files(self.project_source_path)
+            if not jsp_files:
+                warning("JSP 파일이 없습니다")
+                return True
+
+            info(f"처리할 JSP 파일 수: {len(jsp_files)}개")
+
+            # 2. JSP 파일별 통합 처리 (메모리 최적화)
+            for jsp_file in jsp_files:
+                try:
+                    # 파일 읽기 시작 시 file_id를 변수에 저장 (외래키 문제 해결)
+                    # 간단하게 파일 경로에서 file_id 추출
+                    self.current_file_id = self._extract_file_id_from_path(jsp_file)
+                    info(f"현재 처리 중인 JSP 파일: {jsp_file}, current_file_id: {self.current_file_id}")
+                    
+                    # 5단계 Phase 1 MVP: JSP 컴포넌트 추출 + Java 메서드 관계 분석
+                    debug(f"JSP 파일 파싱 시작: {jsp_file}")
+                    analysis_result = self.jsp_parser.parse_jsp_file(jsp_file)
+                    debug(f"JSP 파일 파싱 완료: {jsp_file}")
+
+                    # 파싱 에러 체크 (USER RULES: 파싱 에러는 계속 진행)
+                    if analysis_result.get('has_error') == 'Y':
+                        warning(f"JSP 파싱 에러로 건너뜀: {jsp_file} - {analysis_result.get('error_message', '')}")
+                        self.stats['errors'] += 1
+                        continue
+
+                    # JSP 컴포넌트 저장
+                    if analysis_result.get('jsp_component'):
+                        self._save_jsp_components_to_database([analysis_result['jsp_component']])
+
+                    # JSP → METHOD 관계 저장
+                    if analysis_result.get('java_method_relationships'):
+                        self._save_jsp_method_relationships_to_database(analysis_result['java_method_relationships'])
+
+                    # 통계 업데이트
+                    self.stats['jsp_files_processed'] += 1
+                    if analysis_result.get('jsp_component'):
+                        self.stats['jsp_components_created'] += 1
+                    if analysis_result.get('java_method_relationships'):
+                        self.stats['jsp_method_relationships_created'] += len(analysis_result['java_method_relationships'])
+
+                except Exception as e:
+                    # USER RULES: 파싱 에러는 has_error='Y', error_message 저장 후 계속 진행
+                    warning(f"JSP 파일 처리 중 오류: {jsp_file}, 오류: {str(e)}")
+                    self.stats['errors'] += 1
+                    continue
+
+            # 3. 통계 정보 출력
+            self.stats['processing_time'] = time.time() - start_time
+            self._print_jsp_loading_statistics()
+
+            info("=== JSP 로딩 완료: 5단계 Phase 1 MVP ===")
+            return True
+
+        except Exception as e:
+            # USER RULES: 시스템 에러는 handle_error()로 exit
+            handle_error(e, "JSP 로딩 실행 실패")
+            return False
+
+        finally:
+            # 데이터베이스 연결 해제
+            if self.db_utils:
+                self.db_utils.disconnect()
+
+    def _save_jsp_components_to_database(self, jsp_components: List[Dict[str, Any]]) -> bool:
+        """
+        JSP 컴포넌트를 components 테이블에 저장
+
+        Args:
+            jsp_components: JSP 컴포넌트 정보 리스트
+
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            if not jsp_components:
+                return True
+
+            # 프로젝트 ID 조회
+            project_id = self._get_project_id()
+            if not project_id:
+                error("프로젝트 ID 조회 실패")
+                return False
+
+            # JSP 컴포넌트 데이터 변환
+            component_data_list = []
+            for jsp_comp in jsp_components:
+                # 현재 파일의 file_id 사용 (메모리 최적화)
+                info(f"JSP 컴포넌트 생성 시도: {jsp_comp['jsp_name']}, current_file_id: {self.current_file_id}")
+                if self.current_file_id is not None:
+                    component_data = {
+                        'project_id': project_id,
+                        'component_type': 'JSP',
+                        'component_name': jsp_comp['jsp_name'],
+                        'parent_id': None,  # JSP는 독립적인 컴포넌트
+                        'file_id': self.current_file_id,  # 메모리에 저장된 file_id 사용
+                        'layer': 'PRESENTATION',  # JSP는 프레젠테이션 계층
+                        'line_start': jsp_comp.get('line_start', 1),
+                        'line_end': jsp_comp.get('line_end', 1),
+                        'hash_value': jsp_comp.get('hash_value', '-'),
+                        'has_error': 'N',
+                        'error_message': None,
+                        'del_yn': 'N'
+                    }
+                    component_data_list.append(component_data)
+                else:
+                    warning(f"file_id가 None이어서 JSP 컴포넌트 생성을 건너뜀: {jsp_comp['jsp_name']}")
+
+            if not component_data_list:
+                return True
+
+            # 배치 저장 (USER RULES: 공통함수 사용)
+            processed_count = self.db_utils.batch_insert_or_replace('components', component_data_list)
+
+            if processed_count > 0:
+                info(f"JSP 컴포넌트 배치 저장 완료: {processed_count}개")
+                return True
+            else:
+                error("JSP 컴포넌트 저장 실패")
+                return False
+
+        except Exception as e:
+            handle_error(e, "JSP 컴포넌트 저장 실패")
+
+    def _save_jsp_method_relationships_to_database(self, relationships: List[Dict[str, Any]]) -> bool:
+        """
+        JSP → METHOD 관계를 relationships 테이블에 저장
+
+        Args:
+            relationships: JSP → METHOD 관계 정보 리스트
+
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            if not relationships:
+                return True
+
+            # 프로젝트 ID 조회
+            project_id = self._get_project_id()
+            if not project_id:
+                error("프로젝트 ID 조회 실패")
+                return False
+
+            # 관계 데이터 변환
+            relationship_data_list = []
+            for rel in relationships:
+                # JSP 컴포넌트 ID 조회
+                jsp_component_id = self._get_jsp_component_id(project_id, rel['jsp_name'])
+                if not jsp_component_id:
+                    warning(f"JSP 컴포넌트 ID 조회 실패: {rel['jsp_name']}")
+                    continue
+
+                # METHOD 컴포넌트 ID 조회
+                method_component_id = self._get_method_component_id(project_id, rel['class_name'], rel['method_name'])
+                if not method_component_id:
+                    # Phase 1 MVP: 단순화 - METHOD 컴포넌트가 없으면 건너뛰기
+                    debug(f"METHOD 컴포넌트를 찾을 수 없음 (건너뛰기): {rel['class_name']}.{rel['method_name']}")
+                    continue
+
+                # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                if jsp_component_id == method_component_id:
+                    warning(f"자기 참조 JSP→METHOD 관계 스킵: {rel['jsp_name']} → {rel['class_name']}.{rel['method_name']} (src_id == dst_id)")
+                    continue
+
+                relationship_data = {
+                    'src_id': jsp_component_id,
+                    'dst_id': method_component_id,
+                    'rel_type': 'CALL_METHOD',
+                    'confidence': 1.0,
+                    'has_error': 'N',
+                    'error_message': None,
+                    'hash_value': '-',  # USER RULES: 하드코딩된 '-'
+                    'del_yn': 'N'
+                }
+                relationship_data_list.append(relationship_data)
+
+            if not relationship_data_list:
+                return True
+
+            # 배치 저장 (USER RULES: 공통함수 사용)
+            processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
+
+            if processed_count > 0:
+                info(f"JSP → METHOD 관계 배치 저장 완료: {processed_count}개")
+                return True
+            else:
+                error("JSP → METHOD 관계 저장 실패")
+                return False
+
+        except Exception as e:
+            handle_error(e, "JSP → METHOD 관계 저장 실패")
+
+    def _get_project_id(self) -> Optional[int]:
+        """
+        프로젝트 ID 조회
+
+        Returns:
+            프로젝트 ID (없으면 None)
+        """
+        try:
+            # USER RULES: 공통함수 사용
+            return self.db_utils.get_project_id(self.project_name)
+        except Exception as e:
+            handle_error(e, "프로젝트 ID 조회 실패")
+
+    def _extract_file_id_from_path(self, file_path: str) -> Optional[int]:
+        """
+        파일 경로에서 file_id 추출 (데이터베이스 조회 기반)
+
+        Args:
+            file_path: 파일 경로
+
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            # 프로젝트 ID 조회
+            project_id = self._get_project_id()
+            if not project_id:
+                warning(f"프로젝트 ID 조회 실패로 file_id를 찾을 수 없음: {file_path}")
+                return None
+
+            # 상대 경로 변환 (크로스 플랫폼 지원)
+            from util.path_utils import get_relative_path
+            import os
+            relative_path = get_relative_path(file_path, self.project_source_path)
+
+            # 데이터베이스에서 file_id 조회 (USER RULES: 공통함수 사용)
+            # 먼저 정확한 경로로 조회하고, 없으면 파일명만으로 조회
+            query = """
+                SELECT file_id
+                FROM files
+                WHERE project_id = ? AND (file_path = ? OR file_name = ?)
+            """
+            filename = os.path.basename(relative_path)
+            result = self.db_utils.execute_query(query, (project_id, relative_path, filename))
+
+            if result:
+                file_id = result[0]['file_id']
+                info(f"JSP 파일 ID 조회 성공: {relative_path} (filename: {filename}) -> {file_id}")
+                return file_id
+            else:
+                warning(f"JSP 파일이 files 테이블에 등록되지 않음: {relative_path} (filename: {filename})")
+                # Phase 1 MVP: JSP 파일을 files 테이블에 등록
+                file_id = self._register_jsp_file_to_database(project_id, relative_path, file_path)
+                if file_id:
+                    info(f"JSP 파일 새로 등록 완료: {relative_path} -> {file_id}")
+                else:
+                    error(f"JSP 파일 등록 실패: {relative_path}")
+                return file_id
+
+        except Exception as e:
+            handle_error(e, f"JSP 파일 ID 추출 실패: {file_path}")
+
+    def _register_jsp_file_to_database(self, project_id: int, relative_path: str, full_path: str) -> Optional[int]:
+        """
+        JSP 파일을 files 테이블에 등록 (Phase 1 MVP 지원)
+
+        Args:
+            project_id: 프로젝트 ID
+            relative_path: 상대 경로
+            full_path: 전체 경로
+
+        Returns:
+            생성된 file_id 또는 None
+        """
+        try:
+            from util.file_utils import get_file_hash
+            import os
+
+            # 파일 정보 수집
+            file_hash = get_file_hash(full_path) if os.path.exists(full_path) else '-'
+            file_size = os.path.getsize(full_path) if os.path.exists(full_path) else 0
+
+            # 파일 라인 수 계산
+            line_count = 0
+            if os.path.exists(full_path):
+                try:
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        line_count = sum(1 for _ in f)
+                except:
+                    line_count = 0
+
+            # files 테이블에 JSP 파일 등록
+            file_data = {
+                'project_id': project_id,
+                'file_path': relative_path,
+                'file_name': os.path.basename(relative_path),
+                'file_type': 'JSP',
+                'line_count': line_count,
+                'file_size': file_size,
+                'hash_value': file_hash,
+                'has_error': 'N',
+                'error_message': None,
+                'del_yn': 'N'
+            }
+
+            # 배치 삽입 (USER RULES: 공통함수 사용)
+            processed_count = self.db_utils.batch_insert_or_replace('files', [file_data])
+
+            if processed_count > 0:
+                # 생성된 file_id 조회
+                query = "SELECT file_id FROM files WHERE project_id = ? AND file_path = ?"
+                result = self.db_utils.execute_query(query, (project_id, relative_path))
+
+                if result:
+                    file_id = result[0]['file_id']
+                    debug(f"JSP 파일 등록 완료: {relative_path} -> file_id: {file_id}")
+                    return file_id
+
+            return None
+
+        except Exception as e:
+            handle_error(e, f"JSP 파일 등록 실패: {relative_path}")
+
+    def _get_jsp_component_id(self, project_id: int, jsp_name: str) -> Optional[int]:
+        """
+        JSP 컴포넌트 ID 조회
+
+        Args:
+            project_id: 프로젝트 ID
+            jsp_name: JSP 파일명
+
+        Returns:
+            JSP 컴포넌트 ID (없으면 None)
+        """
+        try:
+            query = """
+                SELECT component_id 
+                FROM components 
+                WHERE project_id = ? AND component_type = 'JSP' AND component_name = ?
+            """
+            result = self.db_utils.execute_query(query, (project_id, jsp_name))
+            if result:
+                return result[0]['component_id']
+            return None
+        except Exception as e:
+            handle_error(e, f"JSP 컴포넌트 ID 조회 실패: {jsp_name}")
+
+    def _get_method_component_id(self, project_id: int, class_name: str, method_name: str) -> Optional[int]:
+        """
+        METHOD 컴포넌트 ID 조회 (4단계에서 생성된 것)
+
+        Args:
+            project_id: 프로젝트 ID
+            class_name: 클래스명
+            method_name: 메서드명
+
+        Returns:
+            METHOD 컴포넌트 ID (없으면 None)
+        """
+        try:
+            query = """
+                SELECT component_id 
+                FROM components 
+                WHERE project_id = ? AND component_type = 'METHOD' AND component_name = ?
+            """
+            component_name = f"{class_name}.{method_name}"
+            result = self.db_utils.execute_query(query, (project_id, component_name))
+            if result:
+                return result[0]['component_id']
+            return None
+        except Exception as e:
+            handle_error(e, f"METHOD 컴포넌트 ID 조회 실패: {class_name}.{method_name}")
+
+
+    def _print_jsp_loading_statistics(self):
+        """JSP 로딩 통계 정보 출력"""
+        try:
+            info("=== JSP 로딩 통계 ===")
+            info(f"처리된 JSP 파일: {self.stats['jsp_files_processed']}개")
+            info(f"생성된 JSP 컴포넌트: {self.stats['jsp_components_created']}개")
+            info(f"생성된 JSP → METHOD 관계: {self.stats['jsp_method_relationships_created']}개")
+            info(f"오류 발생: {self.stats['errors']}개")
+            info(f"처리 시간: {self.stats['processing_time']:.2f}초")
+            info("==================")
+
+        except Exception as e:
+            handle_error(e, "통계 정보 출력 실패")
+
+
+def execute_jsp_loading(project_name: str) -> bool:
+    """
+    JSP 로딩 실행 함수 (main.py에서 호출용)
+
+    Args:
+        project_name: 프로젝트명
+
+    Returns:
+        실행 성공 여부
+    """
+    try:
+        jsp_engine = JspLoadingEngine(project_name)
+        return jsp_engine.execute_jsp_loading()
+    except Exception as e:
+        handle_error(e, "JSP 로딩 실행 실패")
+        return False

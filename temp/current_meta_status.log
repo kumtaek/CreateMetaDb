@@ -1,0 +1,28 @@
+Current metadata status:
+  projects: 1
+  files: 47
+  tables: 25
+  columns: 108
+  classes: 36
+  components: 568
+  relationships: 1408
+
+Relationship types:
+  CALL_METHOD: 1323
+  CALL_QUERY: 56
+  INHERITANCE: 1
+  JOIN_EXPLICIT: 22
+  JOIN_IMPLICIT: 6
+
+Component types:
+  CLASS: 2
+  COLUMN: 64
+  JSP: 7
+  METHOD: 384
+  QUERY: 22
+  SQL_DELETE: 3
+  SQL_INSERT: 4
+  SQL_MERGE: 2
+  SQL_SELECT: 41
+  SQL_UPDATE: 5
+  TABLE: 34

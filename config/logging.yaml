@@ -44,18 +44,18 @@ handlers:
   # 콘솔 출력 핸들러 - 터미널/콘솔에 로그 출력
   console:
     class: logging.StreamHandler  # 표준 출력 스트림 사용
-    level: INFO                   # INFO 레벨 이상의 로그만 출력
-    formatter: detailed          # 상세한 포맷터 사용
+    level: WARNING               # WARNING 레벨 이상의 로그만 출력 (INFO 로그 제거)
+    formatter: simple            # 간단한 포맷터 사용
     stream: ext://sys.stdout     # 표준 출력 스트림 지정
   
   # 파일 출력 핸들러 - 로그 파일에 저장
   file:
     class: logging.handlers.RotatingFileHandler  # 파일 크기 제한이 있는 로테이션 핸들러
-    level: INFO                                  # INFO 레벨 이상의 로그만 저장
+    level: WARNING                              # WARNING 레벨 이상의 로그만 저장 (INFO 로그 제거)
     formatter: detailed                         # 상세한 포맷터 사용
     filename: ./logs/source_analyzer.log        # 로그 파일 경로
-    maxBytes: 10485760                          # 최대 파일 크기 (10MB)
-    backupCount: 5                              # 백업 파일 개수 (최대 5개)
+    maxBytes: 5242880                           # 최대 파일 크기 (5MB로 축소)
+    backupCount: 3                              # 백업 파일 개수 (최대 3개로 축소)
     encoding: utf-8                             # 파일 인코딩
 
 # ========================================
@@ -65,18 +65,18 @@ handlers:
 loggers:
   # 루트 로거 - 모든 로거의 기본 설정
   root:
-    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
   
   # SourceAnalyzer 전용 로거 - 메인 애플리케이션 로거
   SourceAnalyzer:
-    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
   
   # XML 파서 관련 로거 - XML 파싱 관련 로그
   xml_parser:
-    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
 
@@ -86,21 +86,23 @@ loggers:
 # 이 설정은 SourceAnalyzer 내부에서 파서 관련 로깅을 제어하는 데 사용됩니다.
 parser_logging:
   # 로그 레벨 설정
-  log_level: "INFO"
+  log_level: "WARNING"
   
-  # 로그할 정보 유형들
+  # 로그할 정보 유형들 (필수 정보만 유지)
   log_info:
-    - "file_processing"        # 파일 처리 과정 로그
-    - "sql_extraction"         # SQL 추출 과정 로그
-    - "component_registration" # 컴포넌트 등록 과정 로그
-    - "join_analysis"          # 조인 분석 과정 로그
-    - "table_extraction"       # 테이블 추출 과정 로그
-    - "error_details"          # 에러 상세 정보 로그
+    - "error_details"          # 에러 상세 정보 로그만 유지
   
-  # 로그에서 제외할 정보 유형들
+  # 로그에서 제외할 정보 유형들 (대부분의 상세 로그 제외)
   log_exclude:
+    - "file_processing"        # 파일 처리 과정 로그 제외
+    - "sql_extraction"         # SQL 추출 과정 로그 제외
+    - "component_registration" # 컴포넌트 등록 과정 로그 제외
+    - "join_analysis"          # 조인 분석 과정 로그 제외
+    - "table_extraction"       # 테이블 추출 과정 로그 제외
     - "debug_details"          # 디버그 상세 정보 제외
     - "memory_usage"           # 메모리 사용량 정보 제외
+    - "statistics"             # 통계 정보 제외
+    - "progress"               # 진행 상황 로그 제외
 
 # ========================================
 # 로그 레벨 설명

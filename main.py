@@ -107,11 +107,11 @@ def main():
                     set_global_project_info(project_name, project_id)
                     info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
                 else:
-                    warning("프로젝트 ID 획득 실패")
+                    handle_error(Exception("프로젝트 ID 획득 실패"), "프로젝트 ID 획득 실패")
             else:
-                warning("메타데이터베이스 연결 실패")
+                handle_error(Exception("메타데이터베이스 연결 실패"), "메타데이터베이스 연결 실패")
         else:
-            error("1단계 실패: 파일 스캔")
+            handle_error(Exception("1단계 실패: 파일 스캔"), "1단계 실패: 파일 스캔")
             sys.exit(1)
         
         # 8. 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
@@ -155,7 +155,21 @@ def main():
             error("4단계 실패: Java 로딩")
             sys.exit(1)
         
-        info("1-4단계 테스트 완료")
+        # 11. 5단계 실행: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)
+        info("5단계 실행: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)")
+        
+        from jsp_loading import JspLoadingEngine
+        
+        jsp_engine = JspLoadingEngine(project_name)
+        success = jsp_engine.execute_jsp_loading()
+        
+        if success:
+            info("5단계 완료: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)")
+        else:
+            error("5단계 실패: JSP 로딩")
+            sys.exit(1)
+        
+        info("1-5단계 테스트 완료")
         
     except KeyboardInterrupt:
         info("사용자에 의해 중단됨")

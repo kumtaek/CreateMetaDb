@@ -1,0 +1,60 @@
+=== 메서드 호출 추출 디버깅 ===
+=== 스크립틀릿 내용 ===
+
+        List<User> users = userService.getUserList();
+        String message = userController.getMessage();
+        int count = dataService.getCount();
+    
+
+=== 스크립틀릿에서 메서드 호출 추출 ===
+
+패턴 1: (\w+)\.(\w+)\s*\(
+  매치 1: ('userService', 'getUserList')
+  매치 2: ('userController', 'getMessage')
+  매치 3: ('dataService', 'getCount')
+
+패턴 2: (\w+)\s*\([^)]*\)
+  매치 1: ('getUserList',)
+  매치 2: ('getMessage',)
+  매치 3: ('getCount',)
+
+패턴 3: (\w+Service)\.(\w+)\s*\(
+  매치 1: ('userService', 'getUserList')
+  매치 2: ('dataService', 'getCount')
+
+패턴 4: (\w+Controller)\.(\w+)\s*\(
+  매치 1: ('userController', 'getMessage')
+
+패턴 5: (\w+Mapper)\.(\w+)\s*\(
+  매치 없음
+
+패턴 6: (\w+Dao)\.(\w+)\s*\(
+  매치 없음
+
+=== 표현식 내용 ===
+
+        userService.getUserCount()
+        userController.getCurrentMessage()
+    
+
+=== 표현식에서 메서드 호출 추출 ===
+
+패턴 1: (\w+)\.(\w+)\s*\(
+  매치 1: ('userService', 'getUserCount')
+  매치 2: ('userController', 'getCurrentMessage')
+
+패턴 2: (\w+)\s*\([^)]*\)
+  매치 1: ('getUserCount',)
+  매치 2: ('getCurrentMessage',)
+
+패턴 3: (\w+Service)\.(\w+)\s*\(
+  매치 1: ('userService', 'getUserCount')
+
+패턴 4: (\w+Controller)\.(\w+)\s*\(
+  매치 1: ('userController', 'getCurrentMessage')
+
+패턴 5: (\w+Mapper)\.(\w+)\s*\(
+  매치 없음
+
+패턴 6: (\w+Dao)\.(\w+)\s*\(
+  매치 없음

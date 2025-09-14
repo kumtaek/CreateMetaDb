@@ -1,0 +1,7 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\temp\debug_xml_collection.py", line 17, in debug_xml_collection
+    xml_config = config_utils.load_config('config/parser/xml_parser_config.yaml')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ConfigUtils' object has no attribute 'load_config'. Did you mean: 'load_yaml_config'?
+오류 발생: 'ConfigUtils' object has no attribute 'load_config'

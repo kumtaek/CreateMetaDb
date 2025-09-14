@@ -1,0 +1,1276 @@
+2025-09-14 23:43:16,374 - SourceAnalyzer - INFO - main.py:17 - Recursion limit set to: 50
+2025-09-14 23:43:16,375 - SourceAnalyzer - INFO - main.py:25 - 오래된 로그 파일 정리 시작
+2025-09-14 23:43:16,376 - SourceAnalyzer - INFO - file_utils.py:362 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-14 23:43:16,376 - SourceAnalyzer - INFO - main.py:30 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-14 23:43:16,376 - SourceAnalyzer - INFO - main.py:33 - SourceAnalyzer 시작
+2025-09-14 23:43:16,382 - SourceAnalyzer - INFO - main.py:44 - 분석 대상 프로젝트: sampleSrc
+2025-09-14 23:43:16,382 - SourceAnalyzer - INFO - main.py:61 - 분석 옵션:
+2025-09-14 23:43:16,382 - SourceAnalyzer - INFO - main.py:62 -   - 메타데이터베이스 초기화: False
+2025-09-14 23:43:16,383 - SourceAnalyzer - INFO - main.py:63 -   - 상세 로그: False
+2025-09-14 23:43:16,383 - SourceAnalyzer - INFO - main.py:64 -   - 출력 형식: html
+2025-09-14 23:43:16,383 - SourceAnalyzer - INFO - main.py:65 -   - 드라이런 모드: False
+2025-09-14 23:43:16,383 - SourceAnalyzer - INFO - main.py:66 -   - 강제 실행: False
+2025-09-14 23:43:16,383 - SourceAnalyzer - INFO - main.py:75 - 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+2025-09-14 23:43:16,386 - SourceAnalyzer - INFO - file_loading.py:86 - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-14 23:43:16,630 - SourceAnalyzer - INFO - file_loading.py:1161 - === 파일 스캔 완료 ===
+2025-09-14 23:43:16,633 - SourceAnalyzer - INFO - main.py:89 - 1단계 완료: 파일 정보 저장
+2025-09-14 23:43:16,635 - SourceAnalyzer - INFO - main.py:108 - 전역 프로젝트 정보 설정: sampleSrc (ID: 1)
+2025-09-14 23:43:16,635 - SourceAnalyzer - INFO - main.py:118 - 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-14 23:43:16,635 - SourceAnalyzer - INFO - file_loading.py:1181 - === 데이터베이스 로딩 시작: 데이터베이스 구조 저장 ===
+2025-09-14 23:43:16,637 - SourceAnalyzer - INFO - file_utils.py:55 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TABLES.csv
+2025-09-14 23:43:16,637 - SourceAnalyzer - INFO - file_loading.py:547 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TABLES.csv, 16개 행
+2025-09-14 23:43:16,639 - SourceAnalyzer - INFO - file_loading.py:644 - 테이블 정보 저장 완료: 16개 테이블 (오류: 0개)
+2025-09-14 23:43:16,640 - SourceAnalyzer - INFO - file_utils.py:55 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TAB_COLUMNS.csv
+2025-09-14 23:43:16,640 - SourceAnalyzer - INFO - file_loading.py:547 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TAB_COLUMNS.csv, 91개 행
+2025-09-14 23:43:16,644 - SourceAnalyzer - INFO - file_loading.py:762 - 컬럼 정보 저장 완료: 91개 컬럼 (오류: 0개)
+2025-09-14 23:43:16,646 - SourceAnalyzer - INFO - file_loading.py:829 - 테이블 컴포넌트 생성 완료: 25개
+2025-09-14 23:43:16,654 - SourceAnalyzer - INFO - file_loading.py:909 - 컬럼 컴포넌트 생성 완료: 108개
+2025-09-14 23:43:16,656 - SourceAnalyzer - INFO - file_loading.py:967 - 컬럼 component_id 업데이트 완료: 108개
+2025-09-14 23:43:16,660 - SourceAnalyzer - INFO - file_loading.py:1212 - === 데이터베이스 로딩 완료 ===
+2025-09-14 23:43:16,660 - SourceAnalyzer - INFO - main.py:125 - 2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-14 23:43:16,660 - SourceAnalyzer - INFO - main.py:131 - 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-14 23:43:16,697 - SourceAnalyzer - INFO - sql_content_manager.py:63 - SQL Content 데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\SqlContent.db
+2025-09-14 23:43:16,697 - SourceAnalyzer - INFO - xml_loading.py:70 - === XML 로딩 시작: 3~4단계 통합 처리 ===
+2025-09-14 23:43:16,704 - SourceAnalyzer - INFO - xml_parser.py:152 - MyBatis XML 파일 수집 완료: 6개
+2025-09-14 23:43:16,704 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 23:43:16,705 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\com\example\dynamicquery
+2025-09-14 23:43:16,705 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 4개
+2025-09-14 23:43:16,705 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 4
+2025-09-14 23:43:16,737 - SourceAnalyzer - INFO - xml_loading.py:211 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 23:43:16,737 - SourceAnalyzer - INFO - xml_loading.py:212 - 전달받은 SQL 쿼리 수: 8개
+2025-09-14 23:43:16,738 - SourceAnalyzer - INFO - xml_loading.py:220 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 8}
+2025-09-14 23:43:16,739 - SourceAnalyzer - INFO - xml_loading.py:233 - 프로젝트 ID: 1
+2025-09-14 23:43:16,739 - SourceAnalyzer - INFO - xml_loading.py:294 - SQL 컴포넌트 저장 완료: 8/8개 성공
+2025-09-14 23:43:16,740 - SourceAnalyzer - INFO - xml_loading.py:393 - JOIN 관계 저장 완료: 5개
+2025-09-14 23:43:16,740 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 23:43:16,740 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-14 23:43:16,741 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 5개
+2025-09-14 23:43:16,741 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 35
+2025-09-14 23:43:16,762 - SourceAnalyzer - INFO - xml_loading.py:211 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 23:43:16,762 - SourceAnalyzer - INFO - xml_loading.py:212 - 전달받은 SQL 쿼리 수: 5개
+2025-09-14 23:43:16,762 - SourceAnalyzer - INFO - xml_loading.py:220 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5}
+2025-09-14 23:43:16,762 - SourceAnalyzer - INFO - xml_loading.py:233 - 프로젝트 ID: 1
+2025-09-14 23:43:16,763 - SourceAnalyzer - INFO - xml_loading.py:294 - SQL 컴포넌트 저장 완료: 5/5개 성공
+2025-09-14 23:43:16,763 - SourceAnalyzer - INFO - xml_loading.py:393 - JOIN 관계 저장 완료: 8개
+2025-09-14 23:43:16,764 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 23:43:16,764 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-14 23:43:16,764 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 5개
+2025-09-14 23:43:16,764 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 35
+2025-09-14 23:43:16,771 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 23:43:16,771 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-14 23:43:16,771 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 5개
+2025-09-14 23:43:16,772 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 35
+2025-09-14 23:43:16,790 - SourceAnalyzer - INFO - xml_loading.py:211 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 23:43:16,790 - SourceAnalyzer - INFO - xml_loading.py:212 - 전달받은 SQL 쿼리 수: 12개
+2025-09-14 23:43:16,790 - SourceAnalyzer - INFO - xml_loading.py:220 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 9, 'insert': 1, 'update': 1, 'delete': 1}
+2025-09-14 23:43:16,790 - SourceAnalyzer - INFO - xml_loading.py:233 - 프로젝트 ID: 1
+2025-09-14 23:43:16,791 - SourceAnalyzer - INFO - xml_loading.py:294 - SQL 컴포넌트 저장 완료: 12/12개 성공
+2025-09-14 23:43:16,791 - SourceAnalyzer - INFO - xml_loading.py:393 - JOIN 관계 저장 완료: 4개
+2025-09-14 23:43:16,792 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 23:43:16,792 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-14 23:43:16,792 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 5개
+2025-09-14 23:43:16,792 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 35
+2025-09-14 23:43:16,814 - SourceAnalyzer - INFO - xml_loading.py:211 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 23:43:16,815 - SourceAnalyzer - INFO - xml_loading.py:212 - 전달받은 SQL 쿼리 수: 9개
+2025-09-14 23:43:16,816 - SourceAnalyzer - INFO - xml_loading.py:220 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5, 'update': 2, 'insert': 1, 'delete': 1}
+2025-09-14 23:43:16,816 - SourceAnalyzer - INFO - xml_loading.py:233 - 프로젝트 ID: 1
+2025-09-14 23:43:16,816 - SourceAnalyzer - INFO - xml_loading.py:294 - SQL 컴포넌트 저장 완료: 9/9개 성공
+2025-09-14 23:43:16,817 - SourceAnalyzer - INFO - xml_loading.py:393 - JOIN 관계 저장 완료: 2개
+2025-09-14 23:43:16,817 - SourceAnalyzer - INFO - xml_loading.py:109 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 23:43:16,817 - SourceAnalyzer - INFO - xml_loading.py:110 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-14 23:43:16,817 - SourceAnalyzer - INFO - xml_loading.py:121 - SQL 쿼리 결과: 5개
+2025-09-14 23:43:16,817 - SourceAnalyzer - INFO - xml_loading.py:125 - file_id 조회 성공: 35
+2025-09-14 23:43:16,860 - SourceAnalyzer - INFO - xml_loading.py:211 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 23:43:16,860 - SourceAnalyzer - INFO - xml_loading.py:212 - 전달받은 SQL 쿼리 수: 22개
+2025-09-14 23:43:16,861 - SourceAnalyzer - INFO - xml_loading.py:220 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 15, 'update': 2, 'insert': 2, 'delete': 1, 'merge': 2}
+2025-09-14 23:43:16,861 - SourceAnalyzer - INFO - xml_loading.py:233 - 프로젝트 ID: 1
+2025-09-14 23:43:16,862 - SourceAnalyzer - INFO - xml_loading.py:294 - SQL 컴포넌트 저장 완료: 22/22개 성공
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:393 - JOIN 관계 저장 완료: 8개
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:890 - === XML 로딩 통계 ===
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:891 - 처리된 XML 파일: 5개
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:892 - 추출된 SQL 쿼리: 56개
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:893 - 생성된 SQL 컴포넌트: 56개
+2025-09-14 23:43:16,863 - SourceAnalyzer - INFO - xml_loading.py:894 - 생성된 JOIN 관계: 30개
+2025-09-14 23:43:16,864 - SourceAnalyzer - INFO - xml_loading.py:895 - 생성된 inferred 테이블: 0개
+2025-09-14 23:43:16,864 - SourceAnalyzer - INFO - xml_loading.py:896 - 생성된 inferred 컬럼: 0개
+2025-09-14 23:43:16,864 - SourceAnalyzer - INFO - xml_loading.py:897 - 오류 발생: 1개
+2025-09-14 23:43:16,864 - SourceAnalyzer - INFO - xml_loading.py:906 - === SQL Content 통계 ===
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:907 - 저장된 SQL 내용: 0개
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:908 - 총 압축 크기: None bytes
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:913 - 평균 압축 크기: 0.00 bytes
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:914 - 최대 압축 크기: None bytes
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:915 - 최소 압축 크기: None bytes
+2025-09-14 23:43:16,865 - SourceAnalyzer - INFO - xml_loading.py:180 - === XML 로딩 완료 ===
+2025-09-14 23:43:16,867 - SourceAnalyzer - INFO - sql_content_manager.py:282 - SQL Content 데이터베이스 연결 해제
+2025-09-14 23:43:16,867 - SourceAnalyzer - INFO - main.py:139 - 3단계 완료: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-14 23:43:16,867 - SourceAnalyzer - INFO - main.py:145 - 4단계 실행: Java 소스코드 분석 및 관계 생성
+2025-09-14 23:43:16,897 - SourceAnalyzer - INFO - java_parser.py:191 - 정규식 패턴 컴파일 완료: 클래스 12개, 메서드 4개, 패키지 7개, 상속 6개, CALL_QUERY 18개, CALL_METHOD 7개, USE_TABLE 16개
+2025-09-14 23:43:16,897 - SourceAnalyzer - INFO - java_loading.py:71 - === Java 로딩 시작: 4단계 통합 처리 ===
+2025-09-14 23:43:16,907 - SourceAnalyzer - INFO - java_parser.py:243 - Java 파일 수집 완료: 30개
+2025-09-14 23:43:16,908 - SourceAnalyzer - INFO - java_loading.py:85 - 처리할 Java 파일 수: 30개
+2025-09-14 23:43:16,910 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java
+2025-09-14 23:43:16,912 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,912 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: UserDao
+2025-09-14 23:43:16,912 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateAndSetDefaults
+2025-09-14 23:43:16,913 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: UserDao
+2025-09-14 23:43:16,913 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: findUsersByCondition
+2025-09-14 23:43:16,914 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: findUsersByConditionAnsi
+2025-09-14 23:43:16,914 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateAndSetDefaults
+2025-09-14 23:43:16,915 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processUserData
+2025-09-14 23:43:16,915 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: for
+2025-09-14 23:43:16,919 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java ===
+2025-09-14 23:43:16,919 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:16,920 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 4
+2025-09-14 23:43:16,920 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java ===
+2025-09-14 23:43:16,921 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 1개
+2025-09-14 23:43:16,921 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 1개
+2025-09-14 23:43:16,921 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 78개
+2025-09-14 23:43:16,921 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.UserDao → UserDao (src_id == dst_id)
+2025-09-14 23:43:16,922 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.validateAndSetDefaults → validateAndSetDefaults (src_id == dst_id)
+2025-09-14 23:43:16,922 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.UserDao → UserDao (src_id == dst_id)
+2025-09-14 23:43:16,923 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.findUsersByCondition → findUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:16,923 - SourceAnalyzer - INFO - java_loading.py:768 - inferred 메서드 생성 시도: findUsersWithAnsiJoin
+2025-09-14 23:43:16,923 - SourceAnalyzer - INFO - java_loading.py:1098 - inferred 메서드 생성 완료: findUsersWithAnsiJoin (ID: 100)
+2025-09-14 23:43:16,923 - SourceAnalyzer - INFO - java_loading.py:771 - inferred 메서드 생성 성공: findUsersWithAnsiJoin (ID: 100)
+2025-09-14 23:43:16,924 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.findUsersByConditionAnsi → findUsersByConditionAnsi (src_id == dst_id)
+2025-09-14 23:43:16,924 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserDao.validateAndSetDefaults → validateAndSetDefaults (src_id == dst_id)
+2025-09-14 23:43:16,927 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 72개
+2025-09-14 23:43:16,937 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java
+2025-09-14 23:43:16,937 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,938 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java ===
+2025-09-14 23:43:16,938 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:16,938 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 5
+2025-09-14 23:43:16,938 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java ===
+2025-09-14 23:43:16,940 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java
+2025-09-14 23:43:16,940 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,940 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getSearchKeyword
+2025-09-14 23:43:16,940 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setSearchKeyword
+2025-09-14 23:43:16,940 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserStatus
+2025-09-14 23:43:16,941 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setUserStatus
+2025-09-14 23:43:16,941 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDeptName
+2025-09-14 23:43:16,941 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setDeptName
+2025-09-14 23:43:16,942 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getSortOrder
+2025-09-14 23:43:16,942 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setSortOrder
+2025-09-14 23:43:16,942 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getSearchKeyword
+2025-09-14 23:43:16,943 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setSearchKeyword
+2025-09-14 23:43:16,943 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserStatus
+2025-09-14 23:43:16,943 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setUserStatus
+2025-09-14 23:43:16,943 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDeptName
+2025-09-14 23:43:16,944 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setDeptName
+2025-09-14 23:43:16,944 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getSortOrder
+2025-09-14 23:43:16,944 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setSortOrder
+2025-09-14 23:43:16,945 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java ===
+2025-09-14 23:43:16,945 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:16,946 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 7
+2025-09-14 23:43:16,946 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java ===
+2025-09-14 23:43:16,947 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 10개
+2025-09-14 23:43:16,947 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserSearchDto.getSearchKeyword → getSearchKeyword (src_id == dst_id)
+2025-09-14 23:43:16,947 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserSearchDto.setSearchKeyword → setSearchKeyword (src_id == dst_id)
+2025-09-14 23:43:16,947 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserSearchDto.getSearchKeyword → getSearchKeyword (src_id == dst_id)
+2025-09-14 23:43:16,948 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserSearchDto.setSearchKeyword → setSearchKeyword (src_id == dst_id)
+2025-09-14 23:43:16,948 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 6개
+2025-09-14 23:43:16,950 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java
+2025-09-14 23:43:16,950 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,950 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: AnnotatedClass
+2025-09-14 23:43:16,951 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: toString
+2025-09-14 23:43:16,951 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodWithAnnotationParams
+2025-09-14 23:43:16,952 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: customAnnotatedMethod
+2025-09-14 23:43:16,952 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: nestedAnnotationMethod
+2025-09-14 23:43:16,952 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: AnnotatedClass
+2025-09-14 23:43:16,953 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: toString
+2025-09-14 23:43:16,953 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodWithAnnotationParams
+2025-09-14 23:43:16,953 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: customAnnotatedMethod
+2025-09-14 23:43:16,954 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: nestedAnnotationMethod
+2025-09-14 23:43:16,955 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java ===
+2025-09-14 23:43:16,955 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 6개
+2025-09-14 23:43:16,955 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 8
+2025-09-14 23:43:16,956 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java ===
+2025-09-14 23:43:16,956 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 4개
+2025-09-14 23:43:16,956 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 4개
+2025-09-14 23:43:16,958 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java
+2025-09-14 23:43:16,969 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,970 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: CommentHeavyClass
+2025-09-14 23:43:16,971 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getSimpleField
+2025-09-14 23:43:16,971 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodWithFakeCodeInComment
+2025-09-14 23:43:16,971 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processWithComplexJavaDoc
+2025-09-14 23:43:16,971 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: newProcessMethod
+2025-09-14 23:43:16,972 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodAfterNestedComment
+2025-09-14 23:43:16,972 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodWithMixedCommentsAndStrings
+2025-09-14 23:43:16,972 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodWithTodoComments
+2025-09-14 23:43:16,973 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: CommentHeavyClass
+2025-09-14 23:43:16,974 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getSimpleField
+2025-09-14 23:43:16,974 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodWithFakeCodeInComment
+2025-09-14 23:43:16,974 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processWithComplexJavaDoc
+2025-09-14 23:43:16,974 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:16,975 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: newProcessMethod
+2025-09-14 23:43:16,975 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodAfterNestedComment
+2025-09-14 23:43:16,975 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodWithMixedCommentsAndStrings
+2025-09-14 23:43:16,976 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodWithTodoComments
+2025-09-14 23:43:16,978 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java ===
+2025-09-14 23:43:16,978 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:16,978 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 9
+2025-09-14 23:43:16,979 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java ===
+2025-09-14 23:43:16,979 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 26개
+2025-09-14 23:43:16,980 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CommentHeavyClass.processWithComplexJavaDoc → processWithComplexJavaDoc (src_id == dst_id)
+2025-09-14 23:43:16,980 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CommentHeavyClass.methodAfterNestedComment → methodAfterNestedComment (src_id == dst_id)
+2025-09-14 23:43:16,980 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CommentHeavyClass.processWithComplexJavaDoc → processWithComplexJavaDoc (src_id == dst_id)
+2025-09-14 23:43:16,981 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CommentHeavyClass.methodAfterNestedComment → methodAfterNestedComment (src_id == dst_id)
+2025-09-14 23:43:16,982 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 22개
+2025-09-14 23:43:16,985 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java
+2025-09-14 23:43:16,985 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:16,985 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDataCache
+2025-09-14 23:43:16,985 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setDataCache
+2025-09-14 23:43:16,986 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProcessedDataKeys
+2025-09-14 23:43:16,986 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processBusinessData
+2025-09-14 23:43:16,986 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processBatchData
+2025-09-14 23:43:16,986 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: clearCache
+2025-09-14 23:43:16,987 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getSystemStatus
+2025-09-14 23:43:16,987 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: processUserData
+2025-09-14 23:43:16,988 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: processOrderData
+2025-09-14 23:43:16,988 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: processProductData
+2025-09-14 23:43:16,989 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: processGenericData
+2025-09-14 23:43:16,989 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: updateProcessingQueue
+2025-09-14 23:43:16,989 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateProcessingResult
+2025-09-14 23:43:17,002 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDataCache
+2025-09-14 23:43:17,002 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setDataCache
+2025-09-14 23:43:17,003 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProcessedDataKeys
+2025-09-14 23:43:17,003 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processBusinessData
+2025-09-14 23:43:17,003 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,004 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processUserData
+2025-09-14 23:43:17,004 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processOrderData
+2025-09-14 23:43:17,005 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processProductData
+2025-09-14 23:43:17,006 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processGenericData
+2025-09-14 23:43:17,006 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateProcessingQueue
+2025-09-14 23:43:17,006 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateProcessingResult
+2025-09-14 23:43:17,007 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,007 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processBatchData
+2025-09-14 23:43:17,007 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: clearCache
+2025-09-14 23:43:17,008 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getSystemStatus
+2025-09-14 23:43:17,014 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java ===
+2025-09-14 23:43:17,014 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,014 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 10
+2025-09-14 23:43:17,016 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java ===
+2025-09-14 23:43:17,016 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 124개
+2025-09-14 23:43:17,016 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LargeBusinessClass.setDataCache → setDataCache (src_id == dst_id)
+2025-09-14 23:43:17,016 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LargeBusinessClass.getProcessedDataKeys → getProcessedDataKeys (src_id == dst_id)
+2025-09-14 23:43:17,017 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LargeBusinessClass.setDataCache → setDataCache (src_id == dst_id)
+2025-09-14 23:43:17,018 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LargeBusinessClass.getProcessedDataKeys → getProcessedDataKeys (src_id == dst_id)
+2025-09-14 23:43:17,021 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 120개
+2025-09-14 23:43:17,034 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java
+2025-09-14 23:43:17,034 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,034 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: wrongMethod
+2025-09-14 23:43:17,035 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: searchErrors
+2025-09-14 23:43:17,035 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUsersByType
+2025-09-14 23:43:17,035 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: createUser
+2025-09-14 23:43:17,036 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: wrongMethod
+2025-09-14 23:43:17,037 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,037 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: while
+2025-09-14 23:43:17,037 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: searchErrors
+2025-09-14 23:43:17,038 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUsersByType
+2025-09-14 23:43:17,038 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: switch
+2025-09-14 23:43:17,039 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: createUser
+2025-09-14 23:43:17,041 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java ===
+2025-09-14 23:43:17,041 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,042 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 11
+2025-09-14 23:43:17,042 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java ===
+2025-09-14 23:43:17,042 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 32개
+2025-09-14 23:43:17,043 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ErrorController.wrongMethod → wrongMethod (src_id == dst_id)
+2025-09-14 23:43:17,043 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,043 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ErrorController.wrongMethod → wrongMethod (src_id == dst_id)
+2025-09-14 23:43:17,044 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,045 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 28개
+2025-09-14 23:43:17,047 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java
+2025-09-14 23:43:17,047 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,047 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,048 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserById
+2025-09-14 23:43:17,048 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: createUser
+2025-09-14 23:43:17,048 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateUser
+2025-09-14 23:43:17,049 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: deleteUser
+2025-09-14 23:43:17,049 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,049 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserById
+2025-09-14 23:43:17,050 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: createUser
+2025-09-14 23:43:17,050 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,051 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateUser
+2025-09-14 23:43:17,051 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,051 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,051 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,052 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: deleteUser
+2025-09-14 23:43:17,052 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,055 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java ===
+2025-09-14 23:43:17,065 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,065 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 12
+2025-09-14 23:43:17,066 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java ===
+2025-09-14 23:43:17,066 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 49개
+2025-09-14 23:43:17,066 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,067 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,067 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,067 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,067 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,068 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,068 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,068 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,069 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,069 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,069 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,069 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,070 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,070 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,070 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,071 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,071 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,071 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,072 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 31개
+2025-09-14 23:43:17,075 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java
+2025-09-14 23:43:17,075 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,075 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: searchProducts
+2025-09-14 23:43:17,075 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductsByCategory
+2025-09-14 23:43:17,076 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateProductStock
+2025-09-14 23:43:17,077 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: searchProducts
+2025-09-14 23:43:17,078 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductsByCategory
+2025-09-14 23:43:17,078 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateProductStock
+2025-09-14 23:43:17,080 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java ===
+2025-09-14 23:43:17,080 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,080 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 13
+2025-09-14 23:43:17,081 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java ===
+2025-09-14 23:43:17,081 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 22개
+2025-09-14 23:43:17,083 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 22개
+2025-09-14 23:43:17,084 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java
+2025-09-14 23:43:17,084 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,096 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: test1
+2025-09-14 23:43:17,096 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: test2
+2025-09-14 23:43:17,096 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,097 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserById
+2025-09-14 23:43:17,097 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: createUser
+2025-09-14 23:43:17,097 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: test1
+2025-09-14 23:43:17,098 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: test2
+2025-09-14 23:43:17,098 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,098 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,099 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserById
+2025-09-14 23:43:17,099 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: createUser
+2025-09-14 23:43:17,099 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,101 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java ===
+2025-09-14 23:43:17,102 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,102 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 14
+2025-09-14 23:43:17,102 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java ===
+2025-09-14 23:43:17,103 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 37개
+2025-09-14 23:43:17,103 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.test1 → test1 (src_id == dst_id)
+2025-09-14 23:43:17,103 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.test2 → test2 (src_id == dst_id)
+2025-09-14 23:43:17,103 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,104 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,104 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,104 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,104 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,105 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,105 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,105 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,105 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,106 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.test1 → test1 (src_id == dst_id)
+2025-09-14 23:43:17,106 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.test2 → test2 (src_id == dst_id)
+2025-09-14 23:43:17,106 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,106 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,107 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,107 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,107 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,107 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,108 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,108 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,108 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorController.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,109 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 15개
+2025-09-14 23:43:17,116 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java
+2025-09-14 23:43:17,128 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,128 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateSearchParameters
+2025-09-14 23:43:17,129 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateAdvancedSearchParameters
+2025-09-14 23:43:17,129 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: calculateUserStatistics
+2025-09-14 23:43:17,130 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: analyzeSearchResults
+2025-09-14 23:43:17,130 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: calculateTypeStatistics
+2025-09-14 23:43:17,131 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: applyPaging
+2025-09-14 23:43:17,131 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidUserType
+2025-09-14 23:43:17,132 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: calculateAgeRange
+2025-09-14 23:43:17,133 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: calculateStatusDistribution
+2025-09-14 23:43:17,133 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logUserListAccess
+2025-09-14 23:43:17,133 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logAdvancedSearch
+2025-09-14 23:43:17,134 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logTypeBasedAccess
+2025-09-14 23:43:17,135 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,136 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,136 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,137 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,137 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,138 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,138 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateSearchParameters
+2025-09-14 23:43:17,139 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateAdvancedSearchParameters
+2025-09-14 23:43:17,140 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,140 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,140 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: calculateUserStatistics
+2025-09-14 23:43:17,141 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: analyzeSearchResults
+2025-09-14 23:43:17,142 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: calculateTypeStatistics
+2025-09-14 23:43:17,143 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: applyPaging
+2025-09-14 23:43:17,144 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidUserType
+2025-09-14 23:43:17,144 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: calculateAgeRange
+2025-09-14 23:43:17,145 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: calculateStatusDistribution
+2025-09-14 23:43:17,145 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logUserListAccess
+2025-09-14 23:43:17,146 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logAdvancedSearch
+2025-09-14 23:43:17,146 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logTypeBasedAccess
+2025-09-14 23:43:17,178 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java ===
+2025-09-14 23:43:17,178 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,179 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 15
+2025-09-14 23:43:17,179 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java ===
+2025-09-14 23:43:17,180 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 724개
+2025-09-14 23:43:17,205 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 724개
+2025-09-14 23:43:17,206 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java
+2025-09-14 23:43:17,206 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,207 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDescription
+2025-09-14 23:43:17,207 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: canTransitionTo
+2025-09-14 23:43:17,208 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: OrderStatus
+2025-09-14 23:43:17,208 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDescription
+2025-09-14 23:43:17,208 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: canTransitionTo
+2025-09-14 23:43:17,208 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: switch
+2025-09-14 23:43:17,209 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java ===
+2025-09-14 23:43:17,209 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,209 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 16
+2025-09-14 23:43:17,210 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java ===
+2025-09-14 23:43:17,210 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1개
+2025-09-14 23:43:17,210 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1개
+2025-09-14 23:43:17,211 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java
+2025-09-14 23:43:17,211 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,212 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: SyntaxErrorClass
+2025-09-14 23:43:17,212 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getValidField
+2025-09-14 23:43:17,212 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: methodWithMissingBrace
+2025-09-14 23:43:17,212 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: anotherValidMethod
+2025-09-14 23:43:17,213 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: finalMethod
+2025-09-14 23:43:17,213 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: SyntaxErrorClass
+2025-09-14 23:43:17,214 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getValidField
+2025-09-14 23:43:17,214 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: methodWithMissingBrace
+2025-09-14 23:43:17,214 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: anotherValidMethod
+2025-09-14 23:43:17,214 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: finalMethod
+2025-09-14 23:43:17,215 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java ===
+2025-09-14 23:43:17,215 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,216 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 17
+2025-09-14 23:43:17,216 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java ===
+2025-09-14 23:43:17,216 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 4개
+2025-09-14 23:43:17,217 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorClass.getValidField → getValidField (src_id == dst_id)
+2025-09-14 23:43:17,217 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: SyntaxErrorClass.getValidField → getValidField (src_id == dst_id)
+2025-09-14 23:43:17,217 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 2개
+2025-09-14 23:43:17,219 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java
+2025-09-14 23:43:17,219 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,220 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: GenericClass
+2025-09-14 23:43:17,220 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getData
+2025-09-14 23:43:17,221 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: compareWithWildcard
+2025-09-14 23:43:17,221 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: withData
+2025-09-14 23:43:17,221 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: withDataMap
+2025-09-14 23:43:17,221 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: build
+2025-09-14 23:43:17,222 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: GenericClass
+2025-09-14 23:43:17,223 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getData
+2025-09-14 23:43:17,223 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processGenericData
+2025-09-14 23:43:17,223 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: compareWithWildcard
+2025-09-14 23:43:17,223 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,224 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,224 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: builder
+2025-09-14 23:43:17,224 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: withData
+2025-09-14 23:43:17,225 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: withDataMap
+2025-09-14 23:43:17,225 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: build
+2025-09-14 23:43:17,226 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java ===
+2025-09-14 23:43:17,227 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 3개
+2025-09-14 23:43:17,227 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 18
+2025-09-14 23:43:17,228 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java ===
+2025-09-14 23:43:17,240 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 24개
+2025-09-14 23:43:17,240 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: GenericClass.getData → getData (src_id == dst_id)
+2025-09-14 23:43:17,240 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: GenericClass.getData → getData (src_id == dst_id)
+2025-09-14 23:43:17,241 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: GenericClass.processGenericData → processGenericData (src_id == dst_id)
+2025-09-14 23:43:17,241 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: GenericClass.builder → builder (src_id == dst_id)
+2025-09-14 23:43:17,242 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 20개
+2025-09-14 23:43:17,243 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java
+2025-09-14 23:43:17,243 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,244 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: BaseService
+2025-09-14 23:43:17,244 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getServiceName
+2025-09-14 23:43:17,245 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getServiceNameWithPrefix
+2025-09-14 23:43:17,245 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processDataWithValidation
+2025-09-14 23:43:17,245 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: BaseService
+2025-09-14 23:43:17,246 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getServiceName
+2025-09-14 23:43:17,246 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getServiceNameWithPrefix
+2025-09-14 23:43:17,246 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processDataWithValidation
+2025-09-14 23:43:17,249 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java ===
+2025-09-14 23:43:17,250 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 3개
+2025-09-14 23:43:17,250 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 19
+2025-09-14 23:43:17,251 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java ===
+2025-09-14 23:43:17,251 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 60개
+2025-09-14 23:43:17,251 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.getServiceName → getServiceName (src_id == dst_id)
+2025-09-14 23:43:17,251 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.getServiceNameWithPrefix → getServiceNameWithPrefix (src_id == dst_id)
+2025-09-14 23:43:17,252 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.processDataWithValidation → processDataWithValidation (src_id == dst_id)
+2025-09-14 23:43:17,252 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.getServiceName → getServiceName (src_id == dst_id)
+2025-09-14 23:43:17,252 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.getServiceNameWithPrefix → getServiceNameWithPrefix (src_id == dst_id)
+2025-09-14 23:43:17,253 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: BaseService.processDataWithValidation → processDataWithValidation (src_id == dst_id)
+2025-09-14 23:43:17,255 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 54개
+2025-09-14 23:43:17,255 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java
+2025-09-14 23:43:17,256 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,256 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: ConcreteService
+2025-09-14 23:43:17,256 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: executeService
+2025-09-14 23:43:17,257 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: performAdditionalTask
+2025-09-14 23:43:17,257 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAdditionalInfo
+2025-09-14 23:43:17,257 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: ConcreteService
+2025-09-14 23:43:17,257 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: executeService
+2025-09-14 23:43:17,258 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: performAdditionalTask
+2025-09-14 23:43:17,258 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAdditionalInfo
+2025-09-14 23:43:17,259 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java ===
+2025-09-14 23:43:17,259 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,271 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 20
+2025-09-14 23:43:17,272 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java ===
+2025-09-14 23:43:17,272 - SourceAnalyzer - INFO - java_loading.py:440 - 저장할 상속 관계 수: 2개
+2025-09-14 23:43:17,273 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: ConcreteService (ID: 37)
+2025-09-14 23:43:17,273 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: BaseService (ID: 38)
+2025-09-14 23:43:17,273 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: ConcreteService (ID: 37)
+2025-09-14 23:43:17,273 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: BaseService (ID: 38)
+2025-09-14 23:43:17,274 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 10개
+2025-09-14 23:43:17,274 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ConcreteService.executeService → executeService (src_id == dst_id)
+2025-09-14 23:43:17,274 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ConcreteService.executeService → executeService (src_id == dst_id)
+2025-09-14 23:43:17,275 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 8개
+2025-09-14 23:43:17,276 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java
+2025-09-14 23:43:17,276 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,276 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: CreditCardProcessor
+2025-09-14 23:43:17,277 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processPayment
+2025-09-14 23:43:17,277 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: validatePayment
+2025-09-14 23:43:17,277 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processRefund
+2025-09-14 23:43:17,278 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getMerchantId
+2025-09-14 23:43:17,278 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: CreditCardProcessor
+2025-09-14 23:43:17,278 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processPayment
+2025-09-14 23:43:17,279 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validatePayment
+2025-09-14 23:43:17,279 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processRefund
+2025-09-14 23:43:17,279 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getMerchantId
+2025-09-14 23:43:17,280 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java ===
+2025-09-14 23:43:17,281 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,281 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 21
+2025-09-14 23:43:17,281 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java ===
+2025-09-14 23:43:17,282 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 11개
+2025-09-14 23:43:17,282 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CreditCardProcessor.processPayment → processPayment (src_id == dst_id)
+2025-09-14 23:43:17,282 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CreditCardProcessor.processPayment → processPayment (src_id == dst_id)
+2025-09-14 23:43:17,282 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: CreditCardProcessor.validatePayment → validatePayment (src_id == dst_id)
+2025-09-14 23:43:17,283 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 8개
+2025-09-14 23:43:17,284 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java
+2025-09-14 23:43:17,284 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,284 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java ===
+2025-09-14 23:43:17,284 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,285 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 22
+2025-09-14 23:43:17,285 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java ===
+2025-09-14 23:43:17,286 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java
+2025-09-14 23:43:17,287 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,287 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java ===
+2025-09-14 23:43:17,287 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,288 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 23
+2025-09-14 23:43:17,288 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java ===
+2025-09-14 23:43:17,289 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java
+2025-09-14 23:43:17,289 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,290 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java ===
+2025-09-14 23:43:17,290 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,290 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 24
+2025-09-14 23:43:17,290 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java ===
+2025-09-14 23:43:17,291 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java
+2025-09-14 23:43:17,302 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,303 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java ===
+2025-09-14 23:43:17,303 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,303 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 25
+2025-09-14 23:43:17,304 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java ===
+2025-09-14 23:43:17,308 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java
+2025-09-14 23:43:17,308 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,309 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: Product
+2025-09-14 23:43:17,309 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: Product
+2025-09-14 23:43:17,309 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductId
+2025-09-14 23:43:17,310 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setProductId
+2025-09-14 23:43:17,310 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductName
+2025-09-14 23:43:17,310 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setProductName
+2025-09-14 23:43:17,311 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDescription
+2025-09-14 23:43:17,311 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setDescription
+2025-09-14 23:43:17,311 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getPrice
+2025-09-14 23:43:17,311 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setPrice
+2025-09-14 23:43:17,312 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStockQuantity
+2025-09-14 23:43:17,312 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setStockQuantity
+2025-09-14 23:43:17,312 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStatus
+2025-09-14 23:43:17,313 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setStatus
+2025-09-14 23:43:17,313 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getCategoryId
+2025-09-14 23:43:17,313 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setCategoryId
+2025-09-14 23:43:17,313 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getBrandId
+2025-09-14 23:43:17,314 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setBrandId
+2025-09-14 23:43:17,314 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getSupplierId
+2025-09-14 23:43:17,314 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setSupplierId
+2025-09-14 23:43:17,314 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getWarehouseId
+2025-09-14 23:43:17,315 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setWarehouseId
+2025-09-14 23:43:17,315 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getCreatedDate
+2025-09-14 23:43:17,315 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setCreatedDate
+2025-09-14 23:43:17,315 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUpdatedDate
+2025-09-14 23:43:17,316 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setUpdatedDate
+2025-09-14 23:43:17,316 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDelYn
+2025-09-14 23:43:17,316 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setDelYn
+2025-09-14 23:43:17,316 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isActive
+2025-09-14 23:43:17,317 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isInStock
+2025-09-14 23:43:17,317 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isLowStock
+2025-09-14 23:43:17,317 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isOutOfStock
+2025-09-14 23:43:17,318 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isDeleted
+2025-09-14 23:43:17,318 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStockStatus
+2025-09-14 23:43:17,318 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getFormattedPrice
+2025-09-14 23:43:17,319 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getCategoryDisplayName
+2025-09-14 23:43:17,319 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStatusDisplayName
+2025-09-14 23:43:17,319 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isExpensive
+2025-09-14 23:43:17,320 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isCheap
+2025-09-14 23:43:17,320 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getPriceRange
+2025-09-14 23:43:17,321 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDaysSinceCreated
+2025-09-14 23:43:17,321 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isNewProduct
+2025-09-14 23:43:17,321 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isOldProduct
+2025-09-14 23:43:17,322 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductAge
+2025-09-14 23:43:17,322 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hasValidPrice
+2025-09-14 23:43:17,323 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hasValidStock
+2025-09-14 23:43:17,323 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDisplayName
+2025-09-14 23:43:17,323 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: canBeOrdered
+2025-09-14 23:43:17,339 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStockPercentage
+2025-09-14 23:43:17,339 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStockLevel
+2025-09-14 23:43:17,340 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: toString
+2025-09-14 23:43:17,340 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: equals
+2025-09-14 23:43:17,340 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hashCode
+2025-09-14 23:43:17,341 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: Product
+2025-09-14 23:43:17,341 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: Product
+2025-09-14 23:43:17,341 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductId
+2025-09-14 23:43:17,342 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setProductId
+2025-09-14 23:43:17,342 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductName
+2025-09-14 23:43:17,342 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setProductName
+2025-09-14 23:43:17,342 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDescription
+2025-09-14 23:43:17,343 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setDescription
+2025-09-14 23:43:17,343 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getPrice
+2025-09-14 23:43:17,343 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setPrice
+2025-09-14 23:43:17,343 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStockQuantity
+2025-09-14 23:43:17,344 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setStockQuantity
+2025-09-14 23:43:17,344 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStatus
+2025-09-14 23:43:17,345 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setStatus
+2025-09-14 23:43:17,345 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getCategoryId
+2025-09-14 23:43:17,345 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setCategoryId
+2025-09-14 23:43:17,345 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getBrandId
+2025-09-14 23:43:17,346 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setBrandId
+2025-09-14 23:43:17,346 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getSupplierId
+2025-09-14 23:43:17,346 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setSupplierId
+2025-09-14 23:43:17,346 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getWarehouseId
+2025-09-14 23:43:17,347 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setWarehouseId
+2025-09-14 23:43:17,347 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getCreatedDate
+2025-09-14 23:43:17,347 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setCreatedDate
+2025-09-14 23:43:17,347 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUpdatedDate
+2025-09-14 23:43:17,348 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setUpdatedDate
+2025-09-14 23:43:17,348 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDelYn
+2025-09-14 23:43:17,348 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setDelYn
+2025-09-14 23:43:17,349 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isActive
+2025-09-14 23:43:17,349 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isInStock
+2025-09-14 23:43:17,349 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isLowStock
+2025-09-14 23:43:17,350 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isOutOfStock
+2025-09-14 23:43:17,350 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isDeleted
+2025-09-14 23:43:17,350 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStockStatus
+2025-09-14 23:43:17,351 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getFormattedPrice
+2025-09-14 23:43:17,351 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,351 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getCategoryDisplayName
+2025-09-14 23:43:17,351 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,352 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: switch
+2025-09-14 23:43:17,352 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStatusDisplayName
+2025-09-14 23:43:17,353 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,353 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isExpensive
+2025-09-14 23:43:17,354 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isCheap
+2025-09-14 23:43:17,354 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getPriceRange
+2025-09-14 23:43:17,354 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,355 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDaysSinceCreated
+2025-09-14 23:43:17,355 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,355 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isNewProduct
+2025-09-14 23:43:17,369 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isOldProduct
+2025-09-14 23:43:17,370 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductAge
+2025-09-14 23:43:17,370 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,371 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,371 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,371 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,371 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hasValidPrice
+2025-09-14 23:43:17,372 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hasValidStock
+2025-09-14 23:43:17,372 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDisplayName
+2025-09-14 23:43:17,373 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: canBeOrdered
+2025-09-14 23:43:17,373 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStockPercentage
+2025-09-14 23:43:17,373 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,374 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStockLevel
+2025-09-14 23:43:17,374 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,374 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,374 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,375 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: toString
+2025-09-14 23:43:17,375 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: equals
+2025-09-14 23:43:17,375 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hashCode
+2025-09-14 23:43:17,420 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java ===
+2025-09-14 23:43:17,421 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,422 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 26
+2025-09-14 23:43:17,424 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java ===
+2025-09-14 23:43:17,425 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 634개
+2025-09-14 23:43:17,425 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.Product → Product (src_id == dst_id)
+2025-09-14 23:43:17,425 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getProductId → getProductId (src_id == dst_id)
+2025-09-14 23:43:17,426 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getStatus → getStatus (src_id == dst_id)
+2025-09-14 23:43:17,427 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isInStock → isInStock (src_id == dst_id)
+2025-09-14 23:43:17,427 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isLowStock → isLowStock (src_id == dst_id)
+2025-09-14 23:43:17,428 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isOutOfStock → isOutOfStock (src_id == dst_id)
+2025-09-14 23:43:17,428 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isDeleted → isDeleted (src_id == dst_id)
+2025-09-14 23:43:17,428 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getStockStatus → getStockStatus (src_id == dst_id)
+2025-09-14 23:43:17,429 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getFormattedPrice → getFormattedPrice (src_id == dst_id)
+2025-09-14 23:43:17,430 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getDaysSinceCreated → getDaysSinceCreated (src_id == dst_id)
+2025-09-14 23:43:17,431 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.Product → Product (src_id == dst_id)
+2025-09-14 23:43:17,432 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getProductId → getProductId (src_id == dst_id)
+2025-09-14 23:43:17,433 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getStatus → getStatus (src_id == dst_id)
+2025-09-14 23:43:17,433 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isInStock → isInStock (src_id == dst_id)
+2025-09-14 23:43:17,434 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isLowStock → isLowStock (src_id == dst_id)
+2025-09-14 23:43:17,434 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isOutOfStock → isOutOfStock (src_id == dst_id)
+2025-09-14 23:43:17,434 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.isDeleted → isDeleted (src_id == dst_id)
+2025-09-14 23:43:17,435 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getStockStatus → getStockStatus (src_id == dst_id)
+2025-09-14 23:43:17,435 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getFormattedPrice → getFormattedPrice (src_id == dst_id)
+2025-09-14 23:43:17,448 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: Product.getDaysSinceCreated → getDaysSinceCreated (src_id == dst_id)
+2025-09-14 23:43:17,462 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 614개
+2025-09-14 23:43:17,466 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java
+2025-09-14 23:43:17,467 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,467 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: User
+2025-09-14 23:43:17,467 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: User
+2025-09-14 23:43:17,471 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getId
+2025-09-14 23:43:17,472 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setId
+2025-09-14 23:43:17,472 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUsername
+2025-09-14 23:43:17,473 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setUsername
+2025-09-14 23:43:17,473 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getEmail
+2025-09-14 23:43:17,473 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setEmail
+2025-09-14 23:43:17,473 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getPassword
+2025-09-14 23:43:17,474 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setPassword
+2025-09-14 23:43:17,474 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getName
+2025-09-14 23:43:17,474 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setName
+2025-09-14 23:43:17,474 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAge
+2025-09-14 23:43:17,475 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setAge
+2025-09-14 23:43:17,475 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStatus
+2025-09-14 23:43:17,475 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setStatus
+2025-09-14 23:43:17,475 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserType
+2025-09-14 23:43:17,476 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setUserType
+2025-09-14 23:43:17,476 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getCreatedDate
+2025-09-14 23:43:17,476 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setCreatedDate
+2025-09-14 23:43:17,476 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUpdatedDate
+2025-09-14 23:43:17,477 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setUpdatedDate
+2025-09-14 23:43:17,477 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getPhone
+2025-09-14 23:43:17,477 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setPhone
+2025-09-14 23:43:17,477 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAddress
+2025-09-14 23:43:17,478 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: setAddress
+2025-09-14 23:43:17,478 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isActive
+2025-09-14 23:43:17,478 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isAdmin
+2025-09-14 23:43:17,478 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isPremium
+2025-09-14 23:43:17,479 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: isAdult
+2025-09-14 23:43:17,479 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getDisplayName
+2025-09-14 23:43:17,479 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getMaskedEmail
+2025-09-14 23:43:17,480 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getMaskedPhone
+2025-09-14 23:43:17,480 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAccountAgeInDays
+2025-09-14 23:43:17,480 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getStatusDisplayName
+2025-09-14 23:43:17,481 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserTypeDisplayName
+2025-09-14 23:43:17,481 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hasValidEmail
+2025-09-14 23:43:17,481 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hasValidPhone
+2025-09-14 23:43:17,482 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAgeGroup
+2025-09-14 23:43:17,482 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: canAccessAdminFeatures
+2025-09-14 23:43:17,482 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: canAccessPremiumFeatures
+2025-09-14 23:43:17,483 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getLastUpdateInfo
+2025-09-14 23:43:17,483 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: toString
+2025-09-14 23:43:17,483 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: equals
+2025-09-14 23:43:17,497 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: hashCode
+2025-09-14 23:43:17,497 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: User
+2025-09-14 23:43:17,497 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: User
+2025-09-14 23:43:17,498 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getId
+2025-09-14 23:43:17,498 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setId
+2025-09-14 23:43:17,499 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUsername
+2025-09-14 23:43:17,499 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setUsername
+2025-09-14 23:43:17,499 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getEmail
+2025-09-14 23:43:17,499 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setEmail
+2025-09-14 23:43:17,500 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getPassword
+2025-09-14 23:43:17,500 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setPassword
+2025-09-14 23:43:17,500 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getName
+2025-09-14 23:43:17,500 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setName
+2025-09-14 23:43:17,500 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAge
+2025-09-14 23:43:17,501 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setAge
+2025-09-14 23:43:17,501 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStatus
+2025-09-14 23:43:17,501 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setStatus
+2025-09-14 23:43:17,501 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserType
+2025-09-14 23:43:17,502 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setUserType
+2025-09-14 23:43:17,502 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getCreatedDate
+2025-09-14 23:43:17,502 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setCreatedDate
+2025-09-14 23:43:17,503 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUpdatedDate
+2025-09-14 23:43:17,503 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setUpdatedDate
+2025-09-14 23:43:17,503 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getPhone
+2025-09-14 23:43:17,503 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setPhone
+2025-09-14 23:43:17,504 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAddress
+2025-09-14 23:43:17,504 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: setAddress
+2025-09-14 23:43:17,504 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isActive
+2025-09-14 23:43:17,504 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isAdmin
+2025-09-14 23:43:17,505 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isPremium
+2025-09-14 23:43:17,505 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isAdult
+2025-09-14 23:43:17,505 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDisplayName
+2025-09-14 23:43:17,506 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getMaskedEmail
+2025-09-14 23:43:17,506 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getMaskedPhone
+2025-09-14 23:43:17,506 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAccountAgeInDays
+2025-09-14 23:43:17,507 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,507 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getStatusDisplayName
+2025-09-14 23:43:17,507 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,508 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserTypeDisplayName
+2025-09-14 23:43:17,508 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,508 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hasValidEmail
+2025-09-14 23:43:17,509 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hasValidPhone
+2025-09-14 23:43:17,509 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAgeGroup
+2025-09-14 23:43:17,510 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,510 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: canAccessAdminFeatures
+2025-09-14 23:43:17,510 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: canAccessPremiumFeatures
+2025-09-14 23:43:17,511 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getLastUpdateInfo
+2025-09-14 23:43:17,511 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,511 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,512 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,512 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: toString
+2025-09-14 23:43:17,512 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: equals
+2025-09-14 23:43:17,513 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: hashCode
+2025-09-14 23:43:17,534 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java ===
+2025-09-14 23:43:17,535 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,535 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 27
+2025-09-14 23:43:17,537 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java ===
+2025-09-14 23:43:17,537 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 318개
+2025-09-14 23:43:17,538 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.User → User (src_id == dst_id)
+2025-09-14 23:43:17,538 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getId → getId (src_id == dst_id)
+2025-09-14 23:43:17,539 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isAdmin → isAdmin (src_id == dst_id)
+2025-09-14 23:43:17,540 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isPremium → isPremium (src_id == dst_id)
+2025-09-14 23:43:17,540 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isAdult → isAdult (src_id == dst_id)
+2025-09-14 23:43:17,540 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getDisplayName → getDisplayName (src_id == dst_id)
+2025-09-14 23:43:17,541 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getMaskedEmail → getMaskedEmail (src_id == dst_id)
+2025-09-14 23:43:17,542 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.User → User (src_id == dst_id)
+2025-09-14 23:43:17,542 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getId → getId (src_id == dst_id)
+2025-09-14 23:43:17,543 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isAdmin → isAdmin (src_id == dst_id)
+2025-09-14 23:43:17,544 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isPremium → isPremium (src_id == dst_id)
+2025-09-14 23:43:17,544 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.isAdult → isAdult (src_id == dst_id)
+2025-09-14 23:43:17,544 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getDisplayName → getDisplayName (src_id == dst_id)
+2025-09-14 23:43:17,544 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: User.getMaskedEmail → getMaskedEmail (src_id == dst_id)
+2025-09-14 23:43:17,552 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 304개
+2025-09-14 23:43:17,558 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java
+2025-09-14 23:43:17,558 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,558 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: MultipleClassFile
+2025-09-14 23:43:17,559 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getMainData
+2025-09-14 23:43:17,559 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processMainData
+2025-09-14 23:43:17,559 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: HelperClass
+2025-09-14 23:43:17,560 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getHelperData
+2025-09-14 23:43:17,560 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processWithPrefix
+2025-09-14 23:43:17,560 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: formatString
+2025-09-14 23:43:17,561 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: validateData
+2025-09-14 23:43:17,561 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: FinalHelperClass
+2025-09-14 23:43:17,561 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getImmutableData
+2025-09-14 23:43:17,562 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: MultipleClassFile
+2025-09-14 23:43:17,562 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getMainData
+2025-09-14 23:43:17,562 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processMainData
+2025-09-14 23:43:17,563 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: HelperClass
+2025-09-14 23:43:17,563 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getHelperData
+2025-09-14 23:43:17,563 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processWithPrefix
+2025-09-14 23:43:17,564 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: formatString
+2025-09-14 23:43:17,564 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateData
+2025-09-14 23:43:17,564 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,565 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,565 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: FinalHelperClass
+2025-09-14 23:43:17,565 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getImmutableData
+2025-09-14 23:43:17,568 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java ===
+2025-09-14 23:43:17,569 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 6개
+2025-09-14 23:43:17,569 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 28
+2025-09-14 23:43:17,570 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java ===
+2025-09-14 23:43:17,570 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 58개
+2025-09-14 23:43:17,570 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MultipleClassFile.processMainData → processMainData (src_id == dst_id)
+2025-09-14 23:43:17,571 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: HelperClass.getHelperData → getHelperData (src_id == dst_id)
+2025-09-14 23:43:17,571 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: HelperClass.processWithPrefix → processWithPrefix (src_id == dst_id)
+2025-09-14 23:43:17,571 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UtilityClass.formatString → formatString (src_id == dst_id)
+2025-09-14 23:43:17,572 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UtilityClass.validateData → validateData (src_id == dst_id)
+2025-09-14 23:43:17,572 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: FinalHelperClass.FinalHelperClass → FinalHelperClass (src_id == dst_id)
+2025-09-14 23:43:17,572 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MultipleClassFile.processMainData → processMainData (src_id == dst_id)
+2025-09-14 23:43:17,572 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: HelperClass.getHelperData → getHelperData (src_id == dst_id)
+2025-09-14 23:43:17,573 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: HelperClass.processWithPrefix → processWithPrefix (src_id == dst_id)
+2025-09-14 23:43:17,573 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UtilityClass.formatString → formatString (src_id == dst_id)
+2025-09-14 23:43:17,573 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UtilityClass.validateData → validateData (src_id == dst_id)
+2025-09-14 23:43:17,573 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: FinalHelperClass.FinalHelperClass → FinalHelperClass (src_id == dst_id)
+2025-09-14 23:43:17,575 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 46개
+2025-09-14 23:43:17,577 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java
+2025-09-14 23:43:17,577 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,577 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserById
+2025-09-14 23:43:17,577 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,578 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateUser
+2025-09-14 23:43:17,578 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: processLargeData
+2025-09-14 23:43:17,578 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: createUser
+2025-09-14 23:43:17,579 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: processUserData
+2025-09-14 23:43:17,579 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserById
+2025-09-14 23:43:17,591 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,592 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,592 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,592 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateUser
+2025-09-14 23:43:17,593 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,593 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processLargeData
+2025-09-14 23:43:17,593 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: for
+2025-09-14 23:43:17,593 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,594 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: processUserData
+2025-09-14 23:43:17,594 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: createUser
+2025-09-14 23:43:17,594 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,595 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,597 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java ===
+2025-09-14 23:43:17,597 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,598 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 29
+2025-09-14 23:43:17,598 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java ===
+2025-09-14 23:43:17,599 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 20개
+2025-09-14 23:43:17,600 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 20개
+2025-09-14 23:43:17,600 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 56개
+2025-09-14 23:43:17,600 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,601 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,601 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.updateUser → updateUser (src_id == dst_id)
+2025-09-14 23:43:17,601 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,602 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,602 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: LogicErrorService.updateUser → updateUser (src_id == dst_id)
+2025-09-14 23:43:17,604 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 50개
+2025-09-14 23:43:17,606 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java
+2025-09-14 23:43:17,606 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,606 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,607 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserById
+2025-09-14 23:43:17,607 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: createUser
+2025-09-14 23:43:17,608 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateUser
+2025-09-14 23:43:17,608 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: deleteUser
+2025-09-14 23:43:17,608 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: searchUsers
+2025-09-14 23:43:17,609 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getAllUsers
+2025-09-14 23:43:17,609 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserById
+2025-09-14 23:43:17,609 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,610 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: createUser
+2025-09-14 23:43:17,610 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,611 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,611 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateUser
+2025-09-14 23:43:17,611 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,624 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,624 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: deleteUser
+2025-09-14 23:43:17,624 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,625 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,625 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,625 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: searchUsers
+2025-09-14 23:43:17,633 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java ===
+2025-09-14 23:43:17,633 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,634 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 30
+2025-09-14 23:43:17,634 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java ===
+2025-09-14 23:43:17,635 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 60개
+2025-09-14 23:43:17,637 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 60개
+2025-09-14 23:43:17,637 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 206개
+2025-09-14 23:43:17,638 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,638 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,639 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,640 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.updateUser → updateUser (src_id == dst_id)
+2025-09-14 23:43:17,641 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.getAllUsers → getAllUsers (src_id == dst_id)
+2025-09-14 23:43:17,641 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:17,642 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.createUser → createUser (src_id == dst_id)
+2025-09-14 23:43:17,643 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: MixedErrorService.updateUser → updateUser (src_id == dst_id)
+2025-09-14 23:43:17,648 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 198개
+2025-09-14 23:43:17,654 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java
+2025-09-14 23:43:17,654 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,655 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java ===
+2025-09-14 23:43:17,655 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,655 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 31
+2025-09-14 23:43:17,656 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java ===
+2025-09-14 23:43:17,663 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java
+2025-09-14 23:43:17,664 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,664 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductsByCondition
+2025-09-14 23:43:17,664 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductsByAdvancedCondition
+2025-09-14 23:43:17,665 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductsByCategory
+2025-09-14 23:43:17,665 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getProductById
+2025-09-14 23:43:17,665 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateProductStock
+2025-09-14 23:43:17,666 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateProductDynamic
+2025-09-14 23:43:17,667 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: deleteProductsByCondition
+2025-09-14 23:43:17,667 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateProductSearchParams
+2025-09-14 23:43:17,667 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: enhanceProductDisplay
+2025-09-14 23:43:17,668 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateAdvancedProductSearchParams
+2025-09-14 23:43:17,668 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateStockRange
+2025-09-14 23:43:17,668 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: applyDiscountLogic
+2025-09-14 23:43:17,669 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidCategoryId
+2025-09-14 23:43:17,670 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: applyCategorySpecificLogic
+2025-09-14 23:43:17,671 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: incrementProductViewCount
+2025-09-14 23:43:17,671 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: enhanceProductWithRelatedInfo
+2025-09-14 23:43:17,672 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logStockUpdate
+2025-09-14 23:43:17,673 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: sendLowStockAlert
+2025-09-14 23:43:17,673 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateProductNameUniqueness
+2025-09-14 23:43:17,674 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateProductPrice
+2025-09-14 23:43:17,674 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateStockQuantity
+2025-09-14 23:43:17,674 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logProductUpdate
+2025-09-14 23:43:17,675 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: invalidateProductCache
+2025-09-14 23:43:17,675 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateDeleteProductConditions
+2025-09-14 23:43:17,687 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: preventActiveProductDeletion
+2025-09-14 23:43:17,687 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logBulkProductDelete
+2025-09-14 23:43:17,688 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: cleanupRelatedProductData
+2025-09-14 23:43:17,688 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidProductStatus
+2025-09-14 23:43:17,689 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: formatPrice
+2025-09-14 23:43:17,689 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: getDiscountRateByCategory
+2025-09-14 23:43:17,690 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductsByCondition
+2025-09-14 23:43:17,691 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductsByAdvancedCondition
+2025-09-14 23:43:17,691 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,692 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductsByCategory
+2025-09-14 23:43:17,692 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getProductById
+2025-09-14 23:43:17,693 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,693 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateProductStock
+2025-09-14 23:43:17,694 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,694 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,695 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,695 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateProductDynamic
+2025-09-14 23:43:17,696 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: deleteProductsByCondition
+2025-09-14 23:43:17,696 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,696 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateProductSearchParams
+2025-09-14 23:43:17,697 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: enhanceProductDisplay
+2025-09-14 23:43:17,698 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateAdvancedProductSearchParams
+2025-09-14 23:43:17,698 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,699 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,699 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateStockRange
+2025-09-14 23:43:17,699 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,699 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,700 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: applyDiscountLogic
+2025-09-14 23:43:17,701 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,701 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidCategoryId
+2025-09-14 23:43:17,701 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: applyCategorySpecificLogic
+2025-09-14 23:43:17,702 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: switch
+2025-09-14 23:43:17,703 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: incrementProductViewCount
+2025-09-14 23:43:17,704 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: enhanceProductWithRelatedInfo
+2025-09-14 23:43:17,704 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logStockUpdate
+2025-09-14 23:43:17,705 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: sendLowStockAlert
+2025-09-14 23:43:17,705 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateProductNameUniqueness
+2025-09-14 23:43:17,706 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,706 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateProductPrice
+2025-09-14 23:43:17,707 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,707 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,707 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateStockQuantity
+2025-09-14 23:43:17,721 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,721 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,722 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logProductUpdate
+2025-09-14 23:43:17,722 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: invalidateProductCache
+2025-09-14 23:43:17,723 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateDeleteProductConditions
+2025-09-14 23:43:17,723 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: preventActiveProductDeletion
+2025-09-14 23:43:17,724 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logBulkProductDelete
+2025-09-14 23:43:17,724 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: cleanupRelatedProductData
+2025-09-14 23:43:17,725 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidProductStatus
+2025-09-14 23:43:17,726 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: formatPrice
+2025-09-14 23:43:17,726 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getDiscountRateByCategory
+2025-09-14 23:43:17,726 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: switch
+2025-09-14 23:43:17,795 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java ===
+2025-09-14 23:43:17,795 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,796 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 32
+2025-09-14 23:43:17,798 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java ===
+2025-09-14 23:43:17,798 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 88개
+2025-09-14 23:43:17,801 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 88개
+2025-09-14 23:43:17,802 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1352개
+2025-09-14 23:43:17,802 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductsByCondition → getProductsByCondition (src_id == dst_id)
+2025-09-14 23:43:17,802 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductsByCategory → getProductsByCategory (src_id == dst_id)
+2025-09-14 23:43:17,803 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductById → getProductById (src_id == dst_id)
+2025-09-14 23:43:17,803 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,804 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,804 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,807 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.applyDiscountLogic → applyDiscountLogic (src_id == dst_id)
+2025-09-14 23:43:17,809 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.applyCategorySpecificLogic → applyCategorySpecificLogic (src_id == dst_id)
+2025-09-14 23:43:17,811 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.incrementProductViewCount → incrementProductViewCount (src_id == dst_id)
+2025-09-14 23:43:17,813 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.enhanceProductWithRelatedInfo → enhanceProductWithRelatedInfo (src_id == dst_id)
+2025-09-14 23:43:17,814 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateProductNameUniqueness → validateProductNameUniqueness (src_id == dst_id)
+2025-09-14 23:43:17,815 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateStockQuantity → validateStockQuantity (src_id == dst_id)
+2025-09-14 23:43:17,816 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.invalidateProductCache → invalidateProductCache (src_id == dst_id)
+2025-09-14 23:43:17,817 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateDeleteProductConditions → validateDeleteProductConditions (src_id == dst_id)
+2025-09-14 23:43:17,817 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.logBulkProductDelete → logBulkProductDelete (src_id == dst_id)
+2025-09-14 23:43:17,818 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.cleanupRelatedProductData → cleanupRelatedProductData (src_id == dst_id)
+2025-09-14 23:43:17,818 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.isValidProductStatus → isValidProductStatus (src_id == dst_id)
+2025-09-14 23:43:17,819 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getDiscountRateByCategory → getDiscountRateByCategory (src_id == dst_id)
+2025-09-14 23:43:17,820 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductsByCondition → getProductsByCondition (src_id == dst_id)
+2025-09-14 23:43:17,832 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductsByCategory → getProductsByCategory (src_id == dst_id)
+2025-09-14 23:43:17,832 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getProductById → getProductById (src_id == dst_id)
+2025-09-14 23:43:17,832 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,833 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,834 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.updateProductStock → updateProductStock (src_id == dst_id)
+2025-09-14 23:43:17,835 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.deleteProductsByCondition → deleteProductsByCondition (src_id == dst_id)
+2025-09-14 23:43:17,836 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.deleteProductsByCondition → deleteProductsByCondition (src_id == dst_id)
+2025-09-14 23:43:17,836 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.deleteProductsByCondition → deleteProductsByCondition (src_id == dst_id)
+2025-09-14 23:43:17,838 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.applyDiscountLogic → applyDiscountLogic (src_id == dst_id)
+2025-09-14 23:43:17,840 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.applyCategorySpecificLogic → applyCategorySpecificLogic (src_id == dst_id)
+2025-09-14 23:43:17,842 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.incrementProductViewCount → incrementProductViewCount (src_id == dst_id)
+2025-09-14 23:43:17,844 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.enhanceProductWithRelatedInfo → enhanceProductWithRelatedInfo (src_id == dst_id)
+2025-09-14 23:43:17,845 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateProductNameUniqueness → validateProductNameUniqueness (src_id == dst_id)
+2025-09-14 23:43:17,846 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateStockQuantity → validateStockQuantity (src_id == dst_id)
+2025-09-14 23:43:17,847 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.invalidateProductCache → invalidateProductCache (src_id == dst_id)
+2025-09-14 23:43:17,847 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.validateDeleteProductConditions → validateDeleteProductConditions (src_id == dst_id)
+2025-09-14 23:43:17,848 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.logBulkProductDelete → logBulkProductDelete (src_id == dst_id)
+2025-09-14 23:43:17,849 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.cleanupRelatedProductData → cleanupRelatedProductData (src_id == dst_id)
+2025-09-14 23:43:17,849 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.isValidProductStatus → isValidProductStatus (src_id == dst_id)
+2025-09-14 23:43:17,850 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: ProductServiceImpl.getDiscountRateByCategory → getDiscountRateByCategory (src_id == dst_id)
+2025-09-14 23:43:17,880 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1313개
+2025-09-14 23:43:17,882 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java
+2025-09-14 23:43:17,882 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,882 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java ===
+2025-09-14 23:43:17,882 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,883 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 33
+2025-09-14 23:43:17,883 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java ===
+2025-09-14 23:43:17,894 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java
+2025-09-14 23:43:17,894 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-14 23:43:17,894 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUsersByCondition
+2025-09-14 23:43:17,895 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUsersByAdvancedCondition
+2025-09-14 23:43:17,895 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUsersByType
+2025-09-14 23:43:17,895 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: getUserById
+2025-09-14 23:43:17,896 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: updateUserDynamic
+2025-09-14 23:43:17,896 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 1에서 메서드 발견: deleteUsersByCondition
+2025-09-14 23:43:17,897 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateAndSanitizeParams
+2025-09-14 23:43:17,898 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: maskSensitiveData
+2025-09-14 23:43:17,898 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateAdvancedSearchParams
+2025-09-14 23:43:17,899 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateDateRange
+2025-09-14 23:43:17,899 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: filterByUserPermissions
+2025-09-14 23:43:17,905 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidUserType
+2025-09-14 23:43:17,906 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: applyTypeSpecificLogic
+2025-09-14 23:43:17,906 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: updateLastAccessTime
+2025-09-14 23:43:17,907 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateEmailUniqueness
+2025-09-14 23:43:17,908 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateUsernameUniqueness
+2025-09-14 23:43:17,908 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: encryptPassword
+2025-09-14 23:43:17,909 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logUserUpdate
+2025-09-14 23:43:17,909 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: invalidateUserCache
+2025-09-14 23:43:17,910 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: validateDeleteConditions
+2025-09-14 23:43:17,910 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: preventAdminDeletion
+2025-09-14 23:43:17,911 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: logBulkDelete
+2025-09-14 23:43:17,911 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: cleanupRelatedData
+2025-09-14 23:43:17,912 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidEmail
+2025-09-14 23:43:17,912 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: isValidStatus
+2025-09-14 23:43:17,912 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: maskEmail
+2025-09-14 23:43:17,913 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 2에서 메서드 발견: maskPhone
+2025-09-14 23:43:17,914 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUsersByCondition
+2025-09-14 23:43:17,914 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUsersByAdvancedCondition
+2025-09-14 23:43:17,915 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,924 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUsersByType
+2025-09-14 23:43:17,925 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: getUserById
+2025-09-14 23:43:17,926 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,926 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,926 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateUserDynamic
+2025-09-14 23:43:17,927 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: deleteUsersByCondition
+2025-09-14 23:43:17,927 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,927 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateAndSanitizeParams
+2025-09-14 23:43:17,928 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: maskSensitiveData
+2025-09-14 23:43:17,929 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateAdvancedSearchParams
+2025-09-14 23:43:17,929 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,930 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,930 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateDateRange
+2025-09-14 23:43:17,930 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: catch
+2025-09-14 23:43:17,931 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: filterByUserPermissions
+2025-09-14 23:43:17,932 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidUserType
+2025-09-14 23:43:17,933 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: applyTypeSpecificLogic
+2025-09-14 23:43:17,933 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: updateLastAccessTime
+2025-09-14 23:43:17,934 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateEmailUniqueness
+2025-09-14 23:43:17,934 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,935 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateUsernameUniqueness
+2025-09-14 23:43:17,935 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: if
+2025-09-14 23:43:17,935 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: encryptPassword
+2025-09-14 23:43:17,936 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logUserUpdate
+2025-09-14 23:43:17,936 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: invalidateUserCache
+2025-09-14 23:43:17,937 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: validateDeleteConditions
+2025-09-14 23:43:17,938 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: preventAdminDeletion
+2025-09-14 23:43:17,938 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: logBulkDelete
+2025-09-14 23:43:17,939 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: cleanupRelatedData
+2025-09-14 23:43:17,939 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidEmail
+2025-09-14 23:43:17,940 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: isValidStatus
+2025-09-14 23:43:17,941 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: maskEmail
+2025-09-14 23:43:17,941 - SourceAnalyzer - INFO - java_parser.py:894 - 패턴 4에서 메서드 발견: maskPhone
+2025-09-14 23:43:17,994 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java ===
+2025-09-14 23:43:17,994 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-14 23:43:17,996 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 34
+2025-09-14 23:43:17,997 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java ===
+2025-09-14 23:43:17,998 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 52개
+2025-09-14 23:43:18,000 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 52개
+2025-09-14 23:43:18,000 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1209개
+2025-09-14 23:43:18,000 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUsersByCondition → getUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:18,001 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUsersByType → getUsersByType (src_id == dst_id)
+2025-09-14 23:43:18,001 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:18,002 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.updateUserDynamic → updateUserDynamic (src_id == dst_id)
+2025-09-14 23:43:18,002 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.updateUserDynamic → updateUserDynamic (src_id == dst_id)
+2025-09-14 23:43:18,003 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.updateUserDynamic → updateUserDynamic (src_id == dst_id)
+2025-09-14 23:43:18,003 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.deleteUsersByCondition → deleteUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:18,004 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.deleteUsersByCondition → deleteUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:18,004 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.deleteUsersByCondition → deleteUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:18,005 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskSensitiveData → maskSensitiveData (src_id == dst_id)
+2025-09-14 23:43:18,007 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.validateAdvancedSearchParams → validateAdvancedSearchParams (src_id == dst_id)
+2025-09-14 23:43:18,008 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.filterByUserPermissions → filterByUserPermissions (src_id == dst_id)
+2025-09-14 23:43:18,009 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidUserType → isValidUserType (src_id == dst_id)
+2025-09-14 23:43:18,010 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.updateLastAccessTime → updateLastAccessTime (src_id == dst_id)
+2025-09-14 23:43:18,012 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.logUserUpdate → logUserUpdate (src_id == dst_id)
+2025-09-14 23:43:18,024 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.invalidateUserCache → invalidateUserCache (src_id == dst_id)
+2025-09-14 23:43:18,024 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.validateDeleteConditions → validateDeleteConditions (src_id == dst_id)
+2025-09-14 23:43:18,025 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.preventAdminDeletion → preventAdminDeletion (src_id == dst_id)
+2025-09-14 23:43:18,026 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidEmail → isValidEmail (src_id == dst_id)
+2025-09-14 23:43:18,027 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidStatus → isValidStatus (src_id == dst_id)
+2025-09-14 23:43:18,027 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskEmail → maskEmail (src_id == dst_id)
+2025-09-14 23:43:18,028 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskPhone → maskPhone (src_id == dst_id)
+2025-09-14 23:43:18,029 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUsersByCondition → getUsersByCondition (src_id == dst_id)
+2025-09-14 23:43:18,029 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUsersByType → getUsersByType (src_id == dst_id)
+2025-09-14 23:43:18,030 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.getUserById → getUserById (src_id == dst_id)
+2025-09-14 23:43:18,031 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskSensitiveData → maskSensitiveData (src_id == dst_id)
+2025-09-14 23:43:18,033 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.validateAdvancedSearchParams → validateAdvancedSearchParams (src_id == dst_id)
+2025-09-14 23:43:18,035 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.filterByUserPermissions → filterByUserPermissions (src_id == dst_id)
+2025-09-14 23:43:18,036 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidUserType → isValidUserType (src_id == dst_id)
+2025-09-14 23:43:18,037 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.updateLastAccessTime → updateLastAccessTime (src_id == dst_id)
+2025-09-14 23:43:18,039 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.logUserUpdate → logUserUpdate (src_id == dst_id)
+2025-09-14 23:43:18,040 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.invalidateUserCache → invalidateUserCache (src_id == dst_id)
+2025-09-14 23:43:18,040 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.validateDeleteConditions → validateDeleteConditions (src_id == dst_id)
+2025-09-14 23:43:18,041 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.preventAdminDeletion → preventAdminDeletion (src_id == dst_id)
+2025-09-14 23:43:18,042 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidEmail → isValidEmail (src_id == dst_id)
+2025-09-14 23:43:18,043 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.isValidStatus → isValidStatus (src_id == dst_id)
+2025-09-14 23:43:18,044 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskEmail → maskEmail (src_id == dst_id)
+2025-09-14 23:43:18,056 - SourceAnalyzer - WARNING - java_loading.py:778 - 자기 참조 CALL_METHOD 관계 스킵: UserServiceImpl.maskPhone → maskPhone (src_id == dst_id)
+2025-09-14 23:43:18,082 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1171개
+2025-09-14 23:43:18,083 - SourceAnalyzer - INFO - java_loading.py:1327 - === Java 로딩 통계 (4~5단계 통합) ===
+2025-09-14 23:43:18,083 - SourceAnalyzer - INFO - java_loading.py:1328 - 처리된 Java 파일: 30개
+2025-09-14 23:43:18,083 - SourceAnalyzer - INFO - java_loading.py:1329 - 추출된 클래스: 70개
+2025-09-14 23:43:18,083 - SourceAnalyzer - INFO - java_loading.py:1330 - 추출된 메서드: 528개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1331 - 생성된 컴포넌트: 528개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1332 - 생성된 상속 관계: 2개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1333 - 생성된 CALL_QUERY 관계: 221개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1334 - 생성된 CALL_METHOD 관계: 5049개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1335 - 생성된 USE_TABLE 관계: 0개
+2025-09-14 23:43:18,084 - SourceAnalyzer - INFO - java_loading.py:1336 - 비즈니스 로직 메서드: 114개
+2025-09-14 23:43:18,085 - SourceAnalyzer - INFO - java_loading.py:1337 - 처리 시간: 1.19초
+2025-09-14 23:43:18,085 - SourceAnalyzer - INFO - java_loading.py:1338 - 오류 발생: 0개
+2025-09-14 23:43:18,085 - SourceAnalyzer - INFO - java_loading.py:169 - === Java 로딩 완료 ===
+2025-09-14 23:43:18,085 - SourceAnalyzer - INFO - main.py:153 - 4단계 완료: Java 소스코드 분석 및 관계 생성
+2025-09-14 23:43:18,086 - SourceAnalyzer - INFO - main.py:159 - 5단계 실행: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)
+2025-09-14 23:43:18,088 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-14 23:43:18,088 - SourceAnalyzer - INFO - jsp_loading.py:67 - === JSP 로딩 시작: 5단계 Phase 1 MVP ===
+2025-09-14 23:43:18,114 - SourceAnalyzer - INFO - jsp_parser.py:86 - JSP 파일 수집 완료: 9개
+2025-09-14 23:43:18,115 - SourceAnalyzer - INFO - jsp_loading.py:81 - 처리할 JSP 파일 수: 9개
+2025-09-14 23:43:18,116 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\test.jsp (filename: test.jsp) -> 3
+2025-09-14 23:43:18,116 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\test.jsp, current_file_id: 3
+2025-09-14 23:43:18,117 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP test.jsp에서 20개 메서드 호출 발견
+2025-09-14 23:43:18,118 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: test.jsp, current_file_id: 3
+2025-09-14 23:43:18,118 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,118 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\error\syntaxError.jsp (filename: syntaxError.jsp) -> 40
+2025-09-14 23:43:18,119 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\error\syntaxError.jsp, current_file_id: 40
+2025-09-14 23:43:18,119 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP syntaxError.jsp에서 5개 메서드 호출 발견
+2025-09-14 23:43:18,119 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: syntaxError.jsp, current_file_id: 40
+2025-09-14 23:43:18,120 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,120 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\mixed\partialError.jsp (filename: partialError.jsp) -> 41
+2025-09-14 23:43:18,120 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\mixed\partialError.jsp, current_file_id: 41
+2025-09-14 23:43:18,121 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP partialError.jsp에서 5개 메서드 호출 발견
+2025-09-14 23:43:18,121 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: partialError.jsp, current_file_id: 41
+2025-09-14 23:43:18,121 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,121 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\product\list.jsp (filename: list.jsp) -> 42
+2025-09-14 23:43:18,122 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\product\list.jsp, current_file_id: 42
+2025-09-14 23:43:18,122 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP list.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,122 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: list.jsp, current_file_id: 42
+2025-09-14 23:43:18,123 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,123 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\product\searchResult.jsp (filename: searchResult.jsp) -> 43
+2025-09-14 23:43:18,123 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\product\searchResult.jsp, current_file_id: 43
+2025-09-14 23:43:18,124 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP searchResult.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,124 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: searchResult.jsp, current_file_id: 43
+2025-09-14 23:43:18,124 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,124 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\user\error.jsp (filename: error.jsp) -> 44
+2025-09-14 23:43:18,125 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\user\error.jsp, current_file_id: 44
+2025-09-14 23:43:18,125 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP error.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,125 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: error.jsp, current_file_id: 44
+2025-09-14 23:43:18,126 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,126 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\user\list.jsp (filename: list.jsp) -> 42
+2025-09-14 23:43:18,126 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\user\list.jsp, current_file_id: 42
+2025-09-14 23:43:18,127 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP list.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,127 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: list.jsp, current_file_id: 42
+2025-09-14 23:43:18,127 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,127 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\user\searchResult.jsp (filename: searchResult.jsp) -> 43
+2025-09-14 23:43:18,128 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\user\searchResult.jsp, current_file_id: 43
+2025-09-14 23:43:18,128 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP searchResult.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,128 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: searchResult.jsp, current_file_id: 43
+2025-09-14 23:43:18,128 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,129 - SourceAnalyzer - INFO - jsp_loading.py:316 - JSP 파일 ID 조회 성공: src\main\webapp\user\typeList.jsp (filename: typeList.jsp) -> 47
+2025-09-14 23:43:18,129 - SourceAnalyzer - INFO - jsp_loading.py:89 - 현재 처리 중인 JSP 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\webapp\user\typeList.jsp, current_file_id: 47
+2025-09-14 23:43:18,129 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP typeList.jsp에서 0개 메서드 호출 발견
+2025-09-14 23:43:18,130 - SourceAnalyzer - INFO - jsp_loading.py:164 - JSP 컴포넌트 생성 시도: typeList.jsp, current_file_id: 47
+2025-09-14 23:43:18,130 - SourceAnalyzer - INFO - jsp_loading.py:191 - JSP 컴포넌트 배치 저장 완료: 1개
+2025-09-14 23:43:18,130 - SourceAnalyzer - INFO - jsp_loading.py:446 - === JSP 로딩 통계 ===
+2025-09-14 23:43:18,130 - SourceAnalyzer - INFO - jsp_loading.py:447 - 처리된 JSP 파일: 9개
+2025-09-14 23:43:18,130 - SourceAnalyzer - INFO - jsp_loading.py:448 - 생성된 JSP 컴포넌트: 9개
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - jsp_loading.py:449 - 생성된 JSP → METHOD 관계: 30개
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - jsp_loading.py:450 - 오류 발생: 0개
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - jsp_loading.py:451 - 처리 시간: 0.04초
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - jsp_loading.py:452 - ==================
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - jsp_loading.py:127 - === JSP 로딩 완료: 5단계 Phase 1 MVP ===
+2025-09-14 23:43:18,131 - SourceAnalyzer - INFO - main.py:167 - 5단계 완료: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)
+2025-09-14 23:43:18,132 - SourceAnalyzer - INFO - main.py:172 - 1-5단계 테스트 완료

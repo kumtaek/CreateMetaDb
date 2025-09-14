@@ -220,12 +220,12 @@ class JavaLoadingEngine:
                     # 1. classes 테이블에 저장
                     class_id = self._create_class_record(project_id, class_info)
                     if not class_id:
-                        warning(f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}")
+                        handle_error(Exception(f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}"), f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}")
                         continue
 
                     # 2. 클래스 생성 완료
                     self.stats['classes_created'] += 1
-                    info(f"클래스 생성 완료: {class_info.get('class_name')} (ID: {class_id})")
+                    # info(f"클래스 생성 완료: {class_info.get('class_name')} (ID: {class_id})")  # 루프 로그 제거
 
                     # 3. 메서드 처리 (METHOD 컴포넌트 생성)
                     methods = class_info.get('methods', [])
@@ -233,8 +233,8 @@ class JavaLoadingEngine:
                         method_count = self._save_methods_to_database(
                             project_id, file_id, class_id, methods
                         )
-                        if method_count > 0:
-                            info(f"메서드 생성 완료: {class_info.get('class_name')}, {method_count}개")
+                        # if method_count > 0:
+                        #     info(f"메서드 생성 완료: {class_info.get('class_name')}, {method_count}개")  # 루프 로그 제거
 
                 except Exception as e:
                     # 파싱 에러: 특정 클래스 처리 실패 - 계속 진행
@@ -359,7 +359,7 @@ class JavaLoadingEngine:
                         debug(f"메서드 생성 성공: {method_info.get('method_name')} (ID: {method_component_id}, 복잡도: {complexity})")
                     else:
                         # 파싱 에러: 개별 메서드 컴포넌트 생성 실패 - 계속 진행
-                        warning(f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}")
+                        handle_error(Exception(f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}"), f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}")
 
                 except Exception as e:
                     # 파싱 에러: 특정 메서드 처리 실패 - 계속 진행
@@ -419,7 +419,7 @@ class JavaLoadingEngine:
 
         except Exception as e:
             # 파싱 에러: 개별 메서드 컴포넌트 생성 실패 - 계속 진행
-            warning(f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')} - {str(e)}")
+            handle_error(e, f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}")
             return None
 
     def _save_inheritance_relationships_to_database(self, inheritance_relationships: List[Dict[str, Any]]) -> bool:
@@ -453,20 +453,49 @@ class JavaLoadingEngine:
                     # 자식 클래스 컴포넌트 ID 조회
                     child_component_id = self._get_class_component_id(project_id, rel_info['child_class'])
                     if not child_component_id:
-                        warning(f"자식 클래스 컴포넌트 ID를 찾을 수 없습니다: {rel_info['child_class']}")
-                        continue
+                        # inferred 클래스 생성 시도 (중복 체크 포함)
+                        # info(f"inferred 자식 클래스 생성 시도: {rel_info['child_class']}")  # 루프 로그 제거
+                        child_component_id = self._create_inferred_class(project_id, rel_info['child_class'])
+                        if child_component_id:
+                            # info(f"inferred 자식 클래스 생성 성공: {rel_info['child_class']} (ID: {child_component_id})")  # 루프 로그 제거
+                            pass
+                        else:
+                            handle_error(Exception(f"inferred 자식 클래스 생성 실패: {rel_info['child_class']}"), f"상속 관계 분석 실패: {rel_info['child_class']}")
+                            return False
+                    else:
+                        # 기존 클래스가 inferred인지 확인
+                        if self._is_inferred_class(project_id, rel_info['child_class']):
+                            # debug(f"inferred 자식 클래스 스킵: {rel_info['child_class']} (이미 존재)")  # 루프 로그 제거
+                            pass
+                        else:
+                            # debug(f"실제 자식 클래스 사용: {rel_info['child_class']} (ID: {child_component_id})")  # 루프 로그 제거
+                            pass
 
                     # 부모 클래스 컴포넌트 ID 조회
                     parent_component_id = self._get_class_component_id(project_id, rel_info['parent_class'])
                     if not parent_component_id:
-                        # inferred 클래스 생성 시도
-                        info(f"inferred 클래스 생성 시도: {rel_info['parent_class']}")
+                        # inferred 클래스 생성 시도 (중복 체크 포함)
+                        # info(f"inferred 부모 클래스 생성 시도: {rel_info['parent_class']}")  # 루프 로그 제거
                         parent_component_id = self._create_inferred_class(project_id, rel_info['parent_class'])
                         if parent_component_id:
-                            info(f"inferred 클래스 생성 성공: {rel_info['parent_class']} (ID: {parent_component_id})")
+                            # info(f"inferred 부모 클래스 생성 성공: {rel_info['parent_class']} (ID: {parent_component_id})")  # 루프 로그 제거
+                            pass
                         else:
-                            warning(f"inferred 클래스 생성 실패: {rel_info['parent_class']}")
-                            continue
+                            handle_error(Exception(f"inferred 부모 클래스 생성 실패: {rel_info['parent_class']}"), f"상속 관계 분석 실패: {rel_info['parent_class']}")
+                            return False
+                    else:
+                        # 기존 클래스가 inferred인지 확인
+                        if self._is_inferred_class(project_id, rel_info['parent_class']):
+                            # debug(f"inferred 부모 클래스 스킵: {rel_info['parent_class']} (이미 존재)")  # 루프 로그 제거
+                            pass
+                        else:
+                            # debug(f"실제 부모 클래스 사용: {rel_info['parent_class']} (ID: {parent_component_id})")  # 루프 로그 제거
+                            pass
+
+                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                    if child_component_id == parent_component_id:
+                        warning(f"자기 참조 상속 관계 스킵: {rel_info['child_class']} → {rel_info['parent_class']} (src_id == dst_id)")
+                        continue
 
                     # 관계 데이터 생성
                     relationship_data = {
@@ -491,10 +520,10 @@ class JavaLoadingEngine:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
 
                 if processed_count > 0:
-                    info(f"상속 관계 저장 완료: {processed_count}개")
+                    # info(f"상속 관계 저장 완료: {processed_count}개")  # 로그 제거
                     return True
                 else:
-                    warning("상속 관계 저장 실패: processed_count = 0")
+                    handle_error(Exception("상속 관계 저장 실패: processed_count = 0"), "상속 관계 저장 실패: processed_count = 0")
                     return False
             else:
                 warning("저장할 유효한 상속 관계가 없습니다")
@@ -535,6 +564,35 @@ class JavaLoadingEngine:
             handle_error(e, f"클래스 컴포넌트 ID 조회 실패: {class_name}")
             return None
 
+    def _is_inferred_class(self, project_id: int, class_name: str) -> bool:
+        """
+        inferred 클래스인지 확인
+
+        Args:
+            project_id: 프로젝트 ID
+            class_name: 클래스명
+
+        Returns:
+            inferred 클래스 여부
+        """
+        try:
+            # classes 테이블에서 inferred 클래스 확인 (line_start, line_end가 NULL인 경우)
+            query = """
+                SELECT class_id FROM classes 
+                WHERE project_id = ?
+                AND class_name = ?
+                AND line_start IS NULL
+                AND line_end IS NULL
+                AND del_yn = 'N'
+            """
+
+            results = self.db_utils.execute_query(query, (project_id, class_name))
+            return len(results) > 0
+
+        except Exception as e:
+            handle_error(e, f"inferred 클래스 확인 실패: {class_name}")
+            return False
+
     def _create_inferred_class(self, project_id: int, class_name: str) -> Optional[int]:
         """
         inferred 클래스 생성 (classes/components 테이블)
@@ -547,6 +605,12 @@ class JavaLoadingEngine:
             component_id 또는 None
         """
         try:
+            # 중복 체크: 이미 존재하는 inferred 클래스인지 확인
+            existing_component_id = self._get_class_component_id(project_id, class_name)
+            if existing_component_id:
+                debug(f"inferred 클래스가 이미 존재함: {class_name} (ID: {existing_component_id})")
+                return existing_component_id
+            
             # inferred 클래스용 file_id 찾기 (Java 파일 중 하나 선택)
             inferred_file_id = self._get_inferred_file_id(project_id)
             if not inferred_file_id:
@@ -556,59 +620,26 @@ class JavaLoadingEngine:
             # 1. classes 테이블에 inferred 클래스 생성
             class_data = {
                 'project_id': project_id,
-                'component_id': None,  # 나중에 업데이트
+                'file_id': inferred_file_id,
                 'class_name': class_name,
-                'class_type': 'class',
-                'package_name': 'UNKNOWN',
-                'access_modifier': 'public',
-                'is_abstract': 'N',
-                'is_final': 'N',
-                'extends_class': '',
-                'implements_interfaces': '',
-                'class_comments': 'Inferred from inheritance analysis',
-                'annotations': '',
+                'parent_class_id': None,
+                'line_start': None,
+                'line_end': None,
                 'has_error': 'N',
                 'error_message': None,
-                'hash_value': 'INFERRED',
+                'hash_value': HashUtils.generate_content_hash(f"INFERRED_CLASS{project_id}{class_name}"),
                 'del_yn': 'N'
             }
 
             # classes 테이블에 저장 (USER RULES: 공통함수 사용)
             class_id = self.db_utils.insert_or_replace_with_id('classes', class_data)
             if not class_id:
-                warning(f"inferred 클래스 레코드 생성 실패: {class_name}")
+                handle_error(Exception(f"inferred 클래스 레코드 생성 실패: {class_name}"), f"inferred 클래스 저장 실패: {class_name}")
                 return None
 
-            # 2. components 테이블에 클래스 컴포넌트 생성
-            component_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'component_name': class_name,
-                'component_type': 'CLASS',
-                'parent_id': None,
-                'layer': 'APPLICATION',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': 'INFERRED',
-                'del_yn': 'N'
-            }
-
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            if component_id:
-                # 3. classes 테이블의 component_id 업데이트
-                success = self._update_class_component_id(class_id, component_id)
-                if success:
-                    info(f"inferred 클래스 생성 완료: {class_name} (ID: {component_id})")
-                    return component_id
-                else:
-                    warning(f"inferred 클래스 component_id 업데이트 실패: {class_name}")
-            else:
-                warning(f"inferred 클래스 컴포넌트 생성 실패: {class_name}")
-
-            return None
+            # 2. inferred 클래스는 classes 테이블에만 저장 (components 테이블에는 저장하지 않음)
+            info(f"inferred 클래스 생성 완료: {class_name} (ID: {class_id})")
+            return class_id
 
         except Exception as e:
             handle_error(e, f"inferred 클래스 생성 실패: {class_name}")
@@ -742,6 +773,11 @@ class JavaLoadingEngine:
                             # 시스템 에러: inferred 메서드 생성 실패 - 프로그램 종료
                             handle_error(Exception(f"inferred 메서드 생성 실패: {rel_info['dst_name']}"), "CALL_METHOD 관계 저장 실패")
 
+                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                    if src_component_id == dst_component_id:
+                        warning(f"자기 참조 CALL_METHOD 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
+                        continue
+
                     # 관계 데이터 생성
                     relationship_data = {
                         'src_id': src_component_id,
@@ -768,7 +804,7 @@ class JavaLoadingEngine:
                     info(f"CALL_METHOD 관계 저장 완료: {processed_count}개")
                     return True
                 else:
-                    warning("CALL_METHOD 관계 저장 실패: processed_count = 0")
+                    handle_error(Exception("CALL_METHOD 관계 저장 실패: processed_count = 0"), "CALL_METHOD 관계 저장 실패: processed_count = 0")
                     return False
             else:
                 warning("저장할 유효한 CALL_METHOD 관계가 없습니다")
@@ -824,6 +860,11 @@ class JavaLoadingEngine:
                             warning(f"inferred 테이블 생성 실패: {rel_info['dst_name']}")
                             continue
 
+                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                    if src_component_id == dst_component_id:
+                        warning(f"자기 참조 USE_TABLE 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
+                        continue
+
                     # 관계 데이터 생성
                     relationship_data = {
                         'src_id': src_component_id,
@@ -850,7 +891,7 @@ class JavaLoadingEngine:
                     info(f"USE_TABLE 관계 저장 완료: {processed_count}개")
                     return True
                 else:
-                    warning("USE_TABLE 관계 저장 실패: processed_count = 0")
+                    handle_error(Exception("USE_TABLE 관계 저장 실패: processed_count = 0"), "USE_TABLE 관계 저장 실패: processed_count = 0")
                     return False
             else:
                 warning("저장할 유효한 USE_TABLE 관계가 없습니다")
@@ -994,7 +1035,7 @@ class JavaLoadingEngine:
                 'line_end': None,
                 'has_error': 'N',
                 'error_message': None,
-                'hash_value': 'INFERRED',
+                'hash_value': '-',
                 'del_yn': 'N'
             }
 
@@ -1004,7 +1045,7 @@ class JavaLoadingEngine:
                 info(f"inferred 쿼리 생성 완료: {query_id} (ID: {component_id})")
                 return component_id
             else:
-                warning(f"inferred 쿼리 컴포넌트 생성 실패: {query_id}")
+                handle_error(Exception(f"inferred 쿼리 컴포넌트 생성 실패: {query_id}"), f"inferred 쿼리 컴포넌트 생성 실패: {query_id}")
                 return None
 
         except Exception as e:
@@ -1023,6 +1064,12 @@ class JavaLoadingEngine:
             component_id 또는 None
         """
         try:
+            # 중복 체크: 이미 존재하는 inferred 메서드인지 확인
+            existing_component_id = self._get_method_component_id(project_id, method_name)
+            if existing_component_id:
+                debug(f"inferred 메서드가 이미 존재함: {method_name} (ID: {existing_component_id})")
+                return existing_component_id
+            
             # inferred 메서드용 file_id 찾기 (Java 파일 중 하나 선택)
             inferred_file_id = self._get_inferred_file_id(project_id)
             if not inferred_file_id:
@@ -1041,7 +1088,7 @@ class JavaLoadingEngine:
                 'line_end': None,
                 'has_error': 'N',
                 'error_message': None,
-                'hash_value': 'INFERRED',
+                'hash_value': '-',
                 'del_yn': 'N'
             }
 
@@ -1051,7 +1098,7 @@ class JavaLoadingEngine:
                 info(f"inferred 메서드 생성 완료: {method_name} (ID: {component_id})")
                 return component_id
             else:
-                warning(f"inferred 메서드 컴포넌트 생성 실패: {method_name}")
+                handle_error(Exception(f"inferred 메서드 컴포넌트 생성 실패: {method_name}"), f"inferred 메서드 컴포넌트 생성 실패: {method_name}")
                 return None
 
         except Exception as e:
@@ -1070,6 +1117,12 @@ class JavaLoadingEngine:
             component_id 또는 None
         """
         try:
+            # 중복 체크: 이미 존재하는 inferred 테이블인지 확인
+            existing_component_id = self._get_table_component_id(project_id, table_name)
+            if existing_component_id:
+                debug(f"inferred 테이블이 이미 존재함: {table_name} (ID: {existing_component_id})")
+                return existing_component_id
+            
             # inferred 테이블용 file_id 찾기 (SQL 파일 중 하나 선택)
             inferred_file_id = self._get_inferred_sql_file_id(project_id)
             if not inferred_file_id:
@@ -1088,7 +1141,7 @@ class JavaLoadingEngine:
                 'line_end': None,
                 'has_error': 'N',
                 'error_message': None,
-                'hash_value': 'INFERRED',
+                'hash_value': '-',
                 'del_yn': 'N'
             }
 
@@ -1098,7 +1151,7 @@ class JavaLoadingEngine:
                 info(f"inferred 테이블 생성 완료: {table_name} (ID: {component_id})")
                 return component_id
             else:
-                warning(f"inferred 테이블 컴포넌트 생성 실패: {table_name}")
+                handle_error(Exception(f"inferred 테이블 컴포넌트 생성 실패: {table_name}"), f"inferred 테이블 컴포넌트 생성 실패: {table_name}")
                 return None
 
         except Exception as e:
