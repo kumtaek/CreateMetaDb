@@ -1,0 +1,4 @@
+2025-09-12 14:59:39,192 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/xml_parser_config.yaml
+2025-09-12 14:59:39,199 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/xml_parser_config.yaml
+2025-09-12 14:59:39,199 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: projects/sampleSrc/src/com/example/dynamicquery/UserMapper.xml
+2025-09-12 14:59:39,200 - SourceAnalyzer - DEBUG - logger.py:64 - 3단계 XML 쿼리 ID와 내용 추출 완료: projects/sampleSrc/src/com/example/dynamicquery/UserMapper.xml, 2개 쿼리

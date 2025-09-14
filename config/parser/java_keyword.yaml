@@ -1,0 +1,643 @@
+# Java 키워드 정의 파일 (4단계 완전 개선버전)
+# 4단계 Java 소스코드 분석 및 컴포넌트 등록용
+# Classes 테이블 + Components 테이블 완전 지원
+
+# Java 예약어 (Java 17 기준)
+java_reserved_keywords:
+  # 제어문 관련
+  - "if"
+  - "else"
+  - "for"
+  - "while"
+  - "do"
+  - "switch"
+  - "case"
+  - "default"
+  - "break"
+  - "continue"
+  - "return"
+  
+  # 예외 처리
+  - "try"
+  - "catch"
+  - "finally"
+  - "throw"
+  - "throws"
+  
+  # 객체 지향
+  - "class"
+  - "interface"
+  - "extends"
+  - "implements"
+  - "abstract"
+  - "final"
+  - "static"
+  - "this"
+  - "super"
+  - "new"
+  - "instanceof"
+  
+  # 접근 제어자
+  - "public"
+  - "protected"
+  - "private"
+  
+  # 데이터 타입
+  - "boolean"
+  - "byte"
+  - "char"
+  - "short"
+  - "int"
+  - "long"
+  - "float"
+  - "double"
+  - "void"
+  
+  # 기타 키워드
+  - "package"
+  - "import"
+  - "synchronized"
+  - "volatile"
+  - "transient"
+  - "native"
+  - "strictfp"
+  - "assert"
+  - "enum"
+  - "const"
+  - "goto"
+  
+  # Java 10+ 추가 키워드
+  - "var"
+  - "yield"
+  - "record"
+  - "sealed"
+  - "permits"
+  - "non-sealed"
+  
+  # 리터럴 키워드
+  - "true"
+  - "false"
+  - "null"
+
+# Java 기본 클래스 (분석에서 제외할 기본 클래스)
+java_core_classes:
+  - "String"
+  - "Object"
+  - "Integer"
+  - "Long"
+  - "Double"
+  - "Float"
+  - "Boolean"
+  - "Character"
+  - "Byte"
+  - "Short"
+  - "BigDecimal"
+  - "BigInteger"
+  - "List"
+  - "Map"
+  - "Set"
+  - "ArrayList"
+  - "HashMap"
+  - "HashSet"
+  - "LinkedList"
+  - "Vector"
+  - "Stack"
+  - "Queue"
+  - "Deque"
+  - "Collection"
+  - "Iterator"
+  - "Arrays"
+  - "Collections"
+  - "Date"
+  - "Calendar"
+  - "SimpleDateFormat"
+  - "TimeZone"
+  - "Locale"
+  - "Random"
+  - "UUID"
+  - "Pattern"
+  - "Matcher"
+  - "Exception"
+  - "RuntimeException"
+  - "IOException"
+  - "SQLException"
+  - "ClassNotFoundException"
+  - "NoSuchMethodException"
+  - "IllegalArgumentException"
+  - "NullPointerException"
+  - "IndexOutOfBoundsException"
+  - "UnsupportedOperationException"
+  - "Thread"
+  - "Runnable"
+  - "Timer"
+  - "TimerTask"
+  - "System"
+  - "Math"
+  - "Process"
+  - "ProcessBuilder"
+  - "Runtime"
+  - "Class"
+  - "ClassLoader"
+  - "Reflect"
+  - "Annotation"
+  - "Override"
+  - "Deprecated"
+  - "SuppressWarnings"
+  - "FunctionalInterface"
+  - "AutoCloseable"
+  - "Cloneable"
+  - "Serializable"
+  - "Comparable"
+  - "Comparator"
+  - "Optional"
+  - "Stream"
+  - "Collectors"
+  - "Predicate"
+  - "Function"
+  - "Consumer"
+  - "Supplier"
+  - "BiFunction"
+  - "BiConsumer"
+  - "BiPredicate"
+  - "UnaryOperator"
+  - "BinaryOperator"
+
+# Java 기본 패키지들
+java_core_packages:
+  - "java.lang"
+  - "java.util"
+  - "java.io"
+  - "java.math"
+  - "java.text"
+  - "java.time"
+  - "java.sql"
+  - "java.net"
+  - "java.security"
+  - "java.nio"
+  - "javax.servlet"
+  - "javax.sql"
+  - "javax.annotation"
+  - "javax.validation"
+  - "sun."
+  - "com.sun."
+
+# Java 어노테이션 (분석에서 제외할 어노테이션)
+java_annotations:
+  - "Autowired"
+  - "Transactional"
+  - "RequestMapping"
+  - "RequestMethod"
+  - "RequestParam"
+  - "ResponseBody"
+  - "Param"
+  - "Override"
+  - "Deprecated"
+  - "SuppressWarnings"
+  - "Service"
+  - "Controller"
+  - "Repository"
+  - "Component"
+  - "Configuration"
+  - "Bean"
+  - "Value"
+  - "Qualifier"
+  - "Primary"
+  - "Lazy"
+  - "Scope"
+  - "Profile"
+  - "Conditional"
+  - "Order"
+  - "Import"
+  - "ImportResource"
+  - "PropertySource"
+  - "EnableAutoConfiguration"
+  - "SpringBootApplication"
+  - "RestController"
+  - "GetMapping"
+  - "PostMapping"
+  - "PutMapping"
+  - "DeleteMapping"
+  - "PatchMapping"
+  - "PathVariable"
+  - "RequestBody"
+  - "Valid"
+  - "NotNull"
+  - "NotBlank"
+  - "NotEmpty"
+  - "Size"
+  - "Min"
+  - "Max"
+  - "Pattern"
+  - "Email"
+  - "DateTimeFormat"
+  - "JsonFormat"
+  - "JsonIgnore"
+  - "JsonProperty"
+  - "JsonInclude"
+
+# MyBatis 어노테이션
+mybatis_annotations:
+  - "Select"
+  - "Insert"
+  - "Update"
+  - "Delete"
+  - "Results"
+  - "Result"
+  - "ResultMap"
+  - "One"
+  - "Many"
+  - "Options"
+  - "SelectKey"
+  - "InsertProvider"
+  - "UpdateProvider"
+  - "DeleteProvider"
+  - "SelectProvider"
+
+# 메서드 필터링 패턴 (정규식)
+method_filter_patterns:
+  # 제외할 메서드 패턴
+  exclude_patterns:
+    - "^<init>$"                    # 생성자
+    - "^<clinit>$"                  # 정적 초기화
+    - "^toString$"                  # Object 메서드
+    - "^equals$"                    # Object 메서드
+    - "^hashCode$"                  # Object 메서드
+    - "^getClass$"                  # Object 메서드
+    - "^notify$"                    # Object 메서드
+    - "^notifyAll$"                 # Object 메서드
+    - "^wait$"                      # Object 메서드
+    - "^clone$"                     # Object 메서드
+    - "^finalize$"                  # Object 메서드
+    - "^get[A-Z][a-zA-Z]*$"         # 기본 getter
+    - "^set[A-Z][a-zA-Z]*$"         # 기본 setter
+    - "^is[A-Z][a-zA-Z]*$"          # boolean getter
+    - "^has[A-Z][a-zA-Z]*$"         # boolean getter
+    - "^can[A-Z][a-zA-Z]*$"         # boolean getter
+    - "^main$"                      # main 메서드
+    - "^run$"                       # run 메서드
+    - "^log[A-Z].*"                 # 로깅 메서드
+    - "^print[A-Z].*"               # 출력 메서드
+  
+  # 포함할 메서드 패턴 (비즈니스 로직)
+  include_patterns:
+    - "^(create|insert|add|register).*"     # CRUD 생성
+    - "^(read|get|find|search|select|list).*"  # CRUD 조회
+    - "^(update|modify|edit|change).*"     # CRUD 수정
+    - "^(delete|remove|cancel).*"          # CRUD 삭제
+    - "^(process|handle|execute|perform).*" # 비즈니스 처리
+    - "^(validate|check|verify|confirm).*"  # 검증
+    - "^(calculate|compute|analyze|generate).*" # 계산/분석
+    - "^(send|receive|notify|alert).*"     # 통신
+    - "^(activate|deactivate|enable|disable).*" # 상태 관리
+    - "^(approve|reject|accept|decline).*" # 승인/거부
+    - "^(start|stop|pause|resume).*"       # 시작/중지
+    - "^(parse|format|convert|transform).*" # 데이터 변환
+    - "^(export|import|load|save).*"       # 데이터 입출력
+    - "^(merge|split|combine|separate).*"  # 데이터 병합/분리
+
+# 복잡한 메서드 필터링 (4단계 전용)
+complex_method_filtering:
+  # 비즈니스 로직이 포함된 복잡한 getter 패턴
+  business_getter_patterns:
+    - "^get.+With.+"
+    - "^get.+By.+"
+    - "^get.+From.+"
+    - "^find.+By.+"
+    - "^search.+By.+"
+    - "^query.+By.+"
+    - "^retrieve.+By.+"
+    - "^fetch.+By.+"
+    - "^load.+By.+"
+    - "^select.+By.+"
+
+  # 비즈니스 로직이 포함된 복잡한 setter 패턴
+  business_setter_patterns:
+    - "^set.+For.+"
+    - "^set.+With.+"
+    - "^update.+By.+"
+    - "^modify.+By.+"
+    - "^change.+By.+"
+    - "^assign.+To.+"
+    - "^configure.+For.+"
+    - "^initialize.+With.+"
+    - "^prepare.+For.+"
+    - "^setup.+For.+"
+
+  # 비즈니스 로직이 포함된 boolean 메서드 패턴
+  business_boolean_patterns:
+    - "^is.+Eligible.+"
+    - "^can.+.+"
+    - "^has.+Permission.+"
+    - "^validate.+"
+    - "^check.+"
+    - "^verify.+"
+    - "^is.+Valid.+"
+    - "^should.+"
+    - "^must.+"
+    - "^ensure.+"
+    - "^confirm.+"
+
+# 성능 최적화 설정 (4단계 전용)
+performance:
+  # 파일 크기별 처리 전략
+  large_file_threshold_mb: 1.0
+  streaming_threshold_mb: 0.5
+  batch_size: 100
+  use_compiled_patterns: true
+  memory_optimization: true
+  compile_patterns_on_init: true
+  max_memory_usage_mb: 512
+  gc_trigger_threshold: 0.8
+  chunk_processing_enabled: true
+  streaming_buffer_size: 8192
+
+# 안전성 강화 설정 (4단계 전용)
+safety_patterns:
+  block_comment_pattern: "/\\*.*?\\*/"
+  line_comment_pattern: "//.*?$"
+  string_literal_patterns:
+    - "\"(?:[^\"\\\\]|\\\\.)*\""
+    - "'(?:[^'\\\\]|\\\\.)*'"
+  valid_class_context_patterns:
+    - "class\\s+\\w+\\s*\\{"
+    - "interface\\s+\\w+\\s*\\{"
+    - "enum\\s+\\w+\\s*\\{"
+    - "@interface\\s+\\w+\\s*\\{"
+
+# 상속 관계 분석 설정 (4단계 전용)
+inheritance_analysis:
+  extends_patterns:
+    - "public\\s+class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+    - "class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+    - "public\\s+abstract\\s+class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+    - "abstract\\s+class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+    - "public\\s+final\\s+class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+    - "final\\s+class\\s+(\\w+)\\s+extends\\s+(\\w+)"
+  implements_patterns:
+    - "public\\s+class\\s+(\\w+)\\s+implements\\s+([^{]+)"
+    - "class\\s+(\\w+)\\s+implements\\s+([^{]+)"
+    - "public\\s+enum\\s+(\\w+)\\s+implements\\s+([^{]+)"
+    - "enum\\s+(\\w+)\\s+implements\\s+([^{]+)"
+  interface_extends_patterns:
+    - "public\\s+interface\\s+(\\w+)\\s+extends\\s+([^{]+)"
+    - "interface\\s+(\\w+)\\s+extends\\s+([^{]+)"
+
+# 정규식 패턴 (고급 매칭용)
+java_core_patterns:
+  - "^java\\."
+  - "^javax\\."
+  - "^sun\\."
+  - "^com\\.sun\\."
+  - "^org\\.w3c\\."
+  - "^org\\.xml\\."
+
+# Java 클래스 추출 패턴 (4단계 완전 지원)
+java_class_extraction_patterns:
+  - "public\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "public\\s+abstract\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "abstract\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "public\\s+final\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "final\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  - "public\\s+interface\\s+(\\w+)(?:\\s+extends\\s+([^{]+))?"
+  - "interface\\s+(\\w+)(?:\\s+extends\\s+([^{]+))?"
+  - "public\\s+enum\\s+(\\w+)(?:\\s+implements\\s+([^{]+))?"
+  - "enum\\s+(\\w+)(?:\\s+implements\\s+([^{]+))?"
+  - "public\\s+@interface\\s+(\\w+)"
+  - "@interface\\s+(\\w+)"
+
+# 메서드 추출 패턴 (4단계 전용) - 단순화된 버전
+method_extraction_patterns:
+  - "public\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  - "private\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  - "protected\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  - "(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+
+# 패키지 추출 패턴 (우선순위 순)
+package_extraction_patterns:
+  - "src/main/java/(.+?)/"
+  - "src/(.+?)/"
+  - "main/java/(.+?)/"
+  - "java/(.+?)/"
+  - "app/(.+?)/"
+  - "com/(.+?)/"
+  - "org/(.+?)/"
+
+# 비즈니스 도메인 분류 설정 (동적 도메인 분류용)
+domain_classification:
+  user:
+    keywords: ["user", "member", "account", "customer", "client"]
+  order:
+    keywords: ["order", "cart", "purchase", "booking", "reservation"]
+  product:
+    keywords: ["product", "item", "goods", "merchandise", "catalog"]
+  payment:
+    keywords: ["payment", "billing", "invoice", "transaction", "charge"]
+  auth:
+    keywords: ["auth", "login", "security", "permission", "role"]
+  inventory:
+    keywords: ["inventory", "stock", "warehouse", "storage"]
+  notification:
+    keywords: ["notification", "message", "alert", "email", "sms"]
+  report:
+    keywords: ["report", "analytics", "statistics", "dashboard"]
+
+# 아키텍처 레이어 분류 설정 (동적 레이어 분류용)
+layer_classification:
+  controller:
+    suffixes: ["controller", "ctrl"]
+    keywords: ["controller", "rest", "api"]
+  service:
+    suffixes: ["service", "svc"]
+    keywords: ["service", "business", "logic"]
+  dao:
+    suffixes: ["dao", "repository", "repo", "mapper"]
+    keywords: ["dao", "repository", "mapper", "data"]
+  entity:
+    suffixes: ["entity", "model", "vo", "dto", "domain"]
+    keywords: ["entity", "model", "vo", "dto", "domain", "bean"]
+  util:
+    suffixes: ["util", "utils", "helper", "common"]
+    keywords: ["util", "helper", "common", "tool"]
+
+# 5단계 관계 분석 패턴 (4~5단계 통합용)
+relationship_analysis:
+  # CALL_QUERY 관계 분석 패턴 (메서드 → SQL 쿼리)
+  call_query_patterns:
+    - "sqlSession\\.selectOne\\s*\\([^)]*\\)"
+    - "sqlSession\\.selectList\\s*\\([^)]*\\)"
+    - "sqlSession\\.selectMap\\s*\\([^)]*\\)"
+    - "sqlSession\\.insert\\s*\\([^)]*\\)"
+    - "sqlSession\\.update\\s*\\([^)]*\\)"
+    - "sqlSession\\.delete\\s*\\([^)]*\\)"
+    - "mapper\\.(\\w+)\\s*\\([^)]*\\)"
+    - "this\\.(\\w+)\\s*\\([^)]*\\)"  # this.methodName()
+    - "\\w+Mapper\\.(\\w+)\\s*\\([^)]*\\)"
+    - "\\w+Repository\\.(\\w+)\\s*\\([^)]*\\)"
+    - "\\w+Dao\\.(\\w+)\\s*\\([^)]*\\)"
+    - "jdbcTemplate\\.(query|queryForObject|queryForList|update|batchUpdate)\\s*\\([^)]*\\)"
+    - "namedParameterJdbcTemplate\\.(query|queryForObject|queryForList|update|batchUpdate)\\s*\\([^)]*\\)"
+    - "simpleJdbcTemplate\\.(query|queryForObject|queryForList|update|batchUpdate)\\s*\\([^)]*\\)"
+    - "entityManager\\.(createQuery|createNamedQuery|createNativeQuery)\\s*\\([^)]*\\)"
+    - "session\\.(createQuery|createNamedQuery|createSQLQuery)\\s*\\([^)]*\\)"
+    - "criteria\\.(add|list|uniqueResult)\\s*\\([^)]*\\)"
+    - "hibernateTemplate\\.(find|findByCriteria|save|update|delete)\\s*\\([^)]*\\)"
+
+  # CALL_METHOD 관계 분석 패턴 (메서드 → 메서드)
+  call_method_patterns:
+    - "this\\.(\\w+)\\s*\\([^)]*\\)"  # this.methodName()
+    - "(\\w+)\\.(\\w+)\\s*\\([^)]*\\)"  # object.methodName()
+    - "(\\w+)\\s*\\([^)]*\\)"  # methodName() (같은 클래스 내)
+    - "super\\.(\\w+)\\s*\\([^)]*\\)"  # super.methodName()
+    - "get[A-Z]\\w*\\(\\)"  # getter 메서드 호출
+    - "set[A-Z]\\w*\\s*\\([^)]*\\)"  # setter 메서드 호출
+    - "is[A-Z]\\w*\\(\\)"  # boolean getter 메서드 호출
+
+  # USE_TABLE 관계 분석 패턴 (메서드 → 테이블)
+  use_table_patterns:
+    - "FROM\\s+(\\w+)"  # SELECT ... FROM table_name
+    - "JOIN\\s+(\\w+)"  # JOIN table_name
+    - "INNER\\s+JOIN\\s+(\\w+)"  # INNER JOIN table_name
+    - "LEFT\\s+JOIN\\s+(\\w+)"  # LEFT JOIN table_name
+    - "RIGHT\\s+JOIN\\s+(\\w+)"  # RIGHT JOIN table_name
+    - "OUTER\\s+JOIN\\s+(\\w+)"  # OUTER JOIN table_name
+    - "UPDATE\\s+(\\w+)"  # UPDATE table_name
+    - "INSERT\\s+INTO\\s+(\\w+)"  # INSERT INTO table_name
+    - "DELETE\\s+FROM\\s+(\\w+)"  # DELETE FROM table_name
+    - "CREATE\\s+TABLE\\s+(\\w+)"  # CREATE TABLE table_name
+    - "ALTER\\s+TABLE\\s+(\\w+)"  # ALTER TABLE table_name
+    - "DROP\\s+TABLE\\s+(\\w+)"  # DROP TABLE table_name
+    - "TRUNCATE\\s+TABLE\\s+(\\w+)"  # TRUNCATE TABLE table_name
+    - "MERGE\\s+INTO\\s+(\\w+)"  # MERGE INTO table_name
+    - "WITH\\s+(\\w+)\\s+AS"  # WITH table_name AS
+    - "INTO\\s+(\\w+)"  # INTO table_name
+
+  # 메서드 복잡도 분류 설정
+  method_complexity:
+    default_package: "default"
+    default_complexity: "include"
+    exclude_complexity: "exclude"
+    include_complexity: "include"
+    complex_business_complexity: "complex_business"
+    simple_complexity: "simple"
+    business_complexity: "business"
+
+  # 제외할 메서드 패턴 (관계 분석에서 제외)
+  exclude_methods:
+    - "^System\\."
+    - "^String\\."
+    - "^Integer\\."
+    - "^Long\\."
+    - "^Double\\."
+    - "^Float\\."
+    - "^Boolean\\."
+    - "^Character\\."
+    - "^Byte\\."
+    - "^Short\\."
+    - "^BigDecimal\\."
+    - "^BigInteger\\."
+    - "^List\\."
+    - "^Map\\."
+    - "^Set\\."
+    - "^ArrayList\\."
+    - "^HashMap\\."
+    - "^HashSet\\."
+    - "^LinkedList\\."
+    - "^Vector\\."
+    - "^Stack\\."
+    - "^Queue\\."
+    - "^Deque\\."
+    - "^Collection\\."
+    - "^Iterator\\."
+    - "^Arrays\\."
+    - "^Collections\\."
+    - "^Date\\."
+    - "^Calendar\\."
+    - "^SimpleDateFormat\\."
+    - "^TimeZone\\."
+    - "^Locale\\."
+    - "^Random\\."
+    - "^UUID\\."
+    - "^Pattern\\."
+    - "^Matcher\\."
+    - "^Exception\\."
+    - "^RuntimeException\\."
+    - "^IOException\\."
+    - "^SQLException\\."
+    - "^ClassNotFoundException\\."
+    - "^NoSuchMethodException\\."
+    - "^IllegalArgumentException\\."
+    - "^NullPointerException\\."
+    - "^IndexOutOfBoundsException\\."
+    - "^UnsupportedOperationException\\."
+    - "^Thread\\."
+    - "^Runnable\\."
+    - "^Timer\\."
+    - "^TimerTask\\."
+    - "^System\\."
+    - "^Math\\."
+    - "^Process\\."
+    - "^ProcessBuilder\\."
+    - "^Runtime\\."
+    - "^Class\\."
+    - "^ClassLoader\\."
+    - "^Reflect\\."
+    - "^Annotation\\."
+    - "^Override\\."
+    - "^Deprecated\\."
+    - "^SuppressWarnings\\."
+    - "^FunctionalInterface\\."
+    - "^AutoCloseable\\."
+    - "^Cloneable\\."
+    - "^Serializable\\."
+    - "^Comparable\\."
+    - "^Comparator\\."
+    - "^Optional\\."
+    - "^Stream\\."
+    - "^Collectors\\."
+    - "^Predicate\\."
+    - "^Function\\."
+    - "^Consumer\\."
+    - "^Supplier\\."
+    - "^BiFunction\\."
+    - "^BiConsumer\\."
+    - "^BiPredicate\\."
+    - "^UnaryOperator\\."
+    - "^BinaryOperator\\."
+    - "^toString$"
+    - "^equals$"
+    - "^hashCode$"
+    - "^getClass$"
+    - "^notify$"
+    - "^notifyAll$"
+    - "^wait$"
+    - "^clone$"
+    - "^finalize$"
+    - "^main$"
+    - "^run$"
+
+  # 테이블명 정제 패턴
+  table_name_cleaning:
+    # 제거할 패턴
+    remove_patterns:
+      - "\\s+AS\\s+\\w+$"  # AS alias 제거
+      - "\\s+\\w+$"  # 별칭 제거 (AS 없는 경우)
+      - "^\\s+|\\s+$"  # 앞뒤 공백 제거
+      - "^`|`$"  # 백틱 제거
+      - "^\"|\"$"  # 쌍따옴표 제거
+      - "^'|'$"  # 단따옴표 제거
+    # 변환할 패턴
+    transform_patterns:
+      - "\\s+": "_"  # 공백을 언더스코어로 변환
+      - "-": "_"  # 하이픈을 언더스코어로 변환
+    # 유효한 테이블명 패턴
+    valid_table_patterns:
+      - "^[a-zA-Z_][a-zA-Z0-9_]*$"  # 유효한 테이블명 패턴
+
+  # 관계 분석 성능 최적화 설정
+  relationship_performance:
+    max_method_body_size_kb: 50  # 메서드 본문 최대 크기 (KB)
+    max_relationships_per_method: 100  # 메서드당 최대 관계 수
+    batch_relationship_save: true  # 관계 배치 저장 사용
+    relationship_cache_size: 1000  # 관계 캐시 크기
+    enable_relationship_deduplication: true  # 중복 관계 제거 사용

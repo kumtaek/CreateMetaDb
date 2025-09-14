@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mapper.ImplicitJoinMapper">
+    
+    <!-- Oracle 스타일 implicit join 예제들 -->
+    
+    <!-- 기본 implicit join -->
+    <select id="getUsersWithTypes" resultType="com.example.model.UserWithType">
+        SELECT u.id, u.name, u.email, ut.type_name
+        FROM users u, user_types ut
+        WHERE u.type_id = ut.id
+        ORDER BY u.name
+    </select>
+    
+    <!-- 3개 테이블 implicit join -->
+    <select id="getProductsWithCategoryAndBrand" resultType="com.example.model.ProductDetail">
+        SELECT p.id, p.name, p.price, c.category_name, b.brand_name
+        FROM products p, categories c, brands b
+        WHERE p.category_id = c.id 
+          AND p.brand_id = b.id
+          AND p.status = 'ACTIVE'
+        ORDER BY p.name
+    </select>
+    
+    <!-- 별칭 있는 implicit join -->
+    <select id="getOrdersWithUsers" resultType="com.example.model.OrderWithUser">
+        SELECT o.id AS order_id, o.order_date, u.name AS user_name, u.email
+        FROM orders ord_alias, users user_alias
+        WHERE ord_alias.user_id = user_alias.id
+          AND ord_alias.status = 'COMPLETED'
+        ORDER BY ord_alias.order_date DESC
+    </select>
+    
+    <!-- 복잡한 조건의 implicit join -->
+    <select id="getComplexJoin" resultType="com.example.model.ComplexResult">
+        SELECT u.name, ut.type_name, p.name AS product_name, c.category_name
+        FROM users u, user_types ut, products p, categories c
+        WHERE u.type_id = ut.id
+          AND p.category_id = c.id
+          AND u.created_date > #{startDate}
+          AND p.status = 'ACTIVE'
+        ORDER BY u.name, p.name
+    </select>
+    
+    <!-- Mixed: explicit과 implicit 혼합 (실제로는 권장하지 않지만 가능한 경우) -->
+    <select id="getMixedJoin" resultType="com.example.model.MixedResult">
+        SELECT u.name, ut.type_name, r.role_name, p.name AS product_name
+        FROM users u, user_types ut
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        INNER JOIN products p ON p.created_by = u.id
+        WHERE u.type_id = ut.id
+          AND u.status = 'ACTIVE'
+        ORDER BY u.name
+    </select>
+    
+</mapper>

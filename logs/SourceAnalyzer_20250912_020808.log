@@ -1,0 +1,26 @@
+2025-09-12 02:08:08,043 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+2025-09-12 02:08:08,051 - SourceAnalyzer - DEBUG - logger.py:64 - 명령행 인자 파싱 완료: {'project_name': 'sampleSrc', 'clear_metadb': False, 'verbose': False, 'output_format': 'html', 'config_file': None, 'log_level': 'INFO', 'dry_run': False, 'force': False}
+2025-09-12 02:08:08,051 - SourceAnalyzer - DEBUG - logger.py:64 - 인자 검증 성공
+2025-09-12 02:08:08,051 - SourceAnalyzer - INFO - logger.py:68 - 분석 대상 프로젝트: sampleSrc
+2025-09-12 02:08:08,051 - SourceAnalyzer - INFO - logger.py:68 - 분석 옵션:
+2025-09-12 02:08:08,051 - SourceAnalyzer - INFO - logger.py:68 -   - 메타데이터베이스 초기화: False
+2025-09-12 02:08:08,052 - SourceAnalyzer - INFO - logger.py:68 -   - 상세 로그: False
+2025-09-12 02:08:08,052 - SourceAnalyzer - INFO - logger.py:68 -   - 출력 형식: html
+2025-09-12 02:08:08,052 - SourceAnalyzer - INFO - logger.py:68 -   - 드라이런 모드: False
+2025-09-12 02:08:08,052 - SourceAnalyzer - INFO - logger.py:68 -   - 강제 실행: False
+2025-09-12 02:08:08,052 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 분석 시작...
+2025-09-12 02:08:08,053 - SourceAnalyzer - INFO - logger.py:68 - === 처리플로우 1단계 시작: 파일 정보 저장 ===
+2025-09-12 02:08:08,055 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 02:08:08,056 - SourceAnalyzer - ERROR - logger.py:76 - 데이터베이스 연결 오류: index ix_projects_01 already exists
+2025-09-12 02:08:08,063 - SourceAnalyzer - ERROR - logger.py:128 - FATAL ERROR at D:\Analyzer\CreateMetaDb\util\database_utils.py:198 in execute_script()
+Code: conn.executescript(script_content)
+Message: SQL 스크립트 실행 실패: D:\Analyzer\CreateMetaDb\database\create_table_script.sql
+Exception: OperationalError: index ix_projects_01 already exists
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\util\database_utils.py", line 198, in execute_script
+    conn.executescript(script_content)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: index ix_projects_01 already exists
+
+2025-09-12 02:08:08,064 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db

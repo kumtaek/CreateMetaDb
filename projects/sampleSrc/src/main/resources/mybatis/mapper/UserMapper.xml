@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mapper.UserMapper">
+    
+    <!-- 기본 사용자 조회 -->
+    <select id="selectUserById" parameterType="long" resultType="com.example.model.User">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+    
+    <!-- 조건부 사용자 조회 (다이나믹 쿼리) -->
+    <select id="selectUsersByCondition" parameterType="map" resultType="com.example.model.User">
+        SELECT * FROM users
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE #{name}
+            </if>
+            <if test="email != null and email != ''">
+                AND email LIKE #{email}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_date DESC
+    </select>
+    
+    <!-- 고급 조건부 사용자 조회 (복잡한 다이나믹 쿼리) -->
+    <select id="selectUsersByAdvancedCondition" parameterType="map" resultType="com.example.model.User">
+        SELECT u.*, ut.type_name
+        FROM users u
+        LEFT JOIN user_types ut ON u.user_type = ut.type_code
+        <where>
+            <if test="userType != null and userType != ''">
+                AND u.user_type = #{userType}
+            </if>
+            <if test="minAge != null">
+                AND u.age >= #{minAge}
+            </if>
+            <if test="maxAge != null">
+                AND u.age &lt;= #{maxAge}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND u.created_date >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND u.created_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="statusList != null and statusList.size() > 0">
+                AND u.status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY u.created_date DESC
+    </select>
+    
+    <!-- 타입별 사용자 조회 -->
+    <select id="selectUsersByType" parameterType="string" resultType="com.example.model.User">
+        SELECT * FROM users 
+        WHERE user_type = #{type}
+        ORDER BY name
+    </select>
+    
+    <!-- 동적 사용자 업데이트 -->
+    <update id="updateUserDynamic" parameterType="com.example.model.User">
+        UPDATE users
+        <set>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+            <if test="email != null and email != ''">
+                email = #{email},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="age != null">
+                age = #{age},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone},
+            </if>
+            <if test="address != null and address != ''">
+                address = #{address},
+            </if>
+            updated_date = SYSDATE
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 동적 사용자 삽입 -->
+    <insert id="insertUserDynamic" parameterType="com.example.model.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            <trim suffixOverrides=",">
+                <if test="username != null and username != ''">username,</if>
+                <if test="email != null and email != ''">email,</if>
+                <if test="password != null and password != ''">password,</if>
+                <if test="name != null and name != ''">name,</if>
+                <if test="age != null">age,</if>
+                <if test="status != null and status != ''">status,</if>
+                <if test="userType != null and userType != ''">user_type,</if>
+                <if test="phone != null and phone != ''">phone,</if>
+                <if test="address != null and address != ''">address,</if>
+                created_date,
+                updated_date
+            </trim>
+        ) VALUES (
+            <trim suffixOverrides=",">
+                <if test="username != null and username != ''">#{username},</if>
+                <if test="email != null and email != ''">#{email},</if>
+                <if test="password != null and password != ''">#{password},</if>
+                <if test="name != null and name != ''">#{name},</if>
+                <if test="age != null">#{age},</if>
+                <if test="status != null and status != ''">#{status},</if>
+                <if test="userType != null and userType != ''">#{userType},</if>
+                <if test="phone != null and phone != ''">#{phone},</if>
+                <if test="address != null and address != ''">#{address},</if>
+                SYSDATE,
+                SYSDATE
+            </trim>
+        )
+    </insert>
+    
+    <!-- 조건부 사용자 삭제 -->
+    <delete id="deleteUsersByCondition" parameterType="map">
+        DELETE FROM users
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="beforeDate != null and beforeDate != ''">
+                AND created_date &lt; TO_DATE(#{beforeDate}, 'YYYY-MM-DD')
+            </if>
+        </where>
+    </delete>
+    
+    <!-- 동적 COUNT 쿼리 -->
+    <select id="countUsersByCondition" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        <where>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="minAge != null">
+                AND age >= #{minAge}
+            </if>
+            <if test="maxAge != null">
+                AND age &lt;= #{maxAge}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 복잡한 사용자 통계 쿼리 -->
+    <select id="getUserStatistics" parameterType="map" resultType="map">
+        SELECT 
+            COUNT(*) as total_users,
+            COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_users,
+            COUNT(CASE WHEN status = 'INACTIVE' THEN 1 END) as inactive_users,
+            COUNT(CASE WHEN user_type = 'ADMIN' THEN 1 END) as admin_users,
+            COUNT(CASE WHEN user_type = 'PREMIUM' THEN 1 END) as premium_users,
+            AVG(age) as average_age,
+            MIN(age) as min_age,
+            MAX(age) as max_age,
+            COUNT(CASE WHEN created_date >= TRUNC(SYSDATE - 30) THEN 1 END) as new_users_last_30_days,
+            COUNT(CASE WHEN updated_date >= TRUNC(SYSDATE - 7) THEN 1 END) as updated_users_last_7_days
+        FROM users
+        <where>
+            <if test="userType != null and userType != ''">
+                AND user_type = #{userType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND created_date >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND created_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+        </where>
+    </select>
+    
+    <!-- 사용자 연령대별 분포 쿼리 -->
+    <select id="getUserAgeDistribution" parameterType="map" resultType="map">
+        SELECT 
+            CASE 
+                WHEN age &lt; 20 THEN '10대'
+                WHEN age &lt; 30 THEN '20대'
+                WHEN age &lt; 40 THEN '30대'
+                WHEN age &lt; 50 THEN '40대'
+                WHEN age &lt; 60 THEN '50대'
+                ELSE '60대 이상'
+            END as age_group,
+            COUNT(*) as user_count,
+            ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM users), 2) as percentage
+        FROM users
+        <where>
+            age IS NOT NULL
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        GROUP BY 
+            CASE 
+                WHEN age &lt; 20 THEN '10대'
+                WHEN age &lt; 30 THEN '20대'
+                WHEN age &lt; 40 THEN '30대'
+                WHEN age &lt; 50 THEN '40대'
+                WHEN age &lt; 60 THEN '50대'
+                ELSE '60대 이상'
+            END
+        ORDER BY 
+            CASE 
+                WHEN age &lt; 20 THEN 1
+                WHEN age &lt; 30 THEN 2
+                WHEN age &lt; 40 THEN 3
+                WHEN age &lt; 50 THEN 4
+                WHEN age &lt; 60 THEN 5
+                ELSE 6
+            END
+    </select>
+    
+    <!-- 사용자 활동 분석 쿼리 -->
+    <select id="getUserActivityAnalysis" parameterType="map" resultType="map">
+        SELECT 
+            u.user_id,
+            u.username,
+            u.name,
+            u.status,
+            u.user_type,
+            u.created_date,
+            u.updated_date,
+            DATEDIFF(day, u.created_date, SYSDATE) as account_age_days,
+            DATEDIFF(day, u.updated_date, SYSDATE) as days_since_last_update,
+            CASE 
+                WHEN u.updated_date IS NULL THEN 'Never Updated'
+                WHEN DATEDIFF(day, u.updated_date, SYSDATE) &lt;= 7 THEN 'Active'
+                WHEN DATEDIFF(day, u.updated_date, SYSDATE) &lt;= 30 THEN 'Moderate'
+                ELSE 'Inactive'
+            END as activity_level
+        FROM users u
+        <where>
+            <if test="userType != null and userType != ''">
+                AND u.user_type = #{userType}
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="activityLevel != null and activityLevel != ''">
+                AND CASE 
+                    WHEN u.updated_date IS NULL THEN 'Never Updated'
+                    WHEN DATEDIFF(day, u.updated_date, SYSDATE) &lt;= 7 THEN 'Active'
+                    WHEN DATEDIFF(day, u.updated_date, SYSDATE) &lt;= 30 THEN 'Moderate'
+                    ELSE 'Inactive'
+                END = #{activityLevel}
+            </if>
+        </where>
+        ORDER BY u.updated_date DESC NULLS LAST
+    </select>
+    
+    <!-- 복잡한 사용자 검색 쿼리 (다중 조건) -->
+    <select id="searchUsersAdvanced" parameterType="map" resultType="com.example.model.User">
+        SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.password,
+            u.name,
+            u.age,
+            u.status,
+            u.user_type,
+            u.phone,
+            u.address,
+            u.created_date,
+            u.updated_date,
+            ut.type_name,
+            ut.description as type_description
+        FROM users u
+        LEFT JOIN user_types ut ON u.user_type = ut.type_code
+        <where>
+            <if test="searchText != null and searchText != ''">
+                AND (
+                    UPPER(u.username) LIKE UPPER('%' || #{searchText} || '%')
+                    OR UPPER(u.name) LIKE UPPER('%' || #{searchText} || '%')
+                    OR UPPER(u.email) LIKE UPPER('%' || #{searchText} || '%')
+                )
+            </if>
+            <if test="userTypes != null and userTypes.size() > 0">
+                AND u.user_type IN
+                <foreach collection="userTypes" item="type" open="(" separator="," close=")">
+                    #{type}
+                </foreach>
+            </if>
+            <if test="statusList != null and statusList.size() > 0">
+                AND u.status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            <if test="ageRange != null">
+                AND u.age BETWEEN #{ageRange.minAge} AND #{ageRange.maxAge}
+            </if>
+            <if test="dateRange != null">
+                AND u.created_date BETWEEN 
+                    TO_DATE(#{dateRange.startDate}, 'YYYY-MM-DD') 
+                    AND TO_DATE(#{dateRange.endDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="hasPhone != null">
+                <choose>
+                    <when test="hasPhone == true">
+                        AND u.phone IS NOT NULL AND u.phone != ''
+                    </when>
+                    <otherwise>
+                        AND (u.phone IS NULL OR u.phone = '')
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="hasAddress != null">
+                <choose>
+                    <when test="hasAddress == true">
+                        AND u.address IS NOT NULL AND u.address != ''
+                    </when>
+                    <otherwise>
+                        AND (u.address IS NULL OR u.address = '')
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+        <choose>
+            <when test="sortBy != null and sortBy != ''">
+                <choose>
+                    <when test="sortBy == 'name'">
+                        ORDER BY u.name
+                        <if test="sortOrder != null and sortOrder == 'desc'">DESC</if>
+                    </when>
+                    <when test="sortBy == 'age'">
+                        ORDER BY u.age
+                        <if test="sortOrder != null and sortOrder == 'desc'">DESC</if>
+                    </when>
+                    <when test="sortBy == 'created_date'">
+                        ORDER BY u.created_date
+                        <if test="sortOrder != null and sortOrder == 'desc'">DESC</if>
+                    </when>
+                    <when test="sortBy == 'updated_date'">
+                        ORDER BY u.updated_date
+                        <if test="sortOrder != null and sortOrder == 'desc'">DESC</if>
+                    </when>
+                    <otherwise>
+                        ORDER BY u.created_date DESC
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                ORDER BY u.created_date DESC
+            </otherwise>
+        </choose>
+        <if test="offset != null and limit != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+    
+    <!-- 사용자 그룹별 집계 쿼리 -->
+    <select id="getUserGroupStatistics" parameterType="map" resultType="map">
+        SELECT 
+            user_type,
+            status,
+            COUNT(*) as user_count,
+            AVG(age) as avg_age,
+            MIN(created_date) as first_created,
+            MAX(created_date) as last_created,
+            COUNT(CASE WHEN updated_date IS NOT NULL THEN 1 END) as updated_count
+        FROM users
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND created_date >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND created_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+        </where>
+        GROUP BY user_type, status
+        ORDER BY user_type, status
+    </select>
+    
+    <!-- 사용자 선호도 조회 (새로운 테이블 도출용) -->
+    <select id="getUserWithPreferences" parameterType="long" resultType="map">
+        SELECT 
+            u.id,
+            u.username,
+            u.name,
+            u.email,
+            u.user_type,
+            up.theme,
+            up.language,
+            up.timezone,
+            up.notification_email,
+            up.notification_sms,
+            up.created_date as user_created,
+            up.updated_date as pref_updated
+        FROM users u
+        LEFT JOIN user_preferences up ON u.id = up.user_id
+        WHERE u.id = #{userId}
+    </select>
+    
+    <!-- 사용자 선호도와 타입 정보 조회 (복합 조인) -->
+    <select id="getUserWithPreferencesAndType" parameterType="long" resultType="map">
+        SELECT 
+            u.id,
+            u.username,
+            u.name,
+            u.email,
+            u.user_type,
+            ut.type_name,
+            ut.description as type_description,
+            up.theme,
+            up.language,
+            up.timezone,
+            up.notification_email,
+            up.notification_sms
+        FROM users u
+        LEFT JOIN user_types ut ON u.user_type = ut.type_code
+        LEFT JOIN user_preferences up ON u.id = up.user_id
+        WHERE u.id = #{userId}
+    </select>
+    
+    <!-- 사용자 활동 로그 조회 (다양한 알리아스 패턴 테스트) -->
+    <select id="getUserActivityLog" parameterType="long" resultType="map">
+        SELECT 
+            usr.id,
+            usr.username,
+            usr.name,
+            act.activity_type,
+            act.activity_date,
+            act.description
+        FROM users usr
+        LEFT JOIN user_activity_log act ON usr.id = act.user_id
+        WHERE usr.id = #{userId}
+        ORDER BY act.activity_date DESC
+    </select>
+    
+    <!-- 사용자 설정 조회 (다른 알리아스 패턴) -->
+    <select id="getUserSettings" parameterType="long" resultType="map">
+        SELECT 
+            u.id,
+            u.username,
+            settings.setting_key,
+            settings.setting_value,
+            settings.updated_date
+        FROM users u
+        LEFT JOIN user_settings settings ON u.id = settings.user_id
+        WHERE u.id = #{userId}
+    </select>
+    
+    <!-- 사용자 선호도 업데이트 -->
+    <update id="updateUserPreferences" parameterType="map">
+        UPDATE user_preferences
+        SET 
+            theme = #{theme},
+            language = #{language},
+            timezone = #{timezone},
+            notification_email = #{notificationEmail},
+            notification_sms = #{notificationSms},
+            updated_date = SYSDATE
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 사용자 선호도 삽입 -->
+    <insert id="insertUserPreferences" parameterType="map">
+        INSERT INTO user_preferences (
+            user_id,
+            theme,
+            language,
+            timezone,
+            notification_email,
+            notification_sms,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{userId},
+            #{theme},
+            #{language},
+            #{timezone},
+            #{notificationEmail},
+            #{notificationSms},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+    
+    <!-- 새로운 테이블 테스트 쿼리 -->
+    <select id="getUserWithNewTable" parameterType="long" resultType="map">
+        SELECT 
+            u.id,
+            u.username,
+            u.name,
+            nt.new_field1,
+            nt.new_field2
+        FROM users u
+        LEFT JOIN new_test_table nt ON u.id = nt.user_id
+        WHERE u.id = #{userId}
+    </select>
+    
+    <!-- 사용자 통계 MERGE 쿼리 (테스트용) -->
+    <merge id="mergeUserStatistics" parameterType="map">
+        MERGE INTO user_statistics us
+        USING (
+            SELECT 
+                #{userId} as user_id,
+                #{statType} as stat_type,
+                #{statValue} as stat_value,
+                SYSDATE as stat_date
+            FROM dual
+        ) src ON (us.user_id = src.user_id AND us.stat_type = src.stat_type)
+        WHEN MATCHED THEN
+            UPDATE SET 
+                stat_value = src.stat_value,
+                stat_date = src.stat_date,
+                updated_date = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (user_id, stat_type, stat_value, stat_date, created_date, updated_date)
+            VALUES (src.user_id, src.stat_type, src.stat_value, src.stat_date, SYSDATE, SYSDATE)
+    </merge>
+    
+    <!-- 사용자 활동 로그 MERGE 쿼리 (테스트용) -->
+    <merge id="mergeUserActivityLog" parameterType="map">
+        MERGE INTO user_activity_log ual
+        USING (
+            SELECT 
+                #{userId} as user_id,
+                #{activityType} as activity_type,
+                #{description} as description,
+                SYSDATE as activity_date
+            FROM dual
+        ) src ON (ual.user_id = src.user_id AND ual.activity_type = src.activity_type AND ual.activity_date = TRUNC(src.activity_date))
+        WHEN MATCHED THEN
+            UPDATE SET 
+                description = src.description,
+                updated_date = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (user_id, activity_type, description, activity_date, created_date, updated_date)
+            VALUES (src.user_id, src.activity_type, src.description, src.activity_date, SYSDATE, SYSDATE)
+    </merge>
+    
+</mapper>

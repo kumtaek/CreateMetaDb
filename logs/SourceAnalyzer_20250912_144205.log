@@ -1,0 +1,13 @@
+2025-09-12 14:42:06,031 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 14:42:06,054 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 14:42:06,054 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:42:06,065 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:42:06,065 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:42:06,082 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:42:06,083 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: {'USERS', 'PRODUCTS'}
+2025-09-12 14:42:06,090 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 1개
+2025-09-12 14:42:06,090 - SourceAnalyzer - ERROR - logger.py:76 - 테이블 ID 조회 실패: USERS, 오류: 'NoneType' object has no attribute 'execute_query'
+2025-09-12 14:42:06,090 - SourceAnalyzer - ERROR - logger.py:76 - 테이블 ID 조회 실패: PRODUCTS, 오류: 'NoneType' object has no attribute 'execute_query'
+2025-09-12 14:42:06,090 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: {'ORDERS'}
+2025-09-12 14:42:06,090 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 1개
+2025-09-12 14:42:06,090 - SourceAnalyzer - ERROR - logger.py:76 - 테이블 ID 조회 실패: ORDERS, 오류: 'NoneType' object has no attribute 'execute_query'

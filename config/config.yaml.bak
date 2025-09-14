@@ -1,0 +1,60 @@
+# 데이터베이스 설정
+database:
+  # 데이터베이스 타입 설정
+  type: "sqlite"  # 데이터베이스 타입 (sqlite, mysql, postgresql 등)
+  
+  # 기본 스키마 설정 (프로젝트별로 다를 수 있음)
+  default_schema: "DEFAULT"  # 기본 데이터베이스 스키마 (Oracle의 경우 OWNER)
+  
+  # 프로젝트별 설정
+  project:
+    type: "sqlite"  # 프로젝트별 데이터베이스 타입
+    default_schema: "DEFAULT"  # 프로젝트별 기본 스키마
+    sqlite:
+      path: "./project/{project_name}/metadata.db"  # 프로젝트별 메타데이터베이스 경로
+      # SQLite 성능 최적화 설정
+      wal_mode: true          # WAL 모드 활성화 (동시 접근 개선)
+      cache_size: 10000       # 캐시 크기 (페이지 수)
+      journal_mode: "WAL"     # 저널 모드 (WAL, DELETE, TRUNCATE, PERSIST, MEMORY, OFF)
+      synchronous: "NORMAL"   # 동기화 모드 (OFF, NORMAL, FULL)
+      temp_store: "MEMORY"    # 임시 저장소 (FILE, MEMORY)
+ 
+# LLM 설정 (메타데이터 보강용)
+# 코드 메타데이터 보강에 사용될 대규모 언어 모델(LLM)의 설정을 정의합니다.
+llm_assist:                                                                    
+  enabled: true             # LLM 보강 기능 활성화 여부                      
+  provider: "auto"          # LLM 제공자 (auto, ollama, vllm, openai)        
+  provider: "ollama"          # LLM 제공자 (auto, ollama, vllm, openai)      
+  low_conf_threshold: 0.6   # 낮은 신뢰도 임계값                             
+  max_calls_per_run: 50     # 한 번 실행 시 LLM 호출 최대 횟수               
+  file_max_lines: 1200      # LLM이 처리할 파일의 최대 라인 수  
+   
+# 임베딩 모델 설정
+# 텍스트를 벡터로 변환하는 데 사용될 임베딩 모델 목록을 정의합니다.
+embedding:
+  models:
+    - name: "BAAI/bge-m3"  # 다국어 임베딩 모델
+      type: "multilingual"
+      max_length: 8192
+      batch_size: 32
+    - name: "jhgan00/ko-sentence-transformers" # 한국어 임베딩 모델
+      type: "korean"
+      max_length: 512
+      batch_size: 16
+
+# 처리 설정
+# 코드 분석 및 LLM 처리의 일반적인 설정을 정의합니다.
+processing:
+  max_workers: 4            # 병렬 처리 작업자 수
+  chunk_size: 512           # 텍스트 처리 단위 (토큰 또는 문자)
+  chunk_overlap: 50         # 텍스트 청크 간의 중복 크기
+  confidence_threshold: 0.5 # 분석 결과의 신뢰도 임계값 (0.0 ~ 1.0)
+
+# 로그 관리 설정
+# 로그 파일의 보관 및 정리 설정을 정의합니다.
+log_management:
+  enabled: true             # 로그 정리 기능 활성화 여부
+  retention_hours: 24       # 로그 파일 보관 시간 (시간 단위)
+  log_directory: "./logs"   # 로그 파일 디렉토리 경로
+  auto_cleanup_on_startup: true  # 프로그램 시작 시 자동 로그 정리 여부
+     

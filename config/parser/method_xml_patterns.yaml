@@ -1,0 +1,28 @@
+# Method-XML 완전 동적 매핑 설정 (하드코딩 완전 제거)
+method_xml_patterns:
+  # 완전 동적 매핑 규칙 (하드코딩 없음)
+  dynamic_matching:
+    filesystem_based: true
+    metadata_based: true
+    universal_pattern: true
+    case_insensitive: true
+  
+  # 매핑 우선순위 (하드코딩 없음)
+  priority_order:
+    - "filesystem_based"
+    - "metadata_based" 
+    - "universal_pattern"
+    - "fallback"
+  
+  # 범용적 분석 설정
+  analysis_settings:
+    string_similarity_threshold: 0.7
+    path_structure_analysis: true
+    class_name_analysis: true
+    method_name_analysis: true
+  
+  # 프로젝트별 동적 설정 (하드코딩 없음)
+  project_specific:
+    enabled: true
+    config_path: "./project/{project_name}/config/method_xml_patterns.yaml"
+    fallback_to_default: true

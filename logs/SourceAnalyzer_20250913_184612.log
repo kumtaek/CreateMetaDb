@@ -1,0 +1,1667 @@
+2025-09-13 18:46:12,842 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+2025-09-13 18:46:12,847 - SourceAnalyzer - DEBUG - logger.py:64 - 명령행 인자 파싱 완료: {'project_name': 'sampleSrc', 'clear_metadb': False, 'verbose': False, 'output_format': 'html', 'config_file': None, 'log_level': 'INFO', 'dry_run': False, 'force': False}
+2025-09-13 18:46:12,847 - SourceAnalyzer - DEBUG - logger.py:64 - 인자 검증 성공
+2025-09-13 18:46:12,847 - SourceAnalyzer - INFO - logger.py:68 - 분석 대상 프로젝트: sampleSrc
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 - 분석 옵션:
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 -   - 메타데이터베이스 초기화: False
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 -   - 상세 로그: False
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 -   - 출력 형식: html
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 -   - 드라이런 모드: False
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 -   - 강제 실행: False
+2025-09-13 18:46:12,848 - SourceAnalyzer - INFO - logger.py:68 - 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+2025-09-13 18:46:12,849 - SourceAnalyzer - INFO - logger.py:68 - === 파일 스캔 시작: 파일 정보 저장 ===
+2025-09-13 18:46:12,852 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:12,852 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_projects_01 ON projects (pr...
+2025-09-13 18:46:12,852 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_tables_01 ON tables (table_...
+2025-09-13 18:46:12,852 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_columns_01 ON columns (tabl...
+2025-09-13 18:46:12,852 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_files_01 ON files (file_nam...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_classes_01 ON classes (clas...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE INDEX ix_classes_02 ON classes (parent_clas...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_components_01 ON components...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE INDEX ix_components_parent_id ON components...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 인덱스가 이미 존재함 (무시): CREATE UNIQUE INDEX ix_relationships_01 ON relatio...
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - SQL 스크립트 실행 성공: D:\Analyzer\CreateMetaDb\database\create_table_script.sql
+2025-09-13 18:46:12,853 - SourceAnalyzer - INFO - logger.py:68 - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:12,853 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM pro...
+2025-09-13 18:46:12,854 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE projects
+            SET hash_..., 영향받은 행: 1
+2025-09-13 18:46:12,854 - SourceAnalyzer - DEBUG - logger.py:64 - 프로젝트 정보 저장/업데이트 완료: sampleSrc
+2025-09-13 18:46:12,854 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 파일 스캔 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc
+2025-09-13 18:46:12,874 - SourceAnalyzer - DEBUG - logger.py:64 - 디렉토리 스캔 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc, 파일 수: 42
+2025-09-13 18:46:12,875 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,879 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,882 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,886 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,887 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,891 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,892 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,896 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,896 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,901 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,902 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,906 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,907 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,911 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,912 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,916 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,917 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,921 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,922 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,926 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,927 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,930 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,931 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,935 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,936 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,940 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,941 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,945 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,945 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,950 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,950 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,954 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,955 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,959 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,960 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,964 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,964 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,968 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,969 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,973 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,974 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,978 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,978 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,982 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,983 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,987 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,988 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,992 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,993 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,997 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:12,998 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,002 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,003 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,007 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,008 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,012 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,013 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,017 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,018 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,022 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,022 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,026 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,027 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,031 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,032 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,036 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,037 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,040 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
+2025-09-13 18:46:13,041 - SourceAnalyzer - INFO - logger.py:68 - 파일 스캔 완료: 총 35개 파일
+2025-09-13 18:46:13,041 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT project_id FROM projects WHERE project_name...
+2025-09-13 18:46:13,041 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,041 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,041 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,043 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,044 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM fil...
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE files
+            SET file_typ..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - INFO - logger.py:68 - 파일 정보 저장 완료: 35개 파일
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: UPDATE projects SET total_files = ? WHERE project_..., 영향받은 행: 1
+2025-09-13 18:46:13,045 - SourceAnalyzer - DEBUG - logger.py:64 - 프로젝트 총 파일 수 업데이트: 35
+2025-09-13 18:46:13,045 - SourceAnalyzer - INFO - logger.py:68 - === 파일 스캔 통계 ===
+2025-09-13 18:46:13,045 - SourceAnalyzer - INFO - logger.py:68 - 총 파일 수: 35
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - 성공 스캔: 35
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - 오류 파일: 0
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - Java 파일: 19
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - XML 파일: 6
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - JSP 파일: 8
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - SQL 파일: 0
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - CSV 파일: 2
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - 기타 파일: 0
+2025-09-13 18:46:13,046 - SourceAnalyzer - INFO - logger.py:68 - === 파일 스캔 완료 ===
+2025-09-13 18:46:13,048 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:13,048 - SourceAnalyzer - INFO - logger.py:68 - 1단계 완료: 파일 정보 저장
+2025-09-13 18:46:13,048 - SourceAnalyzer - INFO - logger.py:68 - 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-13 18:46:13,048 - SourceAnalyzer - INFO - logger.py:68 - === 데이터베이스 로딩 시작: 데이터베이스 구조 저장 ===
+2025-09-13 18:46:13,050 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:13,050 - SourceAnalyzer - INFO - logger.py:68 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TABLES.csv
+2025-09-13 18:46:13,050 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공 (cp949): D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TABLES.csv
+2025-09-13 18:46:13,050 - SourceAnalyzer - INFO - logger.py:68 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TABLES.csv, 16개 행
+2025-09-13 18:46:13,051 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT f.file_id 
+               ...
+2025-09-13 18:46:13,052 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO tables (project..., 처리된 행: 16
+2025-09-13 18:46:13,052 - SourceAnalyzer - INFO - logger.py:68 - 테이블 정보 저장 완료: 16개 테이블 (오류: 0개)
+2025-09-13 18:46:13,052 - SourceAnalyzer - INFO - logger.py:68 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TAB_COLUMNS.csv
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공 (cp949): D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TAB_COLUMNS.csv
+2025-09-13 18:46:13,053 - SourceAnalyzer - INFO - logger.py:68 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TAB_COLUMNS.csv, 91개 행
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,053 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,054 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,055 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,056 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,057 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT t.table_id 
+              ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO columns (table_..., 처리된 행: 91
+2025-09-13 18:46:13,058 - SourceAnalyzer - INFO - logger.py:68 - 컬럼 정보 저장 완료: 91개 컬럼 (오류: 0개)
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT f.file_id 
+               ...
+2025-09-13 18:46:13,058 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT table_id, table_name, tabl...
+2025-09-13 18:46:13,059 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO components (pro..., 처리된 행: 28
+2025-09-13 18:46:13,059 - SourceAnalyzer - INFO - logger.py:68 - 테이블 컴포넌트 생성 완료: 28개
+2025-09-13 18:46:13,059 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                UPDATE tables 
+                SE..., 영향받은 행: 28
+2025-09-13 18:46:13,059 - SourceAnalyzer - DEBUG - logger.py:64 - 테이블 component_id 업데이트 완료
+2025-09-13 18:46:13,059 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT f.file_id 
+               ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.column_id, c.column_name...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,060 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,061 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,062 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,063 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,064 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                    SELECT t.component_id 
+      ...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO components (pro..., 처리된 행: 91
+2025-09-13 18:46:13,070 - SourceAnalyzer - INFO - logger.py:68 - 컬럼 컴포넌트 생성 완료: 91개
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,070 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,071 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,072 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,073 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT component_id FROM componen...
+2025-09-13 18:46:13,074 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,075 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,076 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,077 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,078 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,079 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            UPDATE columns
+            SET compon..., 영향받은 행: 1
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - 컬럼 component_id 업데이트 완료: 91개
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - === 데이터베이스 구조 저장 통계 ===
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - 테이블 로드: 16 (오류: 0)
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - 컬럼 로드: 91 (오류: 0)
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - 컴포넌트 생성: 119 (오류: 0)
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - inferred 컬럼 생성: 0
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - 오류 없이 완료
+2025-09-13 18:46:13,080 - SourceAnalyzer - INFO - logger.py:68 - === 데이터베이스 로딩 완료 ===
+2025-09-13 18:46:13,083 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:13,083 - SourceAnalyzer - INFO - logger.py:68 - 2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-13 18:46:13,083 - SourceAnalyzer - INFO - logger.py:68 - 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-13 18:46:13,101 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-13 18:46:13,123 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-13 18:46:13,123 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/xml_parser_config.yaml
+2025-09-13 18:46:13,129 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/xml_parser_config.yaml
+2025-09-13 18:46:13,129 - SourceAnalyzer - INFO - logger.py:68 - === XML 로딩 시작: 3~4단계 통합 처리 ===
+2025-09-13 18:46:13,131 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:13,131 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,132 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,133 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-13 18:46:13,133 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,133 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,133 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,134 - SourceAnalyzer - INFO - logger.py:68 - MyBatis XML 파일 수집 완료: 6개
+2025-09-13 18:46:13,135 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,143 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,143 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,144 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,144 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,144 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,145 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,145 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,146 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,147 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO relationships (..., 처리된 행: 6
+2025-09-13 18:46:13,147 - SourceAnalyzer - INFO - logger.py:68 - JOIN 관계 저장 완료: 6개
+2025-09-13 18:46:13,148 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,148 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,149 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,149 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,149 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,150 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,151 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,151 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,151 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,151 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO relationships (..., 처리된 행: 10
+2025-09-13 18:46:13,151 - SourceAnalyzer - INFO - logger.py:68 - JOIN 관계 저장 완료: 10개
+2025-09-13 18:46:13,151 - SourceAnalyzer - WARNING - logger.py:72 - XML 파싱 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - not well-formed (invalid token): line 190, column 37
+2025-09-13 18:46:13,151 - SourceAnalyzer - WARNING - logger.py:72 - XML 파싱 에러로 건너뜀: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - XML 파싱 오류: not well-formed (invalid token): line 190, column 37
+2025-09-13 18:46:13,152 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,153 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,153 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,153 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,153 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,154 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,154 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,154 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,155 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,155 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,155 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,156 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,157 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO relationships (..., 처리된 행: 4
+2025-09-13 18:46:13,157 - SourceAnalyzer - INFO - logger.py:68 - JOIN 관계 저장 완료: 4개
+2025-09-13 18:46:13,157 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,158 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,158 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,158 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,159 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,159 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,159 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,160 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,160 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO relationships (..., 처리된 행: 2
+2025-09-13 18:46:13,161 - SourceAnalyzer - INFO - logger.py:68 - JOIN 관계 저장 완료: 2개
+2025-09-13 18:46:13,161 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,162 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,162 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,163 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,163 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,163 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,164 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,164 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,165 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,165 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,166 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,166 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,167 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,168 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,168 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,169 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,169 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,170 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,170 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,170 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,171 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,171 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-13 18:46:13,171 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,172 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT c.component_id 
+          ...
+2025-09-13 18:46:13,173 - SourceAnalyzer - DEBUG - logger.py:64 - 배치 쿼리 실행 성공: 
+            INSERT OR IGNORE INTO relationships (..., 처리된 행: 8
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - JOIN 관계 저장 완료: 8개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - === XML 로딩 통계 ===
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 처리된 XML 파일: 5개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 추출된 SQL 쿼리: 56개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 생성된 SQL 컴포넌트: 56개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 생성된 JOIN 관계: 30개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 테이블: 0개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 컬럼: 0개
+2025-09-13 18:46:13,173 - SourceAnalyzer - INFO - logger.py:68 - 오류 발생: 1개
+2025-09-13 18:46:13,177 - SourceAnalyzer - ERROR - logger.py:128 - FATAL ERROR at D:\Analyzer\CreateMetaDb\xml_loading.py:812 in _print_xml_loading_statistics()
+Code: sql_content_stats = self.sql_content_manager.get_stats(project_id)
+Message: 통계 출력 실패
+Exception: AttributeError: 'NoneType' object has no attribute 'get_stats'
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\xml_loading.py", line 812, in _print_xml_loading_statistics
+    sql_content_stats = self.sql_content_manager.get_stats(project_id)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_stats'
+
+2025-09-13 18:46:13,179 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-13 18:46:13,182 - SourceAnalyzer - ERROR - logger.py:128 - FATAL ERROR at D:\Analyzer\CreateMetaDb\xml_loading.py:155 in execute_xml_loading()
+Code: self.sql_content_manager.close()
+Message: 프로그램 실행 중 오류 발생
+Exception: AttributeError: 'NoneType' object has no attribute 'close'
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\xml_loading.py", line 812, in _print_xml_loading_statistics
+    sql_content_stats = self.sql_content_manager.get_stats(project_id)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_stats'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\xml_loading.py", line 140, in execute_xml_loading
+    self._print_xml_loading_statistics()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Analyzer\CreateMetaDb\xml_loading.py", line 834, in _print_xml_loading_statistics
+    handle_error(e, "통계 출력 실패")
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Analyzer\CreateMetaDb\util\logger.py", line 182, in handle_error
+    app_logger.handle_error(error, custom_message, exit_code)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Analyzer\CreateMetaDb\util\logger.py", line 133, in handle_error
+    sys.exit(exit_code)
+    ~~~~~~~~^^^^^^^^^^^
+SystemExit: 1
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\main.py", line 91, in main
+    success = xml_engine.execute_xml_loading()
+  File "D:\Analyzer\CreateMetaDb\xml_loading.py", line 155, in execute_xml_loading
+    self.sql_content_manager.close()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'close'
+

@@ -1,0 +1,53 @@
+# 통합 SQL 분석 패턴 (USER RULES: 설정 파일 기반)
+sql_analysis_patterns:
+  # FROM 절 분석 패턴
+  from_clause:
+    - "FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?(?:\s*,\s*([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?)?"
+  
+  # EXPLICIT JOIN 분석 패턴
+  explicit_joins:
+    # LEFT JOIN 패턴 (별칭 선택적, ON 조건절 포함)
+    - "(LEFT\s+(?:OUTER\s+)?JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?\s+ON\s+(.+?)(?=\s+(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL|WHERE|GROUP|ORDER|$))"
+    # INNER JOIN 패턴
+    - "(INNER\s+JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?\s+ON\s+(.+?)(?=\s+(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL|WHERE|GROUP|ORDER|$))"
+    # RIGHT JOIN 패턴
+    - "(RIGHT\s+(?:OUTER\s+)?JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?\s+ON\s+(.+?)(?=\s+(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL|WHERE|GROUP|ORDER|$))"
+    # FULL OUTER JOIN 패턴
+    - "(FULL\s+OUTER\s+JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?\s+ON\s+(.+?)(?=\s+(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL|WHERE|GROUP|ORDER|$))"
+    # CROSS JOIN 패턴 (ON 조건절 없음)
+    - "(CROSS\s+JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?"
+    # NATURAL JOIN 패턴 (ON 조건절 없음)
+    - "(NATURAL\s+JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+([a-zA-Z_][a-zA-Z0-9_]*))?"
+  
+  # IMPLICIT JOIN 분석 패턴 (WHERE 절)
+  implicit_joins:
+    # 별칭 있는 조건 (u.id = o.user_id)
+    - "([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)"
+    # Oracle (+) 외부 조인 구문
+    - "([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\+\)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)"
+    # 별칭 없는 조건 (id = user_id)
+    - "\b([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\b"
+
+# JOIN 타입 매핑 (USER RULES: 설정 파일 기반)
+join_type_mapping:
+  "LEFT\s+(?:OUTER\s+)?JOIN": "LEFT_JOIN"
+  "INNER\s+JOIN": "INNER_JOIN"
+  "RIGHT\s+(?:OUTER\s+)?JOIN": "RIGHT_JOIN"
+  "FULL\s+OUTER\s+JOIN": "FULL_OUTER_JOIN"
+  "CROSS\s+JOIN": "CROSS_JOIN"
+  "NATURAL\s+JOIN": "NATURAL_JOIN"
+  "ORACLE_OUTER": "ORACLE_OUTER_JOIN"
+
+# 동적 쿼리 태그 패턴 (USER RULES: 설정 파일 기반)
+dynamic_sql_patterns:
+  # MyBatis 동적 태그 패턴
+  dynamic_tags:
+    - "<if\s+test=["'][^"']*["'][^>]*>(.*?)</if>"
+    - "<choose\s*>(.*?)</choose>"
+    - "<when\s+test=["'][^"']*["'][^>]*>(.*?)</when>"
+    - "<otherwise\s*>(.*?)</otherwise>"
+    - "<foreach\s+[^>]*>(.*?)</foreach>"
+  
+  # JOIN이 포함된 동적 태그 감지 패턴
+  dynamic_join_detection:
+    - "<if[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\s+JOIN.*?</if>"

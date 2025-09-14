@@ -1,0 +1,151 @@
+# 소스 분석 필터 설정
+# 분석에 포함하거나 제외할 파일 및 디렉토리 패턴을 정의합니다.
+# "**/target/**" 이렇게 명시하면 상,하위 경로는 몇 Depth이던 상관없고 중간에 /target/이라는 폴더가 있으면 만족
+
+
+# 포함할 파일 패턴
+include_patterns:
+  - "**/*.java"
+  - "**/*.jsp"
+  - "**/*.xml"
+  - "**/*.sql"
+  - "**/*.properties"
+  - "**/*.jar"
+
+# 제외할 디렉토리 패턴
+exclude_directories:
+  - "**/target/**"
+  - "**/build/**"
+  - "**/test/**"
+  - "**/.git/**"
+  - "**/node_modules/**"
+  - "**/bin/**"
+  - "**/out/**"
+  - "**/report/**"
+  - "**/config/**"
+  - "**/logs/**"
+  - "**/temp/**"
+  - "**/backup/**"
+
+# 제외할 파일 패턴
+exclude_files:
+  - "**/*.class"
+  - "**/*.log"
+  - "**/*.tmp"
+  - "**/*.bak"
+  - "**/*.swp"
+  - "**/*.orig"
+  - "**/Architecture_Report_*.txt"
+  - "**/ERD_Report_*.txt"
+  - "**/CallChain_Report_*.html"
+  - "**/*_Report_*.txt"
+  - "**/*_Report_*.html"
+
+# 최대 파일 크기 (바이트)
+max_file_size: 10485760  # 10MB
+
+# 최소 파일 크기 (바이트)
+min_file_size: 1
+
+# 분석할 파일 확장자
+supported_extensions:
+  - ".java"
+  - ".jsp"
+  - ".xml"
+  - ".sql"
+  - ".properties"
+  - ".jar"
+
+# 특정 파일 타입별 설정
+file_type_settings:
+  java:
+    enabled: true
+    max_lines: 10000
+    parse_annotations: true
+    parse_imports: true
+  
+  jsp:
+    enabled: true
+    max_lines: 5000
+    parse_jstl: true
+    parse_scriptlets: true
+  
+  xml:
+    enabled: true
+    max_lines: 5000
+    parse_namespaces: true
+    parse_attributes: true
+  
+  sql:
+    enabled: true
+    max_lines: 1000
+    parse_comments: true
+    parse_hints: true
+  
+  properties:
+    enabled: true
+    max_lines: 1000
+    parse_encodings: true
+  
+  jar:
+    enabled: true
+    max_size: 52428800  # 50MB
+    parse_manifest: true
+    parse_class_files: false  # 성능상 기본적으로 비활성화
+
+# =============================================================================
+# 경로 매핑 설정 (Java 파일 경로를 XML 파일 경로로 변환)
+# =============================================================================
+# 
+# 이 설정은 SourceAnalyzer가 Java 파일에서 MyBatis XML 파일을 찾을 때
+# 사용하는 경로 변환 규칙을 정의합니다.
+#
+# 동작 방식:
+# 1. Java 파일 경로에서 매칭되는 패턴을 찾습니다
+# 2. 매칭되는 패턴을 XML 디렉토리 패턴으로 변환합니다
+# 3. 우선순위: 위에서부터 아래로 순서대로 매칭 시도
+#
+# 예시:
+#   Java: src/main/java/com/example/UserMapper.java
+#   XML:  src/main/resources/com/example/UserMapper.xml
+#
+# 자세한 설명은 docs/설정파일_가이드_target_source_config_yaml_분석대상및경로매핑.md 참조
+# =============================================================================
+path_mappings:
+  # =============================================================================
+  # 표준 프로젝트 구조 (우선순위 높음)
+  # =============================================================================
+  
+  # Maven/Gradle 표준 구조
+  "src/main/java": "src/main/resources"    # Maven 표준: src/main/java → src/main/resources
+  "src/test/java": "src/test/resources"    # Maven 테스트: src/test/java → src/test/resources
+  
+  # Gradle 대안 구조
+  "src/java": "src/resources"              # Gradle 대안: src/java → src/resources
+  "src/test": "src/test-resources"         # Gradle 테스트: src/test → src/test-resources
+  
+  # 단순 구조
+  "java": "resources"                      # 단순 구조: java → resources
+  "test": "test-resources"                 # 단순 테스트: test → test-resources
+  
+  # =============================================================================
+  # 커스텀 패턴들 (범용적)
+  # =============================================================================
+  
+  "src/com": "src/mapper"                  # com 패키지 → mapper 디렉토리
+  "src/dao": "src/sql"                     # DAO 패키지 → sql 디렉토리
+  "src/service": "src/mapper"              # Service 패키지 → mapper 디렉토리
+  "src/controller": "src/mapper"           # Controller 패키지 → mapper 디렉토리
+  "src/repository": "src/mapper"           # Repository 패키지 → mapper 디렉토리
+  "src/entity": "src/mapper"               # Entity 패키지 → mapper 디렉토리
+  "src/model": "src/mapper"                # Model 패키지 → mapper 디렉토리
+  "src/domain": "src/mapper"               # Domain 패키지 → mapper 디렉토리
+  "src/business": "src/mapper"             # Business 패키지 → mapper 디렉토리
+  "src/logic": "src/mapper"                # Logic 패키지 → mapper 디렉토리
+  
+  # =============================================================================
+  # 프로젝트별 커스텀 구조 (예시)
+  # =============================================================================
+  # 필요시 아래 주석을 해제하고 프로젝트에 맞게 수정하세요
+  # "src/com/example": "src/mapper"        # 특정 패키지 → mapper 디렉토리
+  # "src/dao": "src/sql"                   # DAO → sql 디렉토리 (이미 위에 정의됨)

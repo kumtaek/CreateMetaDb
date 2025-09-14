@@ -1,0 +1,191 @@
+2025-09-14 15:24:29,959 - SourceAnalyzer - INFO - logger.py:120 - Recursion limit set to: 50
+2025-09-14 15:24:29,959 - SourceAnalyzer - INFO - logger.py:120 - SourceAnalyzer 시작
+2025-09-14 15:24:29,967 - SourceAnalyzer - INFO - logger.py:120 - 분석 대상 프로젝트: sampleSrc
+2025-09-14 15:24:29,968 - SourceAnalyzer - INFO - logger.py:120 - 분석 옵션:
+2025-09-14 15:24:29,968 - SourceAnalyzer - INFO - logger.py:120 -   - 메타데이터베이스 초기화: False
+2025-09-14 15:24:29,968 - SourceAnalyzer - INFO - logger.py:120 -   - 상세 로그: False
+2025-09-14 15:24:29,968 - SourceAnalyzer - INFO - logger.py:120 -   - 출력 형식: html
+2025-09-14 15:24:29,968 - SourceAnalyzer - INFO - logger.py:120 -   - 드라이런 모드: False
+2025-09-14 15:24:29,969 - SourceAnalyzer - INFO - logger.py:120 -   - 강제 실행: False
+2025-09-14 15:24:29,969 - SourceAnalyzer - INFO - logger.py:120 - 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+2025-09-14 15:24:29,970 - SourceAnalyzer - INFO - logger.py:120 - === 파일 스캔 시작: 파일 정보 저장 ===
+2025-09-14 15:24:29,972 - SourceAnalyzer - INFO - logger.py:120 - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-14 15:24:29,974 - SourceAnalyzer - INFO - logger.py:120 - 프로젝트 파일 스캔 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc
+2025-09-14 15:24:30,212 - SourceAnalyzer - INFO - logger.py:120 - 파일 스캔 완료: 총 46개 파일
+2025-09-14 15:24:30,214 - SourceAnalyzer - INFO - logger.py:120 - 파일 정보 저장 완료: 46개 파일
+2025-09-14 15:24:30,214 - SourceAnalyzer - INFO - logger.py:120 - === 파일 스캔 통계 ===
+2025-09-14 15:24:30,214 - SourceAnalyzer - INFO - logger.py:120 - 총 파일 수: 46
+2025-09-14 15:24:30,214 - SourceAnalyzer - INFO - logger.py:120 - 성공 스캔: 46
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - 오류 파일: 0
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - Java 파일: 30
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - XML 파일: 6
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - JSP 파일: 8
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - SQL 파일: 0
+2025-09-14 15:24:30,215 - SourceAnalyzer - INFO - logger.py:120 - CSV 파일: 2
+2025-09-14 15:24:30,216 - SourceAnalyzer - INFO - logger.py:120 - 기타 파일: 0
+2025-09-14 15:24:30,216 - SourceAnalyzer - INFO - logger.py:120 - === 파일 스캔 완료 ===
+2025-09-14 15:24:30,219 - SourceAnalyzer - INFO - logger.py:120 - 1단계 완료: 파일 정보 저장
+2025-09-14 15:24:30,221 - SourceAnalyzer - INFO - logger.py:120 - 전역 프로젝트 정보 설정: sampleSrc (ID: 1)
+2025-09-14 15:24:30,221 - SourceAnalyzer - INFO - logger.py:120 - 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-14 15:24:30,222 - SourceAnalyzer - INFO - logger.py:120 - === 데이터베이스 로딩 시작: 데이터베이스 구조 저장 ===
+2025-09-14 15:24:30,223 - SourceAnalyzer - INFO - logger.py:120 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TABLES.csv
+2025-09-14 15:24:30,223 - SourceAnalyzer - INFO - logger.py:120 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TABLES.csv, 16개 행
+2025-09-14 15:24:30,225 - SourceAnalyzer - INFO - logger.py:120 - 테이블 정보 저장 완료: 16개 테이블 (오류: 0개)
+2025-09-14 15:24:30,225 - SourceAnalyzer - INFO - logger.py:120 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TAB_COLUMNS.csv
+2025-09-14 15:24:30,226 - SourceAnalyzer - INFO - logger.py:120 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TAB_COLUMNS.csv, 91개 행
+2025-09-14 15:24:30,227 - SourceAnalyzer - INFO - logger.py:120 - 컬럼 정보 저장 완료: 91개 컬럼 (오류: 0개)
+2025-09-14 15:24:30,228 - SourceAnalyzer - INFO - logger.py:120 - 테이블 컴포넌트 생성 완료: 40개
+2025-09-14 15:24:30,230 - SourceAnalyzer - INFO - logger.py:120 - 컬럼 컴포넌트 생성 완료: 109개
+2025-09-14 15:24:30,241 - SourceAnalyzer - INFO - logger.py:120 - 컬럼 component_id 업데이트 완료: 109개
+2025-09-14 15:24:30,241 - SourceAnalyzer - INFO - logger.py:120 - === 데이터베이스 구조 저장 통계 ===
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - 테이블 로드: 16 (오류: 0)
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - 컬럼 로드: 91 (오류: 0)
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - 컴포넌트 생성: 149 (오류: 0)
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - inferred 컬럼 생성: 0
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - 오류 없이 완료
+2025-09-14 15:24:30,242 - SourceAnalyzer - INFO - logger.py:120 - === 데이터베이스 로딩 완료 ===
+2025-09-14 15:24:30,243 - SourceAnalyzer - INFO - logger.py:120 - 2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-14 15:24:30,243 - SourceAnalyzer - INFO - logger.py:120 - 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-14 15:24:30,280 - SourceAnalyzer - INFO - logger.py:120 - SQL Content 데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\SqlContent.db
+2025-09-14 15:24:30,281 - SourceAnalyzer - INFO - logger.py:120 - === XML 로딩 시작: 3~4단계 통합 처리 ===
+2025-09-14 15:24:30,287 - SourceAnalyzer - INFO - logger.py:120 - MyBatis XML 파일 수집 완료: 6개
+2025-09-14 15:24:30,287 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,288 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,288 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,289 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,303 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,311 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,311 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,312 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,312 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-14 15:24:30,313 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,326 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,335 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,337 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,340 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,344 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,349 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,351 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,352 - SourceAnalyzer - INFO - logger.py:120 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 15:24:30,352 - SourceAnalyzer - INFO - logger.py:120 - 전달받은 SQL 쿼리 수: 8개
+2025-09-14 15:24:30,352 - SourceAnalyzer - INFO - logger.py:120 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 8}
+2025-09-14 15:24:30,352 - SourceAnalyzer - INFO - logger.py:120 - 프로젝트 ID: 1
+2025-09-14 15:24:30,353 - SourceAnalyzer - INFO - logger.py:120 - JOIN 관계 저장 완료: 6개
+2025-09-14 15:24:30,353 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,354 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,354 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,354 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,368 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,375 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,375 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,375 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,375 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-14 15:24:30,376 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,380 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,384 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,388 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,398 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,405 - SourceAnalyzer - INFO - logger.py:120 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 15:24:30,407 - SourceAnalyzer - INFO - logger.py:120 - 전달받은 SQL 쿼리 수: 5개
+2025-09-14 15:24:30,407 - SourceAnalyzer - INFO - logger.py:120 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5}
+2025-09-14 15:24:30,407 - SourceAnalyzer - INFO - logger.py:120 - 프로젝트 ID: 1
+2025-09-14 15:24:30,408 - SourceAnalyzer - INFO - logger.py:120 - JOIN 관계 저장 완료: 10개
+2025-09-14 15:24:30,408 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,409 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml (사유: not well-formed (invalid token): line 190, column 37)
+2025-09-14 15:24:30,409 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,409 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,423 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,432 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,432 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,432 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,433 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-14 15:24:30,433 - SourceAnalyzer - WARNING - logger.py:127 - XML 파싱 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - not well-formed (invalid token): line 190, column 37
+2025-09-14 15:24:30,433 - SourceAnalyzer - WARNING - logger.py:127 - XML 파싱 에러로 건너뜀: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml - XML 파싱 오류: not well-formed (invalid token): line 190, column 37
+2025-09-14 15:24:30,433 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,434 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,434 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,434 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,447 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,453 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,455 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,455 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,455 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-14 15:24:30,456 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,458 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,460 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,462 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,464 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,466 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,468 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,477 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,479 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,486 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,491 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,492 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,495 - SourceAnalyzer - INFO - logger.py:120 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 15:24:30,496 - SourceAnalyzer - INFO - logger.py:120 - 전달받은 SQL 쿼리 수: 12개
+2025-09-14 15:24:30,496 - SourceAnalyzer - INFO - logger.py:120 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 9, 'insert': 1, 'update': 1, 'delete': 1}
+2025-09-14 15:24:30,496 - SourceAnalyzer - INFO - logger.py:120 - 프로젝트 ID: 1
+2025-09-14 15:24:30,496 - SourceAnalyzer - INFO - logger.py:120 - JOIN 관계 저장 완료: 4개
+2025-09-14 15:24:30,497 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,497 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,498 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,498 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,510 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,516 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,517 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,517 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,518 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-14 15:24:30,519 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,521 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,523 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,528 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,530 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,537 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,540 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,543 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,545 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,546 - SourceAnalyzer - INFO - logger.py:120 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-14 15:24:30,546 - SourceAnalyzer - INFO - logger.py:120 - 전달받은 SQL 쿼리 수: 9개
+2025-09-14 15:24:30,547 - SourceAnalyzer - INFO - logger.py:120 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5, 'update': 2, 'insert': 1, 'delete': 1}
+2025-09-14 15:24:30,552 - SourceAnalyzer - INFO - logger.py:120 - 프로젝트 ID: 1
+2025-09-14 15:24:30,553 - SourceAnalyzer - INFO - logger.py:120 - JOIN 관계 저장 완료: 2개
+2025-09-14 15:24:30,553 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 시도: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,554 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,554 - SourceAnalyzer - INFO - logger.py:120 - DOM 기반 파싱 실패 또는 결과 없음, SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,555 - SourceAnalyzer - INFO - logger.py:120 - SAX 파서로 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,567 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,573 - SourceAnalyzer - WARNING - logger.py:127 - SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,574 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱도 실패, 정규식 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,574 - SourceAnalyzer - INFO - logger.py:120 - SAX 파싱 오류 메시지: SAX 파싱 중 예상치 못한 오류: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml - maximum recursion depth exceeded
+2025-09-14 15:24:30,574 - SourceAnalyzer - INFO - logger.py:120 - 정규식 기반 파서로 최종 Fallback: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-14 15:24:30,575 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,577 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,579 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,589 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,591 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,593 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,602 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,604 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,606 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,609 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,611 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,618 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,625 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,627 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,636 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,641 - SourceAnalyzer - INFO - logger.py:120 - DOM 파싱 불가, SAX로 fallback합니다: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml (사유: cannot access local variable 'child' where it is not associated with a value)
+2025-09-14 15:24:30,646 - SourceAnalyzer - ERROR - logger.py:131 - 데이터베이스 연결 오류: FOREIGN KEY constraint failed
+2025-09-14 15:24:30,652 - SourceAnalyzer - ERROR - logger.py:188 - FATAL ERROR at D:\Analyzer\CreateMetaDb\util\database_utils.py:196 in execute_update()
+Code: cursor.execute(query, params)
+Message: 업데이트 쿼리 실행 실패: 
+            INSERT OR REPLACE INTO components (pr...
+Exception: IntegrityError: FOREIGN KEY constraint failed
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\util\database_utils.py", line 196, in execute_update
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+
+2025-09-14 15:24:30,654 - SourceAnalyzer - INFO - logger.py:120 - SQL Content 데이터베이스 연결 해제

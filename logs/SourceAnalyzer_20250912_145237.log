@@ -1,0 +1,26 @@
+2025-09-12 14:52:38,026 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+2025-09-12 14:52:38,032 - SourceAnalyzer - DEBUG - logger.py:64 - 명령행 인자 파싱 완료: {'project_name': 'sampleSrc', 'clear_metadb': False, 'verbose': False, 'output_format': 'html', 'config_file': None, 'log_level': 'INFO', 'dry_run': False, 'force': False}
+2025-09-12 14:52:38,032 - SourceAnalyzer - DEBUG - logger.py:64 - 인자 검증 성공
+2025-09-12 14:52:38,032 - SourceAnalyzer - INFO - logger.py:68 - 분석 대상 프로젝트: sampleSrc
+2025-09-12 14:52:38,032 - SourceAnalyzer - INFO - logger.py:68 - 분석 옵션:
+2025-09-12 14:52:38,032 - SourceAnalyzer - INFO - logger.py:68 -   - 메타데이터베이스 초기화: False
+2025-09-12 14:52:38,032 - SourceAnalyzer - INFO - logger.py:68 -   - 상세 로그: False
+2025-09-12 14:52:38,033 - SourceAnalyzer - INFO - logger.py:68 -   - 출력 형식: html
+2025-09-12 14:52:38,033 - SourceAnalyzer - INFO - logger.py:68 -   - 드라이런 모드: False
+2025-09-12 14:52:38,033 - SourceAnalyzer - INFO - logger.py:68 -   - 강제 실행: False
+2025-09-12 14:52:38,033 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 분석 시작...
+2025-09-12 14:52:38,034 - SourceAnalyzer - INFO - logger.py:68 - === 파일 스캔 시작: 파일 정보 저장 ===
+2025-09-12 14:52:38,038 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 14:52:38,042 - SourceAnalyzer - DEBUG - logger.py:64 - SQL 스크립트 실행 성공: D:\Analyzer\CreateMetaDb\database\create_table_script.sql
+2025-09-12 14:52:38,042 - SourceAnalyzer - INFO - logger.py:68 - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 14:52:38,042 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT COUNT(*) as count FROM pro...
+2025-09-12 14:52:38,042 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+            INSERT INTO projects (project_name, p..., 영향받은 행: 1
+2025-09-12 14:52:38,043 - SourceAnalyzer - DEBUG - logger.py:64 - 프로젝트 정보 저장/업데이트 완료: sampleSrc
+2025-09-12 14:52:38,043 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 파일 스캔 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc
+2025-09-12 14:52:38,045 - SourceAnalyzer - DEBUG - logger.py:64 - 디렉토리 스캔 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc, 파일 수: 3
+2025-09-12 14:52:38,045 - SourceAnalyzer - INFO - logger.py:68 - 파일 스캔 완료: 총 0개 파일
+2025-09-12 14:52:38,046 - SourceAnalyzer - WARNING - logger.py:72 - 스캔된 파일이 없습니다
+2025-09-12 14:52:38,050 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 14:52:38,050 - SourceAnalyzer - ERROR - logger.py:76 - 파일 스캔 실패

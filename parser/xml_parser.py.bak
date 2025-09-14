@@ -1,0 +1,997 @@
+"""
+XML 파서 모듈
+- 3~4단계 통합 처리: XML 파일에서 SQL 쿼리 추출 및 JOIN 관계 분석
+- MyBatis 동적 SQL 태그 처리 및 Oracle 암시적 JOIN 분석
+- 메모리 최적화 (스트리밍 처리)
+
+USER RULES:
+- 하드코딩 금지: config/parser/sql_keyword.yaml 사용
+- Exception 처리: handle_error() 공통함수 사용
+- 공통함수 사용: util 모듈 활용
+- 메뉴얼 기반: parser/manual/04_mybatis 참고
+"""
+
+import os
+import re
+import xml.etree.ElementTree as ET
+from typing import List, Dict, Any, Optional
+from util import (
+    ConfigUtils, FileUtils, HashUtils, ValidationUtils,
+    app_logger, info, error, debug, warning, handle_error
+)
+
+
+class XmlParser:
+    """XML 파서 - 3~4단계 통합 처리"""
+    
+    def __init__(self, config_path: str = None):
+        """
+        XML 파서 초기화
+        
+        Args:
+            config_path: 설정 파일 경로
+        """
+        # USER RULES: 설정 파일 사용 - sql_keyword.yaml과 xml_parser_config.yaml 모두 로드
+        if config_path is None:
+            sql_config_path = "config/parser/sql_keyword.yaml"
+            xml_config_path = "config/parser/xml_parser_config.yaml"
+            
+            # SQL 키워드 설정 로드
+            sql_config = self._load_config(sql_config_path)
+            # XML 파서 설정 로드
+            xml_config = self._load_config(xml_config_path)
+            
+            # 설정 병합 (SQL 설정 우선, XML 설정으로 보완)
+            self.config = {**xml_config, **sql_config}
+        else:
+            self.config_path = config_path
+            self.config = self._load_config()
+        
+        # 파싱 통계
+        self.stats = {
+            'files_processed': 0,
+            'files_skipped': 0,
+            'sql_queries_extracted': 0,
+            'join_relationships_created': 0,
+            'errors': 0
+        }
+    
+    def _load_config(self, config_path: str = None) -> Dict[str, Any]:
+        """설정 파일 로드 (USER RULES: 하드코딩 금지)"""
+        try:
+            config_utils = ConfigUtils()
+            path = config_path or self.config_path
+            config = config_utils.load_yaml_config(path)
+            if not config:
+                handle_error(Exception(f"설정 파일을 로드할 수 없습니다: {path}"), "설정 파일 로드 실패")
+                return self._get_default_config()
+            return config
+        except Exception as e:
+            handle_error(e, f"설정 파일 로드 실패: {config_path or self.config_path}")
+            return self._get_default_config()
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """기본 설정 반환 (USER RULES: 하드코딩 최소화)"""
+        return {
+            'sql_patterns': {
+                'explicit_joins': [],
+                'implicit_joins': []
+            }
+        }
+    
+    def get_filtered_xml_files(self, project_path: str) -> List[str]:
+        """
+        MyBatis XML 파일 수집 (USER RULES: 공통함수 사용)
+        
+        Args:
+            project_path: 프로젝트 경로
+            
+        Returns:
+            XML 파일 경로 리스트
+        """
+        try:
+            file_utils = FileUtils()
+            xml_files = []
+            
+            for root, dirs, files in os.walk(project_path):
+                for file in files:
+                    if file.endswith('.xml'):
+                        file_path = os.path.join(root, file)
+                        print(f"PRINT: XML 파일 발견: {file_path}")
+                        # MyBatis XML 파일 필터링 (USER RULES: 하드코딩 금지)
+                        if self._is_mybatis_xml_file(file_path):
+                            print(f"PRINT: MyBatis XML 파일로 인식: {file_path}")
+                            xml_files.append(file_path)
+                        else:
+                            print(f"PRINT: MyBatis XML 파일이 아님: {file_path}")
+            
+            info(f"MyBatis XML 파일 수집 완료: {len(xml_files)}개")
+            return xml_files
+            
+        except Exception as e:
+            handle_error(e, "XML 파일 수집 실패")
+            return []
+    
+    def _is_mybatis_xml_file(self, file_path: str) -> bool:
+        """
+        MyBatis XML 파일 여부 확인 (USER RULES: 메뉴얼 기반)
+        
+        Args:
+            file_path: 파일 경로
+            
+        Returns:
+            MyBatis XML 파일 여부
+        """
+        try:
+            # 파일 내용 확인 (USER RULES: 공통함수 사용)
+            file_utils = FileUtils()
+            content = file_utils.read_file(file_path)
+            if not content:
+                return False
+            
+            # MyBatis 네임스페이스 확인 (USER RULES: 설정 파일 사용)
+            mybatis_indicators = ['mybatis.org', 'mybatis-3.org', 'mapper']
+            mybatis_indicators.extend(self.config.get('sql_statement_types', {}).keys())
+            
+            content_lower = content.lower()
+            return any(indicator in content_lower for indicator in mybatis_indicators)
+            
+        except Exception as e:
+            warning(f"MyBatis XML 파일 확인 실패: {file_path}, 오류: {str(e)}")
+            return False
+    
+    def extract_sql_queries_and_analyze_relationships(self, xml_file: str) -> Dict[str, Any]:
+        """
+        XML 파일에서 SQL 쿼리 추출 및 JOIN 관계 분석 (3~4단계 통합)
+        
+        Args:
+            xml_file: XML 파일 경로
+            
+        Returns:
+            분석 결과 딕셔너리
+        """
+        try:
+            # XML 파싱
+            print(f"PRINT: XML 파일 처리 시작: {xml_file}")
+            try:
+                tree = ET.parse(xml_file)
+                root = tree.getroot()
+            except ET.ParseError as e:
+                # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
+                warning(f"XML 파싱 오류: {xml_file} - {str(e)}")
+                return {
+                    'sql_queries': [],
+                    'join_relationships': [],
+                    'has_error': 'Y',
+                    'error_message': f"XML 파싱 오류: {str(e)}"
+                }
+            
+            sql_queries = []
+            join_relationships = []
+            
+            # SQL 쿼리 추출 (3단계) - USER RULES: 설정 파일 사용
+            sql_tags = self.config.get('sql_statement_types', {}).keys()
+            print(f"PRINT: XML 파서가 인식하는 SQL 태그들: {list(sql_tags)}")
+            for element in root.iter():
+                print(f"PRINT: 모든 태그 발견: {element.tag} (id: {element.get('id', 'N/A')})")
+                if element.tag in sql_tags:
+                    print(f"PRINT: SQL 태그 발견: {element.tag} (id: {element.get('id', 'N/A')})")
+                    query_info = self._extract_sql_query_info(element, xml_file)
+                    if query_info:
+                        sql_queries.append(query_info)
+                        
+                        # JOIN 관계 분석 (4단계)
+                        relationships = self._analyze_join_relationships(query_info['sql_content'])
+                        join_relationships.extend(relationships)
+            
+            # 파일별 SQL 쿼리 추출 결과 로깅 (답변파일 제안)
+            file_name = os.path.basename(xml_file)
+            sql_type_count = {}
+            for query in sql_queries:
+                query_type = query.get('query_type', 'unknown')
+                sql_type_count[query_type] = sql_type_count.get(query_type, 0) + 1
+            
+            print(f"PRINT: 파일별 SQL 쿼리 추출 결과 - {file_name}")
+            print(f"PRINT:   총 쿼리 수: {len(sql_queries)}개")
+            print(f"PRINT:   타입별 통계: {sql_type_count}")
+            print(f"PRINT:   JOIN 관계: {len(join_relationships)}개")
+            
+            self.stats['files_processed'] += 1
+            self.stats['sql_queries_extracted'] += len(sql_queries)
+            self.stats['join_relationships_created'] += len(join_relationships)
+            
+            return {
+                'sql_queries': sql_queries,
+                'join_relationships': join_relationships,
+                'file_path': xml_file
+            }
+            
+        except Exception as e:
+            handle_error(e, f"XML 파일 분석 실패: {xml_file}")
+            self.stats['errors'] += 1
+            return {'sql_queries': [], 'join_relationships': [], 'file_path': xml_file}
+    
+    def _extract_sql_query_info(self, element: ET.Element, file_path: str) -> Optional[Dict[str, Any]]:
+        """
+        SQL 쿼리 정보 추출 (USER RULES: 메뉴얼 기반)
+        
+        Args:
+            element: XML 엘리먼트
+            file_path: 파일 경로
+            
+        Returns:
+            SQL 쿼리 정보 딕셔너리
+        """
+        try:
+            # 기본 정보 추출
+            tag_name = element.tag
+            query_id = element.get('id', '')
+            
+            if not query_id:
+                warning(f"쿼리 ID가 없습니다: {file_path}")
+                return None
+            
+            # SQL 내용 추출 (USER RULES: 메뉴얼 기반)
+            sql_content = self._extract_sql_content(element)
+            if not sql_content:
+                warning(f"SQL 내용이 없습니다: {query_id}")
+                return None
+            
+            # 라인 번호 추출
+            line_start, line_end = self._extract_line_numbers(element, file_path)
+            
+            # 해시 값 생성 (USER RULES: 공통함수 사용)
+            hash_utils = HashUtils()
+            hash_value = hash_utils.generate_md5(sql_content)
+            
+            return {
+                'tag_name': tag_name,
+                'query_id': query_id,
+                'query_type': tag_name,  # 답변파일 제안: query_type 추가
+                'sql_content': sql_content,
+                'file_path': file_path,
+                'line_start': line_start,
+                'line_end': line_end,
+                'hash_value': hash_value
+            }
+            
+        except Exception as e:
+            warning(f"SQL 쿼리 정보 추출 실패: {str(e)}")
+            return None
+    
+    def _extract_sql_content(self, element: ET.Element) -> str:
+        """
+        XML 엘리먼트에서 SQL 내용 추출 (USER RULES: 메뉴얼 기반)
+        
+        Args:
+            element: XML 엘리먼트
+            
+        Returns:
+            SQL 내용
+        """
+        try:
+            # XML을 문자열로 변환
+            import xml.etree.ElementTree as ET
+            xml_str = ET.tostring(element, encoding='unicode')
+            
+            # MyBatis 동적 SQL 태그 처리 (USER RULES: 메뉴얼 기반)
+            sql_content = self._process_mybatis_dynamic_sql_tags(xml_str)
+            
+            # 공백 정리
+            sql_content = ' '.join(sql_content.split()).strip()
+            return sql_content
+            
+        except Exception as e:
+            warning(f"SQL 내용 추출 실패: {str(e)}")
+            return ""
+    
+    def _process_mybatis_dynamic_sql_tags(self, sql_content: str) -> str:
+        """
+        MyBatis 동적 SQL 태그 처리 (USER RULES: 메뉴얼 기반)
+        
+        Args:
+            sql_content: 원본 SQL 내용
+            
+        Returns:
+            처리된 SQL 내용
+        """
+        try:
+            # SQL 태그 처리: 태그 제거 - USER RULES: 설정 파일 사용
+            sql_tags = '|'.join(self.config.get('sql_statement_types', {}).keys())
+            sql_content = re.sub(f'<({sql_tags})[^>]*>', '', sql_content, flags=re.IGNORECASE)
+            sql_content = re.sub(f'</({sql_tags})>', '', sql_content, flags=re.IGNORECASE)
+            
+            # <where> 태그 처리: 태그 제거하고 WHERE 키워드 추가
+            sql_content = re.sub(r'<where>', ' WHERE ', sql_content, flags=re.IGNORECASE)
+            sql_content = re.sub(r'</where>', '', sql_content, flags=re.IGNORECASE)
+            
+            # <if> 태그 처리: 태그와 내용 제거
+            sql_content = re.sub(r'<if[^>]*>.*?</if>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            
+            # <choose>, <when>, <otherwise> 태그 처리
+            sql_content = re.sub(r'<choose>.*?</choose>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            sql_content = re.sub(r'<when[^>]*>.*?</when>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            sql_content = re.sub(r'<otherwise>.*?</otherwise>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            
+            # <foreach> 태그 처리
+            sql_content = re.sub(r'<foreach[^>]*>.*?</foreach>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            
+            # <set> 태그 처리
+            sql_content = re.sub(r'<set>', 'SET ', sql_content, flags=re.IGNORECASE)
+            sql_content = re.sub(r'</set>', '', sql_content, flags=re.IGNORECASE)
+            
+            # <trim> 태그 처리
+            sql_content = re.sub(r'<trim[^>]*>.*?</trim>', '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            
+            # MyBatis 파라미터 패턴 처리
+            sql_content = re.sub(r'#\{[^}]+\}', 'param', sql_content)
+            sql_content = re.sub(r'\$\{[^}]+\}', 'param', sql_content)
+            
+            return sql_content
+            
+        except Exception as e:
+            warning(f"MyBatis 동적 SQL 태그 처리 실패: {str(e)}")
+            return sql_content
+    
+    def _extract_line_numbers(self, element: ET.Element, file_path: str) -> tuple[Optional[int], Optional[int]]:
+        """
+        라인 번호 추출 (USER RULES: 공통함수 사용)
+        
+        Args:
+            element: XML 엘리먼트
+            file_path: 파일 경로
+            
+        Returns:
+            (시작 라인, 종료 라인)
+        """
+        try:
+            # XML 파싱 시 라인 번호 정보는 기본적으로 제공되지 않음
+            # 파일 내용을 다시 읽어서 라인 번호 추출
+            file_utils = FileUtils()
+            content = file_utils.read_file(file_path)
+            if not content:
+                return None, None
+            
+            lines = content.split('\n')
+            element_text = ET.tostring(element, encoding='unicode')
+            
+            # 간단한 라인 번호 추출 (정확하지 않을 수 있음)
+            for i, line in enumerate(lines, 1):
+                if element.tag in line and element.get('id', '') in line:
+                    return i, i + len(element_text.split('\n')) - 1
+            
+            return None, None
+            
+        except Exception as e:
+            warning(f"라인 번호 추출 실패: {str(e)}")
+            return None, None
+    
+    def _analyze_join_relationships(self, sql_content: str) -> List[Dict[str, Any]]:
+        """
+        JOIN 관계 분석 (USER RULES: 설정 파일 사용)
+        복잡한 쿼리 지원: 인라인뷰, 서브쿼리, CTE, UNION 등
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            JOIN 관계 리스트
+        """
+        try:
+            relationships = []
+            all_tables = set()
+            
+            # 1. 메인 쿼리 분석
+            main_tables = self._extract_all_tables_from_query(sql_content)
+            all_tables.update(main_tables)
+            
+            # 2. 서브쿼리 분석 (인라인뷰, 스칼러 서브쿼리, EXISTS 등)
+            subquery_tables = self._extract_tables_from_subqueries(sql_content)
+            all_tables.update(subquery_tables)
+            
+            # 3. CTE(WITH 절) 분석
+            cte_tables = self._extract_tables_from_cte(sql_content)
+            all_tables.update(cte_tables)
+            
+            # 4. UNION 쿼리 분석
+            union_tables = self._extract_tables_from_union(sql_content)
+            all_tables.update(union_tables)
+            
+            # 5. 모든 테이블에 대해 관계 분석
+            for table in all_tables:
+                # 명시적 JOIN 분석
+                explicit_relationships = self._analyze_explicit_joins_for_table(sql_content, table)
+                relationships.extend(explicit_relationships)
+                
+                # 암시적 JOIN 분석
+                implicit_relationships = self._analyze_implicit_joins_for_table(sql_content, table)
+                relationships.extend(implicit_relationships)
+            
+            # 6. 중복 제거
+            unique_relationships = self._remove_duplicate_relationships(relationships)
+            
+            return unique_relationships
+            
+        except Exception as e:
+            warning(f"JOIN 관계 분석 실패: {str(e)}")
+            return []
+    
+    def _extract_all_tables_from_query(self, sql_content: str) -> List[str]:
+        """
+        쿼리에서 모든 테이블 추출 (FROM 절, JOIN 절 포함)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            테이블 목록
+        """
+        try:
+            tables = set()
+            
+            # FROM 절에서 테이블 추출
+            from_tables = self._extract_tables_from_from_clause(sql_content)
+            tables.update(from_tables)
+            
+            # JOIN 절에서 테이블 추출
+            join_tables = self._extract_tables_from_join_clauses(sql_content)
+            tables.update(join_tables)
+            
+            return list(tables)
+            
+        except Exception as e:
+            warning(f"테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _extract_tables_from_subqueries(self, sql_content: str) -> List[str]:
+        """
+        서브쿼리에서 테이블 추출 (인라인뷰, 스칼러 서브쿼리, EXISTS 등)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            서브쿼리 내부 테이블 목록
+        """
+        try:
+            tables = set()
+            
+            # 1. 괄호로 감싸진 서브쿼리 패턴 (인라인뷰)
+            subquery_pattern = r'\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+            subqueries = re.findall(subquery_pattern, sql_content, re.IGNORECASE | re.DOTALL)
+            
+            for subquery in subqueries:
+                subquery_tables = self._extract_all_tables_from_query(subquery)
+                tables.update(subquery_tables)
+            
+            # 2. EXISTS/NOT EXISTS 서브쿼리
+            exists_pattern = r'(?:EXISTS|NOT\s+EXISTS)\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+            exists_queries = re.findall(exists_pattern, sql_content, re.IGNORECASE | re.DOTALL)
+            
+            for exists_query in exists_queries:
+                exists_tables = self._extract_all_tables_from_query(exists_query)
+                tables.update(exists_tables)
+            
+            # 3. 스칼러 서브쿼리 (SELECT 절 내부)
+            scalar_pattern = r'\(\s*SELECT\s+.*?\s+FROM\s+.*?\s+WHERE\s+.*?\)'
+            scalar_queries = re.findall(scalar_pattern, sql_content, re.IGNORECASE | re.DOTALL)
+            
+            for scalar_query in scalar_queries:
+                scalar_tables = self._extract_all_tables_from_query(scalar_query)
+                tables.update(scalar_tables)
+            
+            # 4. IN/NOT IN 서브쿼리
+            in_pattern = r'(?:IN|NOT\s+IN)\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+            in_queries = re.findall(in_pattern, sql_content, re.IGNORECASE | re.DOTALL)
+            
+            for in_query in in_queries:
+                in_tables = self._extract_all_tables_from_query(in_query)
+                tables.update(in_tables)
+            
+            return list(tables)
+            
+        except Exception as e:
+            warning(f"서브쿼리 테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _extract_tables_from_cte(self, sql_content: str) -> List[str]:
+        """
+        CTE(WITH 절)에서 테이블 추출
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            CTE 내부 테이블 목록
+        """
+        try:
+            tables = set()
+            
+            # WITH 절 패턴
+            with_pattern = r'WITH\s+.*?AS\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+            cte_queries = re.findall(with_pattern, sql_content, re.IGNORECASE | re.DOTALL)
+            
+            for cte_query in cte_queries:
+                cte_tables = self._extract_all_tables_from_query(cte_query)
+                tables.update(cte_tables)
+            
+            return list(tables)
+            
+        except Exception as e:
+            warning(f"CTE 테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _extract_tables_from_union(self, sql_content: str) -> List[str]:
+        """
+        UNION/UNION ALL 쿼리에서 테이블 추출
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            UNION 내부 테이블 목록
+        """
+        try:
+            tables = set()
+            
+            # UNION으로 쿼리 분할
+            union_parts = re.split(r'\s+UNION\s+(?:ALL\s+)?', sql_content, re.IGNORECASE)
+            
+            for part in union_parts:
+                part_tables = self._extract_all_tables_from_query(part)
+                tables.update(part_tables)
+            
+            return list(tables)
+            
+        except Exception as e:
+            warning(f"UNION 테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _extract_tables_from_join_clauses(self, sql_content: str) -> List[str]:
+        """
+        JOIN 절에서 테이블 추출
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            JOIN 절 테이블 목록
+        """
+        try:
+            tables = set()
+            
+            # JOIN 패턴 (INNER, LEFT, RIGHT, FULL, OUTER 등)
+            join_pattern = r'(?:INNER|LEFT|RIGHT|FULL|OUTER)?\s+JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)'
+            join_matches = re.findall(join_pattern, sql_content, re.IGNORECASE)
+            
+            for match in join_matches:
+                table_name = match.split('.')[-1].upper()
+                tables.add(table_name)
+            
+            return list(tables)
+            
+        except Exception as e:
+            warning(f"JOIN 절 테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _remove_duplicate_relationships(self, relationships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        중복된 관계 제거
+        
+        Args:
+            relationships: 관계 리스트
+            
+        Returns:
+            중복 제거된 관계 리스트
+        """
+        try:
+            unique_relationships = []
+            seen = set()
+            
+            for rel in relationships:
+                # 관계의 고유 키 생성 (소스-대상 테이블 조합)
+                key = tuple(sorted([rel['source_table'], rel['target_table']]))
+                
+                if key not in seen:
+                    seen.add(key)
+                    unique_relationships.append(rel)
+            
+            return unique_relationships
+            
+        except Exception as e:
+            warning(f"중복 관계 제거 실패: {str(e)}")
+            return relationships
+    
+    def _analyze_explicit_joins_for_table(self, sql_content: str, table_name: str) -> List[Dict[str, Any]]:
+        """
+        특정 테이블에 대한 명시적 JOIN 관계 분석 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            table_name: 분석할 테이블명
+            
+        Returns:
+            명시적 JOIN 관계 리스트
+        """
+        try:
+            relationships = []
+            # USER RULES: sql_keyword.yaml에서 패턴 가져오기
+            join_patterns = self.config.get('join_relationship_patterns', {})
+            explicit_patterns = join_patterns.get('explicit_joins', [])
+            
+            for pattern in explicit_patterns:
+                matches = re.findall(pattern, sql_content, re.IGNORECASE | re.MULTILINE)
+                for match in matches:
+                    if isinstance(match, tuple) and len(match) >= 2:
+                        source_table = match[0].upper()
+                        target_table = match[1].upper()
+                        
+                        # 현재 테이블과 관련된 관계만 추가
+                        if source_table == table_name or target_table == table_name:
+                            relationship = {
+                                'source_table': source_table,
+                                'target_table': target_table,
+                                'rel_type': 'JOIN_EXPLICIT',
+                                'description': f"Explicit JOIN between {source_table} and {target_table}"
+                            }
+                            relationships.append(relationship)
+            
+            return relationships
+            
+        except Exception as e:
+            warning(f"명시적 JOIN 분석 실패: {str(e)}")
+            return []
+    
+    def _analyze_explicit_joins(self, sql_content: str) -> List[Dict[str, Any]]:
+        """
+        명시적 JOIN 관계 분석 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            명시적 JOIN 관계 리스트
+        """
+        try:
+            relationships = []
+            # USER RULES: 설정 파일에서 패턴 가져오기
+            join_patterns = self.config.get('join_relationship_patterns', {})
+            explicit_patterns = join_patterns.get('explicit_joins', [])
+            
+            for pattern in explicit_patterns:
+                matches = re.findall(pattern, sql_content, re.IGNORECASE | re.MULTILINE)
+                for match in matches:
+                    if isinstance(match, tuple) and len(match) >= 2:
+                        source_table = match[0].upper()
+                        target_table = match[1].upper()
+                        
+                        relationship = {
+                            'source_table': source_table,
+                            'target_table': target_table,
+                            'rel_type': 'JOIN_EXPLICIT',
+                            'description': f"Explicit JOIN between {source_table} and {target_table}"
+                        }
+                        relationships.append(relationship)
+            
+            return relationships
+            
+        except Exception as e:
+            warning(f"명시적 JOIN 분석 실패: {str(e)}")
+            return []
+    
+    def _analyze_implicit_joins_for_table(self, sql_content: str, table_name: str) -> List[Dict[str, Any]]:
+        """
+        특정 테이블에 대한 암시적 JOIN 관계 분석 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            table_name: 분석할 테이블명
+            
+        Returns:
+            암시적 JOIN 관계 리스트
+        """
+        try:
+            relationships = []
+            
+            # 1. FROM 절에서 테이블-별칭 매핑 생성
+            table_alias_map = self._create_table_alias_mapping(sql_content)
+            if len(table_alias_map) < 2:
+                return relationships
+            
+            # 2. WHERE 절에서 조인 조건 추출
+            join_conditions = self._extract_join_conditions_from_where(sql_content, table_alias_map)
+            
+            # 3. 현재 테이블과 다른 테이블들 간의 관계 확인
+            tables = list(table_alias_map.keys())
+            for other_table in tables:
+                if other_table != table_name:
+                    # 조인 조건 확인
+                    if self._has_join_condition(table_name, other_table, join_conditions):
+                        relationship = {
+                            'source_table': table_name,
+                            'target_table': other_table,
+                            'rel_type': 'JOIN_IMPLICIT',
+                            'description': f"Implicit JOIN between {table_name} and {other_table}"
+                        }
+                        relationships.append(relationship)
+            
+            return relationships
+            
+        except Exception as e:
+            warning(f"암시적 JOIN 분석 실패: {str(e)}")
+            return []
+    
+    def _analyze_implicit_joins(self, sql_content: str) -> List[Dict[str, Any]]:
+        """
+        암시적 JOIN 관계 분석 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            암시적 JOIN 관계 리스트
+        """
+        try:
+            relationships = []
+            
+            # 1. FROM 절에서 테이블-별칭 매핑 생성
+            table_alias_map = self._create_table_alias_mapping(sql_content)
+            if len(table_alias_map) < 2:
+                return relationships
+            
+            # 2. WHERE 절에서 조인 조건 추출
+            join_conditions = self._extract_join_conditions_from_where(sql_content, table_alias_map)
+            
+            # 3. 테이블 조합 생성 및 관계 매핑
+            tables = list(table_alias_map.keys())
+            for i in range(len(tables)):
+                for j in range(i + 1, len(tables)):
+                    table1 = tables[i]
+                    table2 = tables[j]
+                    
+                    # 조인 조건 확인
+                    if self._has_join_condition(table1, table2, join_conditions):
+                        relationship = {
+                            'source_table': table1,
+                            'target_table': table2,
+                            'rel_type': 'JOIN_IMPLICIT',
+                            'description': f"Implicit JOIN between {table1} and {table2}"
+                        }
+                        relationships.append(relationship)
+            
+            return relationships
+            
+        except Exception as e:
+            warning(f"암시적 JOIN 분석 실패: {str(e)}")
+            return []
+    
+    def _extract_tables_from_from_clause(self, sql_content: str) -> List[str]:
+        """
+        FROM 절에서 테이블 목록 추출 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            테이블 목록
+        """
+        try:
+            tables = []
+            
+            # FROM 절 추출
+            from_match = re.search(r'FROM\s+(.*?)(?:\s+WHERE|\s+ORDER|\s+GROUP|\s+HAVING|\s+UNION|$)', sql_content, re.IGNORECASE | re.DOTALL)
+            if not from_match:
+                return tables
+            
+            from_clause = from_match.group(1)
+            
+            # 테이블명과 별칭 추출 (테이블명 별칭 형태)
+            table_alias_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            table_alias_matches = re.findall(table_alias_pattern, from_clause, re.IGNORECASE)
+            
+            for table_match, alias_match in table_alias_matches:
+                # 스키마명 제거 (TABLE.SCHEMA -> TABLE)
+                table_name = table_match.split('.')[-1].upper()
+                if table_name not in tables:
+                    tables.append(table_name)
+            
+            # 별칭이 없는 테이블도 추출
+            remaining_clause = from_clause
+            for table_match, alias_match in table_alias_matches:
+                remaining_clause = remaining_clause.replace(f"{table_match} {alias_match}", "")
+            
+            # 남은 테이블명 추출 (별칭 없는 경우)
+            remaining_tables = re.findall(r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)', remaining_clause, re.IGNORECASE)
+            for table_match in remaining_tables:
+                table_name = table_match.split('.')[-1].upper()
+                if table_name and table_name not in tables:
+                    tables.append(table_name)
+            
+            return tables
+            
+        except Exception as e:
+            warning(f"FROM 절 테이블 추출 실패: {str(e)}")
+            return []
+    
+    def _create_table_alias_mapping(self, sql_content: str) -> Dict[str, str]:
+        """
+        테이블-별칭 매핑 생성 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            
+        Returns:
+            테이블-별칭 매핑 딕셔너리 {테이블명: 별칭}
+        """
+        try:
+            table_alias_map = {}
+            
+            # FROM 절 추출
+            from_match = re.search(r'FROM\s+(.*?)(?:\s+WHERE|\s+ORDER|\s+GROUP|\s+HAVING|\s+UNION|$)', sql_content, re.IGNORECASE | re.DOTALL)
+            if not from_match:
+                return table_alias_map
+            
+            from_clause = from_match.group(1)
+            
+            # 테이블명과 별칭 추출 (테이블명 별칭 형태)
+            table_alias_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            table_alias_matches = re.findall(table_alias_pattern, from_clause, re.IGNORECASE)
+            
+            for table_match, alias_match in table_alias_matches:
+                # 스키마명 제거 (TABLE.SCHEMA -> TABLE)
+                table_name = table_match.split('.')[-1].upper()
+                alias_name = alias_match.upper()
+                table_alias_map[table_name] = alias_name
+            
+            return table_alias_map
+            
+        except Exception as e:
+            warning(f"테이블-별칭 매핑 생성 실패: {str(e)}")
+            return {}
+    
+    def _extract_join_conditions_from_where(self, sql_content: str, table_alias_map: Dict[str, str]) -> List[Dict[str, str]]:
+        """
+        WHERE 절에서 조인 조건 추출 (USER RULES: 설정 파일 사용)
+        
+        Args:
+            sql_content: SQL 내용
+            table_alias_map: 테이블-별칭 매핑
+            
+        Returns:
+            조인 조건 리스트
+        """
+        try:
+            join_conditions = []
+            
+            # WHERE 절 추출
+            where_match = re.search(r'WHERE\s+(.*?)(?:\s+ORDER|\s+GROUP|\s+HAVING|\s+UNION|$)', sql_content, re.IGNORECASE | re.DOTALL)
+            if not where_match:
+                return join_conditions
+            
+            where_clause = where_match.group(1)
+            
+            # 1. 완전한 형태: 테이블.컬럼 = 테이블.컬럼
+            full_condition_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+            full_conditions = re.findall(full_condition_pattern, where_clause, re.IGNORECASE)
+            
+            for condition in full_conditions:
+                alias1, col1, alias2, col2 = condition
+                table1 = self._resolve_alias_to_table(alias1.upper(), table_alias_map)
+                table2 = self._resolve_alias_to_table(alias2.upper(), table_alias_map)
+                
+                if table1 and table2:
+                    join_conditions.append({
+                        'table1': table1,
+                        'column1': col1.upper(),
+                        'table2': table2,
+                        'column2': col2.upper()
+                    })
+            
+            # 2. 별칭 생략 형태: 테이블.컬럼 = 컬럼
+            partial_condition_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+            partial_conditions = re.findall(partial_condition_pattern, where_clause, re.IGNORECASE)
+            
+            for condition in partial_conditions:
+                alias1, col1, col2 = condition
+                table1 = self._resolve_alias_to_table(alias1.upper(), table_alias_map)
+                table2 = self._resolve_column_to_table(col2.upper(), table_alias_map, where_clause)
+                
+                if table1 and table2 and table1 != table2:
+                    join_conditions.append({
+                        'table1': table1,
+                        'column1': col1.upper(),
+                        'table2': table2,
+                        'column2': col2.upper()
+                    })
+            
+            return join_conditions
+            
+        except Exception as e:
+            warning(f"WHERE 절 조인 조건 추출 실패: {str(e)}")
+            return []
+    
+    def _resolve_alias_to_table(self, alias: str, table_alias_map: Dict[str, str]) -> Optional[str]:
+        """
+        별칭을 테이블명으로 변환
+        
+        Args:
+            alias: 별칭
+            table_alias_map: 테이블-별칭 매핑
+            
+        Returns:
+            테이블명
+        """
+        try:
+            for table_name, alias_name in table_alias_map.items():
+                if alias_name == alias:
+                    return table_name
+            return None
+            
+        except Exception as e:
+            warning(f"별칭-테이블 변환 실패: {str(e)}")
+            return None
+    
+    def _resolve_column_to_table(self, column: str, table_alias_map: Dict[str, str], where_clause: str) -> Optional[str]:
+        """
+        컬럼명을 테이블명으로 변환 (별칭 생략된 경우) (USER RULES: 설정 파일 사용)
+        
+        Args:
+            column: 컬럼명
+            table_alias_map: 테이블-별칭 매핑
+            where_clause: WHERE 절 내용
+            
+        Returns:
+            테이블명
+        """
+        try:
+            # 컬럼명이 WHERE 절에서 어떤 테이블과 연관되는지 추정
+            # 일반적으로 같은 컬럼명을 가진 테이블을 찾음
+            for table_name, alias_name in table_alias_map.items():
+                # 테이블명이 컬럼명과 유사한 경우 (예: USER_ID -> USERS)
+                if column.startswith(table_name[:3]) or table_name.startswith(column[:3]):
+                    return table_name
+            
+            # USER RULES: 설정 파일에서 매핑 규칙 가져오기
+            column_table_mapping = self.config.get('column_table_mapping', {})
+            return column_table_mapping.get(column)
+            
+        except Exception as e:
+            warning(f"컬럼-테이블 변환 실패: {str(e)}")
+            return None
+    
+    def _has_join_condition(self, table1: str, table2: str, join_conditions: List[Dict[str, str]]) -> bool:
+        """
+        두 테이블 간 조인 조건 존재 여부 확인
+        
+        Args:
+            table1: 첫 번째 테이블
+            table2: 두 번째 테이블
+            join_conditions: 조인 조건 리스트
+            
+        Returns:
+            조인 조건 존재 여부
+        """
+        try:
+            for condition in join_conditions:
+                if ((condition['table1'] == table1 and condition['table2'] == table2) or
+                    (condition['table1'] == table2 and condition['table2'] == table1)):
+                    return True
+            return False
+            
+        except Exception as e:
+            warning(f"조인 조건 확인 실패: {str(e)}")
+            return False
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """파싱 통계 반환"""
+        return self.stats.copy()
+    
+    def reset_statistics(self):
+        """통계 초기화"""
+        self.stats = {
+            'files_processed': 0,
+            'files_skipped': 0,
+            'sql_queries_extracted': 0,
+            'join_relationships_created': 0,
+            'errors': 0
+        }

@@ -1,0 +1,274 @@
+# Spring 프레임워크 키워드 정의 파일 (리뉴얼)
+# Spring Boot, Spring MVC, Spring Data JPA 등 Spring 생태계 키워드 정의
+# 메뉴얼 기반으로 체계적으로 재구성
+
+# Spring 핵심 어노테이션
+spring_core_annotations:
+  - "Component"
+  - "Service"
+  - "Repository"
+  - "Controller"
+  - "RestController"
+  - "Configuration"
+  - "Bean"
+  - "Autowired"
+  - "Value"
+  - "Qualifier"
+  - "Primary"
+  - "Lazy"
+  - "Scope"
+  - "Profile"
+  - "Conditional"
+  - "Order"
+  - "Import"
+  - "ImportResource"
+  - "PropertySource"
+
+# Spring Boot 어노테이션
+spring_boot_annotations:
+  - "SpringBootApplication"
+  - "EnableAutoConfiguration"
+  - "ComponentScan"
+  - "ConfigurationProperties"
+  - "ConditionalOnProperty"
+  - "ConditionalOnClass"
+  - "ConditionalOnMissingBean"
+  - "EnableConfigurationProperties"
+  - "EnableJpaRepositories"
+  - "EnableTransactionManagement"
+  - "EnableWebSecurity"
+  - "EnableGlobalMethodSecurity"
+
+# Spring MVC 어노테이션
+spring_mvc_annotations:
+  - "RequestMapping"
+  - "GetMapping"
+  - "PostMapping"
+  - "PutMapping"
+  - "DeleteMapping"
+  - "PatchMapping"
+  - "PathVariable"
+  - "RequestBody"
+  - "RequestParam"
+  - "ResponseBody"
+  - "ModelAttribute"
+  - "SessionAttribute"
+  - "CookieValue"
+  - "RequestHeader"
+  - "ExceptionHandler"
+  - "ControllerAdvice"
+
+# Spring Data JPA 어노테이션
+spring_data_jpa_annotations:
+  - "Entity"
+  - "Table"
+  - "Id"
+  - "GeneratedValue"
+  - "Column"
+  - "JoinColumn"
+  - "OneToMany"
+  - "ManyToOne"
+  - "OneToOne"
+  - "ManyToMany"
+  - "JoinTable"
+  - "Query"
+  - "Modifying"
+  - "Transactional"
+  - "EnableJpaRepositories"
+
+# Spring Security 어노테이션
+spring_security_annotations:
+  - "EnableWebSecurity"
+  - "EnableGlobalMethodSecurity"
+  - "PreAuthorize"
+  - "PostAuthorize"
+  - "Secured"
+  - "RolesAllowed"
+  - "EnableOAuth2Client"
+  - "EnableOAuth2Sso"
+
+# Spring Validation 어노테이션
+spring_validation_annotations:
+  - "Valid"
+  - "NotNull"
+  - "NotBlank"
+  - "NotEmpty"
+  - "Size"
+  - "Min"
+  - "Max"
+  - "Pattern"
+  - "Email"
+  - "DateTimeFormat"
+  - "JsonFormat"
+  - "JsonIgnore"
+  - "JsonProperty"
+  - "JsonInclude"
+
+# Spring 패턴 정의
+spring_patterns:
+  # 클래스 패턴
+  class_patterns:
+    controller_pattern: "@(?:RestController|Controller)\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    service_pattern: "@Service\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    repository_pattern: "@Repository\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    component_pattern: "@Component\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    configuration_pattern: "@Configuration\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    entity_pattern: "@Entity\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+    spring_boot_app_pattern: "@SpringBootApplication\\s*\\n\\s*(?:public\\s+)?class\\s+(\\w+)"
+  
+  # 메서드 패턴
+  method_patterns:
+    request_mapping_pattern: "@(?:RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\([^)]*\\)\\s*\\n\\s*(?:public\\s+)?\\w+\\s+(\\w+)\\s*\\("
+    bean_method_pattern: "@Bean\\s*\\n\\s*(?:public\\s+)?\\w+\\s+(\\w+)\\s*\\("
+    query_method_pattern: "@Query\\s*\\([^)]*\\)\\s*\\n\\s*(?:public\\s+)?\\w+\\s+(\\w+)\\s*\\("
+  
+  # 필드 패턴
+  field_patterns:
+    autowired_pattern: "@Autowired\\s*\\n\\s*(?:private|public|protected)\\s+\\w+\\s+(\\w+)"
+    value_pattern: "@Value\\s*\\([^)]*\\)\\s*\\n\\s*(?:private|public|protected)\\s+\\w+\\s+(\\w+)"
+    qualifier_pattern: "@Qualifier\\s*\\([^)]*\\)\\s*\\n\\s*(?:private|public|protected)\\s+\\w+\\s+(\\w+)"
+  
+  # 설정 패턴
+  config_patterns:
+    property_pattern: "@Value\\s*\\(\"([^\"]+)\"\\)"
+    profile_pattern: "@Profile\\s*\\(\"([^\"]+)\"\\)"
+    conditional_pattern: "@ConditionalOnProperty\\s*\\([^)]*name\\s*=\\s*\"([^\"]+)\""
+
+# Spring 컴포넌트 타입 분류
+spring_component_types:
+  controller:
+    annotations: ["Controller", "RestController"]
+    suffixes: ["Controller", "Ctrl"]
+    keywords: ["controller", "rest", "api", "web"]
+  
+  service:
+    annotations: ["Service"]
+    suffixes: ["Service", "Svc"]
+    keywords: ["service", "business", "logic"]
+  
+  repository:
+    annotations: ["Repository"]
+    suffixes: ["Repository", "Repo", "Dao"]
+    keywords: ["repository", "dao", "data", "persistence"]
+  
+  entity:
+    annotations: ["Entity"]
+    suffixes: ["Entity", "Model", "Domain"]
+    keywords: ["entity", "model", "domain", "jpa"]
+  
+  configuration:
+    annotations: ["Configuration"]
+    suffixes: ["Config", "Configuration"]
+    keywords: ["config", "configuration", "setup"]
+  
+  component:
+    annotations: ["Component"]
+    suffixes: ["Component", "Util", "Helper"]
+    keywords: ["component", "util", "helper", "common"]
+
+# Spring 관계 타입
+spring_relationship_types:
+  - "DEPENDS_ON"
+  - "USES_CONFIG"
+  - "INJECTS"
+  - "CONFIGURES"
+  - "HANDLES_REQUEST"
+  - "PERSISTS"
+  - "VALIDATES"
+
+# Spring 설정 속성
+spring_config_properties:
+  application_properties:
+    - "spring.application.name"
+    - "spring.profiles.active"
+    - "server.port"
+    - "spring.datasource.url"
+    - "spring.datasource.username"
+    - "spring.datasource.password"
+    - "spring.jpa.hibernate.ddl-auto"
+    - "spring.jpa.show-sql"
+    - "logging.level"
+  
+  security_properties:
+    - "spring.security.user.name"
+    - "spring.security.user.password"
+    - "spring.security.oauth2.client.registration"
+    - "spring.security.oauth2.client.provider"
+
+# Spring 예외 처리
+spring_exception_handling:
+  - "ExceptionHandler"
+  - "ControllerAdvice"
+  - "ResponseStatus"
+  - "ResponseEntity"
+  - "HttpStatus"
+
+# Spring AOP
+spring_aop_annotations:
+  - "Aspect"
+  - "Pointcut"
+  - "Before"
+  - "After"
+  - "AfterReturning"
+  - "AfterThrowing"
+  - "Around"
+  - "EnableAspectJAutoProxy"
+
+# Spring 캐싱
+spring_caching_annotations:
+  - "EnableCaching"
+  - "Cacheable"
+  - "CacheEvict"
+  - "CachePut"
+  - "Caching"
+
+# Spring 스케줄링
+spring_scheduling_annotations:
+  - "EnableScheduling"
+  - "Scheduled"
+  - "Async"
+  - "EnableAsync"
+
+# Spring 메시징
+spring_messaging_annotations:
+  - "EnableJms"
+  - "JmsListener"
+  - "EnableRabbit"
+  - "RabbitListener"
+  - "EnableKafka"
+  - "KafkaListener"
+
+# Spring 웹플럭스
+spring_webflux_annotations:
+  - "EnableWebFlux"
+  - "WebFluxConfigurer"
+  - "RouterFunction"
+  - "HandlerFunction"
+
+# Spring 정규식 패턴 (고급 매칭용)
+spring_advanced_patterns:
+  - "^@SpringBootApplication"
+  - "^@EnableAutoConfiguration"
+  - "^@ComponentScan"
+  - "^@ConfigurationProperties"
+  - "^@ConditionalOn"
+  - "^@Enable"
+  - "^@RestController"
+  - "^@Controller"
+  - "^@Service"
+  - "^@Repository"
+  - "^@Component"
+  - "^@Configuration"
+  - "^@Bean"
+  - "^@Autowired"
+  - "^@Value"
+  - "^@Qualifier"
+  - "^@Primary"
+  - "^@Lazy"
+  - "^@Scope"
+  - "^@Profile"
+  - "^@Conditional"
+  - "^@Order"
+  - "^@Import"
+  - "^@ImportResource"
+  - "^@PropertySource"

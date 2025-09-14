@@ -1,0 +1,211 @@
+# XML 파서 설정 파일
+# MyBatis XML 파일 분석을 위한 설정
+
+# XML 파일 필터링 설정
+xml_file_filtering:
+  # 포함할 XML 파일 패턴
+  include_patterns:
+    - "**/*Mapper.xml"
+    - "**/*mapper.xml"
+    - "**/*.xml"
+  
+  # 제외할 XML 파일 패턴
+  exclude_patterns:
+    - "**/pom.xml"
+    - "**/build.xml"
+    - "**/web.xml"
+    - "**/applicationContext.xml"
+    - "**/spring-*.xml"
+    - "**/logback.xml"
+    - "**/log4j.xml"
+  
+  # MyBatis XML 파일 식별 패턴
+  mybatis_identifiers:
+    doctype_patterns:
+      - "mybatis.org//DTD Mapper"
+      - "mybatis.org//DTD Config"
+    namespace_patterns:
+      - "com.example.mapper"
+      - "com.example.dao"
+      - "com.example.repository"
+    root_element_patterns:
+      - "mapper"
+      - "configuration"
+
+# SQL 쿼리 타입 매핑
+sql_type_mapping:
+  # MyBatis SQL 태그 → 컴포넌트 타입 매핑
+  tag_to_component_type:
+    "select": "SQL_SELECT"
+    "insert": "SQL_INSERT"
+    "update": "SQL_UPDATE"
+    "delete": "SQL_DELETE"
+    "merge": "SQL_MERGE"
+  
+  # Oracle SQL 키워드 (우선순위 순)
+  oracle_sql_keywords:
+    select_keywords:
+      - "SELECT"
+      - "FROM"
+      - "WHERE"
+      - "GROUP BY"
+      - "HAVING"
+      - "ORDER BY"
+      - "UNION"
+      - "INTERSECT"
+      - "MINUS"
+    
+    insert_keywords:
+      - "INSERT"
+      - "INTO"
+      - "VALUES"
+      - "SELECT"
+    
+    update_keywords:
+      - "UPDATE"
+      - "SET"
+      - "WHERE"
+    
+    delete_keywords:
+      - "DELETE"
+      - "FROM"
+      - "WHERE"
+    
+    merge_keywords:
+      - "MERGE"
+      - "INTO"
+      - "USING"
+      - "ON"
+      - "WHEN MATCHED"
+      - "WHEN NOT MATCHED"
+
+# XML 파싱 설정
+xml_parsing:
+  # 파싱 옵션
+  options:
+    strip_comments: true
+    preserve_whitespace: false
+    handle_cdata: true
+    validate_xml: false
+  
+  # 에러 처리
+  error_handling:
+    skip_invalid_xml: true
+    log_parsing_errors: true
+    max_error_count: 100
+  
+  # 메모리 최적화
+  memory_optimization:
+    streaming_parse: true
+    max_file_size_mb: 10
+    cleanup_after_parse: true
+
+# SQL 추출 설정
+sql_extraction:
+  # 추출할 SQL 요소
+  extract_elements:
+    - "id"
+    - "parameterType"
+    - "resultType"
+    - "resultMap"
+    - "sql_content"
+    - "line_numbers"
+  
+  # 동적 SQL 처리
+  dynamic_sql_handling:
+    extract_dynamic_tags: true
+    preserve_mybatis_syntax: true
+    flatten_conditions: false
+  
+  # SQL 정규화
+  sql_normalization:
+    remove_extra_whitespace: true
+    standardize_keywords: true
+    preserve_parameters: true
+
+# 컴포넌트 등록 설정
+component_registration:
+  # 기본 설정
+  default_layer: "xml"
+  default_parent_id: null
+  
+  # 중복 처리
+  duplicate_handling:
+    allow_same_id_different_file: true
+    error_on_same_id_same_file: true
+    log_duplicates: true
+  
+  # 에러 처리
+  error_handling:
+    has_error_on_failure: true
+    include_error_details: true
+    skip_on_error: true
+
+# JOIN 관계 분석 설정
+join_relationship_patterns:
+  # 명시적 JOIN 패턴
+  explicit_joins:
+    - r'(?:INNER|LEFT|RIGHT|FULL|OUTER)?\s+JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s+ON\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)'
+    - r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s+(?:INNER|LEFT|RIGHT|FULL|OUTER)?\s+JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)'
+  
+  # 암시적 JOIN 패턴 (WHERE 절에서)
+  implicit_joins:
+    - r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+  
+  # 서브쿼리 패턴
+  subquery_patterns:
+    # 인라인뷰
+    inline_view: r'\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+    # EXISTS 서브쿼리
+    exists_subquery: r'(?:EXISTS|NOT\s+EXISTS)\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+    # 스칼러 서브쿼리
+    scalar_subquery: r'\(\s*SELECT\s+.*?\s+FROM\s+.*?\s+WHERE\s+.*?\)'
+    # IN 서브쿼리
+    in_subquery: r'(?:IN|NOT\s+IN)\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+  
+  # CTE 패턴
+  cte_patterns:
+    - r'WITH\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s*\(\s*SELECT\s+.*?\s+FROM\s+.*?\)'
+  
+  # UNION 패턴
+  union_patterns:
+    - r'UNION\s+(?:ALL\s+)?'
+  
+  # 테이블 추출 패턴
+  table_extraction:
+    # FROM 절 테이블
+    from_clause: r'FROM\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)'
+    # JOIN 절 테이블
+    join_clause: r'(?:INNER|LEFT|RIGHT|FULL|OUTER)?\s+JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)'
+    # 테이블-별칭 매핑
+    table_alias: r'([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+
+# 복잡한 쿼리 분석 설정
+complex_query_analysis:
+  # 중첩 깊이 제한
+  max_nesting_depth: 5
+  
+  # 서브쿼리 분석 옵션
+  subquery_analysis:
+    analyze_inline_views: true
+    analyze_scalar_subqueries: true
+    analyze_exists_subqueries: true
+    analyze_in_subqueries: true
+  
+  # CTE 분석 옵션
+  cte_analysis:
+    analyze_with_clauses: true
+    recursive_cte_support: true
+  
+  # UNION 분석 옵션
+  union_analysis:
+    analyze_union_all: true
+    analyze_union_distinct: true
+  
+  # 테이블 누락 방지
+  table_missing_prevention:
+    strict_mode: true
+    log_missing_tables: true
+    validate_all_tables: true
+
+# 로깅 설정은 config/logging.yaml에서 중앙 관리

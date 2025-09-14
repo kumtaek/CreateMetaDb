@@ -1,0 +1,79 @@
+2025-09-14 13:38:39,156 - SourceAnalyzer - INFO - logger.py:68 - Recursion limit set to: 25
+2025-09-14 13:38:39,156 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\main.py", line 27, in main
+    args = arg_utils.parse_args()
+  File "D:\Analyzer\CreateMetaDb\util\arg_utils.py", line 112, in parse_args
+    self.create_parser()
+  File "D:\Analyzer\CreateMetaDb\util\arg_utils.py", line 33, in create_parser
+    self.parser = argparse.ArgumentParser(
+  File "C:\Python313\Lib\argparse.py", line 1800, in __init__
+    self._positionals = add_group(_('positional arguments'))
+  File "C:\Python313\Lib\gettext.py", line 628, in gettext
+    return dgettext(_current_domain, message)
+  File "C:\Python313\Lib\gettext.py", line 589, in dgettext
+    t = translation(domain, _localedirs.get(domain, None))
+  File "C:\Python313\Lib\gettext.py", line 532, in translation
+    mofiles = find(domain, localedir, languages, all=True)
+  File "C:\Python313\Lib\gettext.py", line 504, in find
+    for nelang in _expand_lang(lang):
+  File "C:\Python313\Lib\gettext.py", line 232, in _expand_lang
+    import locale
+  File "C:\Python313\Lib\locale.py", line 180, in <module>
+    _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
+  File "C:\Python313\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Python313\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Python313\Lib\re\_compiler.py", line 748, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Python313\Lib\re\_parser.py", line 980, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Python313\Lib\re\_parser.py", line 459, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+  File "C:\Python313\Lib\re\_parser.py", line 863, in _parse
+    p = _parse_sub(source, state, sub_verbose, nested + 1)
+  File "C:\Python313\Lib\re\_parser.py", line 459, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+  File "C:\Python313\Lib\re\_parser.py", line 529, in _parse
+    sourceget()
+  File "C:\Python313\Lib\re\_parser.py", line 262, in get
+    self.__next()
+RecursionError: maximum recursion depth exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\main.py", line 169, in <module>
+    main()
+  File "D:\Analyzer\CreateMetaDb\main.py", line 141, in main
+    handle_error(e, "프로그램 실행 중 오류 발생")
+  File "D:\Analyzer\CreateMetaDb\util\logger.py", line 182, in handle_error
+    app_logger.handle_error(error, custom_message, exit_code)
+  File "D:\Analyzer\CreateMetaDb\util\logger.py", line 99, in handle_error
+    tb = traceback.extract_tb(error.__traceback__)
+  File "C:\Python313\Lib\traceback.py", line 78, in extract_tb
+    return StackSummary._extract_from_extended_frame_gen(
+  File "C:\Python313\Lib\traceback.py", line 500, in _extract_from_extended_frame_gen
+    f.line
+  File "C:\Python313\Lib\traceback.py", line 373, in line
+    self._set_lines()
+  File "C:\Python313\Lib\traceback.py", line 351, in _set_lines
+    line = linecache.getline(self.filename, lineno).rstrip()
+  File "C:\Python313\Lib\linecache.py", line 26, in getline
+    lines = getlines(filename, module_globals)
+  File "C:\Python313\Lib\linecache.py", line 42, in getlines
+    return updatecache(filename, module_globals)
+  File "C:\Python313\Lib\linecache.py", line 113, in updatecache
+    import tokenize
+  File "C:\Python313\Lib\tokenize.py", line 35, in <module>
+    from token import *
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1322, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 1262, in _find_spec
+  File "<frozen importlib._bootstrap_external>", line 1559, in find_spec
+  File "<frozen importlib._bootstrap_external>", line 1533, in _get_spec
+  File "<frozen importlib._bootstrap_external>", line 1665, in find_spec
+  File "<frozen importlib._bootstrap_external>", line 166, in _path_isfile
+  File "<frozen importlib._bootstrap_external>", line 158, in _path_is_mode_type
+RecursionError: maximum recursion depth exceeded

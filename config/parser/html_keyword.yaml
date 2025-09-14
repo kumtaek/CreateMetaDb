@@ -1,0 +1,651 @@
+# HTML5 키워드 정의 파일
+# HTML5, HTML Living Standard, Web Components 등 모든 HTML 키워드 정의
+
+# HTML5 기본 요소
+html5_basic_elements:
+  # 문서 구조
+  document_structure:
+    - "<!DOCTYPE html>"
+    - "<html>"
+    - "<head>"
+    - "<title>"
+    - "<meta>"
+    - "<link>"
+    - "<style>"
+    - "<script>"
+    - "<noscript>"
+    - "<body>"
+    - "<base>"
+    - "<basefont>"
+  
+  # 텍스트 요소
+  text_elements:
+    - "<h1>"
+    - "<h2>"
+    - "<h3>"
+    - "<h4>"
+    - "<h5>"
+    - "<h6>"
+    - "<p>"
+    - "<br>"
+    - "<hr>"
+    - "<div>"
+    - "<span>"
+    - "<strong>"
+    - "<b>"
+    - "<em>"
+    - "<i>"
+    - "<u>"
+    - "<s>"
+    - "<strike>"
+    - "<del>"
+    - "<ins>"
+    - "<mark>"
+    - "<small>"
+    - "<sub>"
+    - "<sup>"
+    - "<code>"
+    - "<pre>"
+    - "<kbd>"
+    - "<samp>"
+    - "<var>"
+    - "<cite>"
+    - "<q>"
+    - "<blockquote>"
+    - "<abbr>"
+    - "<acronym>"
+    - "<address>"
+    - "<bdo>"
+    - "<dfn>"
+    - "<time>"
+  
+  # 링크 및 네비게이션
+  links_navigation:
+    - "<a>"
+    - "<nav>"
+    - "<link>"
+    - "<area>"
+    - "<map>"
+  
+  # 리스트
+  lists:
+    - "<ul>"
+    - "<ol>"
+    - "<li>"
+    - "<dl>"
+    - "<dt>"
+    - "<dd>"
+    - "<dir>"
+    - "<menu>"
+  
+  # 테이블
+  tables:
+    - "<table>"
+    - "<caption>"
+    - "<thead>"
+    - "<tbody>"
+    - "<tfoot>"
+    - "<tr>"
+    - "<th>"
+    - "<td>"
+    - "<col>"
+    - "<colgroup>"
+  
+  # 폼 요소
+  form_elements:
+    - "<form>"
+    - "<fieldset>"
+    - "<legend>"
+    - "<label>"
+    - "<input>"
+    - "<button>"
+    - "<select>"
+    - "<optgroup>"
+    - "<option>"
+    - "<textarea>"
+    - "<output>"
+    - "<progress>"
+    - "<meter>"
+  
+  # 미디어
+  media:
+    - "<img>"
+    - "<audio>"
+    - "<video>"
+    - "<source>"
+    - "<track>"
+    - "<embed>"
+    - "<object>"
+    - "<param>"
+    - "<iframe>"
+    - "<canvas>"
+    - "<svg>"
+    - "<math>"
+  
+  # 기타
+  others:
+    - "<details>"
+    - "<summary>"
+    - "<dialog>"
+    - "<template>"
+    - "<slot>"
+
+# HTML5 시맨틱 요소
+html5_semantic_elements:
+  # 구조적 시맨틱
+  structural_semantic:
+    - "<header>"
+    - "<nav>"
+    - "<main>"
+    - "<section>"
+    - "<article>"
+    - "<aside>"
+    - "<footer>"
+  
+  # 콘텐츠 시맨틱
+  content_semantic:
+    - "<figure>"
+    - "<figcaption>"
+    - "<mark>"
+    - "<time>"
+    - "<data>"
+    - "<meter>"
+    - "<progress>"
+
+# HTML5 새로운 입력 타입
+html5_input_types:
+  - "text"
+  - "password"
+  - "email"
+  - "url"
+  - "tel"
+  - "search"
+  - "number"
+  - "range"
+  - "color"
+  - "date"
+  - "time"
+  - "datetime"
+  - "datetime-local"
+  - "month"
+  - "week"
+  - "file"
+  - "hidden"
+  - "image"
+  - "radio"
+  - "checkbox"
+  - "submit"
+  - "reset"
+  - "button"
+
+# HTML5 새로운 속성
+html5_new_attributes:
+  # 폼 속성
+  form_attributes:
+    - "autocomplete"
+    - "autofocus"
+    - "form"
+    - "formaction"
+    - "formenctype"
+    - "formmethod"
+    - "formnovalidate"
+    - "formtarget"
+    - "list"
+    - "max"
+    - "min"
+    - "multiple"
+    - "pattern"
+    - "placeholder"
+    - "readonly"
+    - "required"
+    - "step"
+    - "novalidate"
+  
+  # 미디어 속성
+  media_attributes:
+    - "autoplay"
+    - "controls"
+    - "loop"
+    - "muted"
+    - "preload"
+    - "poster"
+    - "src"
+    - "width"
+    - "height"
+    - "crossorigin"
+    - "mediagroup"
+    - "kind"
+    - "srclang"
+    - "label"
+    - "default"
+  
+  # 링크 속성
+  link_attributes:
+    - "download"
+    - "hreflang"
+    - "media"
+    - "ping"
+    - "rel"
+    - "target"
+    - "type"
+  
+  # 기타 속성
+  other_attributes:
+    - "contenteditable"
+    - "contextmenu"
+    - "data-*"
+    - "dir"
+    - "draggable"
+    - "dropzone"
+    - "hidden"
+    - "id"
+    - "lang"
+    - "spellcheck"
+    - "style"
+    - "tabindex"
+    - "title"
+    - "translate"
+    - "accesskey"
+    - "class"
+    - "itemid"
+    - "itemprop"
+    - "itemref"
+    - "itemscope"
+    - "itemtype"
+    - "role"
+    - "aria-*"
+
+# HTML5 글로벌 속성
+html5_global_attributes:
+  - "accesskey"
+  - "class"
+  - "contenteditable"
+  - "contextmenu"
+  - "data-*"
+  - "dir"
+  - "draggable"
+  - "dropzone"
+  - "hidden"
+  - "id"
+  - "itemid"
+  - "itemprop"
+  - "itemref"
+  - "itemscope"
+  - "itemtype"
+  - "lang"
+  - "role"
+  - "spellcheck"
+  - "style"
+  - "tabindex"
+  - "title"
+  - "translate"
+  - "aria-*"
+
+# HTML5 이벤트 속성
+html5_event_attributes:
+  # 윈도우 이벤트
+  window_events:
+    - "onload"
+    - "onunload"
+    - "onresize"
+    - "onscroll"
+    - "onbeforeunload"
+    - "onerror"
+    - "onhashchange"
+    - "onpagehide"
+    - "onpageshow"
+    - "onpopstate"
+    - "onstorage"
+  
+  # 폼 이벤트
+  form_events:
+    - "onblur"
+    - "onchange"
+    - "oncontextmenu"
+    - "onfocus"
+    - "oninput"
+    - "oninvalid"
+    - "onreset"
+    - "onsearch"
+    - "onselect"
+    - "onsubmit"
+  
+  # 키보드 이벤트
+  keyboard_events:
+    - "onkeydown"
+    - "onkeypress"
+    - "onkeyup"
+  
+  # 마우스 이벤트
+  mouse_events:
+    - "onclick"
+    - "ondblclick"
+    - "onmousedown"
+    - "onmousemove"
+    - "onmouseout"
+    - "onmouseover"
+    - "onmouseup"
+    - "onmousewheel"
+    - "onwheel"
+  
+  # 드래그 이벤트
+  drag_events:
+    - "ondrag"
+    - "ondragend"
+    - "ondragenter"
+    - "ondragleave"
+    - "ondragover"
+    - "ondragstart"
+    - "ondrop"
+  
+  # 클립보드 이벤트
+  clipboard_events:
+    - "oncopy"
+    - "oncut"
+    - "onpaste"
+  
+  # 미디어 이벤트
+  media_events:
+    - "onabort"
+    - "oncanplay"
+    - "oncanplaythrough"
+    - "ondurationchange"
+    - "onemptied"
+    - "onended"
+    - "onerror"
+    - "onloadeddata"
+    - "onloadedmetadata"
+    - "onloadstart"
+    - "onpause"
+    - "onplay"
+    - "onplaying"
+    - "onprogress"
+    - "onratechange"
+    - "onseeked"
+    - "onseeking"
+    - "onstalled"
+    - "onsuspend"
+    - "ontimeupdate"
+    - "onvolumechange"
+    - "onwaiting"
+  
+  # 터치 이벤트
+  touch_events:
+    - "ontouchstart"
+    - "ontouchend"
+    - "ontouchmove"
+    - "ontouchcancel"
+
+# HTML5 메타데이터 요소
+html5_metadata_elements:
+  - "<head>"
+  - "<title>"
+  - "<base>"
+  - "<link>"
+  - "<meta>"
+  - "<style>"
+  - "<script>"
+  - "<noscript>"
+  - "<template>"
+
+# HTML5 섹션 요소
+html5_section_elements:
+  - "<body>"
+  - "<article>"
+  - "<section>"
+  - "<nav>"
+  - "<aside>"
+  - "<h1>"
+  - "<h2>"
+  - "<h3>"
+  - "<h4>"
+  - "<h5>"
+  - "<h6>"
+  - "<header>"
+  - "<footer>"
+  - "<address>"
+  - "<main>"
+
+# HTML5 그룹 콘텐츠 요소
+html5_grouping_elements:
+  - "<p>"
+  - "<hr>"
+  - "<pre>"
+  - "<blockquote>"
+  - "<ol>"
+  - "<ul>"
+  - "<li>"
+  - "<dl>"
+  - "<dt>"
+  - "<dd>"
+  - "<figure>"
+  - "<figcaption>"
+  - "<div>"
+  - "<main>"
+
+# HTML5 텍스트 레벨 시맨틱 요소
+html5_text_semantic_elements:
+  - "<a>"
+  - "<em>"
+  - "<strong>"
+  - "<small>"
+  - "<s>"
+  - "<cite>"
+  - "<q>"
+  - "<dfn>"
+  - "<abbr>"
+  - "<data>"
+  - "<time>"
+  - "<code>"
+  - "<var>"
+  - "<samp>"
+  - "<kbd>"
+  - "<sub>"
+  - "<sup>"
+  - "<i>"
+  - "<b>"
+  - "<u>"
+  - "<mark>"
+  - "<ruby>"
+  - "<rt>"
+  - "<rp>"
+  - "<bdi>"
+  - "<bdo>"
+  - "<span>"
+  - "<br>"
+  - "<wbr>"
+
+# HTML5 편집 요소
+html5_editing_elements:
+  - "<ins>"
+  - "<del>"
+
+# HTML5 임베디드 콘텐츠 요소
+html5_embedded_elements:
+  - "<img>"
+  - "<iframe>"
+  - "<embed>"
+  - "<object>"
+  - "<param>"
+  - "<video>"
+  - "<audio>"
+  - "<source>"
+  - "<track>"
+  - "<canvas>"
+  - "<map>"
+  - "<area>"
+  - "<svg>"
+  - "<math>"
+
+# HTML5 테이블 요소
+html5_table_elements:
+  - "<table>"
+  - "<caption>"
+  - "<colgroup>"
+  - "<col>"
+  - "<tbody>"
+  - "<thead>"
+  - "<tfoot>"
+  - "<tr>"
+  - "<td>"
+  - "<th>"
+
+# HTML5 폼 요소
+html5_form_elements:
+  - "<form>"
+  - "<fieldset>"
+  - "<legend>"
+  - "<label>"
+  - "<input>"
+  - "<button>"
+  - "<select>"
+  - "<datalist>"
+  - "<optgroup>"
+  - "<option>"
+  - "<textarea>"
+  - "<output>"
+  - "<progress>"
+  - "<meter>"
+  - "<keygen>"
+
+# HTML5 인터랙티브 요소
+html5_interactive_elements:
+  - "<details>"
+  - "<summary>"
+  - "<dialog>"
+  - "<menu>"
+  - "<menuitem>"
+
+# HTML5 스크립팅 요소
+html5_scripting_elements:
+  - "<script>"
+  - "<noscript>"
+  - "<template>"
+
+# HTML5 정규식 패턴
+html5_regex_patterns:
+  # HTML 태그 패턴
+  tag_patterns:
+    - "<[a-zA-Z][^>]*>"
+    - "</[a-zA-Z][^>]*>"
+    - "<[a-zA-Z][^>]*/>"
+    - "<!DOCTYPE[^>]*>"
+    - "<!--.*?-->"
+  
+  # HTML 속성 패턴
+  attribute_patterns:
+    - "[a-zA-Z-]+\\s*="
+    - "[a-zA-Z-]+\\s*=\\s*\"[^\"]*\""
+    - "[a-zA-Z-]+\\s*=\\s*'[^']*'"
+    - "data-[a-zA-Z-]+"
+    - "aria-[a-zA-Z-]+"
+    - "on[a-zA-Z]+"
+  
+  # HTML 요소 패턴
+  element_patterns:
+    - "<[a-zA-Z]+"
+    - "</[a-zA-Z]+>"
+    - "<[a-zA-Z]+[^>]*>"
+    - "<[a-zA-Z]+[^>]*/>"
+  
+  # HTML 주석 패턴
+  comment_patterns:
+    - "<!--.*?-->"
+    - "<!--[\\s\\S]*?-->"
+  
+  # HTML DOCTYPE 패턴
+  doctype_patterns:
+    - "<!DOCTYPE[^>]*>"
+    - "<!doctype[^>]*>"
+
+# HTML5 문자 엔티티
+html5_character_entities:
+  # 특수 문자
+  special_characters:
+    - "&lt;"
+    - "&gt;"
+    - "&amp;"
+    - "&quot;"
+    - "&apos;"
+    - "&nbsp;"
+    - "&copy;"
+    - "&reg;"
+    - "&trade;"
+    - "&hellip;"
+    - "&mdash;"
+    - "&ndash;"
+    - "&lsquo;"
+    - "&rsquo;"
+    - "&ldquo;"
+    - "&rdquo;"
+    - "&bull;"
+    - "&middot;"
+    - "&deg;"
+    - "&plusmn;"
+    - "&times;"
+    - "&divide;"
+    - "&frac14;"
+    - "&frac12;"
+    - "&frac34;"
+    - "&sup1;"
+    - "&sup2;"
+    - "&sup3;"
+    - "&alpha;"
+    - "&beta;"
+    - "&gamma;"
+    - "&delta;"
+    - "&epsilon;"
+    - "&zeta;"
+    - "&eta;"
+    - "&theta;"
+    - "&lambda;"
+    - "&mu;"
+    - "&pi;"
+    - "&sigma;"
+    - "&tau;"
+    - "&phi;"
+    - "&chi;"
+    - "&psi;"
+    - "&omega;"
+    - "&Alpha;"
+    - "&Beta;"
+    - "&Gamma;"
+    - "&Delta;"
+    - "&Epsilon;"
+    - "&Zeta;"
+    - "&Eta;"
+    - "&Theta;"
+    - "&Lambda;"
+    - "&Mu;"
+    - "&Pi;"
+    - "&Sigma;"
+    - "&Tau;"
+    - "&Phi;"
+    - "&Chi;"
+    - "&Psi;"
+    - "&Omega;"
+
+# HTML5 MIME 타입
+html5_mime_types:
+  - "text/html"
+  - "text/plain"
+  - "text/css"
+  - "text/javascript"
+  - "application/javascript"
+  - "application/json"
+  - "application/xml"
+  - "text/xml"
+  - "image/jpeg"
+  - "image/png"
+  - "image/gif"
+  - "image/svg+xml"
+  - "image/webp"
+  - "audio/mpeg"
+  - "audio/ogg"
+  - "audio/wav"
+  - "video/mp4"
+  - "video/webm"
+  - "video/ogg"
+  - "application/pdf"
+  - "application/zip"
+  - "application/octet-stream"

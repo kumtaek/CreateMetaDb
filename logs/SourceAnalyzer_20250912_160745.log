@@ -1,0 +1,2 @@
+2025-09-12 16:07:46,024 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+2025-09-12 16:07:46,031 - SourceAnalyzer - ERROR - logger.py:76 - 명령행 인자 오류

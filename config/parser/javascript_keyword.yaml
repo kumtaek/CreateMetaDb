@@ -1,0 +1,450 @@
+# JavaScript 키워드 정의 파일
+# ES6+ (ES2015~ES2023) 모든 버전의 JavaScript 키워드 정의
+
+# ES6 (ES2015) 키워드
+es6_keywords:
+  # 변수 선언
+  variable_declarations:
+    - "let"
+    - "const"
+  
+  # 클래스 관련
+  class_keywords:
+    - "class"
+    - "extends"
+    - "super"
+    - "constructor"
+    - "static"
+    - "get"
+    - "set"
+  
+  # 모듈 시스템
+  module_keywords:
+    - "import"
+    - "export"
+    - "default"
+    - "from"
+    - "as"
+  
+  # 함수 관련
+  function_keywords:
+    - "function"
+    - "=>"  # Arrow function
+    - "return"
+    - "yield"
+  
+  # 객체 관련
+  object_keywords:
+    - "this"
+    - "new"
+    - "instanceof"
+    - "typeof"
+    - "delete"
+    - "in"
+    - "of"
+  
+  # 제어문
+  control_keywords:
+    - "if"
+    - "else"
+    - "switch"
+    - "case"
+    - "default"
+    - "break"
+    - "continue"
+    - "for"
+    - "while"
+    - "do"
+    - "try"
+    - "catch"
+    - "finally"
+    - "throw"
+  
+  # 연산자
+  operators:
+    - "==="
+    - "!=="
+    - "&&"
+    - "||"
+    - "!"
+    - "?"
+    - ":"
+    - "..."
+    - "**"
+  
+  # 기타
+  other_keywords:
+    - "var"
+    - "true"
+    - "false"
+    - "null"
+    - "undefined"
+    - "NaN"
+    - "Infinity"
+
+# ES7 (ES2016) 키워드
+es7_keywords:
+  - "**"  # 지수 연산자
+  - "includes"  # Array.prototype.includes
+
+# ES8 (ES2017) 키워드
+es8_keywords:
+  # 비동기 처리
+  async_keywords:
+    - "async"
+    - "await"
+    - "Promise"
+  
+  # 객체 메서드
+  object_methods:
+    - "Object.values"
+    - "Object.entries"
+    - "Object.getOwnPropertyDescriptors"
+
+# ES9 (ES2018) 키워드
+es9_keywords:
+  # 비동기 반복
+  async_iteration:
+    - "for await...of"
+    - "Symbol.asyncIterator"
+  
+  # Promise
+  promise_methods:
+    - "Promise.finally"
+  
+  # 정규식
+  regex_keywords:
+    - "s"  # dotAll flag
+    - "u"  # unicode flag
+    - "y"  # sticky flag
+
+# ES10 (ES2019) 키워드
+es10_keywords:
+  # 배열 메서드
+  array_methods:
+    - "Array.prototype.flat"
+    - "Array.prototype.flatMap"
+  
+  # 객체 메서드
+  object_methods:
+    - "Object.fromEntries"
+  
+  # 문자열 메서드
+  string_methods:
+    - "String.prototype.trimStart"
+    - "String.prototype.trimEnd"
+  
+  # 기타
+  other_keywords:
+    - "Symbol.description"
+
+# ES11 (ES2020) 키워드
+es11_keywords:
+  # 옵셔널 체이닝
+  optional_chaining:
+    - "?."
+    - "?.["
+    - "?.("
+  
+  # 널리시 병합
+  nullish_coalescing:
+    - "??"
+  
+  # BigInt
+  bigint_keywords:
+    - "BigInt"
+    - "n"  # BigInt literal
+  
+  # 동적 import
+  dynamic_import:
+    - "import("
+  
+  # Promise
+  promise_methods:
+    - "Promise.allSettled"
+  
+  # 전역 객체
+  global_objects:
+    - "globalThis"
+
+# ES12 (ES2021) 키워드
+es12_keywords:
+  # 논리 할당 연산자
+  logical_assignment:
+    - "&&="
+    - "||="
+    - "??="
+  
+  # 문자열 메서드
+  string_methods:
+    - "String.prototype.replaceAll"
+  
+  # Promise
+  promise_methods:
+    - "Promise.any"
+  
+  # WeakRef
+  weakref_keywords:
+    - "WeakRef"
+    - "FinalizationRegistry"
+  
+  # 숫자 구분자
+  numeric_separator:
+    - "_"  # 1_000_000
+
+# ES13 (ES2022) 키워드
+es13_keywords:
+  # 클래스 필드
+  class_fields:
+    - "#"  # Private fields
+    - "static"
+    - "private"
+    - "public"
+  
+  # 정규식
+  regex_keywords:
+    - "d"  # hasIndices flag
+  
+  # 기타
+  other_keywords:
+    - "at"  # Array.prototype.at, String.prototype.at
+
+# ES14 (ES2023) 키워드
+es14_keywords:
+  # 배열 메서드
+  array_methods:
+    - "Array.prototype.findLast"
+    - "Array.prototype.findLastIndex"
+    - "Array.prototype.toSorted"
+    - "Array.prototype.toReversed"
+    - "Array.prototype.toSpliced"
+    - "Array.prototype.with"
+  
+  # 기타
+  other_keywords:
+    - "Symbol.dispose"
+
+# JavaScript 내장 객체
+javascript_builtin_objects:
+  # 기본 객체
+  basic_objects:
+    - "Object"
+    - "Function"
+    - "Boolean"
+    - "Symbol"
+    - "Error"
+    - "EvalError"
+    - "InternalError"
+    - "RangeError"
+    - "ReferenceError"
+    - "SyntaxError"
+    - "TypeError"
+    - "URIError"
+  
+  # 숫자 및 날짜
+  numbers_dates:
+    - "Number"
+    - "Math"
+    - "Date"
+    - "BigInt"
+  
+  # 텍스트 처리
+  text_processing:
+    - "String"
+    - "RegExp"
+  
+  # 인덱스 컬렉션
+  indexed_collections:
+    - "Array"
+    - "Int8Array"
+    - "Uint8Array"
+    - "Uint8ClampedArray"
+    - "Int16Array"
+    - "Uint16Array"
+    - "Int32Array"
+    - "Uint32Array"
+    - "Float32Array"
+    - "Float64Array"
+    - "BigInt64Array"
+    - "BigUint64Array"
+  
+  # 키 컬렉션
+  keyed_collections:
+    - "Map"
+    - "Set"
+    - "WeakMap"
+    - "WeakSet"
+  
+  # 구조화된 데이터
+  structured_data:
+    - "ArrayBuffer"
+    - "SharedArrayBuffer"
+    - "Atomics"
+    - "DataView"
+    - "JSON"
+  
+  # 제어 추상화 객체
+  control_abstraction:
+    - "Promise"
+    - "Generator"
+    - "GeneratorFunction"
+    - "AsyncFunction"
+    - "AsyncGenerator"
+    - "AsyncGeneratorFunction"
+  
+  # 반영
+  reflection:
+    - "Reflect"
+    - "Proxy"
+
+# JavaScript 전역 함수
+javascript_global_functions:
+  - "eval"
+  - "isFinite"
+  - "isNaN"
+  - "parseFloat"
+  - "parseInt"
+  - "decodeURI"
+  - "decodeURIComponent"
+  - "encodeURI"
+  - "encodeURIComponent"
+
+# JavaScript 전역 속성
+javascript_global_properties:
+  - "Infinity"
+  - "NaN"
+  - "undefined"
+  - "globalThis"
+
+# JavaScript 정규식 패턴
+javascript_regex_patterns:
+  # 변수 선언 패턴
+  variable_patterns:
+    - "\\blet\\s+\\w+"
+    - "\\bconst\\s+\\w+"
+    - "\\bvar\\s+\\w+"
+  
+  # 함수 패턴
+  function_patterns:
+    - "function\\s+\\w+\\s*\\("
+    - "\\w+\\s*=>\\s*"
+    - "async\\s+function"
+    - "async\\s+\\w+\\s*=>"
+  
+  # 클래스 패턴
+  class_patterns:
+    - "class\\s+\\w+"
+    - "extends\\s+\\w+"
+    - "constructor\\s*\\("
+  
+  # 모듈 패턴
+  module_patterns:
+    - "import\\s+.*?from"
+    - "export\\s+.*?"
+    - "export\\s+default"
+  
+  # 옵셔널 체이닝 패턴
+  optional_chaining_patterns:
+    - "\\w+\\?\\.\\w+"
+    - "\\w+\\?\\[.*?\\]"
+    - "\\w+\\?\\(.*?\\)"
+  
+  # 널리시 병합 패턴
+  nullish_coalescing_patterns:
+    - "\\w+\\s*\\?\\?\\s*\\w+"
+  
+  # 논리 할당 패턴
+  logical_assignment_patterns:
+    - "\\w+\\s*&&=\\s*\\w+"
+    - "\\w+\\s*\\|\\|=\\s*\\w+"
+    - "\\w+\\s*\\?\\?=\\s*\\w+"
+
+# JavaScript 이벤트 관련
+javascript_events:
+  # 마우스 이벤트
+  mouse_events:
+    - "click"
+    - "dblclick"
+    - "mousedown"
+    - "mouseup"
+    - "mousemove"
+    - "mouseover"
+    - "mouseout"
+    - "mouseenter"
+    - "mouseleave"
+    - "contextmenu"
+  
+  # 키보드 이벤트
+  keyboard_events:
+    - "keydown"
+    - "keyup"
+    - "keypress"
+  
+  # 폼 이벤트
+  form_events:
+    - "submit"
+    - "reset"
+    - "change"
+    - "input"
+    - "focus"
+    - "blur"
+    - "select"
+  
+  # 윈도우 이벤트
+  window_events:
+    - "load"
+    - "unload"
+    - "resize"
+    - "scroll"
+    - "beforeunload"
+  
+  # 터치 이벤트
+  touch_events:
+    - "touchstart"
+    - "touchend"
+    - "touchmove"
+    - "touchcancel"
+
+# JavaScript DOM 메서드
+javascript_dom_methods:
+  # 요소 선택
+  element_selection:
+    - "getElementById"
+    - "getElementsByClassName"
+    - "getElementsByTagName"
+    - "querySelector"
+    - "querySelectorAll"
+  
+  # 요소 조작
+  element_manipulation:
+    - "createElement"
+    - "appendChild"
+    - "removeChild"
+    - "insertBefore"
+    - "replaceChild"
+    - "cloneNode"
+  
+  # 속성 조작
+  attribute_manipulation:
+    - "getAttribute"
+    - "setAttribute"
+    - "removeAttribute"
+    - "hasAttribute"
+  
+  # 클래스 조작
+  class_manipulation:
+    - "classList.add"
+    - "classList.remove"
+    - "classList.toggle"
+    - "classList.contains"
+  
+  # 스타일 조작
+  style_manipulation:
+    - "style"
+    - "getComputedStyle"
+  
+  # 이벤트 처리
+  event_handling:
+    - "addEventListener"
+    - "removeEventListener"
+    - "dispatchEvent"

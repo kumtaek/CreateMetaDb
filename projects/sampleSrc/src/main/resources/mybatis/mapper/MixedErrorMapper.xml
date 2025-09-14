@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mapper.MixedErrorMapper">
+    
+    <!-- 일부 오류가 있는 매퍼 - 정상적인 부분과 오류 부분이 섞여있음 -->
+    
+    <!-- 정상적인 쿼리 -->
+    <select id="selectAll" resultType="com.example.model.User">
+        SELECT id, name, email, create_date, update_date
+        FROM users
+        ORDER BY create_date DESC
+    </select>
+    
+    <!-- 정상적인 쿼리 -->
+    <select id="selectById" resultType="com.example.model.User">
+        SELECT id, name, email, create_date, update_date
+        FROM users
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 일부 오류가 있는 쿼리 -->
+    <select id="selectByName" resultType="com.example.model.User">
+        SELECT id, name, email, create_date, update_date
+        FROM users
+        WHERE name LIKE #{name}
+        <!-- 정상적인 부분 -->
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <!-- 오류 부분: 잘못된 컬럼명 -->
+        AND active_flag = 'Y'  <!-- active_flag 컬럼이 존재하지 않을 수 있음 -->
+        ORDER BY name
+    </select>
+    
+    <!-- 정상적인 쿼리 -->
+    <insert id="insert" parameterType="com.example.model.User">
+        INSERT INTO users (name, email, create_date)
+        VALUES (#{name}, #{email}, #{createDate})
+    </insert>
+    
+    <!-- 일부 오류가 있는 쿼리 -->
+    <update id="update" parameterType="com.example.model.User">
+        UPDATE users
+        SET name = #{name},
+            email = #{email},
+            update_date = #{updateDate}
+        WHERE id = #{id}
+        <!-- 정상적인 부분 -->
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <!-- 오류 부분: 잘못된 테이블명 참조 -->
+        AND EXISTS (SELECT 1 FROM user_profiles WHERE user_id = users.id)  <!-- user_profiles 테이블이 존재하지 않을 수 있음 -->
+    </update>
+    
+    <!-- 정상적인 쿼리 -->
+    <delete id="delete">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+    
+    <!-- 일부 오류가 있는 동적 쿼리 -->
+    <select id="searchUsers" resultType="com.example.model.User">
+        SELECT id, name, email, create_date, update_date
+        FROM users
+        <where>
+            <!-- 정상적인 부분 -->
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="email != null and email != ''">
+                AND email LIKE CONCAT('%', #{email}, '%')
+            </if>
+            <!-- 오류 부분: 잘못된 컬럼명 -->
+            <if test="department != null">
+                AND dept_name = #{department}  <!-- dept_name 컬럼이 존재하지 않을 수 있음 -->
+            </if>
+        </where>
+        ORDER BY create_date DESC
+    </select>
+    
+    <!-- 정상적인 쿼리 -->
+    <select id="countUsers" resultType="int">
+        SELECT COUNT(*) FROM users
+    </select>
+    
+    <!-- 일부 오류가 있는 복잡한 쿼리 -->
+    <select id="getUserWithDetails" resultType="com.example.model.User">
+        SELECT u.id, u.name, u.email, u.create_date, u.update_date
+        FROM users u
+        <!-- 정상적인 부분 -->
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        <!-- 오류 부분: 잘못된 테이블명 -->
+        LEFT JOIN user_preferences up ON u.id = up.user_id  <!-- user_preferences 테이블이 존재하지 않을 수 있음 -->
+        WHERE u.id = #{id}
+        GROUP BY u.id, u.name, u.email, u.create_date, u.update_date
+    </select>
+    
+    <!-- 실제 구조적 에러가 있는 쿼리들 -->
+    
+    <!-- 존재하지 않는 테이블 참조 -->
+    <select id="selectFromNonExistentTable" resultType="com.example.model.User">
+        SELECT id, name, email
+        FROM NONEXISTENT_TABLE  <!-- 이 테이블은 존재하지 않음 -->
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 존재하지 않는 컬럼 참조 -->
+    <select id="selectWithNonExistentColumn" resultType="com.example.model.User">
+        SELECT id, name, email, NONEXISTENT_COLUMN  <!-- 이 컬럼은 존재하지 않음 -->
+        FROM users
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 존재하지 않는 테이블과 컬럼 모두 참조 -->
+    <select id="selectComplexError" resultType="com.example.model.User">
+        SELECT u.id, u.name, u.email, nt.nonexistent_field
+        FROM users u
+        LEFT JOIN NONEXISTENT_TABLE nt ON u.id = nt.user_id  <!-- 존재하지 않는 테이블 -->
+        WHERE u.NONEXISTENT_COLUMN = #{value}  <!-- 존재하지 않는 컬럼 -->
+    </select>
+    
+</mapper>

@@ -1,0 +1,43 @@
+2025-09-12 14:27:15,661 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 14:27:15,683 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: D:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 14:27:15,683 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,694 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,695 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,712 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,712 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 시작 ===
+2025-09-12 14:27:15,714 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 14:27:15,714 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT DISTINCT table_name 
+     ...
+2025-09-12 14:27:15,714 - SourceAnalyzer - ERROR - logger.py:76 - 기존 테이블 조회 실패: 0
+2025-09-12 14:27:15,714 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT DISTINCT t.table_name, c.c...
+2025-09-12 14:27:15,714 - SourceAnalyzer - ERROR - logger.py:76 - 기존 컬럼 조회 실패: 0
+2025-09-12 14:27:15,715 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,726 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,726 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,743 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,744 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: set()
+2025-09-12 14:27:15,744 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 컬럼 참조: set()
+2025-09-12 14:27:15,751 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 0개
+2025-09-12 14:27:15,751 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT project_id FROM projects WHERE project_name...
+2025-09-12 14:27:15,751 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,762 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 14:27:15,762 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,780 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 14:27:15,780 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: set()
+2025-09-12 14:27:15,780 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 컬럼 참조: set()
+2025-09-12 14:27:15,780 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 1개
+2025-09-12 14:27:15,780 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT c.component_id 
+            FR...
+2025-09-12 14:27:15,780 - SourceAnalyzer - ERROR - logger.py:76 - 테이블 컴포넌트 ID 조회 실패: ORDERS, 오류: 0
+2025-09-12 14:27:15,780 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 통계 ===
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 분석된 쿼리 수: 2
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 발견된 JOIN 관계 수: 1
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 테이블 수: 0
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 컬럼 수: 0
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 등록된 관계 수: 1
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - 오류 발생 수: 0
+2025-09-12 14:27:15,781 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 완료 ===
+2025-09-12 14:27:15,782 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db

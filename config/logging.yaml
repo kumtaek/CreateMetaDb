@@ -1,0 +1,112 @@
+# ========================================
+# SourceAnalyzer 로깅 설정 파일
+# ========================================
+# 이 파일은 Python logging.config.dictConfig()에서 사용하는 YAML 형식의 로깅 설정입니다.
+# 모든 로깅 관련 설정을 중앙에서 관리합니다.
+
+# 로깅 설정 버전 (dictConfig에서 사용)
+version: 1
+
+# 기존 로거들을 비활성화할지 여부
+# false: 기존 로거들을 유지하고 새로운 설정을 추가/수정
+# true: 기존 로거들을 모두 비활성화하고 새로 시작
+disable_existing_loggers: false
+
+# ========================================
+# 포맷터 (Formatter) 설정
+# ========================================
+# 로그 메시지의 출력 형식을 정의합니다.
+formatters:
+  # 상세한 포맷터 - 파일명과 라인번호를 포함한 자세한 정보
+  detailed:
+    # 포맷 문자열:
+    # %(asctime)s: 타임스탬프
+    # %(name)s: 로거 이름
+    # %(levelname)s: 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    # %(filename)s: 파일명 (stacklevel로 인해 실제 호출한 파일명이 표시됨)
+    # %(lineno)d: 라인 번호 (stacklevel로 인해 실제 호출한 라인번호가 표시됨)
+    # %(message)s: 실제 로그 메시지
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    # 타임스탬프 형식
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  # 간단한 포맷터 - 기본적인 정보만 포함
+  simple:
+    # 타임스탬프, 로그 레벨, 메시지만 출력
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+# ========================================
+# 핸들러 (Handler) 설정
+# ========================================
+# 로그 메시지를 어디로 출력할지 정의합니다.
+handlers:
+  # 콘솔 출력 핸들러 - 터미널/콘솔에 로그 출력
+  console:
+    class: logging.StreamHandler  # 표준 출력 스트림 사용
+    level: INFO                   # INFO 레벨 이상의 로그만 출력
+    formatter: detailed          # 상세한 포맷터 사용
+    stream: ext://sys.stdout     # 표준 출력 스트림 지정
+  
+  # 파일 출력 핸들러 - 로그 파일에 저장
+  file:
+    class: logging.handlers.RotatingFileHandler  # 파일 크기 제한이 있는 로테이션 핸들러
+    level: INFO                                  # INFO 레벨 이상의 로그만 저장
+    formatter: detailed                         # 상세한 포맷터 사용
+    filename: ./logs/source_analyzer.log        # 로그 파일 경로
+    maxBytes: 10485760                          # 최대 파일 크기 (10MB)
+    backupCount: 5                              # 백업 파일 개수 (최대 5개)
+    encoding: utf-8                             # 파일 인코딩
+
+# ========================================
+# 로거 (Logger) 설정
+# ========================================
+# 각 모듈별 로거의 동작을 정의합니다.
+loggers:
+  # 루트 로거 - 모든 로거의 기본 설정
+  root:
+    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
+  
+  # SourceAnalyzer 전용 로거 - 메인 애플리케이션 로거
+  SourceAnalyzer:
+    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
+    propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
+  
+  # XML 파서 관련 로거 - XML 파싱 관련 로그
+  xml_parser:
+    level: INFO                    # INFO 레벨 이상의 로그만 처리
+    handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
+    propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
+
+# ========================================
+# 파서 관련 로깅 설정 (사용자 정의)
+# ========================================
+# 이 설정은 SourceAnalyzer 내부에서 파서 관련 로깅을 제어하는 데 사용됩니다.
+parser_logging:
+  # 로그 레벨 설정
+  log_level: "INFO"
+  
+  # 로그할 정보 유형들
+  log_info:
+    - "file_processing"        # 파일 처리 과정 로그
+    - "sql_extraction"         # SQL 추출 과정 로그
+    - "component_registration" # 컴포넌트 등록 과정 로그
+    - "join_analysis"          # 조인 분석 과정 로그
+    - "table_extraction"       # 테이블 추출 과정 로그
+    - "error_details"          # 에러 상세 정보 로그
+  
+  # 로그에서 제외할 정보 유형들
+  log_exclude:
+    - "debug_details"          # 디버그 상세 정보 제외
+    - "memory_usage"           # 메모리 사용량 정보 제외
+
+# ========================================
+# 로그 레벨 설명
+# ========================================
+# DEBUG: 가장 상세한 정보 (개발/디버깅용)
+# INFO: 일반적인 정보 (정상 동작 확인용)
+# WARNING: 경고 메시지 (문제 가능성 있음)
+# ERROR: 에러 메시지 (기능 실패)
+# CRITICAL: 치명적 에러 (프로그램 종료 위험)

@@ -1,0 +1,42 @@
+2025-09-14 02:34:24,642 - SourceAnalyzer - INFO - logger.py:68 - === Java 로딩 엔진 테스트 시작 ===
+2025-09-14 02:34:24,643 - SourceAnalyzer - INFO - logger.py:68 - 테스트 프로젝트: sampleSrc
+2025-09-14 02:34:24,643 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 소스 경로: D:\Analyzer\CreateMetaDb\projects\sampleSrc
+2025-09-14 02:34:24,643 - SourceAnalyzer - INFO - logger.py:68 - 메타데이터베이스 경로: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-14 02:34:24,643 - SourceAnalyzer - INFO - logger.py:68 - === Java 파서 테스트 ===
+2025-09-14 02:34:24,662 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/java_keyword.yaml
+2025-09-14 02:34:24,675 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/java_keyword.yaml
+2025-09-14 02:34:24,678 - SourceAnalyzer - INFO - logger.py:68 - 정규식 패턴 컴파일 완료: 클래스 12개, 메서드 2개, 패키지 7개, 상속 6개
+2025-09-14 02:34:24,679 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java
+2025-09-14 02:34:24,680 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java
+2025-09-14 02:34:24,680 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java
+2025-09-14 02:34:24,680 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java
+2025-09-14 02:34:24,681 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java
+2025-09-14 02:34:24,681 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java
+2025-09-14 02:34:24,681 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java
+2025-09-14 02:34:24,681 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java
+2025-09-14 02:34:24,682 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java
+2025-09-14 02:34:24,682 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java
+2025-09-14 02:34:24,682 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java
+2025-09-14 02:34:24,682 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java
+2025-09-14 02:34:24,683 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java
+2025-09-14 02:34:24,683 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java
+2025-09-14 02:34:24,683 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java
+2025-09-14 02:34:24,683 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java
+2025-09-14 02:34:24,684 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java
+2025-09-14 02:34:24,684 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java
+2025-09-14 02:34:24,684 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java
+2025-09-14 02:34:24,685 - SourceAnalyzer - INFO - logger.py:68 - Java 파일 수집 완료: 19개
+2025-09-14 02:34:24,685 - SourceAnalyzer - INFO - logger.py:68 - 발견된 Java 파일 수: 19개
+2025-09-14 02:34:24,685 - SourceAnalyzer - INFO - logger.py:68 - 테스트 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java
+2025-09-14 02:34:24,685 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java
+2025-09-14 02:34:24,695 - SourceAnalyzer - INFO - logger.py:68 - 파싱 결과:
+2025-09-14 02:34:24,695 - SourceAnalyzer - INFO - logger.py:68 -   - 에러 여부: N
+2025-09-14 02:34:24,695 - SourceAnalyzer - INFO - logger.py:68 -   - 클래스 수: 0
+2025-09-14 02:34:24,695 - SourceAnalyzer - INFO - logger.py:68 -   - 상속 관계 수: 0
+2025-09-14 02:34:24,695 - SourceAnalyzer - INFO - logger.py:68 - === Java 로딩 엔진 초기화 테스트 ===
+2025-09-14 02:34:24,696 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/java_keyword.yaml
+2025-09-14 02:34:24,709 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/java_keyword.yaml
+2025-09-14 02:34:24,709 - SourceAnalyzer - INFO - logger.py:68 - 정규식 패턴 컴파일 완료: 클래스 12개, 메서드 2개, 패키지 7개, 상속 6개
+2025-09-14 02:34:24,709 - SourceAnalyzer - INFO - logger.py:68 - Java 로딩 엔진 초기화 완료
+2025-09-14 02:34:24,709 - SourceAnalyzer - INFO - logger.py:68 - 초기 통계: {'java_files_processed': 0, 'classes_extracted': 0, 'methods_extracted': 0, 'components_created': 0, 'inheritance_relationships_created': 0, 'business_methods_filtered': 0, 'errors': 0, 'processing_time': 0.0}
+2025-09-14 02:34:24,709 - SourceAnalyzer - INFO - logger.py:68 - === Java 로딩 엔진 테스트 완료 ===

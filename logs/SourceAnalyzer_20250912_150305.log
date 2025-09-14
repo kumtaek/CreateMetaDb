@@ -1,0 +1,102 @@
+2025-09-12 15:03:05,296 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/xml_parser_config.yaml
+2025-09-12 15:03:05,301 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/xml_parser_config.yaml
+2025-09-12 15:03:05,302 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: projects/sampleSrc/src/com/example/dynamicquery/UserMapper.xml
+2025-09-12 15:03:05,303 - SourceAnalyzer - DEBUG - logger.py:64 - 3단계 XML 쿼리 ID와 내용 추출 완료: projects/sampleSrc/src/com/example/dynamicquery/UserMapper.xml, 2개 쿼리
+2025-09-12 15:03:05,303 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: d:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 15:03:05,326 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: d:\Analyzer\CreateMetaDb\config\parser\sql_keyword.yaml
+2025-09-12 15:03:05,327 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,338 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,338 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,356 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,363 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 시작 ===
+2025-09-12 15:03:05,366 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: d:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 15:03:05,366 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT DISTINCT table_name 
+     ...
+2025-09-12 15:03:05,366 - SourceAnalyzer - ERROR - logger.py:76 - 기존 테이블 조회 실패: 0
+2025-09-12 15:03:05,367 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                SELECT DISTINCT t.table_name, c.c...
+2025-09-12 15:03:05,367 - SourceAnalyzer - ERROR - logger.py:76 - 기존 컬럼 조회 실패: 0
+2025-09-12 15:03:05,367 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,379 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,379 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,402 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,405 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: {'USERS', 'USER_PROFILES'}
+2025-09-12 15:03:05,405 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 컬럼 참조: set()
+2025-09-12 15:03:05,407 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 1개
+2025-09-12 15:03:05,408 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT project_id FROM projects WHERE project_name...
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                            INSERT OR REPLACE INT..., 영향받은 행: 1
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - Inferred 테이블 생성: USERS
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                            INSERT OR REPLACE INT..., 영향받은 행: 1
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - Inferred 테이블 생성: USER_PROFILES
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 소스 테이블 USERS ID: 1
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,409 - SourceAnalyzer - DEBUG - logger.py:64 - 타겟 테이블 USER_PROFILES ID: 99
+2025-09-12 15:03:05,410 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                        INSERT OR REPLACE INTO re..., 영향받은 행: 1
+2025-09-12 15:03:05,410 - SourceAnalyzer - DEBUG - logger.py:64 - 관계 등록: USERS -> USER_PROFILES
+2025-09-12 15:03:05,410 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,421 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/mybatis_keyword.yaml
+2025-09-12 15:03:05,421 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/sql_keyword.yaml
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 테이블 참조: {'USERS', 'USER_PROFILES', 'DEPARTMENTS'}
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - 추출된 컬럼 참조: set()
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - 분석된 JOIN 관계: 3개
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                            INSERT OR REPLACE INT..., 영향받은 행: 1
+2025-09-12 15:03:05,439 - SourceAnalyzer - DEBUG - logger.py:64 - Inferred 테이블 생성: USERS
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                            INSERT OR REPLACE INT..., 영향받은 행: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - Inferred 테이블 생성: USER_PROFILES
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                            INSERT OR REPLACE INT..., 영향받은 행: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - Inferred 테이블 생성: DEPARTMENTS
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 소스 테이블 USERS ID: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 타겟 테이블 USER_PROFILES ID: 101
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                        INSERT OR REPLACE INTO re..., 영향받은 행: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 관계 등록: USERS -> USER_PROFILES
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 소스 테이블 USERS ID: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 타겟 테이블 DEPARTMENTS ID: 102
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                        INSERT OR REPLACE INTO re..., 영향받은 행: 1
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 관계 등록: USERS -> DEPARTMENTS
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 소스 테이블 USER_PROFILES ID: 101
+2025-09-12 15:03:05,440 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+            SELECT t.table_id 
+            FROM t...
+2025-09-12 15:03:05,441 - SourceAnalyzer - DEBUG - logger.py:64 - 타겟 테이블 DEPARTMENTS ID: 102
+2025-09-12 15:03:05,441 - SourceAnalyzer - DEBUG - logger.py:64 - 업데이트 쿼리 실행 성공: 
+                        INSERT OR REPLACE INTO re..., 영향받은 행: 1
+2025-09-12 15:03:05,441 - SourceAnalyzer - DEBUG - logger.py:64 - 관계 등록: USER_PROFILES -> DEPARTMENTS
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 통계 ===
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - 분석된 쿼리 수: 2
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - 발견된 JOIN 관계 수: 4
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 테이블 수: 5
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - 생성된 inferred 컬럼 수: 0
+2025-09-12 15:03:05,441 - SourceAnalyzer - INFO - logger.py:68 - 등록된 관계 수: 4
+2025-09-12 15:03:05,442 - SourceAnalyzer - INFO - logger.py:68 - 오류 발생 수: 0
+2025-09-12 15:03:05,442 - SourceAnalyzer - INFO - logger.py:68 - === 4-2단계 XML 쿼리 관계 분석 완료 ===
+2025-09-12 15:03:05,445 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 해제: d:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mapper.ProductMapper">
+    
+    <!-- 기본 상품 조회 -->
+    <select id="selectProductById" parameterType="string" resultType="com.example.model.Product">
+        SELECT * FROM products WHERE product_id = #{productId}
+    </select>
+    
+    <!-- 조건부 상품 조회 (다이나믹 쿼리) -->
+    <select id="selectProductsByCondition" parameterType="map" resultType="com.example.model.Product">
+        SELECT * FROM products
+        <where>
+            <if test="name != null and name != ''">
+                AND product_name LIKE #{name}
+            </if>
+            <if test="category != null and category != ''">
+                AND category_id = #{category}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="delYn != null and delYn != ''">
+                AND del_yn = #{delYn}
+            </if>
+        </where>
+        ORDER BY created_date DESC
+    </select>
+    
+    <!-- 고급 조건부 상품 조회 (복잡한 다이나믹 쿼리) -->
+    <select id="selectProductsByAdvancedCondition" parameterType="map" resultType="com.example.model.Product">
+        SELECT p.*, c.category_name, b.brand_name
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN brands b ON p.brand_id = b.brand_id
+        <where>
+            <if test="categoryId != null and categoryId != ''">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="brandId != null and brandId != ''">
+                AND p.brand_id = #{brandId}
+            </if>
+            <if test="minPrice != null">
+                AND p.price >= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND p.price &lt;= #{maxPrice}
+            </if>
+            <if test="minStock != null">
+                AND p.stock_quantity >= #{minStock}
+            </if>
+            <if test="maxStock != null">
+                AND p.stock_quantity &lt;= #{maxStock}
+            </if>
+            <if test="statusList != null and statusList.size() > 0">
+                AND p.status IN
+                <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY p.created_date DESC
+    </select>
+    
+    <!-- 카테고리별 상품 조회 -->
+    <select id="selectProductsByCategory" parameterType="string" resultType="com.example.model.Product">
+        SELECT * FROM products 
+        WHERE category_id = #{categoryId}
+        ORDER BY product_name
+    </select>
+    
+    <!-- 재고 업데이트 -->
+    <update id="updateProductStock">
+        UPDATE products 
+        SET stock_quantity = stock_quantity + #{quantity},
+            updated_date = SYSDATE
+        WHERE product_id = #{productId}
+    </update>
+    
+    <!-- 동적 상품 업데이트 -->
+    <update id="updateProductDynamic" parameterType="com.example.model.Product">
+        UPDATE products
+        <set>
+            <if test="productName != null and productName != ''">
+                product_name = #{productName},
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="stockQuantity != null">
+                stock_quantity = #{stockQuantity},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                category_id = #{categoryId},
+            </if>
+            <if test="brandId != null and brandId != ''">
+                brand_id = #{brandId},
+            </if>
+            <if test="supplierId != null and supplierId != ''">
+                supplier_id = #{supplierId},
+            </if>
+            <if test="warehouseId != null and warehouseId != ''">
+                warehouse_id = #{warehouseId},
+            </if>
+            updated_date = SYSDATE
+        </set>
+        WHERE product_id = #{productId}
+    </update>
+    
+    <!-- 동적 상품 삽입 -->
+    <insert id="insertProductDynamic" parameterType="com.example.model.Product">
+        INSERT INTO products (
+            <trim suffixOverrides=",">
+                <if test="productId != null and productId != ''">product_id,</if>
+                <if test="productName != null and productName != ''">product_name,</if>
+                <if test="description != null and description != ''">description,</if>
+                <if test="price != null">price,</if>
+                <if test="stockQuantity != null">stock_quantity,</if>
+                <if test="status != null and status != ''">status,</if>
+                <if test="categoryId != null and categoryId != ''">category_id,</if>
+                <if test="brandId != null and brandId != ''">brand_id,</if>
+                <if test="supplierId != null and supplierId != ''">supplier_id,</if>
+                <if test="warehouseId != null and warehouseId != ''">warehouse_id,</if>
+                created_date,
+                updated_date,
+                del_yn
+            </trim>
+        ) VALUES (
+            <trim suffixOverrides=",">
+                <if test="productId != null and productId != ''">#{productId},</if>
+                <if test="productName != null and productName != ''">#{productName},</if>
+                <if test="description != null and description != ''">#{description},</if>
+                <if test="price != null">#{price},</if>
+                <if test="stockQuantity != null">#{stockQuantity},</if>
+                <if test="status != null and status != ''">#{status},</if>
+                <if test="categoryId != null and categoryId != ''">#{categoryId},</if>
+                <if test="brandId != null and brandId != ''">#{brandId},</if>
+                <if test="supplierId != null and supplierId != ''">#{supplierId},</if>
+                <if test="warehouseId != null and warehouseId != ''">#{warehouseId},</if>
+                SYSDATE,
+                SYSDATE,
+                'N'
+            </trim>
+        )
+    </insert>
+    
+    <!-- 조건부 상품 삭제 -->
+    <delete id="deleteProductsByCondition" parameterType="map">
+        UPDATE products 
+        SET del_yn = 'Y', updated_date = SYSDATE
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="beforeDate != null and beforeDate != ''">
+                AND created_date &lt; TO_DATE(#{beforeDate}, 'YYYY-MM-DD')
+            </if>
+        </where>
+    </delete>
+    
+    <!-- 동적 COUNT 쿼리 -->
+    <select id="countProductsByCondition" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM products
+        <where>
+            <if test="categoryId != null and categoryId != ''">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="minPrice != null">
+                AND price >= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND price &lt;= #{maxPrice}
+            </if>
+            <if test="delYn != null and delYn != ''">
+                AND del_yn = #{delYn}
+            </if>
+        </where>
+    </select>
+    
+</mapper>

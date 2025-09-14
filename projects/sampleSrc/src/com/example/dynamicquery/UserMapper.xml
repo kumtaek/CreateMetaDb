@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 네임스페이스는 매퍼 인터페이스의 전체 경로와 일치해야 합니다. -->
+<mapper namespace="com.example.dynamicquery.UserMapper">
+
+    <!--
+      [Oracle Implicit Join 방식]
+      동적 쿼리를 사용하여 사용자를 검색하는 SELECT 문입니다.
+      USERS, DEPARTMENTS, USER_PROFILES 테이블을 암시적 조인(Oracle 방식)으로 연결합니다.
+    -->
+    <select id="findUsers" parameterType="com.example.dynamicquery.UserSearchDto" resultType="java.util.Map">
+        SELECT
+            u.USER_ID,
+            u.USER_NAME,
+            u.EMAIL,
+            u.STATUS,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL,
+            u.CREATED_AT
+        FROM
+            USERS u,
+            DEPARTMENTS d,
+            USER_PROFILES p
+        <where>
+            u.DEPT_ID = d.DEPT_ID
+            AND u.USER_ID = p.USER_ID(+)
+            <if test="searchKeyword != null and searchKeyword != ''">
+                AND (u.USER_NAME LIKE '%' || #{searchKeyword} || '%' OR u.EMAIL LIKE '%' || #{searchKeyword} || '%')
+            </if>
+            <if test="userStatus != null and userStatus != ''">
+                AND u.STATUS = #{userStatus}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND d.DEPT_NAME LIKE '%' || #{deptName} || '%'
+            </if>
+        </where>
+        <if test="sortOrder != null and sortOrder != ''">
+            ORDER BY u.CREATED_AT ${sortOrder}
+        </if>
+    </select>
+
+    <!--
+      [ANSI Join 방식]
+      동적 쿼리를 사용하여 사용자를 검색하는 SELECT 문입니다.
+      INNER JOIN과 LEFT JOIN을 사용하는 표준 SQL 방식입니다.
+    -->
+    <select id="findUsersWithAnsiJoin" parameterType="com.example.dynamicquery.UserSearchDto" resultType="java.util.Map">
+        SELECT
+            u.USER_ID,
+            u.USER_NAME,
+            u.EMAIL,
+            u.STATUS,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL,
+            u.CREATED_AT
+        FROM
+            USERS u
+            INNER JOIN DEPARTMENTS d ON u.DEPT_ID = d.DEPT_ID
+            LEFT JOIN USER_PROFILES p ON u.USER_ID = p.USER_ID
+        <where>
+            <if test="searchKeyword != null and searchKeyword != ''">
+                AND (u.USER_NAME LIKE '%' || #{searchKeyword} || '%' OR u.EMAIL LIKE '%' || #{searchKeyword} || '%')
+            </if>
+            <if test="userStatus != null and userStatus != ''">
+                AND u.STATUS = #{userStatus}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND d.DEPT_NAME LIKE '%' || #{deptName} || '%'
+            </if>
+        </where>
+        <if test="sortOrder != null and sortOrder != ''">
+            ORDER BY u.CREATED_AT ${sortOrder}
+        </if>
+    </select>
+
+    <!--
+      [복잡한 암시적 JOIN 사례 1]
+      별칭 생략 형태의 조인 조건
+    -->
+    <select id="findUsersWithAliasOmission" resultType="java.util.Map">
+        SELECT 
+            u.USER_ID,
+            u.USER_NAME,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL
+        FROM 
+            USERS u,
+            DEPARTMENTS d,
+            USER_PROFILES p
+        WHERE 
+            u.DEPT_ID = DEPT_ID  -- d. 생략
+            AND u.USER_ID = USER_ID  -- p. 생략
+            AND u.STATUS = 'ACTIVE'
+    </select>
+
+    <!--
+      [복잡한 암시적 JOIN 사례 2]
+      혼합 형태의 조인 조건 (완전한 형태 + 생략 형태)
+    -->
+    <select id="findUsersWithMixedJoins" resultType="java.util.Map">
+        SELECT 
+            u.USER_ID,
+            u.USER_NAME,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL,
+            ut.TYPE_NAME
+        FROM 
+            USERS u,
+            DEPARTMENTS d,
+            USER_PROFILES p,
+            USER_TYPES ut
+        WHERE 
+            u.DEPT_ID = d.DEPT_ID  -- 완전한 형태
+            AND u.USER_ID = USER_ID  -- p. 생략
+            AND u.USER_TYPE = TYPE_CODE  -- ut. 생략
+            AND u.STATUS = 'ACTIVE'
+    </select>
+
+    <!--
+      [복잡한 암시적 JOIN 사례 3]
+      여러 테이블과 복수 조인 필드
+    -->
+    <select id="findComplexJoins" resultType="java.util.Map">
+        SELECT 
+            o.ORDER_ID,
+            o.ORDER_DATE,
+            c.CUSTOMER_NAME,
+            p.PRODUCT_NAME,
+            oi.QUANTITY,
+            oi.UNIT_PRICE
+        FROM 
+            ORDERS o,
+            CUSTOMERS c,
+            ORDER_ITEMS oi,
+            PRODUCTS p
+        WHERE 
+            o.CUSTOMER_ID = c.CUSTOMER_ID  -- 완전한 형태
+            AND o.ORDER_ID = ORDER_ID  -- oi. 생략
+            AND oi.PRODUCT_ID = p.PRODUCT_ID  -- 완전한 형태
+            AND o.STATUS = 'COMPLETED'
+    </select>
+
+    <!--
+      [조건이 떨어져 있는 여러 테이블 사례 1]
+      WHERE 절에 조인 조건이 분산되어 있는 경우
+    -->
+    <select id="findUsersWithScatteredConditions" resultType="java.util.Map">
+        SELECT 
+            u.USER_ID,
+            u.USER_NAME,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL,
+            ut.TYPE_NAME,
+            r.ROLE_NAME
+        FROM 
+            USERS u,
+            DEPARTMENTS d,
+            USER_PROFILES p,
+            USER_TYPES ut,
+            USER_ROLES ur,
+            ROLES r
+        WHERE 
+            u.STATUS = 'ACTIVE'  -- 일반 조건
+            AND u.DEPT_ID = d.DEPT_ID  -- 조인 조건 1
+            AND u.USER_TYPE = 'PREMIUM'  -- 일반 조건
+            AND u.USER_ID = p.USER_ID  -- 조인 조건 2
+            AND u.USER_TYPE = ut.TYPE_CODE  -- 조인 조건 3
+            AND u.USER_ID = ur.USER_ID  -- 조인 조건 4
+            AND ur.ROLE_ID = r.ROLE_ID  -- 조인 조건 5
+            AND d.DEPT_STATUS = 'ACTIVE'  -- 일반 조건
+    </select>
+
+    <!--
+      [조건이 떨어져 있는 여러 테이블 사례 2]
+      복잡한 비즈니스 로직과 조인 조건이 섞인 경우
+    -->
+    <select id="findOrdersWithScatteredJoins" resultType="java.util.Map">
+        SELECT 
+            o.ORDER_ID,
+            o.ORDER_DATE,
+            c.CUSTOMER_NAME,
+            c.EMAIL,
+            p.PRODUCT_NAME,
+            p.PRICE,
+            oi.QUANTITY,
+            oi.UNIT_PRICE,
+            cat.CATEGORY_NAME,
+            b.BRAND_NAME
+        FROM 
+            ORDERS o,
+            CUSTOMERS c,
+            ORDER_ITEMS oi,
+            PRODUCTS p,
+            CATEGORIES cat,
+            BRANDS b
+        WHERE 
+            o.ORDER_DATE >= '2024-01-01'  -- 일반 조건
+            AND o.CUSTOMER_ID = c.CUSTOMER_ID  -- 조인 조건 1
+            AND o.STATUS = 'COMPLETED'  -- 일반 조건
+            AND o.ORDER_ID = oi.ORDER_ID  -- 조인 조건 2
+            AND oi.PRODUCT_ID = p.PRODUCT_ID  -- 조인 조건 3
+            AND p.CATEGORY_ID = cat.CATEGORY_ID  -- 조인 조건 4
+            AND p.BRAND_ID = b.BRAND_ID  -- 조인 조건 5
+            AND oi.QUANTITY > 1  -- 일반 조건
+            AND p.STATUS = 'ACTIVE'  -- 일반 조건
+            AND cat.CATEGORY_STATUS = 'ACTIVE'  -- 일반 조건
+    </select>
+
+    <!--
+      [조건이 떨어져 있는 여러 테이블 사례 3]
+      서브쿼리와 조인 조건이 섞인 복잡한 경우
+    -->
+    <select id="findComplexScatteredJoins" resultType="java.util.Map">
+        SELECT 
+            u.USER_ID,
+            u.USER_NAME,
+            d.DEPT_NAME,
+            p.PROFILE_IMAGE_URL,
+            ut.TYPE_NAME,
+            COUNT(o.ORDER_ID) as ORDER_COUNT,
+            SUM(o.TOTAL_AMOUNT) as TOTAL_SPENT
+        FROM 
+            USERS u,
+            DEPARTMENTS d,
+            USER_PROFILES p,
+            USER_TYPES ut,
+            ORDERS o,
+            CUSTOMERS c
+        WHERE 
+            u.USER_ID IN (SELECT USER_ID FROM USER_ACTIVITY_LOG WHERE ACTIVITY_DATE >= '2024-01-01')  -- 서브쿼리
+            AND u.DEPT_ID = d.DEPT_ID  -- 조인 조건 1
+            AND u.USER_ID = p.USER_ID  -- 조인 조건 2
+            AND u.USER_TYPE = ut.TYPE_CODE  -- 조인 조건 3
+            AND u.USER_ID = c.USER_ID  -- 조인 조건 4
+            AND c.CUSTOMER_ID = o.CUSTOMER_ID  -- 조인 조건 5
+            AND o.ORDER_DATE >= '2024-01-01'  -- 일반 조건
+            AND u.STATUS = 'ACTIVE'  -- 일반 조건
+            AND d.DEPT_STATUS = 'ACTIVE'  -- 일반 조건
+        GROUP BY 
+            u.USER_ID, u.USER_NAME, d.DEPT_NAME, p.PROFILE_IMAGE_URL, ut.TYPE_NAME
+        HAVING 
+            COUNT(o.ORDER_ID) > 5  -- 그룹 조건
+    </select>
+
+</mapper>

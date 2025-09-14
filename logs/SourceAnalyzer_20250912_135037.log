@@ -1,0 +1,15 @@
+2025-09-12 13:50:37,362 - SourceAnalyzer - INFO - logger.py:68 - === 처리플로우 1단계 테스트 시작 ===
+2025-09-12 13:50:37,362 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트: sampleSrc
+2025-09-12 13:50:37,362 - SourceAnalyzer - INFO - logger.py:68 - 메타DB 초기화: True
+2025-09-12 13:50:37,363 - SourceAnalyzer - INFO - logger.py:68 - === 파일 스캔 시작: 파일 정보 저장 ===
+2025-09-12 13:50:37,367 - SourceAnalyzer - ERROR - logger.py:128 - FATAL ERROR at D:\Analyzer\CreateMetaDb\file_loading.py:71 in initialize_database()
+Code: os.remove(self.metadata_db_path)
+Message: 메타데이터베이스 초기화 실패
+Exception: PermissionError: [WinError 32] 다른 프로세스가 파일을 사용 중이기 때문에 프로세스가 액세스 할 수 없습니다: 'D:\\Analyzer\\CreateMetaDb\\projects\\sampleSrc\\metadata.db'
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\file_loading.py", line 71, in initialize_database
+    os.remove(self.metadata_db_path)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [WinError 32] 다른 프로세스가 파일을 사용 중이기 때문에 프로세스가 액세스 할 수 없습니다: 'D:\\Analyzer\\CreateMetaDb\\projects\\sampleSrc\\metadata.db'
+

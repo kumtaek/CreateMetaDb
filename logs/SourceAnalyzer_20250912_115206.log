@@ -1,0 +1,25 @@
+2025-09-12 11:52:06,514 - SourceAnalyzer - INFO - logger.py:68 - SourceAnalyzer 시작
+2025-09-12 11:52:06,520 - SourceAnalyzer - DEBUG - logger.py:64 - 명령행 인자 파싱 완료: {'project_name': 'sampleSrc', 'clear_metadb': True, 'verbose': False, 'output_format': 'html', 'config_file': None, 'log_level': 'INFO', 'dry_run': False, 'force': False}
+2025-09-12 11:52:06,521 - SourceAnalyzer - DEBUG - logger.py:64 - 인자 검증 성공
+2025-09-12 11:52:06,521 - SourceAnalyzer - INFO - logger.py:68 - 분석 대상 프로젝트: sampleSrc
+2025-09-12 11:52:06,521 - SourceAnalyzer - INFO - logger.py:68 - 분석 옵션:
+2025-09-12 11:52:06,521 - SourceAnalyzer - INFO - logger.py:68 -   - 메타데이터베이스 초기화: True
+2025-09-12 11:52:06,521 - SourceAnalyzer - INFO - logger.py:68 -   - 상세 로그: False
+2025-09-12 11:52:06,521 - SourceAnalyzer - INFO - logger.py:68 -   - 출력 형식: html
+2025-09-12 11:52:06,522 - SourceAnalyzer - INFO - logger.py:68 -   - 드라이런 모드: False
+2025-09-12 11:52:06,522 - SourceAnalyzer - INFO - logger.py:68 -   - 강제 실행: False
+2025-09-12 11:52:06,522 - SourceAnalyzer - INFO - logger.py:68 - 프로젝트 분석 시작...
+2025-09-12 11:52:06,538 - SourceAnalyzer - ERROR - logger.py:128 - FATAL ERROR at D:\Analyzer\CreateMetaDb\file_loading.py:9 in <module>()
+Code: from util import (
+Message: 프로그램 실행 중 오류 발생
+Exception: ImportError: cannot import name 'validate_directory_exists' from 'util' (D:\Analyzer\CreateMetaDb\util\__init__.py)
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\main.py", line 63, in main
+    from file_loading import execute_file_scan, execute_db_loading
+  File "D:\Analyzer\CreateMetaDb\file_loading.py", line 9, in <module>
+    from util import (
+    ...<4 lines>...
+    )
+ImportError: cannot import name 'validate_directory_exists' from 'util' (D:\Analyzer\CreateMetaDb\util\__init__.py). Did you mean: 'validate_file_exists'?
+

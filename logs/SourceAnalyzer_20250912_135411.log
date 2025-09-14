@@ -1,0 +1,98 @@
+2025-09-12 13:54:11,642 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: config/parser/xml_parser_config.yaml
+2025-09-12 13:54:11,648 - SourceAnalyzer - DEBUG - logger.py:64 - YAML 설정 파일 로드 성공: config/parser/xml_parser_config.yaml
+2025-09-12 13:54:11,649 - SourceAnalyzer - DEBUG - logger.py:64 - 파일 읽기 성공: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,654 - SourceAnalyzer - DEBUG - logger.py:64 - 3단계 XML 쿼리 ID와 내용 추출 완료: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml, 22개 쿼리
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 데이터베이스 연결 성공: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT COUNT(*) as count FROM components...
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT project_id FROM projects WHERE project_name...
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,656 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,656 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,656 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,656 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,657 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,657 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,658 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,658 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,659 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,659 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,659 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,659 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,659 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,659 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: 
+                        SELECT f.file_id 
+       ...
+2025-09-12 13:54:11,659 - SourceAnalyzer - WARNING - logger.py:72 - XML 파일 ID를 찾을 수 없습니다: projects/sampleSrc/src/main/resources/mybatis/mapper/UserMapper.xml
+2025-09-12 13:54:11,659 - SourceAnalyzer - INFO - logger.py:68 - 3단계 SQL 컴포넌트 저장 완료: 22개
+2025-09-12 13:54:11,659 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT COUNT(*) as count FROM components...
+2025-09-12 13:54:11,659 - SourceAnalyzer - DEBUG - logger.py:64 - 쿼리 실행 성공: SELECT component_type, COUNT(*) as count FROM comp...

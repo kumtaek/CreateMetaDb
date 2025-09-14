@@ -1,0 +1,394 @@
+# JSP 키워드 정의 파일 (리뉴얼)
+# Jakarta Server Pages 3.1 Specification 기반 JSP 키워드 정의
+# 메뉴얼 기반으로 체계적으로 재구성
+
+# JSP 지시어 (Directives)
+jsp_directives:
+  - "page"
+  - "include"
+  - "taglib"
+  - "tag"
+  - "attribute"
+  - "variable"
+
+# JSP 액션 태그 (Action Tags)
+jsp_action_tags:
+  # 표준 액션 태그
+  standard_actions:
+    - "jsp:useBean"
+    - "jsp:setProperty"
+    - "jsp:getProperty"
+    - "jsp:include"
+    - "jsp:forward"
+    - "jsp:param"
+    - "jsp:plugin"
+    - "jsp:params"
+    - "jsp:fallback"
+    - "jsp:attribute"
+    - "jsp:body"
+    - "jsp:element"
+    - "jsp:text"
+    - "jsp:output"
+    - "jsp:root"
+    - "jsp:declaration"
+    - "jsp:scriptlet"
+    - "jsp:expression"
+  
+  # JSTL 코어 태그
+  jstl_core:
+    - "c:out"
+    - "c:set"
+    - "c:remove"
+    - "c:catch"
+    - "c:if"
+    - "c:choose"
+    - "c:when"
+    - "c:otherwise"
+    - "c:forEach"
+    - "c:forTokens"
+    - "c:import"
+    - "c:param"
+    - "c:redirect"
+    - "c:url"
+    - "c:import"
+  
+  # JSTL 포맷팅 태그
+  jstl_formatting:
+    - "fmt:setLocale"
+    - "fmt:bundle"
+    - "fmt:setBundle"
+    - "fmt:message"
+    - "fmt:param"
+    - "fmt:requestEncoding"
+    - "fmt:timeZone"
+    - "fmt:setTimeZone"
+    - "fmt:formatNumber"
+    - "fmt:parseNumber"
+    - "fmt:formatDate"
+    - "fmt:parseDate"
+  
+  # JSTL SQL 태그
+  jstl_sql:
+    - "sql:setDataSource"
+    - "sql:query"
+    - "sql:update"
+    - "sql:param"
+    - "sql:dateParam"
+    - "sql:transaction"
+  
+  # JSTL XML 태그
+  jstl_xml:
+    - "x:parse"
+    - "x:out"
+    - "x:set"
+    - "x:if"
+    - "x:choose"
+    - "x:when"
+    - "x:otherwise"
+    - "x:forEach"
+    - "x:transform"
+    - "x:param"
+
+# JSP 내장 객체 (Implicit Objects)
+jsp_implicit_objects:
+  - "request"
+  - "response"
+  - "session"
+  - "application"
+  - "out"
+  - "page"
+  - "pageContext"
+  - "config"
+  - "exception"
+
+# JSP 스크립팅 요소
+jsp_scripting_elements:
+  # 스크립틀릿
+  scriptlets:
+    - "<%"
+    - "%>"
+  
+  # 표현식
+  expressions:
+    - "<%="
+    - "%>"
+  
+  # 선언문
+  declarations:
+    - "<%!"
+    - "%>"
+
+# EL (Expression Language) 키워드
+el_keywords:
+  # EL 연산자
+  operators:
+    - "."
+    - "[]"
+    - "()"
+    - "+"
+    - "-"
+    - "*"
+    - "/"
+    - "div"
+    - "%"
+    - "mod"
+    - "=="
+    - "eq"
+    - "!="
+    - "ne"
+    - "<"
+    - "lt"
+    - ">"
+    - "gt"
+    - "<="
+    - "le"
+    - ">="
+    - "ge"
+    - "&&"
+    - "and"
+    - "||"
+    - "or"
+    - "!"
+    - "not"
+    - "empty"
+    - "instanceof"
+  
+  # EL 내장 객체
+  implicit_objects:
+    - "pageScope"
+    - "requestScope"
+    - "sessionScope"
+    - "applicationScope"
+    - "param"
+    - "paramValues"
+    - "header"
+    - "headerValues"
+    - "cookie"
+    - "initParam"
+    - "pageContext"
+
+# JSP 주석
+jsp_comments:
+  - "<!--"
+  - "-->"
+  - "<%--"
+  - "--%>"
+
+# JSP 예약어
+jsp_reserved_keywords:
+  - "page"
+  - "include"
+  - "taglib"
+  - "tag"
+  - "attribute"
+  - "variable"
+  - "import"
+  - "session"
+  - "buffer"
+  - "autoFlush"
+  - "isThreadSafe"
+  - "info"
+  - "errorPage"
+  - "isErrorPage"
+  - "contentType"
+  - "pageEncoding"
+  - "language"
+  - "extends"
+  - "trimDirectiveWhitespaces"
+  - "deferredSyntaxAllowedAsLiteral"
+  - "elIgnored"
+  - "scriptingInvalid"
+
+# JSP 태그 라이브러리 URI 패턴
+jsp_taglib_uris:
+  - "http://java.sun.com/jsp/jstl/core"
+  - "http://java.sun.com/jsp/jstl/fmt"
+  - "http://java.sun.com/jsp/jstl/sql"
+  - "http://java.sun.com/jsp/jstl/xml"
+  - "http://java.sun.com/jsp/jstl/functions"
+
+# JSP 함수 라이브러리
+jsp_functions:
+  - "fn:contains"
+  - "fn:containsIgnoreCase"
+  - "fn:endsWith"
+  - "fn:escapeXml"
+  - "fn:indexOf"
+  - "fn:join"
+  - "fn:length"
+  - "fn:replace"
+  - "fn:split"
+  - "fn:startsWith"
+  - "fn:substring"
+  - "fn:substringAfter"
+  - "fn:substringBefore"
+  - "fn:toLowerCase"
+  - "fn:toUpperCase"
+  - "fn:trim"
+
+# JSP 페이지 지시어 속성
+jsp_page_directive_attributes:
+  - "language"
+  - "extends"
+  - "import"
+  - "session"
+  - "buffer"
+  - "autoFlush"
+  - "isThreadSafe"
+  - "info"
+  - "errorPage"
+  - "isErrorPage"
+  - "contentType"
+  - "pageEncoding"
+  - "trimDirectiveWhitespaces"
+  - "deferredSyntaxAllowedAsLiteral"
+  - "elIgnored"
+  - "scriptingInvalid"
+
+# JSP 포함 지시어 속성
+jsp_include_directive_attributes:
+  - "file"
+
+# JSP 태그 라이브러리 지시어 속성
+jsp_taglib_directive_attributes:
+  - "prefix"
+  - "uri"
+  - "tagdir"
+
+# JSP 태그 속성
+jsp_tag_attributes:
+  - "name"
+  - "scope"
+  - "type"
+  - "beanName"
+  - "property"
+  - "value"
+  - "target"
+  - "param"
+  - "page"
+  - "flush"
+  - "var"
+  - "scope"
+  - "test"
+  - "items"
+  - "begin"
+  - "end"
+  - "step"
+  - "varStatus"
+  - "delims"
+  - "url"
+  - "context"
+  - "value"
+  - "default"
+  - "escapeXml"
+
+# JSP 정규식 패턴
+jsp_patterns:
+  # 지시어 패턴
+  directive_patterns:
+    - "<%@\\s*(page|include|taglib)\\s+.*?%>"
+    - "<%@\\s*page\\s+.*?%>"
+    - "<%@\\s*include\\s+.*?%>"
+    - "<%@\\s*taglib\\s+.*?%>"
+  
+  # 액션 태그 패턴
+  action_patterns:
+    - "<jsp:.*?/>"
+    - "<jsp:.*?>.*?</jsp:.*?>"
+    - "<c:.*?/>"
+    - "<c:.*?>.*?</c:.*?>"
+    - "<fmt:.*?/>"
+    - "<fmt:.*?>.*?</fmt:.*?>"
+    - "<sql:.*?/>"
+    - "<sql:.*?>.*?</sql:.*?>"
+    - "<x:.*?/>"
+    - "<x:.*?>.*?</x:.*?>"
+  
+  # 스크립팅 요소 패턴
+  scripting_patterns:
+    - "<%.*?%>"
+    - "<%=.*?%>"
+    - "<%!.*?%>"
+  
+  # EL 표현식 패턴
+  el_patterns:
+    - "\\$\\{.*?\\}"
+    - "\\#\\{.*?\\}"
+  
+  # 주석 패턴
+  comment_patterns:
+    - "<!--.*?-->"
+    - "<%--.*?--%>"
+
+# JSP 예외 처리
+jsp_exception_handling:
+  - "errorPage"
+  - "isErrorPage"
+  - "exception"
+  - "throwable"
+
+# JSP 세션 관리
+jsp_session_management:
+  - "session"
+  - "sessionScope"
+  - "session.setAttribute"
+  - "session.getAttribute"
+  - "session.removeAttribute"
+  - "session.invalidate"
+
+# JSP 애플리케이션 스코프
+jsp_application_scope:
+  - "application"
+  - "applicationScope"
+  - "application.setAttribute"
+  - "application.getAttribute"
+  - "application.removeAttribute"
+
+# JSP 요청 스코프
+jsp_request_scope:
+  - "request"
+  - "requestScope"
+  - "request.setAttribute"
+  - "request.getAttribute"
+  - "request.removeAttribute"
+  - "request.getParameter"
+  - "request.getParameterValues"
+
+# JSP 페이지 스코프
+jsp_page_scope:
+  - "page"
+  - "pageScope"
+  - "pageContext"
+  - "pageContext.setAttribute"
+  - "pageContext.getAttribute"
+  - "pageContext.removeAttribute"
+
+# JSP 출력 버퍼링
+jsp_output_buffering:
+  - "out"
+  - "out.print"
+  - "out.println"
+  - "out.flush"
+  - "out.clear"
+  - "out.clearBuffer"
+  - "out.isAutoFlush"
+  - "out.getBufferSize"
+  - "out.getRemaining"
+
+# JSP 설정 정보
+jsp_config_info:
+  - "config"
+  - "config.getInitParameter"
+  - "config.getInitParameterNames"
+  - "config.getServletContext"
+  - "config.getServletName"
+
+# JSP 응답 객체
+jsp_response_object:
+  - "response"
+  - "response.setContentType"
+  - "response.setCharacterEncoding"
+  - "response.sendRedirect"
+  - "response.addCookie"
+  - "response.setHeader"
+  - "response.addHeader"
