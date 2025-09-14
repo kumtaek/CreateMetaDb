@@ -1,0 +1,34 @@
+2025-09-15 00:06:10,114 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-15 00:06:10,115 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP test.jsp에서 14개 메서드 호출 발견
+2025-09-15 00:06:10,115 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP test.jsp에서 4개 JSP 관계 발견
+2025-09-15 00:06:10,117 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP test.jsp에서 25개 고도화 관계 발견
+2025-09-15 00:06:10,119 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-15 00:06:10,143 - SourceAnalyzer - INFO - jsp_parser.py:86 - JSP 파일 수집 완료: 9개
+2025-09-15 00:06:10,144 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP test.jsp에서 14개 메서드 호출 발견
+2025-09-15 00:06:10,144 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP test.jsp에서 4개 JSP 관계 발견
+2025-09-15 00:06:10,144 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP test.jsp에서 25개 고도화 관계 발견
+2025-09-15 00:06:10,145 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP syntaxError.jsp에서 5개 메서드 호출 발견
+2025-09-15 00:06:10,145 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP syntaxError.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,145 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP syntaxError.jsp에서 14개 고도화 관계 발견
+2025-09-15 00:06:10,145 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP partialError.jsp에서 5개 메서드 호출 발견
+2025-09-15 00:06:10,145 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP partialError.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,146 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP partialError.jsp에서 15개 고도화 관계 발견
+2025-09-15 00:06:10,146 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP list.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,146 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP list.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,146 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP list.jsp에서 16개 고도화 관계 발견
+2025-09-15 00:06:10,147 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP searchResult.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,147 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP searchResult.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,147 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP searchResult.jsp에서 27개 고도화 관계 발견
+2025-09-15 00:06:10,147 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP error.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,147 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP error.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,148 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP error.jsp에서 19개 고도화 관계 발견
+2025-09-15 00:06:10,148 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP list.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,148 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP list.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,149 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP list.jsp에서 56개 고도화 관계 발견
+2025-09-15 00:06:10,150 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP searchResult.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,150 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP searchResult.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,150 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP searchResult.jsp에서 32개 고도화 관계 발견
+2025-09-15 00:06:10,150 - SourceAnalyzer - INFO - jsp_parser.py:215 - JSP typeList.jsp에서 0개 메서드 호출 발견
+2025-09-15 00:06:10,151 - SourceAnalyzer - INFO - jsp_parser.py:584 - JSP typeList.jsp에서 0개 JSP 관계 발견
+2025-09-15 00:06:10,151 - SourceAnalyzer - INFO - jsp_parser.py:971 - JSP typeList.jsp에서 26개 고도화 관계 발견
+2025-09-15 00:06:10,151 - SourceAnalyzer - INFO - jsp_parser.py:815 - JSP 의존성 그래프 생성 완료: 노드 5개, 엣지 4개

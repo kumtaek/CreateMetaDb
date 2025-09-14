@@ -137,7 +137,7 @@ def test_jsp_phases():
         print("\n[OK] Phase 2&3 테스트 완료!")
 
     except Exception as e:
-        print(f"❌ 테스트 중 오류 발생: {str(e)}")
+        print(f"[ERROR] 테스트 중 오류 발생: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -157,13 +157,13 @@ def test_jsp_dependency_graph():
 
         print(f"JSP 파일 수집: {len(jsp_files)}개")
         for jsp_file in jsp_files:
-            print(f"  • {jsp_file}")
+            print(f"  - {jsp_file}")
         print()
 
         # 의존성 그래프 생성
         dependency_graph = jsp_parser.generate_jsp_dependency_graph(jsp_files)
 
-        print("📊 의존성 그래프 분석 결과")
+        print("[의존성 그래프 분석 결과]")
         print("-" * 40)
         print(f"  노드(JSP 파일): {len(dependency_graph['nodes'])}개")
         print(f"  엣지(관계): {len(dependency_graph['edges'])}개")
@@ -175,20 +175,20 @@ def test_jsp_dependency_graph():
 
         # 엣지 상세 정보
         if dependency_graph['edges']:
-            print("🔗 JSP 의존성 관계:")
+            print("[JSP 의존성 관계]")
             for edge in dependency_graph['edges']:
-                print(f"  • {edge['source']} → {edge['target']} ({edge['type']})")
+                print(f"  - {edge['source']} -> {edge['target']} ({edge['type']})")
 
         # 순환 의존성 경고
         if dependency_graph['circular_dependencies']:
-            print("\n⚠️  순환 의존성 발견:")
+            print("\n[WARNING] 순환 의존성 발견:")
             for cycle in dependency_graph['circular_dependencies']:
-                print(f"  • {' → '.join(cycle)}")
+                print(f"  - {' -> '.join(cycle)}")
 
-        print("\n✅ 의존성 그래프 테스트 완료!")
+        print("\n[OK] 의존성 그래프 테스트 완료!")
 
     except Exception as e:
-        print(f"❌ 의존성 그래프 테스트 중 오류: {str(e)}")
+        print(f"[ERROR] 의존성 그래프 테스트 중 오류: {str(e)}")
         import traceback
         traceback.print_exc()
 
