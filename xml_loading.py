@@ -237,29 +237,41 @@ class XmlLoadingEngine:
             
             for rel_info in join_relationships:
                 try:
+                    # USER RULES: 테이블명 유효성 검증 (별칭 오탐 방지)
+                    source_table = rel_info['source_table']
+                    target_table = rel_info['target_table']
+                    
+                    # 유효하지 않은 테이블명은 건너뜀
+                    if not self._is_valid_table_name(source_table):
+                        debug(f"유효하지 않은 소스 테이블명 건너뜀: {source_table}")
+                        continue
+                    if not self._is_valid_table_name(target_table):
+                        debug(f"유효하지 않은 대상 테이블명 건너뜀: {target_table}")
+                        continue
+                    
                     # 소스 테이블 컴포넌트 ID 조회
-                    src_component_id = self._get_table_component_id(project_id, rel_info['source_table'])
+                    src_component_id = self._get_table_component_id(project_id, source_table)
                     if not src_component_id:
                         # inferred 테이블 생성 (join_relationships 전달)
-                        info(f"inferred 테이블 생성 시도: {rel_info['source_table']}")
-                        src_component_id = self._create_inferred_table(project_id, rel_info['source_table'], join_relationships)
+                        info(f"inferred 테이블 생성 시도: {source_table}")
+                        src_component_id = self._create_inferred_table(project_id, source_table, join_relationships)
                         if src_component_id:
                             self.stats['inferred_tables_created'] += 1
-                            info(f"inferred 테이블 생성 성공: {rel_info['source_table']} (ID: {src_component_id})")
+                            info(f"inferred 테이블 생성 성공: {source_table} (ID: {src_component_id})")
                         else:
-                            error(f"inferred 테이블 생성 실패: {rel_info['source_table']}")
+                            error(f"inferred 테이블 생성 실패: {source_table}")
                     
                     # 대상 테이블 컴포넌트 ID 조회
-                    dst_component_id = self._get_table_component_id(project_id, rel_info['target_table'])
+                    dst_component_id = self._get_table_component_id(project_id, target_table)
                     if not dst_component_id:
                         # inferred 테이블 생성 (join_relationships 전달)
-                        info(f"inferred 테이블 생성 시도: {rel_info['target_table']}")
-                        dst_component_id = self._create_inferred_table(project_id, rel_info['target_table'], join_relationships)
+                        info(f"inferred 테이블 생성 시도: {target_table}")
+                        dst_component_id = self._create_inferred_table(project_id, target_table, join_relationships)
                         if dst_component_id:
                             self.stats['inferred_tables_created'] += 1
-                            info(f"inferred 테이블 생성 성공: {rel_info['target_table']} (ID: {dst_component_id})")
+                            info(f"inferred 테이블 생성 성공: {target_table} (ID: {dst_component_id})")
                         else:
-                            error(f"inferred 테이블 생성 실패: {rel_info['target_table']}")
+                            error(f"inferred 테이블 생성 실패: {target_table}")
                     
                     if src_component_id and dst_component_id:
                         # 관계 데이터 생성
@@ -295,6 +307,44 @@ class XmlLoadingEngine:
                 
         except Exception as e:
             handle_error(e, "JOIN 관계 저장 실패")
+            return False
+
+    def _is_valid_table_name(self, table_name: str) -> bool:
+        """
+        테이블명 유효성 검증 (별칭 오탐 방지)
+        
+        Args:
+            table_name: 검증할 테이블명
+            
+        Returns:
+            유효한 테이블명이면 True, 아니면 False
+        """
+        try:
+            if not table_name:
+                return False
+            
+            # 단일 문자 또는 2글자 이하 필터링 (별칭 가능성 높음)
+            if len(table_name) <= 2:
+                return False
+            
+            # 대문자로만 구성된 경우 (별칭 가능성 높음)
+            if table_name.isupper() and len(table_name) <= 3:
+                return False
+            
+            # 실제 테이블명 패턴 검증 (대문자, 언더스코어 포함)
+            import re
+            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
+                return False
+            
+            # 예약어 체크 (자주 사용되는 단일 문자 별칭)
+            reserved_words = {'B', 'C', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z'}
+            if table_name in reserved_words:
+                return False
+            
+            return True
+            
+        except Exception as e:
+            warning(f"테이블명 유효성 검증 실패: {table_name} - {str(e)}")
             return False
     
     def _get_project_id(self) -> Optional[int]:
@@ -448,6 +498,7 @@ class XmlLoadingEngine:
                 'component_name': table_name,
                 'parent_id': None,
                 'file_id': inferred_file_id,
+                'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
                 'line_start': None,
                 'line_end': None,
                 'hash_value': 'INFERRED',

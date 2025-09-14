@@ -277,6 +277,25 @@ method_filter_patterns:
     - "^run$"                       # run 메서드
     - "^log[A-Z].*"                 # 로깅 메서드
     - "^print[A-Z].*"               # 출력 메서드
+    
+    # 제어문 키워드 필터링 (METHOD 컴포넌트로 잘못 파싱 방지)
+    - "^if$"                        # if 제어문
+    - "^else$"                      # else 제어문
+    - "^for$"                       # for 제어문
+    - "^while$"                     # while 제어문
+    - "^do$"                        # do 제어문
+    - "^switch$"                    # switch 제어문
+    - "^case$"                      # case 제어문
+    - "^default$"                   # default 제어문
+    - "^break$"                     # break 제어문
+    - "^continue$"                  # continue 제어문
+    - "^return$"                    # return 제어문
+    - "^try$"                       # try 예외처리
+    - "^catch$"                     # catch 예외처리
+    - "^finally$"                   # finally 예외처리
+    - "^throw$"                     # throw 예외처리
+    - "^throws$"                    # throws 예외처리
+    - "^synchronized$"              # synchronized 동기화
   
   # 포함할 메서드 패턴 (비즈니스 로직)
   include_patterns:

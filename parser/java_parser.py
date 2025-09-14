@@ -632,6 +632,11 @@ class JavaParser:
                 for match in matches:
                     method_name = match.group(1)
                     
+                    # USER RULES: 제어문 키워드 필터링 적용 (METHOD 컴포넌트로 잘못 파싱 방지)
+                    if self._is_control_keyword(method_name):
+                        debug(f"제어문 키워드 필터링: {method_name} - 건너뜀")
+                        continue
+                    
                     # 메서드가 해당 클래스에 속하는지 확인
                     if self._is_method_in_class(class_content, method_name, class_name):
                         # 메서드 본문 추출
@@ -888,6 +893,11 @@ class JavaParser:
                     match_count += 1
                     info(f"패턴 {i+1}에서 메서드 발견: {method_name}")
 
+                    # USER RULES: 제어문 키워드 필터링 적용 (METHOD 컴포넌트로 잘못 파싱 방지)
+                    if self._is_control_keyword(method_name):
+                        debug(f"제어문 키워드 필터링: {method_name} - 건너뜀")
+                        continue
+
                     # 메서드 복잡도 분류로 정교한 필터링
                     method_body = self._extract_method_body(original_content, match.start())
                     complexity_classification = self._classify_method_complexity(method_name, method_body)
@@ -1098,6 +1108,35 @@ class JavaParser:
     def _is_constructor_or_main(self, method_name: str) -> bool:
         """생성자 및 main 메서드 확인"""
         return method_name in ['<init>', '<clinit>', 'main']
+
+    def _is_control_keyword(self, method_name: str) -> bool:
+        """
+        제어문 키워드인지 확인 (METHOD 컴포넌트로 잘못 파싱 방지)
+        
+        Args:
+            method_name: 확인할 메서드명
+            
+        Returns:
+            제어문 키워드이면 True, 아니면 False
+        """
+        try:
+            # USER RULES: 하드코딩 지양 - 설정 파일에서 제어문 키워드 가져오기
+            exclude_patterns = self.config.get('method_filter_patterns', {}).get('exclude_patterns', [])
+            
+            # 제어문 키워드 패턴 확인
+            for pattern in exclude_patterns:
+                if pattern.startswith('^') and pattern.endswith('$'):
+                    # 정확한 매치 패턴 (^keyword$)
+                    keyword = pattern[1:-1]  # ^와 $ 제거
+                    if method_name == keyword:
+                        return True
+            
+            return False
+            
+        except Exception as e:
+            # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
+            warning(f"제어문 키워드 확인 실패: {method_name} - {str(e)}")
+            return False
 
     def _find_class_for_method(self, java_content: str, method_pos: int) -> Optional[str]:
         """

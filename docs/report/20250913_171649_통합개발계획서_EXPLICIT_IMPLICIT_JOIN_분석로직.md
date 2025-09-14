@@ -411,8 +411,8 @@ def _create_inferred_column(self, table_name: str, column_name: str) -> int:
             'is_primary_key': 'N',
             'is_foreign_key': 'N',
             'is_nullable': 'Y',
-            'created_at': 'CURRENT_TIMESTAMP',
             'del_yn': 'N'
+            # created_at은 DEFAULT 값 사용
         }
         
         # USER RULES: DatabaseUtils 공통함수 사용
@@ -425,8 +425,8 @@ def _create_inferred_column(self, table_name: str, column_name: str) -> int:
             'component_name': column_name,
             'parent_id': table_component_id,
             'hash_value': '-',  # USER RULES: 프로젝트 hash_value는 하드코딩 '-'
-            'created_at': 'CURRENT_TIMESTAMP',
             'del_yn': 'N'
+            # created_at은 DEFAULT 값 사용
         }
         
         component_id = self.db_utils.insert_or_replace('components', component_data)
@@ -500,11 +500,11 @@ def _mark_parsing_error(self, component_id: int, error_message: str) -> None:
     """
     try:
         # USER RULES: DatabaseUtils() 공통함수 사용
-        update_data = {
-            'has_error': 'Y',
-            'error_message': error_message,
-            'updated_at': 'CURRENT_TIMESTAMP'
-        }
+            update_data = {
+                'has_error': 'Y',
+                'error_message': error_message
+                # updated_at은 DEFAULT 값 사용
+            }
         
         self.db_utils.update_record('components', update_data, {'component_id': component_id})
         

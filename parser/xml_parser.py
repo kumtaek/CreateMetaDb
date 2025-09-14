@@ -789,8 +789,8 @@ class XmlParser:
 
                 update_data = {
                     'has_error': 'Y',
-                    'error_message': error_message,
-                    'updated_at': 'CURRENT_TIMESTAMP'
+                    'error_message': error_message
+                    # updated_at은 DEFAULT 값 사용
                 }
 
                 db_utils.update_record('components', update_data, {'component_id': component_id})
@@ -861,8 +861,15 @@ class XmlParser:
 
                 for match in matches:
                     alias1, col1, alias2, col2 = match
-                    table1 = alias_map.get(alias1.upper(), alias1.upper())
-                    table2 = alias_map.get(alias2.upper(), alias2.upper())
+                    
+                    # USER RULES: 테이블 별칭 필터링 - 단일 문자 별칭은 실제 테이블명으로 인식하지 않음
+                    table1 = self._resolve_table_alias(alias1.upper(), alias_map)
+                    table2 = self._resolve_table_alias(alias2.upper(), alias_map)
+                    
+                    # 유효한 테이블명인지 검증
+                    if not self._is_valid_table_name(table1) or not self._is_valid_table_name(table2):
+                        debug(f"유효하지 않은 테이블명 건너뜀: {table1}, {table2}")
+                        continue
 
                     if table1 != table2:
                         # 존재하지 않는 컬럼 검사 및 생성 - 프로젝트 ID 전역 관리
@@ -887,6 +894,71 @@ class XmlParser:
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, "Inferred Column 분석 실패")
             return []
+
+    def _is_valid_table_name(self, table_name: str) -> bool:
+        """
+        테이블명 유효성 검증 (별칭 오탐 방지)
+        
+        Args:
+            table_name: 검증할 테이블명
+            
+        Returns:
+            유효한 테이블명이면 True, 아니면 False
+        """
+        try:
+            if not table_name:
+                return False
+            
+            # 단일 문자 또는 2글자 이하 필터링 (별칭 가능성 높음)
+            if len(table_name) <= 2:
+                return False
+            
+            # 대문자로만 구성된 경우 (별칭 가능성 높음)
+            if table_name.isupper() and len(table_name) <= 3:
+                return False
+            
+            # 실제 테이블명 패턴 검증 (대문자, 언더스코어 포함)
+            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
+                return False
+            
+            # 예약어 체크 (자주 사용되는 단일 문자 별칭)
+            reserved_words = {'B', 'C', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z'}
+            if table_name in reserved_words:
+                return False
+            
+            return True
+            
+        except Exception as e:
+            warning(f"테이블명 유효성 검증 실패: {table_name} - {str(e)}")
+            return False
+
+    def _resolve_table_alias(self, alias: str, alias_map: dict) -> str:
+        """
+        테이블 별칭을 실제 테이블명으로 변환
+        
+        Args:
+            alias: 테이블 별칭
+            alias_map: 별칭-테이블명 매핑
+            
+        Returns:
+            실제 테이블명 또는 None (유효하지 않은 경우)
+        """
+        try:
+            # 별칭 매핑에서 실제 테이블명 찾기
+            actual_table = alias_map.get(alias)
+            if actual_table:
+                return actual_table
+            
+            # 별칭이 매핑에 없으면 유효성 검증 후 반환
+            if self._is_valid_table_name(alias):
+                return alias
+            
+            # 유효하지 않은 별칭은 None 반환
+            return None
+            
+        except Exception as e:
+            warning(f"테이블 별칭 변환 실패: {alias} - {str(e)}")
+            return None
 
     def _should_create_inferred_column(self, table_name: str, column_name: str) -> bool:
         """
@@ -971,9 +1043,10 @@ class XmlParser:
                     'data_type': 'INFERRED',
                     'nullable': 'Y',
                     'column_comments': 'Inferred from SQL JOIN analysis',
+                    'owner': 'UNKNOWN',  # inferred 컬럼은 owner를 UNKNOWN으로 설정
                     'hash_value': 'INFERRED',
-                    'created_at': 'CURRENT_TIMESTAMP',
                     'del_yn': 'N'
+                    # created_at은 DEFAULT 값 사용
                 }
 
                 column_id = db_utils.insert_or_replace('columns', column_data)
@@ -985,9 +1058,10 @@ class XmlParser:
                     'component_type': 'COLUMN',
                     'component_name': column_name.upper(),
                     'parent_id': self._get_table_component_id(table_id),
+                    'layer': 'DB',  # COLUMN 컴포넌트는 DB 레이어
                     'hash_value': 'INFERRED',
-                    'created_at': 'CURRENT_TIMESTAMP',
                     'del_yn': 'N'
+                    # created_at은 DEFAULT 값 사용
                 }
 
                 db_utils.insert_or_replace('components', component_data)
@@ -1039,11 +1113,11 @@ class XmlParser:
                 table_data = {
                     'project_id': project_id,
                     'table_name': table_name,
-                    'table_owner': 'INFERRED',
+                    'table_owner': 'UNKNOWN',  # inferred 테이블은 owner를 UNKNOWN으로 설정
                     'table_comments': 'Inferred from SQL analysis',
                     'hash_value': 'INFERRED',
-                    'created_at': 'CURRENT_TIMESTAMP',
                     'del_yn': 'N'
+                    # created_at은 DEFAULT 값 사용
                 }
 
                 table_id = db_utils.insert_or_replace('tables', table_data)
@@ -1055,9 +1129,10 @@ class XmlParser:
                     'component_type': 'TABLE',
                     'component_name': table_name,
                     'parent_id': None,
+                    'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
                     'hash_value': 'INFERRED',
-                    'created_at': 'CURRENT_TIMESTAMP',
                     'del_yn': 'N'
+                    # created_at은 DEFAULT 값 사용
                 }
 
                 component_id = db_utils.insert_or_replace('components', component_data)
