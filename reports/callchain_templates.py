@@ -1,11 +1,164 @@
-<!DOCTYPE html>
+"""
+CallChain Report HTML 템플릿 관리
+"""
+
+from typing import Dict, List, Any
+
+
+class CallChainTemplates:
+    """CallChain Report 템플릿 관리 클래스"""
+    
+    def get_callchain_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 
+                              chain_data: List[Dict[str, Any]], filter_options: Dict[str, List[str]]) -> str:
+        """CallChain Report HTML 템플릿 생성"""
+        
+        # 통계 카드 HTML 생성
+        stats_html = self._generate_stats_html(stats)
+        
+        # 필터링 옵션 HTML 생성
+        filter_html = self._generate_filter_html(filter_options)
+        
+        # 연계 체인 테이블 HTML 생성
+        table_html = self._generate_chain_table_html(chain_data)
+        
+        return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CallChain Report - sampleSrc</title>
+    <title>CallChain Report - {project_name}</title>
     <style>
+        {self._get_callchain_css()}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CallChain Report</h1>
+            <div class="subtitle">Method-Class-Method-XML-Query-Table 연계 정보</div>
+            <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
+        </div>
+        {stats_html}
+        <div class="content">
+            <div class="section">
+                <h2>필터 및 검색</h2>
+                {filter_html}
+            </div>
+            <div class="section">
+                <h2>완전한 연계 경로</h2>
+                <div class="table-container">
+                    <table id="chainTable">
+                        <thead>
+                            <tr>
+                                <th>연계ID</th>
+                                <th>클래스</th>
+                                <th>메서드</th>
+                                <th>XML파일</th>
+                                <th>쿼리ID</th>
+                                <th>쿼리종류</th>
+                                <th>관련테이블들</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {table_html}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        {self._get_callchain_javascript()}
+    </script>
+</body>
+</html>"""
+    
+    def _generate_stats_html(self, stats: Dict[str, int]) -> str:
+        """통계 카드 HTML 생성"""
+        return f"""
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{stats.get('java_classes', 0)}</div>
+                <div class="stat-label">Java 클래스</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{stats.get('database_tables', 0)}</div>
+                <div class="stat-label">데이터베이스 테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{stats.get('xml_files', 0)}</div>
+                <div class="stat-label">XML 파일</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{stats.get('jsp_files', 0)}</div>
+                <div class="stat-label">JSP 파일</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{stats.get('join_relations', 0)}</div>
+                <div class="stat-label">JOIN 관계</div>
+            </div>
+        </div>"""
+    
+    def _generate_filter_html(self, filter_options: Dict[str, List[str]]) -> str:
+        """필터링 옵션 HTML 생성"""
+        # 테이블 옵션
+        table_options = ''.join([f'<option value="{table}">{table}</option>' for table in filter_options.get('tables', [])])
         
+        # 쿼리 타입 옵션
+        query_type_options = ''.join([f'<option value="{qt}">{qt}</option>' for qt in filter_options.get('query_types', [])])
+        
+        return f"""
+        <div class="filter-controls">
+            <input type="text" id="searchInput" placeholder="클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
+            <select id="tableFilter">
+                <option value="">모든 테이블</option>
+                {table_options}
+            </select>
+            <select id="queryTypeFilter">
+                <option value="">모든 쿼리 타입</option>
+                {query_type_options}
+            </select>
+            <button onclick="filterTable()">필터 적용</button>
+            <button onclick="clearFilters()">필터 초기화</button>
+            <button onclick="exportToCSV()">CSV 내보내기</button>
+        </div>"""
+    
+    def _generate_chain_table_html(self, chain_data: List[Dict[str, Any]]) -> str:
+        """연계 체인 테이블 HTML 생성 (툴팁 포함, 오프라인 지원)"""
+        rows = []
+        for data in chain_data:
+            sql_content = data.get('sql_content', '')
+            # HTML 특수문자 이스케이프 (크로스플랫폼 호환)
+            escaped_sql = (sql_content.replace('&', '&amp;')
+                          .replace('<', '&lt;')
+                          .replace('>', '&gt;')
+                          .replace('"', '&quot;')
+                          .replace("'", '&#39;'))
+            
+            # 툴팁이 있는 경우와 없는 경우 분기
+            if sql_content:
+                query_type_html = f'<span class="query-type tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
+            else:
+                query_type_html = f'<span class="query-type">{data["query_type"]}</span>'
+            
+            # 안전한 HTML 생성 (크로스플랫폼 호환)
+            rows.append(f"""
+                <tr>
+                    <td><span class="chain-id">{data['chain_id']}</span></td>
+                    <td><span class="class-name">{data['class_name']}</span></td>
+                    <td><span class="method-name">{data['method_name']}</span></td>
+                    <td><span class="xml-file">{data['xml_file']}</span></td>
+                    <td><span class="query-id">{data['query_id']}</span></td>
+                    <td>{query_type_html}</td>
+                    <td><span class="tables">{data['related_tables']}</span></td>
+                </tr>""")
+        
+        return '\n'.join(rows)
+    
+    def _get_callchain_css(self) -> str:
+        """CallChain Report CSS 스타일"""
+        return """
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -209,85 +362,11 @@
                 margin-left: -150px;
             }
         }
-        
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>CallChain Report</h1>
-            <div class="subtitle">JSP-Class-Method-XML-Query-Table 연계 정보</div>
-            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-09-15 10:25:48</div>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">38</div>
-                <div class="stat-label">Java 클래스</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">25</div>
-                <div class="stat-label">데이터베이스 테이블</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">5</div>
-                <div class="stat-label">XML 파일</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">7</div>
-                <div class="stat-label">JSP 파일</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">28</div>
-                <div class="stat-label">JOIN 관계</div>
-            </div>
-        </div>
-        <div class="content">
-            <div class="section">
-                <h2>필터 및 검색</h2>
-                
-        <div class="filter-controls">
-            <input type="text" id="searchInput" placeholder="JSP파일, 클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
-            <select id="tableFilter">
-                <option value="">모든 테이블</option>
-                <option value="BRANDS">BRANDS</option><option value="CATEGORIES">CATEGORIES</option><option value="CUSTOMERS">CUSTOMERS</option><option value="DEPARTMENTS">DEPARTMENTS</option><option value="DISCOUNTS">DISCOUNTS</option><option value="DYNAMIC_DATA">DYNAMIC_DATA</option><option value="INVENTORIES">INVENTORIES</option><option value="NEW_TEST_TABLE">NEW_TEST_TABLE</option><option value="NONEXISTENT_TABLE">NONEXISTENT_TABLE</option><option value="ORDERS">ORDERS</option><option value="ORDER_ITEMS">ORDER_ITEMS</option><option value="PRODUCTS">PRODUCTS</option><option value="PRODUCT_REVIEWS">PRODUCT_REVIEWS</option><option value="RELATED_DATA">RELATED_DATA</option><option value="ROLES">ROLES</option><option value="SUPPLIERS">SUPPLIERS</option><option value="USERS">USERS</option><option value="USER_ACTIVITY_LOG">USER_ACTIVITY_LOG</option><option value="USER_PREFERENCES">USER_PREFERENCES</option><option value="USER_PROFILES">USER_PROFILES</option><option value="USER_ROLE">USER_ROLE</option><option value="USER_ROLES">USER_ROLES</option><option value="USER_SETTINGS">USER_SETTINGS</option><option value="USER_TYPES">USER_TYPES</option><option value="WAREHOUSES">WAREHOUSES</option>
-            </select>
-            <select id="queryTypeFilter">
-                <option value="">모든 쿼리 타입</option>
-                <option value="QUERY">QUERY</option><option value="DELETE">DELETE</option><option value="INSERT">INSERT</option><option value="MERGE">MERGE</option><option value="SELECT">SELECT</option><option value="UPDATE">UPDATE</option>
-            </select>
-            <button onclick="filterTable()">필터 적용</button>
-            <button onclick="clearFilters()">필터 초기화</button>
-            <button onclick="exportToCSV()">CSV 내보내기</button>
-        </div>
-            </div>
-            <div class="section">
-                <h2>완전한 연계 경로</h2>
-                <div class="table-container">
-                    <table id="chainTable">
-                        <thead>
-                            <tr>
-                                <th>연계ID</th>
-                                <th>JSP파일</th>
-                                <th>클래스</th>
-                                <th>메서드</th>
-                                <th>XML파일</th>
-                                <th>쿼리ID</th>
-                                <th>쿼리종류</th>
-                                <th>관련테이블들</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+        """
     
-    <script>
-        
+    def _get_callchain_javascript(self) -> str:
+        """CallChain Report JavaScript (오프라인 지원)"""
+        return """
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
         
@@ -318,7 +397,7 @@
                 
                 // 테이블 필터
                 if (tableFilter && shouldShow) {
-                    const tablesCell = cells[7];
+                    const tablesCell = cells[6];
                     if (tablesCell.textContent.indexOf(tableFilter) === -1) {
                         shouldShow = false;
                     }
@@ -326,7 +405,7 @@
                 
                 // 쿼리 타입 필터
                 if (queryTypeFilter && shouldShow) {
-                    const queryTypeCell = cells[6];
+                    const queryTypeCell = cells[5];
                     if (queryTypeCell.textContent.indexOf(queryTypeFilter) === -1) {
                         shouldShow = false;
                     }
@@ -355,7 +434,7 @@
             let csv = [];
             
             // 헤더 추가
-            csv.push('연계ID,JSP파일,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
+            csv.push('연계ID,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
             
             for (let i = 1; i < rows.length; i++) {
                 const cells = rows[i].getElementsByTagName('td');
@@ -364,8 +443,8 @@
                     for (let j = 0; j < cells.length; j++) {
                         let cellText = cells[j].textContent.replace(/"/g, '""');
                         
-                        // 쿼리종류 컬럼(인덱스 6)의 경우 정제된 SQL 내용도 포함
-                        if (j === 6) {
+                        // 쿼리종류 컬럼(인덱스 5)의 경우 정제된 SQL 내용도 포함
+                        if (j === 5) {
                             const queryTypeSpan = cells[j].querySelector('.query-type');
                             if (queryTypeSpan && queryTypeSpan.classList.contains('tooltip')) {
                                 const sqlContent = queryTypeSpan.getAttribute('data-query') || '';
@@ -383,7 +462,7 @@
                 }
             }
             
-            const csvContent = csv.join('\n');
+            const csvContent = csv.join('\\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -436,7 +515,4 @@
                 });
             });
         });
-        
-    </script>
-</body>
-</html>
+        """

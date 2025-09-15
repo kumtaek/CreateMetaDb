@@ -7,6 +7,7 @@ SourceAnalyzer 리포트 생성 메인 실행 파일
 
 import sys
 import argparse
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -18,6 +19,8 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from reports.callchain_report_generator import CallChainReportGenerator
 from reports.erd_report_generator import ERDReportGenerator
+from reports.erd_dagre_report_generator import ERDDagreReportGenerator
+from reports.architecture_report_generator import ArchitectureReportGenerator
 
 
 def parse_arguments():
@@ -27,9 +30,11 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 사용 예시:
+  python create_report.py --project-name sampleSrc
   python create_report.py --project-name sampleSrc --report-type callchain
   python create_report.py --project-name sampleSrc --report-type erd
-  python create_report.py --project-name sampleSrc --report-type all
+  python create_report.py --project-name sampleSrc --report-type erd-dagre
+  python create_report.py --project-name sampleSrc --report-type architecture
         """
     )
     
@@ -41,9 +46,9 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'all'],
         default='all',
-        help='생성할 리포트 타입 (기본값: all)'
+        help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
     
     parser.add_argument(
@@ -97,6 +102,35 @@ def create_output_directory(project_name: str, path_utils: PathUtils, output_dir
         handle_error(e, f"출력 디렉토리 생성 실패: {output_path}")
 
 
+def copy_js_assets(output_dir: str) -> bool:
+    """JavaScript 자산 파일들을 출력 디렉토리에 복사"""
+    try:
+        # 소스 JavaScript 폴더 경로
+        source_js_dir = Path(__file__).parent / "reports" / "js"
+        
+        # 대상 JavaScript 폴더 경로
+        target_js_dir = Path(output_dir) / "js"
+        
+        # 대상 폴더 생성 (존재하지 않으면)
+        target_js_dir.mkdir(parents=True, exist_ok=True)
+        
+        # JavaScript 파일들 복사 (덮어쓰기)
+        if source_js_dir.exists():
+            for js_file in source_js_dir.glob("*.js"):
+                target_file = target_js_dir / js_file.name
+                shutil.copy2(js_file, target_file)
+            
+            app_logger.info(f"JavaScript 자산 파일 복사 완료: {target_js_dir}")
+            return True
+        else:
+            app_logger.warning(f"소스 JavaScript 폴더가 존재하지 않습니다: {source_js_dir}")
+            return False
+            
+    except Exception as e:
+        handle_error(e, f"JavaScript 자산 파일 복사 실패: {output_dir}")
+        return False
+
+
 def generate_callchain_report(project_name: str, output_dir: str) -> bool:
     """CallChain Report 생성"""
     try:
@@ -135,6 +169,44 @@ def generate_erd_report(project_name: str, output_dir: str) -> bool:
         handle_error(e, "ERD Report 생성 중 오류 발생")
 
 
+def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
+    """ERD(Dagre) Report 생성"""
+    try:
+        app_logger.info("ERD(Dagre) Report 생성 시작")
+        
+        generator = ERDDagreReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        
+        if success:
+            app_logger.info("ERD(Dagre) Report 생성 완료")
+            return True
+        else:
+            app_logger.error("ERD(Dagre) Report 생성 실패")
+            return False
+            
+    except Exception as e:
+        handle_error(e, "ERD(Dagre) Report 생성 중 오류 발생")
+
+
+def generate_architecture_report(project_name: str, output_dir: str) -> bool:
+    """Architecture Report 생성"""
+    try:
+        app_logger.info("Architecture Report 생성 시작")
+        
+        generator = ArchitectureReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        
+        if success:
+            app_logger.info("Architecture Report 생성 완료")
+            return True
+        else:
+            app_logger.error("Architecture Report 생성 실패")
+            return False
+            
+    except Exception as e:
+        handle_error(e, "Architecture Report 생성 중 오류 발생")
+
+
 def main():
     """메인 함수"""
     try:
@@ -153,6 +225,9 @@ def main():
         # 출력 디렉토리 생성
         output_dir = create_output_directory(args.project_name, path_utils, args.output_dir)
         
+        # JavaScript 자산 파일 복사
+        copy_js_assets(output_dir)
+        
         # 리포트 생성
         success_count = 0
         total_count = 0
@@ -165,6 +240,16 @@ def main():
         if args.report_type in ['erd', 'all']:
             total_count += 1
             if generate_erd_report(args.project_name, output_dir):
+                success_count += 1
+        
+        if args.report_type in ['erd-dagre', 'all']:
+            total_count += 1
+            if generate_erd_dagre_report(args.project_name, output_dir):
+                success_count += 1
+        
+        if args.report_type in ['architecture', 'all']:
+            total_count += 1
+            if generate_architecture_report(args.project_name, output_dir):
                 success_count += 1
         
         # 결과 출력

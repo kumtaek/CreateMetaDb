@@ -45,7 +45,7 @@ class BackendEntryLoadingEngine:
         
         # 분석기 로드 (servlet_url_map 전달)
         self.analyzers = self._load_analyzers()
-        app_logger.info(f"로드된 분석기: {[analyzer.get_framework_name() for analyzer in self.analyzers]}")
+        app_logger.debug(f"로드된 분석기: {[analyzer.get_framework_name() for analyzer in self.analyzers]}")
         
         app_logger.info(f"백엔드 진입점 분석 엔진 초기화 완료: {project_name}")
     
@@ -58,7 +58,7 @@ class BackendEntryLoadingEngine:
         """
         try:
             analyzers = self.factory.load_analyzers_from_config(self.project_name, self.servlet_url_map)
-            app_logger.info(f"분석기 로드 완료: {len(analyzers)}개")
+            app_logger.debug(f"분석기 로드 완료: {len(analyzers)}개")
             return analyzers
             
         except Exception as e:
@@ -135,7 +135,7 @@ class BackendEntryLoadingEngine:
                     # USER RULE: 모든 exception 발생시 handle_error()로 exit()
                     handle_error(e, f"web.xml 파싱 실패: {row['file_path']}/{row['file_name']}")
             
-            app_logger.info(f"web.xml 파싱 완료. 총 {len(url_map)}개의 서블릿 매핑을 로드했습니다")
+            app_logger.debug(f"web.xml 파싱 완료. 총 {len(url_map)}개의 서블릿 매핑을 로드했습니다")
             return url_map
             
         except Exception as e:
@@ -161,7 +161,7 @@ class BackendEntryLoadingEngine:
             try:
                 # 2. Java 파일 수집
                 java_files = self._get_java_files()
-                app_logger.info(f"Java 파일 수집 완료: {len(java_files)}개 파일")
+                app_logger.debug(f"Java 파일 수집 완료: {len(java_files)}개 파일")
                 
                 if not java_files:
                     # USER RULE: 분석할 파일이 없으면 handle_error()로 즉시 종료
@@ -314,14 +314,14 @@ class BackendEntryLoadingEngine:
                 full_file_path = self.path_utils.join_path("projects", self.project_name, java_file.file_path, java_file.file_name)
                 
                 # 각 분석기는 자신의 설정에 따라 2차 필터링 수행
-                app_logger.info(f"분석기 {analyzer.get_framework_name()}로 파일 {full_file_path} 필터링 확인")
+                app_logger.debug(f"분석기 {analyzer.get_framework_name()}로 파일 {full_file_path} 필터링 확인")
                 if self._is_target_for_analyzer_with_full_path(java_file, analyzer, full_file_path):
-                    app_logger.info(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상임")
+                    app_logger.debug(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상임")
                     entries = analyzer.analyze_backend_entry(java_file, self.stats)
                     app_logger.info(f"분석기 {analyzer.get_framework_name()}에서 {len(entries)}개 진입점 발견")
                     file_entries.extend(entries)
                 else:
-                    app_logger.info(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상이 아님")
+                    app_logger.debug(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상이 아님")
                     
             except Exception as e:
                 # USER RULE: 분석기 실행 실패는 handle_error()로 즉시 종료
@@ -404,21 +404,21 @@ class BackendEntryLoadingEngine:
             # 배치 upsert 저장
             if components_to_insert:
                 self.db.batch_insert_or_replace('components', components_to_insert)
-                app_logger.info(f"컴포넌트 upsert 저장 완료: {len(components_to_insert)}개")
+                app_logger.debug(f"컴포넌트 upsert 저장 완료: {len(components_to_insert)}개")
 
             # API 컴포넌트 생성 (컴포넌트 저장 후)
             self._create_api_components(entries, project_id, api_components_to_insert)
 
             if api_components_to_insert:
                 self.db.batch_insert_or_replace('api_components', api_components_to_insert)
-                app_logger.info(f"API 컴포넌트 upsert 저장 완료: {len(api_components_to_insert)}개")
+                app_logger.debug(f"API 컴포넌트 upsert 저장 완료: {len(api_components_to_insert)}개")
 
             # 관계 생성 (컴포넌트 저장 후)
             self._create_api_relationships(entries, project_id, relationships_to_insert)
 
             if relationships_to_insert:
                 self.db.batch_insert_or_replace('relationships', relationships_to_insert)
-                app_logger.info(f"관계 upsert 저장 완료: {len(relationships_to_insert)}개")
+                app_logger.debug(f"관계 upsert 저장 완료: {len(relationships_to_insert)}개")
 
         except Exception as e:
             handle_error(e, f"분석 결과 DB 저장 실패: {self.project_name}")

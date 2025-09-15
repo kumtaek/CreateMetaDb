@@ -190,8 +190,8 @@ class JavaLoadingEngine:
             저장 성공 여부
         """
         try:
-            info(f"=== Java 클래스 저장 시작: {java_file} ===")
-            info(f"저장할 클래스 수: {len(classes)}개")
+            debug(f"=== Java 클래스 저장 시작: {java_file} ===")
+            debug(f"저장할 클래스 수: {len(classes)}개")
 
             if not classes:
                 warning("저장할 클래스가 없습니다")
@@ -801,7 +801,7 @@ class JavaLoadingEngine:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
 
                 if processed_count > 0:
-                    info(f"CALL_METHOD 관계 저장 완료: {processed_count}개")
+                    debug(f"CALL_METHOD 관계 저장 완료: {processed_count}개")
                     return True
                 else:
                     handle_error(Exception("CALL_METHOD 관계 저장 실패: processed_count = 0"), "CALL_METHOD 관계 저장 실패: processed_count = 0")

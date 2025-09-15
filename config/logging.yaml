@@ -44,14 +44,14 @@ handlers:
   # 콘솔 출력 핸들러 - 터미널/콘솔에 로그 출력
   console:
     class: logging.StreamHandler  # 표준 출력 스트림 사용
-    level: WARNING               # WARNING 레벨 이상의 로그만 출력 (INFO 로그 제거)
+    level: INFO                  # INFO 레벨 이상의 로그만 출력 (중요 로그만 표시)
     formatter: simple            # 간단한 포맷터 사용
     stream: ext://sys.stdout     # 표준 출력 스트림 지정
   
   # 파일 출력 핸들러 - 로그 파일에 저장
   file:
     class: logging.handlers.RotatingFileHandler  # 파일 크기 제한이 있는 로테이션 핸들러
-    level: WARNING                              # WARNING 레벨 이상의 로그만 저장 (INFO 로그 제거)
+    level: DEBUG                               # DEBUG 레벨 이상의 로그만 저장 (모든 로그 저장)
     formatter: detailed                         # 상세한 포맷터 사용
     filename: ./logs/source_analyzer.log        # 로그 파일 경로
     maxBytes: 5242880                           # 최대 파일 크기 (5MB로 축소)
@@ -65,18 +65,18 @@ handlers:
 loggers:
   # 루트 로거 - 모든 로거의 기본 설정
   root:
-    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
+    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
   
   # SourceAnalyzer 전용 로거 - 메인 애플리케이션 로거
   SourceAnalyzer:
-    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
+    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
   
   # XML 파서 관련 로거 - XML 파싱 관련 로그
   xml_parser:
-    level: WARNING                 # WARNING 레벨 이상의 로그만 처리 (INFO 로그 제거)
+    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
 
@@ -86,7 +86,7 @@ loggers:
 # 이 설정은 SourceAnalyzer 내부에서 파서 관련 로깅을 제어하는 데 사용됩니다.
 parser_logging:
   # 로그 레벨 설정
-  log_level: "WARNING"
+  log_level: "INFO"
   
   # 로그할 정보 유형들 (필수 정보만 유지)
   log_info:

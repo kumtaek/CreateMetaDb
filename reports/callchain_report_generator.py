@@ -17,7 +17,7 @@ from typing import List, Dict, Any, Optional
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from reports.report_templates import ReportTemplates
+from reports.callchain_templates import CallChainTemplates
 
 
 class CallChainReportGenerator:

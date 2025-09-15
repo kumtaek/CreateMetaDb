@@ -880,8 +880,8 @@ class JavaParser:
             methods = []
 
             # USER RULES: 하드코딩 지양 - 컴파일된 패턴 사용
-            info(f"메서드 추출 시작: {file_path}")
-            info(f"컴파일된 메서드 패턴 수: {len(self.compiled_method_patterns)}")
+            debug(f"메서드 추출 시작: {file_path}")
+            debug(f"컴파일된 메서드 패턴 수: {len(self.compiled_method_patterns)}")
             debug(f"_extract_method_info_safe 호출됨: {file_path}")
             
             for i, compiled_pattern in enumerate(self.compiled_method_patterns):

@@ -202,7 +202,7 @@ class EntryAnalyzerFactory:
                 else:
                     app_logger.warning(f"분석기 로드 실패: {framework_name}")
             
-            app_logger.info(f"총 {len(analyzers)}개 분석기 로드 완료")
+            app_logger.debug(f"총 {len(analyzers)}개 분석기 로드 완료")
             return analyzers
             
         except Exception as e:
