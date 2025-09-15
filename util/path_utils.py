@@ -135,14 +135,15 @@ class PathUtils:
             
             # Windows에서 상대경로가 상위 디렉토리로 나가는 경우 처리
             if relative_path.startswith('..'):
-                app_logger.warning(f"상대경로가 프로젝트 루트를 벗어남: {target_path}")
+                # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+                handle_error(Exception(f"상대경로가 프로젝트 루트를 벗어남: {target_path}"), f"경로 오류: {target_path}")
             
             return relative_path
             
         except ValueError:
             # 다른 드라이브에 있는 경우 절대경로 반환
-            app_logger.warning(f"다른 드라이브 경로: {target_path}")
-            return self.normalize_path(target_path)
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(Exception(f"다른 드라이브 경로: {target_path}"), f"경로 오류: {target_path}")
         except Exception as e:
             handle_error(e, f"상대경로 생성 실패: {target_path}")
             return target_path
@@ -1061,5 +1062,39 @@ def get_components_by_parent_id(project_name: str, parent_id: int, component_typ
     """parent_id로 하위 컴포넌트 조회 편의 함수"""
     path_utils = PathUtils(project_root)
     return path_utils.get_components_by_parent_id(project_name, parent_id, component_type)
+
+
+def normalize_url_path(*parts: str) -> str:
+    """
+    여러 경로 조각을 안전하게 조합하여 표준 URL 경로로 만듭니다.
+    예: normalize_url_path("/api/", "users", "list") -> "/api/users/list"
+    예: normalize_url_path("api/users", "/list/") -> "/api/users/list"
+    
+    Args:
+        *parts: 결합할 URL 경로 조각들
+        
+    Returns:
+        정규화된 URL 경로
+    """
+    from urllib.parse import urljoin
+    
+    # 빈 경로 조각 제거
+    valid_parts = [part for part in parts if part and part.strip()]
+    if not valid_parts:
+        return "/"
+    
+    # 항상 절대 경로 형태로 시작하도록 보장
+    result = "/"
+    for part in valid_parts:
+        # 각 부분을 슬래시로 끝나도록 만들어 urljoin이 상대경로로 인식하게 함
+        if not part.endswith('/'):
+            part += '/'
+        result = urljoin(result, part)
+
+    # 마지막에 불필요한 슬래시 제거 (루트 경로 제외)
+    if result != '/' and result.endswith('/'):
+        result = result[:-1]
+        
+    return result
 
 

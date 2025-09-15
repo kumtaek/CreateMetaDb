@@ -162,18 +162,17 @@ def main():
             error("4단계 실패: Java 로딩")
             sys.exit(1)
         
-        # 11. 5단계 실행: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)
-        info("5단계 실행: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)")
+        # 11. 5단계 실행: Spring API 진입점 분석 (Phase 1)
+        info("5단계 실행: Spring API 진입점 분석 (Phase 1)")
         
-        from jsp_loading import JspLoadingEngine
+        from backend_entry_loading import execute_backend_entry_loading
         
-        jsp_engine = JspLoadingEngine(project_name)
-        success = jsp_engine.execute_jsp_loading()
+        success = execute_backend_entry_loading(project_name)
         
         if success:
-            info("5단계 완료: JSP 파일 분석 및 컴포넌트 등록 (Phase 1 MVP)")
+            info("5단계 완료: Spring API 진입점 분석 (Phase 1)")
         else:
-            error("5단계 실패: JSP 로딩")
+            error("5단계 실패: 백엔드 진입점 분석")
             sys.exit(1)
         
         info("1-5단계 테스트 완료")

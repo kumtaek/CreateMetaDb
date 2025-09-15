@@ -1,0 +1,13 @@
+relationships table schema:
+  relationship_id (INTEGER)
+  src_id (INTEGER)
+  dst_id (INTEGER)
+  rel_type (VARCHAR(30))
+  is_conditional (CHAR(1))
+  condition_expression (VARCHAR(1024))
+  confidence (FLOAT)
+  has_error (CHAR(1))
+  error_message (TEXT)
+  created_at (DATETIME)
+  updated_at (DATETIME)
+  del_yn (CHAR(1))

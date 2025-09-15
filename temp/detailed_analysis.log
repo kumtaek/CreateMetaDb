@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT component_type, COUNT(*) FROM components GROUP BY component_type ORDER BY component_type'); components_by_type = cursor.fetchall(); print('Components by type:'); for comp_type, count in components_by_type: print(f'  {comp_type}: {count}'); cursor.execute('SELECT rel_type, COUNT(*) FROM relationships GROUP BY rel_type ORDER BY rel_type'); relationships_by_type = cursor.fetchall(); print('Relationships by type:'); for rel_type, count in relationships_by_type: print(f'  {rel_type}: {count}'); conn.close()
+                                                                                                                                                                                                                                                                                               ^^^
+SyntaxError: invalid syntax

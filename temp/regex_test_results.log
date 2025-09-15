@@ -1,0 +1,12 @@
+Method annotation pattern: (@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\((?:.*?)\))?)\s+(?:(?:public|private|protected)\s+)?(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\(
+
+=== Testing Regex Patterns ===
+
+Test 1:
+Sample: @GetMapping("/list")
+    public String getProductList(@RequestParam(required = false) String name,
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\temp\test_regex_patterns.py", line 55, in <module>
+    print(f"\u2713 Match found: {matches}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'cp949' codec can't encode character '\u2713' in position 0: illegal multibyte sequence

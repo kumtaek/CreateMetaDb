@@ -1,0 +1,376 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from 'util' (consider renaming 'D:\\Analyzer\\CreateMetaDb\\util\\__init__.py' if it has the same name as a library you intended to import)
+2025-09-15 14:45:57,012 - SourceAnalyzer - INFO - main.py:17 - Recursion limit set to: 50
+2025-09-15 14:45:57,012 - SourceAnalyzer - INFO - main.py:25 - 오래된 로그 파일 정리 시작
+2025-09-15 14:45:57,013 - SourceAnalyzer - INFO - file_utils.py:362 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-15 14:45:57,013 - SourceAnalyzer - INFO - main.py:30 - 삭제할 오래된 로그 파일이 없습니다
+2025-09-15 14:45:57,013 - SourceAnalyzer - INFO - main.py:33 - SourceAnalyzer 시작
+2025-09-15 14:45:57,018 - SourceAnalyzer - INFO - main.py:44 - 분석 대상 프로젝트: sampleSrc
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:61 - 분석 옵션:
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:62 -   - 메타데이터베이스 초기화: False
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:63 -   - 상세 로그: False
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:64 -   - 출력 형식: html
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:65 -   - 드라이런 모드: False
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:66 -   - 강제 실행: False
+2025-09-15 14:45:57,019 - SourceAnalyzer - INFO - main.py:75 - 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+2025-09-15 14:45:57,022 - SourceAnalyzer - INFO - file_loading.py:86 - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-15 14:45:57,274 - SourceAnalyzer - INFO - file_loading.py:1161 - === 파일 스캔 완료 ===
+2025-09-15 14:45:57,277 - SourceAnalyzer - INFO - main.py:89 - 1단계 완료: 파일 정보 저장
+2025-09-15 14:45:57,278 - SourceAnalyzer - INFO - main.py:108 - 전역 프로젝트 정보 설정: sampleSrc (ID: 1)
+2025-09-15 14:45:57,279 - SourceAnalyzer - INFO - main.py:118 - 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-15 14:45:57,279 - SourceAnalyzer - INFO - file_loading.py:1181 - === 데이터베이스 로딩 시작: 데이터베이스 구조 저장 ===
+2025-09-15 14:45:57,280 - SourceAnalyzer - INFO - file_utils.py:55 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TABLES.csv
+2025-09-15 14:45:57,280 - SourceAnalyzer - INFO - file_loading.py:547 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TABLES.csv, 16개 행
+2025-09-15 14:45:57,282 - SourceAnalyzer - INFO - file_loading.py:644 - 테이블 정보 저장 완료: 16개 테이블 (오류: 0개)
+2025-09-15 14:45:57,282 - SourceAnalyzer - INFO - file_utils.py:55 - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TAB_COLUMNS.csv
+2025-09-15 14:45:57,283 - SourceAnalyzer - INFO - file_loading.py:547 - CSV 파일 로드 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\db_schema\ALL_TAB_COLUMNS.csv, 91개 행
+2025-09-15 14:45:57,286 - SourceAnalyzer - INFO - file_loading.py:762 - 컬럼 정보 저장 완료: 91개 컬럼 (오류: 0개)
+2025-09-15 14:45:57,287 - SourceAnalyzer - INFO - file_loading.py:829 - 테이블 컴포넌트 생성 완료: 25개
+2025-09-15 14:45:57,296 - SourceAnalyzer - INFO - file_loading.py:909 - 컬럼 컴포넌트 생성 완료: 108개
+2025-09-15 14:45:57,298 - SourceAnalyzer - INFO - file_loading.py:967 - 컬럼 component_id 업데이트 완료: 108개
+2025-09-15 14:45:57,298 - SourceAnalyzer - INFO - file_loading.py:1212 - === 데이터베이스 로딩 완료 ===
+2025-09-15 14:45:57,298 - SourceAnalyzer - INFO - main.py:125 - 2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-15 14:45:57,299 - SourceAnalyzer - INFO - main.py:131 - 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-15 14:45:57,305 - SourceAnalyzer - INFO - main.py:140 - SQL Content 기능이 비활성화되었습니다 (--sql-content 옵션으로 활성화 가능)
+2025-09-15 14:45:57,333 - SourceAnalyzer - INFO - xml_loading.py:60 - SQL Content 기능이 비활성화되어 있습니다
+2025-09-15 14:45:57,333 - SourceAnalyzer - INFO - xml_loading.py:85 - === XML 로딩 시작: 3~4단계 통합 처리 ===
+2025-09-15 14:45:57,339 - SourceAnalyzer - INFO - xml_parser.py:152 - MyBatis XML 파일 수집 완료: 6개
+2025-09-15 14:45:57,339 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.xml
+2025-09-15 14:45:57,339 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\com\example\dynamicquery
+2025-09-15 14:45:57,340 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 4개
+2025-09-15 14:45:57,340 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 4
+2025-09-15 14:45:57,373 - SourceAnalyzer - INFO - xml_loading.py:250 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-15 14:45:57,373 - SourceAnalyzer - INFO - xml_loading.py:251 - 전달받은 SQL 쿼리 수: 8개
+2025-09-15 14:45:57,373 - SourceAnalyzer - INFO - xml_loading.py:259 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 8}
+2025-09-15 14:45:57,373 - SourceAnalyzer - INFO - xml_loading.py:272 - 프로젝트 ID: 1
+2025-09-15 14:45:57,373 - SourceAnalyzer - INFO - xml_loading.py:359 - SQL 컴포넌트 저장 완료: 8/8개 성공
+2025-09-15 14:45:57,374 - SourceAnalyzer - INFO - xml_loading.py:458 - JOIN 관계 저장 완료: 5개
+2025-09-15 14:45:57,374 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml
+2025-09-15 14:45:57,374 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-15 14:45:57,374 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 5개
+2025-09-15 14:45:57,374 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 35
+2025-09-15 14:45:57,394 - SourceAnalyzer - INFO - xml_loading.py:250 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-15 14:45:57,395 - SourceAnalyzer - INFO - xml_loading.py:251 - 전달받은 SQL 쿼리 수: 5개
+2025-09-15 14:45:57,395 - SourceAnalyzer - INFO - xml_loading.py:259 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5}
+2025-09-15 14:45:57,395 - SourceAnalyzer - INFO - xml_loading.py:272 - 프로젝트 ID: 1
+2025-09-15 14:45:57,395 - SourceAnalyzer - INFO - xml_loading.py:359 - SQL 컴포넌트 저장 완료: 5/5개 성공
+2025-09-15 14:45:57,395 - SourceAnalyzer - INFO - xml_loading.py:458 - JOIN 관계 저장 완료: 8개
+2025-09-15 14:45:57,396 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinTestMapper.xml
+2025-09-15 14:45:57,396 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-15 14:45:57,396 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 5개
+2025-09-15 14:45:57,396 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 35
+2025-09-15 14:45:57,402 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\MixedErrorMapper.xml
+2025-09-15 14:45:57,402 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-15 14:45:57,402 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 5개
+2025-09-15 14:45:57,402 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 35
+2025-09-15 14:45:57,420 - SourceAnalyzer - INFO - xml_loading.py:250 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:251 - 전달받은 SQL 쿼리 수: 12개
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:259 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 9, 'insert': 1, 'update': 1, 'delete': 1}
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:272 - 프로젝트 ID: 1
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:359 - SQL 컴포넌트 저장 완료: 12/12개 성공
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:458 - JOIN 관계 저장 완료: 4개
+2025-09-15 14:45:57,421 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml
+2025-09-15 14:45:57,422 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-15 14:45:57,422 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 5개
+2025-09-15 14:45:57,422 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 35
+2025-09-15 14:45:57,440 - SourceAnalyzer - INFO - xml_loading.py:250 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-15 14:45:57,440 - SourceAnalyzer - INFO - xml_loading.py:251 - 전달받은 SQL 쿼리 수: 9개
+2025-09-15 14:45:57,440 - SourceAnalyzer - INFO - xml_loading.py:259 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 5, 'update': 2, 'insert': 1, 'delete': 1}
+2025-09-15 14:45:57,440 - SourceAnalyzer - INFO - xml_loading.py:272 - 프로젝트 ID: 1
+2025-09-15 14:45:57,440 - SourceAnalyzer - INFO - xml_loading.py:359 - SQL 컴포넌트 저장 완료: 9/9개 성공
+2025-09-15 14:45:57,441 - SourceAnalyzer - INFO - xml_loading.py:458 - JOIN 관계 저장 완료: 2개
+2025-09-15 14:45:57,441 - SourceAnalyzer - INFO - xml_loading.py:124 - XML 파일: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml
+2025-09-15 14:45:57,441 - SourceAnalyzer - INFO - xml_loading.py:125 - 디렉토리 경로: src\main\resources\mybatis\mapper
+2025-09-15 14:45:57,441 - SourceAnalyzer - INFO - xml_loading.py:136 - SQL 쿼리 결과: 5개
+2025-09-15 14:45:57,441 - SourceAnalyzer - INFO - xml_loading.py:140 - file_id 조회 성공: 35
+2025-09-15 14:45:57,493 - SourceAnalyzer - INFO - xml_loading.py:250 - === XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===
+2025-09-15 14:45:57,493 - SourceAnalyzer - INFO - xml_loading.py:251 - 전달받은 SQL 쿼리 수: 22개
+2025-09-15 14:45:57,494 - SourceAnalyzer - INFO - xml_loading.py:259 - XML에서 추출된 SQL 쿼리 타입별 통계: {'select': 15, 'update': 2, 'insert': 2, 'delete': 1, 'merge': 2}
+2025-09-15 14:45:57,494 - SourceAnalyzer - INFO - xml_loading.py:272 - 프로젝트 ID: 1
+2025-09-15 14:45:57,494 - SourceAnalyzer - INFO - xml_loading.py:359 - SQL 컴포넌트 저장 완료: 22/22개 성공
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:458 - JOIN 관계 저장 완료: 8개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:955 - === XML 로딩 통계 ===
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:956 - 처리된 XML 파일: 5개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:957 - 추출된 SQL 쿼리: 56개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:958 - 생성된 SQL 컴포넌트: 56개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:959 - 생성된 JOIN 관계: 30개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:960 - 생성된 inferred 테이블: 0개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:961 - 생성된 inferred 컬럼: 0개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:962 - 오류 발생: 1개
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:993 - === SQL Content 통계 ===
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:994 - SQL Content Manager가 초기화되지 않았습니다.
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - xml_loading.py:215 - === XML 로딩 완료 ===
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - main.py:146 - 3단계 완료: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-15 14:45:57,495 - SourceAnalyzer - INFO - main.py:152 - 4단계 실행: Java 소스코드 분석 및 관계 생성
+2025-09-15 14:45:57,528 - SourceAnalyzer - INFO - java_parser.py:191 - 정규식 패턴 컴파일 완료: 클래스 12개, 메서드 4개, 패키지 7개, 상속 6개, CALL_QUERY 18개, CALL_METHOD 7개, USE_TABLE 16개
+2025-09-15 14:45:57,528 - SourceAnalyzer - INFO - java_loading.py:71 - === Java 로딩 시작: 4단계 통합 처리 ===
+2025-09-15 14:45:57,537 - SourceAnalyzer - INFO - java_parser.py:243 - Java 파일 수집 완료: 30개
+2025-09-15 14:45:57,538 - SourceAnalyzer - INFO - java_loading.py:85 - 처리할 Java 파일 수: 30개
+2025-09-15 14:45:57,540 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java
+2025-09-15 14:45:57,540 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,546 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java ===
+2025-09-15 14:45:57,546 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,547 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 4
+2025-09-15 14:45:57,548 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java ===
+2025-09-15 14:45:57,548 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 1개
+2025-09-15 14:45:57,548 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 1개
+2025-09-15 14:45:57,548 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 78개
+2025-09-15 14:45:57,549 - SourceAnalyzer - INFO - java_loading.py:768 - inferred 메서드 생성 시도: findUsersWithAnsiJoin
+2025-09-15 14:45:57,550 - SourceAnalyzer - INFO - java_loading.py:1098 - inferred 메서드 생성 완료: findUsersWithAnsiJoin (ID: 100)
+2025-09-15 14:45:57,550 - SourceAnalyzer - INFO - java_loading.py:771 - inferred 메서드 생성 성공: findUsersWithAnsiJoin (ID: 100)
+2025-09-15 14:45:57,554 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 72개
+2025-09-15 14:45:57,555 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java
+2025-09-15 14:45:57,555 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,555 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java ===
+2025-09-15 14:45:57,555 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,555 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 5
+2025-09-15 14:45:57,556 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java ===
+2025-09-15 14:45:57,557 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java
+2025-09-15 14:45:57,557 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,559 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java ===
+2025-09-15 14:45:57,559 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,559 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 7
+2025-09-15 14:45:57,559 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java ===
+2025-09-15 14:45:57,560 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 10개
+2025-09-15 14:45:57,560 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 6개
+2025-09-15 14:45:57,562 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java
+2025-09-15 14:45:57,562 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,564 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java ===
+2025-09-15 14:45:57,564 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 6개
+2025-09-15 14:45:57,564 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 8
+2025-09-15 14:45:57,565 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java ===
+2025-09-15 14:45:57,565 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 4개
+2025-09-15 14:45:57,566 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 4개
+2025-09-15 14:45:57,567 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java
+2025-09-15 14:45:57,567 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,572 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java ===
+2025-09-15 14:45:57,572 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,572 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 9
+2025-09-15 14:45:57,573 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java ===
+2025-09-15 14:45:57,573 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 26개
+2025-09-15 14:45:57,574 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 22개
+2025-09-15 14:45:57,577 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java
+2025-09-15 14:45:57,577 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,588 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java ===
+2025-09-15 14:45:57,588 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,588 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 10
+2025-09-15 14:45:57,589 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java ===
+2025-09-15 14:45:57,589 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 124개
+2025-09-15 14:45:57,593 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 120개
+2025-09-15 14:45:57,595 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java
+2025-09-15 14:45:57,596 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,600 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java ===
+2025-09-15 14:45:57,600 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,600 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 11
+2025-09-15 14:45:57,600 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java ===
+2025-09-15 14:45:57,600 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 32개
+2025-09-15 14:45:57,602 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 28개
+2025-09-15 14:45:57,604 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java
+2025-09-15 14:45:57,604 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,608 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java ===
+2025-09-15 14:45:57,608 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,608 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 12
+2025-09-15 14:45:57,609 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java ===
+2025-09-15 14:45:57,609 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 49개
+2025-09-15 14:45:57,610 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 31개
+2025-09-15 14:45:57,613 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java
+2025-09-15 14:45:57,613 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,617 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java ===
+2025-09-15 14:45:57,617 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,617 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 13
+2025-09-15 14:45:57,617 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java ===
+2025-09-15 14:45:57,617 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 22개
+2025-09-15 14:45:57,618 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 22개
+2025-09-15 14:45:57,620 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java
+2025-09-15 14:45:57,620 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,623 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java ===
+2025-09-15 14:45:57,623 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,623 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 14
+2025-09-15 14:45:57,623 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java ===
+2025-09-15 14:45:57,623 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 37개
+2025-09-15 14:45:57,625 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 15개
+2025-09-15 14:45:57,632 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java
+2025-09-15 14:45:57,632 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,675 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java ===
+2025-09-15 14:45:57,675 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,675 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 15
+2025-09-15 14:45:57,676 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java ===
+2025-09-15 14:45:57,677 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 724개
+2025-09-15 14:45:57,702 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 724개
+2025-09-15 14:45:57,703 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java
+2025-09-15 14:45:57,703 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,704 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java ===
+2025-09-15 14:45:57,704 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,704 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 16
+2025-09-15 14:45:57,705 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java ===
+2025-09-15 14:45:57,705 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1개
+2025-09-15 14:45:57,705 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1개
+2025-09-15 14:45:57,706 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java
+2025-09-15 14:45:57,706 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,707 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java ===
+2025-09-15 14:45:57,707 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,707 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 17
+2025-09-15 14:45:57,708 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java ===
+2025-09-15 14:45:57,708 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 4개
+2025-09-15 14:45:57,708 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 2개
+2025-09-15 14:45:57,710 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java
+2025-09-15 14:45:57,710 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,714 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java ===
+2025-09-15 14:45:57,714 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 3개
+2025-09-15 14:45:57,714 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 18
+2025-09-15 14:45:57,715 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java ===
+2025-09-15 14:45:57,715 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 24개
+2025-09-15 14:45:57,716 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 20개
+2025-09-15 14:45:57,717 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java
+2025-09-15 14:45:57,717 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,721 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java ===
+2025-09-15 14:45:57,721 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 3개
+2025-09-15 14:45:57,721 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 19
+2025-09-15 14:45:57,721 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java ===
+2025-09-15 14:45:57,721 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 60개
+2025-09-15 14:45:57,723 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 54개
+2025-09-15 14:45:57,724 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java
+2025-09-15 14:45:57,724 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java ===
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 20
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java ===
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:440 - 저장할 상속 관계 수: 2개
+2025-09-15 14:45:57,726 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: ConcreteService (ID: 37)
+2025-09-15 14:45:57,727 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: BaseService (ID: 38)
+2025-09-15 14:45:57,727 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: ConcreteService (ID: 37)
+2025-09-15 14:45:57,727 - SourceAnalyzer - INFO - java_loading.py:641 - inferred 클래스 생성 완료: BaseService (ID: 38)
+2025-09-15 14:45:57,727 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 10개
+2025-09-15 14:45:57,727 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 8개
+2025-09-15 14:45:57,728 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java
+2025-09-15 14:45:57,728 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,730 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java ===
+2025-09-15 14:45:57,730 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,731 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 21
+2025-09-15 14:45:57,731 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java ===
+2025-09-15 14:45:57,731 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 11개
+2025-09-15 14:45:57,731 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 8개
+2025-09-15 14:45:57,732 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java
+2025-09-15 14:45:57,732 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,732 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java ===
+2025-09-15 14:45:57,732 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,732 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 22
+2025-09-15 14:45:57,733 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java ===
+2025-09-15 14:45:57,734 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java
+2025-09-15 14:45:57,734 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,734 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java ===
+2025-09-15 14:45:57,734 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,735 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 23
+2025-09-15 14:45:57,735 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java ===
+2025-09-15 14:45:57,735 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java
+2025-09-15 14:45:57,736 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,736 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java ===
+2025-09-15 14:45:57,736 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,736 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 24
+2025-09-15 14:45:57,736 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java ===
+2025-09-15 14:45:57,737 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java
+2025-09-15 14:45:57,737 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,737 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java ===
+2025-09-15 14:45:57,738 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,738 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 25
+2025-09-15 14:45:57,738 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java ===
+2025-09-15 14:45:57,742 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java
+2025-09-15 14:45:57,742 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,802 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java ===
+2025-09-15 14:45:57,802 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,803 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 26
+2025-09-15 14:45:57,805 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java ===
+2025-09-15 14:45:57,805 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 634개
+2025-09-15 14:45:57,826 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 614개
+2025-09-15 14:45:57,830 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java
+2025-09-15 14:45:57,830 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,862 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java ===
+2025-09-15 14:45:57,862 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,862 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 27
+2025-09-15 14:45:57,864 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java ===
+2025-09-15 14:45:57,864 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 318개
+2025-09-15 14:45:57,874 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 304개
+2025-09-15 14:45:57,876 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java
+2025-09-15 14:45:57,876 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,881 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java ===
+2025-09-15 14:45:57,881 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 6개
+2025-09-15 14:45:57,881 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 28
+2025-09-15 14:45:57,882 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java ===
+2025-09-15 14:45:57,882 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 58개
+2025-09-15 14:45:57,884 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 46개
+2025-09-15 14:45:57,886 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java
+2025-09-15 14:45:57,886 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,892 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java ===
+2025-09-15 14:45:57,892 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,892 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 29
+2025-09-15 14:45:57,892 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java ===
+2025-09-15 14:45:57,893 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 20개
+2025-09-15 14:45:57,894 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 20개
+2025-09-15 14:45:57,894 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 56개
+2025-09-15 14:45:57,896 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 50개
+2025-09-15 14:45:57,899 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java
+2025-09-15 14:45:57,899 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,909 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java ===
+2025-09-15 14:45:57,909 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,910 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 30
+2025-09-15 14:45:57,910 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java ===
+2025-09-15 14:45:57,910 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 60개
+2025-09-15 14:45:57,912 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 60개
+2025-09-15 14:45:57,913 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 206개
+2025-09-15 14:45:57,921 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 198개
+2025-09-15 14:45:57,921 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java
+2025-09-15 14:45:57,922 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:57,922 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java ===
+2025-09-15 14:45:57,922 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:57,922 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 31
+2025-09-15 14:45:57,922 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java ===
+2025-09-15 14:45:57,930 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java
+2025-09-15 14:45:57,930 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:58,023 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java ===
+2025-09-15 14:45:58,023 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:58,024 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 32
+2025-09-15 14:45:58,025 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java ===
+2025-09-15 14:45:58,025 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 88개
+2025-09-15 14:45:58,029 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 88개
+2025-09-15 14:45:58,029 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1352개
+2025-09-15 14:45:58,089 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1313개
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java ===
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 33
+2025-09-15 14:45:58,090 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java ===
+2025-09-15 14:45:58,097 - SourceAnalyzer - INFO - java_parser.py:883 - 메서드 추출 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java
+2025-09-15 14:45:58,097 - SourceAnalyzer - INFO - java_parser.py:884 - 컴파일된 메서드 패턴 수: 4
+2025-09-15 14:45:58,164 - SourceAnalyzer - INFO - java_loading.py:193 - === Java 클래스 저장 시작: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java ===
+2025-09-15 14:45:58,164 - SourceAnalyzer - INFO - java_loading.py:194 - 저장할 클래스 수: 2개
+2025-09-15 14:45:58,164 - SourceAnalyzer - INFO - java_loading.py:212 - 프로젝트 ID: 1, 파일 ID: 34
+2025-09-15 14:45:58,166 - SourceAnalyzer - INFO - java_loading.py:244 - === Java 클래스 저장 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java ===
+2025-09-15 14:45:58,166 - SourceAnalyzer - INFO - java_loading.py:663 - 저장할 CALL_QUERY 관계 수: 52개
+2025-09-15 14:45:58,168 - SourceAnalyzer - INFO - java_loading.py:717 - CALL_QUERY 관계 저장 완료: 52개
+2025-09-15 14:45:58,168 - SourceAnalyzer - INFO - java_loading.py:745 - 저장할 CALL_METHOD 관계 수: 1209개
+2025-09-15 14:45:58,213 - SourceAnalyzer - INFO - java_loading.py:804 - CALL_METHOD 관계 저장 완료: 1171개
+2025-09-15 14:45:58,213 - SourceAnalyzer - INFO - java_loading.py:1327 - === Java 로딩 통계 (4~5단계 통합) ===
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1328 - 처리된 Java 파일: 30개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1329 - 추출된 클래스: 70개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1330 - 추출된 메서드: 528개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1331 - 생성된 컴포넌트: 528개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1332 - 생성된 상속 관계: 2개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1333 - 생성된 CALL_QUERY 관계: 221개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1334 - 생성된 CALL_METHOD 관계: 5049개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1335 - 생성된 USE_TABLE 관계: 0개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1336 - 비즈니스 로직 메서드: 114개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1337 - 처리 시간: 0.69초
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:1338 - 오류 발생: 0개
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - java_loading.py:169 - === Java 로딩 완료 ===
+2025-09-15 14:45:58,214 - SourceAnalyzer - INFO - main.py:160 - 4단계 완료: Java 소스코드 분석 및 관계 생성
+2025-09-15 14:45:58,215 - SourceAnalyzer - INFO - main.py:166 - 5단계 실행: Spring API 진입점 분석 (Phase 1)
+2025-09-15 14:45:58,249 - SourceAnalyzer - INFO - entry_analyzer_factory.py:178 - 총 1개 분석기 로드 완료
+2025-09-15 14:45:58,249 - SourceAnalyzer - INFO - backend_entry_loading.py:56 - 분석기 로드 완료: 1개
+2025-09-15 14:45:58,249 - SourceAnalyzer - INFO - backend_entry_loading.py:45 - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc
+2025-09-15 14:45:58,249 - SourceAnalyzer - INFO - backend_entry_loading.py:71 - === 백엔드 진입점 분석 시작 ===
+2025-09-15 14:45:58,249 - SourceAnalyzer - INFO - statistics_utils.py:57 - 분석 통계 수집 시작
+2025-09-15 14:45:58,251 - SourceAnalyzer - INFO - backend_entry_loading.py:82 - Java 파일 수집 완료: 0개 파일
+2025-09-15 14:45:58,252 - SourceAnalyzer - WARNING - backend_entry_loading.py:85 - 분석할 Java 파일이 없습니다
+2025-09-15 14:45:58,252 - SourceAnalyzer - INFO - statistics_utils.py:63 - 분석 통계 수집 종료
+2025-09-15 14:45:58,252 - SourceAnalyzer - INFO - main.py:173 - 5단계 완료: Spring API 진입점 분석 (Phase 1)
+2025-09-15 14:45:58,252 - SourceAnalyzer - INFO - main.py:178 - 1-5단계 테스트 완료

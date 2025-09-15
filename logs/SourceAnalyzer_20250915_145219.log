@@ -1,0 +1,15 @@
+2025-09-15 14:52:19,406 - SourceAnalyzer - ERROR - spring_entry_analyzer.py:192 - AST 트리 추출 중 오류: name 'javalang' is not defined
+2025-09-15 14:52:19,408 - SourceAnalyzer - ERROR - logger.py:207 - FATAL ERROR at D:\Analyzer\CreateMetaDb\parser\spring_entry_analyzer.py:77 in analyze_backend_entry()
+Code: stats.log_file_result(
+Message: Spring 분석 중 심각한 오류 발생: 'NoneType' object has no attribute 'log_file_result'
+Exception: AttributeError: 'NoneType' object has no attribute 'log_file_result'
+Stack Trace:
+Traceback (most recent call last):
+  File "D:\Analyzer\CreateMetaDb\parser\spring_entry_analyzer.py", line 77, in analyze_backend_entry
+    stats.log_file_result(
+    ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'log_file_result'
+
+2025-09-15 14:52:19,408 - SourceAnalyzer - ERROR - logger.py:210 - 
+[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: 1)
+2025-09-15 14:52:19,408 - SourceAnalyzer - ERROR - logger.py:211 - 자세한 내용은 로그 파일을 확인하세요: logs/SourceAnalyzer_20250915_145219.log

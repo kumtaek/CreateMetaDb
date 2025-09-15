@@ -159,35 +159,35 @@ class CallChainReportGenerator:
     def _get_call_chain_data(self) -> List[Dict[str, Any]]:
         """연계 체인 데이터 조회 (JSP 연계 경로 포함, SqlContent.db 연동)"""
         try:
-            # JSP -> Method -> Class -> Method -> XML -> Query -> Table 연계 체인 조회
+            # Method -> Class -> Method -> XML -> Query -> Table 연계 체인 조회
             query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY jsp_file.file_name, cls.class_name, m.component_name) as chain_id,
-                    jsp_file.file_name as jsp_file,
+                    ROW_NUMBER() OVER (ORDER BY src_m.component_name, cls.class_name, dst_m.component_name) as chain_id,
+                    '' as jsp_file,
                     cls.class_name as class_name,
-                    m.component_name as method_name,
+                    src_m.component_name as method_name,
                     xml_file.file_name as xml_file,
                     q.component_name as query_id,
                     q.component_type as query_type,
                     GROUP_CONCAT(DISTINCT t.table_name) as related_tables
-                FROM files jsp_file
-                JOIN relationships r1 ON jsp_file.file_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
-                JOIN components m ON r1.dst_id = m.component_id AND m.component_type = 'METHOD'
-                JOIN classes cls ON m.parent_id = cls.class_id
-                JOIN relationships r2 ON m.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
+                FROM components src_m
+                JOIN classes cls ON src_m.parent_id = cls.class_id
+                JOIN relationships r1 ON src_m.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
+                JOIN components dst_m ON r1.dst_id = dst_m.component_id AND dst_m.component_type = 'METHOD'
+                JOIN relationships r2 ON dst_m.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
                 JOIN components q ON r2.dst_id = q.component_id AND q.component_type IN ('QUERY', 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE')
                 JOIN files xml_file ON q.file_id = xml_file.file_id
                 LEFT JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'QUERY_TABLE'
                 LEFT JOIN tables t ON r3.dst_id = t.component_id
-                JOIN projects p ON jsp_file.project_id = p.project_id
+                JOIN projects p ON src_m.project_id = p.project_id
                 WHERE p.project_name = ? 
-                  AND jsp_file.file_type = 'JSP'
-                  AND jsp_file.del_yn = 'N'
-                  AND m.del_yn = 'N'
+                  AND src_m.component_type = 'METHOD'
+                  AND src_m.del_yn = 'N'
                   AND cls.del_yn = 'N'
+                  AND dst_m.del_yn = 'N'
                   AND q.del_yn = 'N'
-                GROUP BY jsp_file.file_name, cls.class_name, m.component_name, xml_file.file_name, q.component_name, q.component_type
-                ORDER BY jsp_file.file_name, cls.class_name, m.component_name
+                GROUP BY src_m.component_name, cls.class_name, dst_m.component_name, xml_file.file_name, q.component_name, q.component_type
+                ORDER BY src_m.component_name, cls.class_name, dst_m.component_name
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))

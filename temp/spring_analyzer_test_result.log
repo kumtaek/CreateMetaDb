@@ -1,0 +1,41 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== Spring 분석기 테스트 ===
+
+--- ProductController.java ---
+필터링 결과: True
+진입점 4개 발견
+  - ProductController.getProductList GET /
+  - ProductController.searchProducts POST /
+  - ProductController.getProductsByCategory GET /
+  - ProductController.updateProductStock POST /
+
+--- UserController.java ---
+필터링 결과: True
+진입점 3개 발견
+  - UserController.getUserList GET /
+  - UserController.searchUsers POST /
+  - UserController.getUsersByType GET /
+
+--- ErrorController.java ---
+필터링 결과: True
+2025-09-15 14:59:59,818 - SourceAnalyzer - WARNING - spring_entry_analyzer.py:108 - 모든 파싱 방법으로 진입점을 찾지 못했습니다: src/main/java/com/example/controller/ErrorController.java
+진입점 0개 발견
+
+--- SyntaxErrorController.java ---
+필터링 결과: True
+진입점 10개 발견
+  - SyntaxErrorController.test1 GET /
+  - SyntaxErrorController.test1 POST /
+  - SyntaxErrorController.test2 GET /
+  - SyntaxErrorController.test2 POST /
+  - SyntaxErrorController.getAllUsers GET /
+  - SyntaxErrorController.getAllUsers POST /
+  - SyntaxErrorController.getUserById GET /
+  - SyntaxErrorController.getUserById POST /
+  - SyntaxErrorController.createUser GET /
+  - SyntaxErrorController.createUser POST /
+
+--- MixedErrorController.java ---
+필터링 결과: True
+2025-09-15 14:59:59,822 - SourceAnalyzer - WARNING - spring_entry_analyzer.py:108 - 모든 파싱 방법으로 진입점을 찾지 못했습니다: src/main/java/com/example/controller/MixedErrorController.java
+진입점 0개 발견

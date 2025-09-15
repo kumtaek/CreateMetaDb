@@ -37,7 +37,7 @@ class ReportTemplates:
     <div class="container">
         <div class="header">
             <h1>CallChain Report</h1>
-            <div class="subtitle">JSP-Class-Method-XML-Query-Table 연계 정보</div>
+            <div class="subtitle">Method-Class-Method-XML-Query-Table 연계 정보</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
         {stats_html}
@@ -53,7 +53,6 @@ class ReportTemplates:
                         <thead>
                             <tr>
                                 <th>연계ID</th>
-                                <th>JSP파일</th>
                                 <th>클래스</th>
                                 <th>메서드</th>
                                 <th>XML파일</th>
@@ -113,7 +112,7 @@ class ReportTemplates:
         
         return f"""
         <div class="filter-controls">
-            <input type="text" id="searchInput" placeholder="JSP파일, 클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
+            <input type="text" id="searchInput" placeholder="클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
             <select id="tableFilter">
                 <option value="">모든 테이블</option>
                 {table_options}
@@ -149,7 +148,6 @@ class ReportTemplates:
             rows.append(f"""
                 <tr>
                     <td><span class="chain-id">{data['chain_id']}</span></td>
-                    <td><span class="jsp-file">{data.get('jsp_file', '')}</span></td>
                     <td><span class="class-name">{data['class_name']}</span></td>
                     <td><span class="method-name">{data['method_name']}</span></td>
                     <td><span class="xml-file">{data['xml_file']}</span></td>
@@ -401,7 +399,7 @@ class ReportTemplates:
                 
                 // 테이블 필터
                 if (tableFilter && shouldShow) {
-                    const tablesCell = cells[7];
+                    const tablesCell = cells[6];
                     if (tablesCell.textContent.indexOf(tableFilter) === -1) {
                         shouldShow = false;
                     }
@@ -409,7 +407,7 @@ class ReportTemplates:
                 
                 // 쿼리 타입 필터
                 if (queryTypeFilter && shouldShow) {
-                    const queryTypeCell = cells[6];
+                    const queryTypeCell = cells[5];
                     if (queryTypeCell.textContent.indexOf(queryTypeFilter) === -1) {
                         shouldShow = false;
                     }
@@ -438,7 +436,7 @@ class ReportTemplates:
             let csv = [];
             
             // 헤더 추가
-            csv.push('연계ID,JSP파일,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
+            csv.push('연계ID,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
             
             for (let i = 1; i < rows.length; i++) {
                 const cells = rows[i].getElementsByTagName('td');
@@ -447,8 +445,8 @@ class ReportTemplates:
                     for (let j = 0; j < cells.length; j++) {
                         let cellText = cells[j].textContent.replace(/"/g, '""');
                         
-                        // 쿼리종류 컬럼(인덱스 6)의 경우 정제된 SQL 내용도 포함
-                        if (j === 6) {
+                        // 쿼리종류 컬럼(인덱스 5)의 경우 정제된 SQL 내용도 포함
+                        if (j === 5) {
                             const queryTypeSpan = cells[j].querySelector('.query-type');
                             if (queryTypeSpan && queryTypeSpan.classList.contains('tooltip')) {
                                 const sqlContent = queryTypeSpan.getAttribute('data-query') || '';

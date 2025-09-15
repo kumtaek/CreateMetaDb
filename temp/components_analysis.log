@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT component_name, component_type, layer FROM components ORDER BY component_name'); components = cursor.fetchall(); print('=== COMPONENTS TABLE ==='); for c in components: print(f'  {c[0]} ({c[1]}, {c[2]})'); conn.close()
+                                                                                                                                                                                                                                                                                 ^^^
+SyntaxError: invalid syntax

@@ -1,0 +1,14 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== 필터링 디버깅 ===
+2025-09-15 15:05:52,543 - SourceAnalyzer - INFO - entry_analyzer_factory.py:178 - 총 1개 분석기 로드 완료
+2025-09-15 15:05:52,543 - SourceAnalyzer - INFO - backend_entry_loading.py:57 - 분석기 로드 완료: 1개
+2025-09-15 15:05:52,543 - SourceAnalyzer - INFO - backend_entry_loading.py:44 - 로드된 분석기: ['spring']
+2025-09-15 15:05:52,543 - SourceAnalyzer - INFO - backend_entry_loading.py:46 - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc
+파일: ProductController.java
+경로: src/main/java/com/example/controller/ProductController.java
+로드된 분석기 수: 1
+
+--- 분석기 1: spring ---
+  analyzer.is_target_file() 결과: True
+  engine._is_target_for_analyzer() 결과: True
+  분석기 설정: {'file_filtering': {'include_patterns': ['*Controller.java', '*RestController.java'], 'exclude_patterns': ['*Test.java']}, 'spring_annotations': {'class_annotations': ['@RestController', '@Controller', '@RequestMapping'], 'method_annotations': ['@RequestMapping', '@GetMapping', '@PostMapping', '@PutMapping', '@DeleteMapping', '@PatchMapping']}, 'extraction_rules': {'url_attributes': ['path', 'value'], 'default_http_methods': ['GET', 'POST']}, 'regex_patterns': {'class_declaration': '(?m)^[ \\t]*((public|private|protected)\\s+)?class\\s+(\\w+)\\s*.*{', 'class_annotation': '(@(?:RestController|Controller|RequestMapping)\\s*(?:\\(.*?\\))?)\\s+(?=(?:public|class))', 'method_annotation': '(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\\s*(?:\\(.*?\\))?)\\s+(?:public|private|protected|)\\s*[\\w\\<\\>\\[\\]]+\\s+(\\w+)\\s*\\(', 'url_from_attribute': '(?:path|value)\\s*=\\s*"(.*?)"'}}

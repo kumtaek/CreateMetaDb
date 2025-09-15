@@ -1,0 +1,51 @@
+2025-09-15 17:11:32,311 - SourceAnalyzer - INFO - java_loading.py:1332 - 생성된 상속 관계: 12개
+2025-09-15 17:11:32,311 - SourceAnalyzer - INFO - java_loading.py:1333 - 생성된 CALL_QUERY 관계: 239개
+2025-09-15 17:11:32,319 - SourceAnalyzer - INFO - java_loading.py:1334 - 생성된 CALL_METHOD 관계: 7335개
+2025-09-15 17:11:32,319 - SourceAnalyzer - INFO - java_loading.py:1335 - 생성된 USE_TABLE 관계: 0개
+2025-09-15 17:11:32,320 - SourceAnalyzer - INFO - java_loading.py:1336 - 비즈니스 로직 메서드: 168개
+2025-09-15 17:11:32,320 - SourceAnalyzer - INFO - java_loading.py:1337 - 처리 시간: 1.34초
+2025-09-15 17:11:32,320 - SourceAnalyzer - INFO - java_loading.py:1338 - 오류 발생: 0개
+2025-09-15 17:11:32,320 - SourceAnalyzer - INFO - java_loading.py:169 - === Java 로딩 완료 ===
+2025-09-15 17:11:32,321 - SourceAnalyzer - INFO - main.py:160 - 4단계 완료: Java 소스코드 분석 및 관계 생성
+2025-09-15 17:11:32,321 - SourceAnalyzer - INFO - main.py:166 - 5단계 실행: Spring API 진입점 분석 (Phase 1)
+2025-09-15 17:11:32,339 - SourceAnalyzer - INFO - backend_entry_loading.py:137 - web.xml 파싱 완료. 총 0개의 서블릿 매핑을 로드했습니다
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - entry_analyzer_factory.py:205 - 총 2개 분석기 로드 완료
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - backend_entry_loading.py:61 - 분석기 로드 완료: 2개
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - backend_entry_loading.py:48 - 로드된 분석기: ['spring', 'servlet']
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - backend_entry_loading.py:50 - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - backend_entry_loading.py:152 - === 백엔드 진입점 분석 시작 ===
+2025-09-15 17:11:32,345 - SourceAnalyzer - INFO - statistics_utils.py:57 - 분석 통계 수집 시작
+2025-09-15 17:11:32,354 - SourceAnalyzer - INFO - backend_entry_loading.py:163 - Java 파일 수집 완료: 39개 파일
+2025-09-15 17:11:32,356 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserDao.java 필터링 확인
+2025-09-15 17:11:32,356 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserDao.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserDao.java 필터링 확인
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserDao.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserMapper.java 필터링 확인
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserMapper.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserMapper.java 필터링 확인
+2025-09-15 17:11:32,357 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserMapper.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserSearchDto.java 필터링 확인
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserSearchDto.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserSearchDto.java 필터링 확인
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\com\example\dynamicquery\UserSearchDto.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\annotations\AnnotatedClass.java 필터링 확인
+2025-09-15 17:11:32,358 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\annotations\AnnotatedClass.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\annotations\AnnotatedClass.java 필터링 확인
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\annotations\AnnotatedClass.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\comments\CommentHeavyClass.java 필터링 확인
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\comments\CommentHeavyClass.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\comments\CommentHeavyClass.java 필터링 확인
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\comments\CommentHeavyClass.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,359 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\complex\LargeBusinessClass.java 필터링 확인
+2025-09-15 17:11:32,360 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\complex\LargeBusinessClass.java이 분석기 spring의 대상이 아님
+2025-09-15 17:11:32,360 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 servlet로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\complex\LargeBusinessClass.java 필터링 확인
+2025-09-15 17:11:32,360 - SourceAnalyzer - INFO - backend_entry_loading.py:323 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\complex\LargeBusinessClass.java이 분석기 servlet의 대상이 아님
+2025-09-15 17:11:32,360 - SourceAnalyzer - INFO - backend_entry_loading.py:316 - 분석기 spring로 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\controller\ErrorController.java 필터링 확인
+2025-09-15 17:11:32,360 - SourceAnalyzer - INFO - backend_entry_loading.py:318 - 파일 D:\Analyzer\CreateMetaDb\src\main\java\com\example\controller\ErrorController.java이 분석기 spring의 대상임
+2025-09-15 17:11:32,370 - SourceAnalyzer - ERROR - logger.py:207 - FATAL ERROR: Exception: 모든 파싱 방법으로 진입점을 찾지 못했습니다: src\main\java\com\example\controller
+Message: 모든 파싱 방법으로 진입점을 찾지 못했습니다: src\main\java\com\example\controller
+2025-09-15 17:11:32,383 - SourceAnalyzer - ERROR - logger.py:210 - 
+[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: 1)
+2025-09-15 17:11:32,384 - SourceAnalyzer - ERROR - logger.py:211 - 자세한 내용은 로그 파일을 확인하세요: logs/SourceAnalyzer_20250915_171130.log
+2025-09-15 17:11:32,384 - SourceAnalyzer - INFO - statistics_utils.py:63 - 분석 통계 수집 종료
+

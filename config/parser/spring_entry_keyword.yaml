@@ -1,0 +1,51 @@
+# Spring 진입점 분석을 위한 모든 설정을 정의
+
+# 1. 파일 필터링 (2차 필터)
+file_filtering:
+  # Spring 컨트롤러일 가능성이 높은 파일 패턴 (필수)
+  include_patterns:
+    - "*Controller.java"
+    - "*RestController.java"
+  # 분석에서 제외할 파일 패턴 (선택)
+  exclude_patterns:
+    - "*Test.java"
+
+# 2. Spring 어노테이션 정의
+spring_annotations:
+  # 클래스 레벨에서 검색할 어노테이션
+  class_annotations:
+    - "@RestController"
+    - "@Controller"
+    - "@RequestMapping"
+  
+  # 메서드 레벨에서 검색할 어노테이션
+  method_annotations:
+    - "@RequestMapping"
+    - "@GetMapping"
+    - "@PostMapping"
+    - "@PutMapping"
+    - "@DeleteMapping"
+    - "@PatchMapping"
+
+# 3. URL 및 HTTP 메서드 추출 규칙
+extraction_rules:
+  # URL 경로를 담고 있는 어노테이션 속성 목록 (Spring 버전에 따라 다를 수 있음)
+  url_attributes:
+    - "path"
+    - "value"
+  
+  # @RequestMapping의 method 속성이 없을 경우 적용할 기본 HTTP 메서드
+  default_http_methods:
+    - "GET"
+    - "POST"
+
+# 4. 정규식 패턴 (AST 파서 Fallback용)
+regex_patterns:
+  # 주석, 문자열을 제외하고 클래스 선언부를 찾는 패턴
+  class_declaration: '(?m)^[ \t]*((public|private|protected)\s+)?class\s+(\w+)\s*.*{'
+  # 클래스 레벨 어노테이션과 URL을 찾는 패턴
+  class_annotation: '(@(?:RestController|Controller|RequestMapping)\s*(?:\(.*?\))?)\s+(?=(?:public|class))'
+  # 메서드 레벨 어노테이션과 URL, 메서드명을 찾는 패턴 (수정됨)
+  method_annotation: '(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\((?:.*?)\))?)\s+(?:(?:public|private|protected)\s+)?(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\('
+  # 어노테이션 속성에서 URL 값을 추출하는 패턴 (path="/api", value="/api")
+  url_from_attribute: '(?:path|value)\s*=\s*"(.*?)"'

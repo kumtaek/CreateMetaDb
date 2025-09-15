@@ -1,0 +1,6 @@
+Java 파일 정보:
+  ID: 4, Path: src\com\example\dynamicquery, Name: UserDao.java, Type: JAVA
+  ID: 5, Path: src\com\example\dynamicquery, Name: UserMapper.java, Type: JAVA
+  ID: 7, Path: src\com\example\dynamicquery, Name: UserSearchDto.java, Type: JAVA
+  ID: 8, Path: src\main\java\com\example\annotations, Name: AnnotatedClass.java, Type: JAVA
+  ID: 9, Path: src\main\java\com\example\comments, Name: CommentHeavyClass.java, Type: JAVA

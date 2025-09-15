@@ -1,0 +1,21 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== 단일 파일 디버깅 ===
+2025-09-15 15:03:35,852 - SourceAnalyzer - INFO - entry_analyzer_factory.py:178 - 총 1개 분석기 로드 완료
+2025-09-15 15:03:35,852 - SourceAnalyzer - INFO - backend_entry_loading.py:57 - 분석기 로드 완료: 1개
+2025-09-15 15:03:35,852 - SourceAnalyzer - INFO - backend_entry_loading.py:44 - 로드된 분석기: ['spring']
+2025-09-15 15:03:35,852 - SourceAnalyzer - INFO - backend_entry_loading.py:46 - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc
+
+--- src/main/java/com/example/controller/ProductController.java 테스트 ---
+파일 정보: ProductController.java
+로드된 분석기 수: 1
+  분석기 1: spring
+    필터링 결과: True
+    분석 실행 중...
+    진입점 4개 발견
+      - ProductController.getProductList GET /
+      - ProductController.searchProducts POST /
+      - ProductController.getProductsByCategory GET /
+      - ProductController.updateProductStock POST /
+
+--- _filter_and_analyze_file 메서드 테스트 ---
+최종 결과: 4개 진입점

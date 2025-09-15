@@ -1,0 +1,4 @@
+Java 파일 경로 샘플:
+  src\com\example\dynamicquery / UserDao.java
+  src\com\example\dynamicquery / UserMapper.java
+  src\com\example\dynamicquery / UserSearchDto.java

@@ -1,0 +1,2 @@
+2025-09-15 14:59:59,818 - SourceAnalyzer - WARNING - spring_entry_analyzer.py:108 - 모든 파싱 방법으로 진입점을 찾지 못했습니다: src/main/java/com/example/controller/ErrorController.java
+2025-09-15 14:59:59,822 - SourceAnalyzer - WARNING - spring_entry_analyzer.py:108 - 모든 파싱 방법으로 진입점을 찾지 못했습니다: src/main/java/com/example/controller/MixedErrorController.java

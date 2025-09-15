@@ -1,0 +1,35 @@
+=== 기본 통계 ===
+Files: 58
+Components: 772
+Relationships: 1779
+Tables: 25
+Columns: 108
+Classes: 52
+
+=== Components by type ===
+  API_ENTRY: 30
+  COLUMN: 64
+  FRONTEND_API: 30
+  JSP: 14
+  METHOD: 495
+  QUERY: 29
+  SQL_DELETE: 3
+  SQL_INSERT: 5
+  SQL_MERGE: 2
+  SQL_SELECT: 58
+  SQL_UPDATE: 8
+  TABLE: 34
+
+=== Relationships by type ===
+  CALL_API_F2B: 28
+  CALL_METHOD: 1649
+  CALL_QUERY: 66
+  INHERITANCE: 7
+  JOIN_EXPLICIT: 23
+  JOIN_IMPLICIT: 6
+
+=== Files by type ===
+  CSV: 2
+  JAVA: 39
+  JSP: 10
+  XML: 7

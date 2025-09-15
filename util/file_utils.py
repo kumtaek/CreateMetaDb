@@ -49,8 +49,8 @@ class FileUtils:
                 app_logger.debug(f"파일 읽기 성공: {file_path}")
                 return content
         except FileNotFoundError:
-            app_logger.error(f"파일을 찾을 수 없습니다: {file_path}")
-            return None
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(Exception(f"파일을 찾을 수 없습니다: {file_path}"), f"파일 읽기 실패: {file_path}")
         except UnicodeDecodeError:
             info(f"인코딩 문제 감지, 다른 인코딩으로 재시도: {os.path.basename(file_path)}")
             try:
@@ -353,8 +353,8 @@ class FileUtils:
                         info(f"오래된 로그 파일 삭제: {filename} (생성일: {time.ctime(file_mtime)})")
                         
                 except Exception as e:
-                    app_logger.warning(f"로그 파일 삭제 실패: {filename}, 오류: {str(e)}")
-                    continue
+                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+                    handle_error(e, f"로그 파일 삭제 실패: {filename}")
             
             if deleted_count > 0:
                 info(f"총 {deleted_count}개의 오래된 로그 파일을 삭제했습니다")

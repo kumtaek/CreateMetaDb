@@ -1,0 +1,94 @@
+# Servlet 진입점 분석을 위한 모든 설정을 정의
+
+# 1. 파일 필터링 (2차 필터)
+file_filtering:
+  # Servlet일 가능성이 높은 파일 패턴 (필수)
+  include_patterns:
+    - "*Servlet.java"
+    - "*Controller.java"  # Servlet 기반 컨트롤러
+  # 분석에서 제외할 파일 패턴 (선택)
+  exclude_patterns:
+    - "*Test.java"
+    - "*Config.java"
+
+# 2. Servlet 어노테이션 정의
+servlet_annotations:
+  # 클래스 레벨에서 검색할 어노테이션
+  class_annotations:
+    - "@WebServlet"
+  
+  # 상속 관계에서 검색할 클래스
+  inheritance_classes:
+    - "HttpServlet"
+    - "GenericServlet"
+
+# 3. URL 매핑 추출 규칙
+mapping_extraction:
+  # @WebServlet 어노테이션 속성
+  web_servlet_attributes:
+    - "urlPatterns"
+    - "value"
+    - "name"
+  
+  # web.xml 매핑 패턴 (향후 확장)
+  web_xml_patterns:
+    - "servlet-mapping"
+    - "servlet-class"
+  
+  # 확장자 매핑(예: *.do)을 컴포넌트 이름으로 변환할 때 사용할 접두사
+  extension_mapping_prefix: "EXT_PATTERN"
+
+# 4. HTTP 메서드 매핑 규칙
+http_method_mapping:
+  # doGet, doPost 등 메서드명에서 HTTP 메서드 추출
+  method_name_mapping:
+    "doGet": "GET"
+    "doPost": "POST"
+    "doPut": "PUT"
+    "doDelete": "DELETE"
+    "doHead": "HEAD"
+    "doOptions": "OPTIONS"
+    "doTrace": "TRACE"
+    "service": "MULTI"
+  
+  # service() 메서드를 발견했을 때 매핑할 HTTP 메서드 목록
+  service_method_http_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+  
+  # 기본 HTTP 메서드 (메서드명으로 추출 불가능한 경우)
+  default_http_methods:
+    - "GET"
+    - "POST"
+
+# 5. 정규식 패턴 (AST 파서 Fallback용)
+regex_patterns:
+  # 클래스 선언부를 찾는 패턴
+  class_declaration: '(?m)^[ \t]*((public|private|protected)\s+)?class\s+(\w+)\s+extends\s+(\w+)'
+  # @WebServlet 어노테이션과 URL 패턴을 찾는 패턴
+  web_servlet_annotation: '@WebServlet\s*\(\s*(?:urlPatterns\s*=\s*)?(?:{\s*)?([^}]+)(?:\s*})?\s*\)'
+  # doXXX 메서드를 찾는 패턴
+  do_method: '(?:public|protected)\s+void\s+(do\w+)\s*\([^)]*\)'
+  # service 메서드를 찾는 패턴
+  service_method: '(?:public|protected)\s+void\s+service\s*\([^)]*\)'
+  # web.xml servlet-mapping 패턴 (향후 확장)
+  web_xml_mapping: '<servlet-mapping>\s*<servlet-name>([^<]+)</servlet-name>\s*<url-pattern>([^<]+)</url-pattern>\s*</servlet-mapping>'
+
+# 6. Servlet 메서드 시그니처 검증 규칙
+method_signature_validation:
+  # doXXX 메서드의 유효한 파라미터 시그니처
+  do_method_signature:
+    - "HttpServletRequest"
+    - "HttpServletResponse"
+  
+  # service 메서드의 유효한 파라미터 시그니처
+  service_method_signature:
+    - "ServletRequest"
+    - "ServletResponse"
+  
+  # javax.servlet과 jakarta.servlet 모두 지원
+  servlet_packages:
+    - "javax.servlet"
+    - "jakarta.servlet"

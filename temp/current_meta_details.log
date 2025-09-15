@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT file_name, file_type, line_count FROM files ORDER BY file_name'); files = cursor.fetchall(); print('=== FILES TABLE ==='); for f in files: print(f'  {f[0]} ({f[1]}): {f[2]} lines'); cursor.execute('SELECT component_name, component_type, layer FROM components ORDER BY component_name'); components = cursor.fetchall(); print('\n=== COMPONENTS TABLE ==='); for c in components: print(f'  {c[0]} ({c[1]}, {c[2]})'); conn.close()
+                                                                                                                                                                                                                                                        ^^^
+SyntaxError: invalid syntax

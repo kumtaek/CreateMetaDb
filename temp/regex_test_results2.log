@@ -1,0 +1,55 @@
+Method annotation pattern: (@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\((?:.*?)\))?)\s+(?:(?:public|private|protected)\s+)?(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\(
+
+=== Testing Regex Patterns ===
+
+Test 1:
+Sample: @GetMapping("/list")
+    public String getProductList(@RequestParam(required = false) String name,
+[OK] Match found: [('@GetMapping("/list")', 'getProductList')]
+
+Test 2:
+Sample: @PostMapping("/search")
+    public String searchProducts(@RequestParam Map<String, String> searchParams, Model model) {
+[OK] Match found: [('@PostMapping("/search")', 'searchProducts')]
+
+Test 3:
+Sample: @GetMapping("/category/{categoryId}")
+    public String getProductsByCategory(@PathVariable String categoryId, Model model) {
+[OK] Match found: [('@GetMapping("/category/{categoryId}")', 'getProductsByCategory')]
+
+Test 4:
+Sample: @GetMapping("/list")
+    public String getUserList(@RequestParam(required = false) String name,
+[OK] Match found: [('@GetMapping("/list")', 'getUserList')]
+
+Test 5:
+Sample: @PostMapping("/search")
+    public String searchUsers(@RequestParam Map<String, String> searchParams,
+[OK] Match found: [('@PostMapping("/search")', 'searchUsers')]
+
+Test 6:
+Sample: @GetMapping("/list")
+    public String getErrorList(@RequestParam(required = false) String name,
+[OK] Match found: [('@GetMapping("/list")', 'getErrorList')]
+
+Test 7:
+Sample: @RequestMapping(value = "/users", method = RequestMethod.GET)
+    @ResponseBody
+    public List<User> getAllUsers() {
+[FAIL] No match found
+  Debugging:
+    [OK] Annotation part matches
+    [OK] Access modifier part matches
+    [OK] Return type part matches
+    [OK] Method name part matches
+
+Test 8:
+Sample: @RequestMapping(value = "/user/{id}", method = RequestMethod.GET)
+    @ResponseBody
+    public User getUserById(@RequestParam Long id) {
+[FAIL] No match found
+  Debugging:
+    [OK] Annotation part matches
+    [OK] Access modifier part matches
+    [OK] Return type part matches
+    [OK] Method name part matches

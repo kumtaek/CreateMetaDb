@@ -120,7 +120,8 @@ class DatabaseUtils:
                 self.connection.close()
                 app_logger.debug(f"데이터베이스 연결 해제: {self.db_path}")
             except Exception as e:
-                app_logger.error(f"데이터베이스 연결 해제 실패: {str(e)}")
+                # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+                handle_error(e, f"데이터베이스 연결 해제 실패")
             finally:
                 self.connection = None
     
@@ -140,9 +141,8 @@ class DatabaseUtils:
             conn = self.connection
             yield conn
         except Exception as e:
-            app_logger.error(f"데이터베이스 연결 오류: {str(e)}")
-            handle_error(e, f"데이터베이스 연결 오류: {str(e)}")
-            raise
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"데이터베이스 연결 오류")
         finally:
             # 연결은 클래스 레벨에서 관리하므로 여기서는 닫지 않음
             pass
@@ -176,9 +176,8 @@ class DatabaseUtils:
                 return results
                 
         except Exception as e:
-            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"쿼리 실행 실패: {query[:50]}...")
-            return []
     
     def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
         """
@@ -373,8 +372,8 @@ class DatabaseUtils:
                 return self.insert_record(table_name, data)
                 
         except Exception as e:
-            app_logger.error(f"UPSERT 실패: {table_name}, 오류: {str(e)}")
-            return False
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"UPSERT 실패: {table_name}")
     
     def insert_record(self, table_name: str, data: Dict[str, Any]) -> bool:
         """
@@ -401,8 +400,8 @@ class DatabaseUtils:
             return affected_rows > 0
             
         except Exception as e:
-            app_logger.error(f"INSERT 실패: {table_name}, 오류: {str(e)}")
-            return False
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"INSERT 실패: {table_name}")
     
     def insert_or_replace(self, table_name: str, data: Dict[str, Any]) -> bool:
         """
@@ -454,6 +453,8 @@ class DatabaseUtils:
             # 테이블별 unique_columns 설정
             if table_name == 'components':
                 unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+            elif table_name == 'api_components':
+                unique_columns = ['component_id']  # api_components는 component_id가 UNIQUE
             elif table_name == 'tables':
                 unique_columns = ['project_id', 'table_name', 'table_owner']
             elif table_name == 'columns':
@@ -472,9 +473,8 @@ class DatabaseUtils:
             return processed_count
             
         except Exception as e:
-            app_logger.error(f"배치 UPSERT 실패: {table_name}, 오류: {str(e)}")
-            handle_error(e, f"배치 UPSERT 실패: {table_name}, 오류: {str(e)}")
-            return 0
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"배치 UPSERT 실패: {table_name}")
     
     def update_record(self, table_name: str, update_data: Dict[str, Any], where_conditions: Dict[str, Any]) -> bool:
         """
@@ -517,8 +517,8 @@ class DatabaseUtils:
             return affected_rows > 0
             
         except Exception as e:
-            app_logger.error(f"레코드 업데이트 실패: {table_name}, 오류: {str(e)}")
-            return False
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"레코드 업데이트 실패: {table_name}")
     
     def get_last_insert_id(self) -> int:
         """
@@ -533,8 +533,8 @@ class DatabaseUtils:
                 cursor.execute("SELECT last_insert_rowid()")
                 return cursor.fetchone()[0]
         except Exception as e:
-            app_logger.error(f"마지막 삽입 ID 조회 실패: {str(e)}")
-            return 0
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"마지막 삽입 ID 조회 실패")
     
     def insert_or_replace_with_id(self, table_name: str, data: Dict[str, Any]) -> int:
         """
@@ -697,9 +697,8 @@ class DatabaseUtils:
                     return result if result else 0
                 
         except Exception as e:
-            app_logger.error(f"Upsert 실패: {table_name}, 오류: {str(e)}")
-            handle_error(e, f"Upsert 실패: {table_name}, 오류: {str(e)}")
-            return 0
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"Upsert 실패: {table_name}")
     
     def begin_transaction(self):
         """트랜잭션 시작"""
@@ -707,7 +706,8 @@ class DatabaseUtils:
             with self.get_connection() as conn:
                 conn.execute("BEGIN TRANSACTION")
         except Exception as e:
-            app_logger.error(f"트랜잭션 시작 실패: {str(e)}")
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"트랜잭션 시작 실패")
     
     def commit_transaction(self):
         """트랜잭션 커밋"""
@@ -715,7 +715,8 @@ class DatabaseUtils:
             with self.get_connection() as conn:
                 conn.commit()
         except Exception as e:
-            app_logger.error(f"트랜잭션 커밋 실패: {str(e)}")
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"트랜잭션 커밋 실패")
     
     def rollback_transaction(self):
         """트랜잭션 롤백"""
@@ -723,7 +724,8 @@ class DatabaseUtils:
             with self.get_connection() as conn:
                 conn.rollback()
         except Exception as e:
-            app_logger.error(f"트랜잭션 롤백 실패: {str(e)}")
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"트랜잭션 롤백 실패")
     
     @contextmanager
     def transaction(self):
@@ -739,8 +741,8 @@ class DatabaseUtils:
             self.commit_transaction()
         except Exception as e:
             self.rollback_transaction()
-            app_logger.error(f"트랜잭션 오류: {str(e)}")
-            raise
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"트랜잭션 오류")
     
     def vacuum(self):
         """데이터베이스 최적화 (VACUUM)"""
@@ -749,7 +751,8 @@ class DatabaseUtils:
                 conn.execute("VACUUM")
                 app_logger.debug("데이터베이스 최적화 완료")
         except Exception as e:
-            app_logger.error(f"데이터베이스 최적화 실패: {str(e)}")
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"데이터베이스 최적화 실패")
     
     def analyze(self):
         """통계 정보 업데이트 (ANALYZE)"""
@@ -758,7 +761,8 @@ class DatabaseUtils:
                 conn.execute("ANALYZE")
                 app_logger.debug("통계 정보 업데이트 완료")
         except Exception as e:
-            app_logger.error(f"통계 정보 업데이트 실패: {str(e)}")
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"통계 정보 업데이트 실패")
     
     def get_project_id(self, project_name: str) -> Optional[int]:
         """

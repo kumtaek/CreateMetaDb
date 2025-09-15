@@ -1,0 +1,16 @@
+components 테이블 스키마:
+  component_id (INTEGER) - NULL: True
+  project_id (INTEGER) - NULL: False
+  file_id (INTEGER) - NULL: False
+  component_name (VARCHAR(200)) - NULL: False
+  component_type (VARCHAR(20)) - NULL: False
+  parent_id (INTEGER) - NULL: True
+  layer (VARCHAR(30)) - NULL: True
+  line_start (INTEGER) - NULL: True
+  line_end (INTEGER) - NULL: True
+  has_error (CHAR(1)) - NULL: True
+  error_message (TEXT) - NULL: True
+  hash_value (VARCHAR(64)) - NULL: False
+  created_at (DATETIME) - NULL: True
+  updated_at (DATETIME) - NULL: True
+  del_yn (CHAR(1)) - NULL: True

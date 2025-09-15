@@ -1,0 +1,45 @@
+로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
+=== ProductController 분석 테스트 ===
+파일 내용 길이: 3830 문자
+파일 라인 수: 103 라인
+
+=== 클래스 정보 추출 테스트 ===
+클래스명: ProductController
+어노테이션 수: 2
+  어노테이션 1: Controller
+    annotation type: <class 'javalang.tree.Annotation'>
+    annotation dir: ['attrs', 'children', 'element', 'filter', 'name', 'position']
+    elements: None
+  어노테이션 2: RequestMapping
+    annotation type: <class 'javalang.tree.Annotation'>
+    annotation dir: ['attrs', 'children', 'element', 'filter', 'name', 'position']
+    elements: None
+    RequestMapping 특별 분석:
+      annotation: Annotation(element=Literal(postfix_operators=[], prefix_operators=[], qualifier=None, selectors=[], value="/product"), name=RequestMapping)
+추출된 클래스 URL: '/product'
+
+ProductController 분석 결과: 4개 진입점
+  1. GET /product - ProductController.getProductList
+     파일: src/main/java/com/example/controller
+     라인: 21-21
+     파라미터: ['String name', 'String category', 'String status', 'Model model']
+     어노테이션: ['@GetMapping']
+
+  2. POST /product - ProductController.searchProducts
+     파일: src/main/java/com/example/controller
+     라인: 46-46
+     파라미터: ['Map searchParams', 'Model model']
+     어노테이션: ['@PostMapping']
+
+  3. GET /product - ProductController.getProductsByCategory
+     파일: src/main/java/com/example/controller
+     라인: 80-80
+     파라미터: ['String categoryId', 'Model model']
+     어노테이션: ['@GetMapping']
+
+  4. POST /product - ProductController.updateProductStock
+     파일: src/main/java/com/example/controller
+     라인: 91-91
+     파라미터: ['String productId', 'int quantity', 'Model model']
+     어노테이션: ['@PostMapping']
+

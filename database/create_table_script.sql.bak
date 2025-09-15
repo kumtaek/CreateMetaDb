@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS files (
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn CHAR(1) DEFAULT 'N',                    -- 삭제 여부 (Y/N) - COALESCE(UPPER(DEL_YN),'N') = 'N'
     line_count INTEGER,
+    file_size INTEGER,
     FOREIGN KEY (project_id) REFERENCES projects(project_id)
 );
 CREATE UNIQUE INDEX ix_files_01 ON files (file_name, file_path, project_id);
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS relationships (
     relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,
     src_id INTEGER NOT NULL,                       -- 소스 component_id
     dst_id INTEGER NOT NULL,                       -- 대상 component_id
-    rel_type VARCHAR(30) NOT NULL,                
+    rel_type VARCHAR(50) NOT NULL,                
     is_conditional CHAR(1) Default 'N',
     condition_expression VARCHAR(1024),
     confidence FLOAT DEFAULT 1.0,
@@ -137,6 +138,26 @@ CREATE TABLE IF NOT EXISTS relationships (
     CHECK (src_id != dst_id)
 );
 CREATE UNIQUE INDEX ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
+
+-- API 컴포넌트 상세 정보 테이블
+CREATE TABLE IF NOT EXISTS api_components (
+    api_component_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id INTEGER NOT NULL,
+    api_type VARCHAR(20) NOT NULL,                    -- 'API_ENTRY' 또는 'FRONTEND_API'
+    tech_stack VARCHAR(50),                           -- 'SPRING_BOOT', 'REACT', 'VUE', 'ANGULAR' 등
+    interface_type VARCHAR(200),                      -- 'List<User>', 'AXIOS', 'FETCH' 등
+    metadata TEXT,                                    -- JSON 형태로 parameters, annotations, call_config, ui_props 등
+    has_error CHAR(1) DEFAULT 'N',                    -- 오류 여부 (Y/N)
+    error_message TEXT,                               -- 오류 메시지
+    hash_value VARCHAR(64) NOT NULL,                  -- 변경 감지용
+    created_at DATETIME DEFAULT (datetime('now', '+9 hours')),
+    updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),
+    del_yn CHAR(1) DEFAULT 'N',                       -- 삭제 여부 (Y/N)
+    FOREIGN KEY (component_id) REFERENCES components(component_id),
+    CHECK (api_type IN ('API_ENTRY', 'FRONTEND_API'))
+);
+CREATE UNIQUE INDEX ix_api_components_01 ON api_components (component_id);
+CREATE INDEX ix_api_components_02 ON api_components (api_type);
 
 -- 데이터베이스 최적화 설정
 PRAGMA journal_mode = WAL;
