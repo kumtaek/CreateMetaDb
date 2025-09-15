@@ -431,6 +431,10 @@ method_extraction_patterns:
   - "private\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
   - "protected\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
   - "(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  # @Override 등 어노테이션이 있는 메소드 패턴들
+  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\n\\s+throws\\s+[^{]+\\{"
+  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\n\\s+throws\\s+[^{]+)?\\s*\\{"
 
 # 패키지 추출 패턴 (우선순위 순)
 package_extraction_patterns:

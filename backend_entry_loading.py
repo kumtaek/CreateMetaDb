@@ -810,11 +810,15 @@ class BackendEntryLoadingEngine:
                             app_logger.debug(f"inferred METHOD 생성: {entry.method_name} (ID: {method_id})")
 
                     if method_id:
-                        # 4. CALL_METHOD 관계 생성
+                        # 4. CALL_METHOD 관계 생성 (API_ENTRY -> METHOD)
                         relationship_created = self._create_call_method_relationship(api_entry_id, method_id, project_id)
                         if relationship_created:
                             relationships_created += 1
                             app_logger.debug(f"CALL_METHOD 관계 생성: API_ENTRY({api_entry_id}) -> METHOD({method_id})")
+
+                        # 5. inferred METHOD인 경우 추가 관계 분석
+                        if method_id and methods_inferred > existing_methods_inferred:  # 새로 생성된 inferred METHOD
+                            self._analyze_inferred_method_relationships(entry, method_id, project_id)
 
                 except Exception as e:
                     app_logger.error(f"API-METHOD 관계 생성 실패: {entry.class_name}.{entry.method_name} - {str(e)}")

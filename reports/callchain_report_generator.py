@@ -220,29 +220,39 @@ class CallChainReportGenerator:
                 GROUP BY q.component_name, f.file_name, q.component_type
             """
             
-            # FRONTEND_API -> API_ENTRY 체인 (간단한 버전)
+            # FRONTEND_API -> API_ENTRY -> Method -> Query -> Table 체인
             api_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name) as chain_id,
+                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name, m.component_name) as chain_id,
                     '' as jsp_file,
                     api.component_name as api_entry,
                     frontend.component_name as virtual_endpoint,
                     f.file_name as class_name,
-                    '' as method_name,
-                    '' as xml_file,
-                    '' as query_id,
-                    '' as query_type,
-                    '' as related_tables
+                    m.component_name as method_name,
+                    xml_file.file_name as xml_file,
+                    q.component_name as query_id,
+                    q.component_type as query_type,
+                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
                 FROM components frontend
                 JOIN relationships r1 ON frontend.component_id = r1.src_id AND r1.rel_type = 'CALL_API_F2B'
                 JOIN components api ON r1.dst_id = api.component_id
-                JOIN files f ON api.file_id = f.file_id
+                JOIN relationships r2 ON api.component_id = r2.src_id AND r2.rel_type = 'CALL_METHOD'
+                JOIN components m ON r2.dst_id = m.component_id AND m.component_type = 'METHOD'
+                JOIN files f ON m.file_id = f.file_id
+                JOIN relationships r3 ON m.component_id = r3.src_id AND r3.rel_type = 'CALL_QUERY'
+                JOIN components q ON r3.dst_id = q.component_id AND (q.component_type = 'QUERY' OR q.component_type LIKE 'SQL_%')
+                JOIN files xml_file ON q.file_id = xml_file.file_id
+                LEFT JOIN relationships r4 ON q.component_id = r4.src_id AND r4.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r4.dst_id = t.component_id
                 JOIN projects p ON frontend.project_id = p.project_id
                 WHERE p.project_name = ? 
                   AND frontend.component_type = 'FRONTEND_API'
                   AND api.component_type = 'API_ENTRY'
                   AND frontend.del_yn = 'N'
                   AND api.del_yn = 'N'
+                  AND m.del_yn = 'N'
+                  AND q.del_yn = 'N'
+                GROUP BY frontend.component_name, api.component_name, m.component_name, xml_file.file_name, q.component_name, q.component_type
             """
             
             # 세 쿼리를 UNION으로 결합
