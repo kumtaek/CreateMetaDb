@@ -22,7 +22,7 @@ else:
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from reports.report_templates import ReportTemplates
+from reports.erd_dagre_templates import ERDDagreTemplates
 
 
 class ERDDagreReportGenerator:
@@ -39,7 +39,7 @@ class ERDDagreReportGenerator:
         self.project_name = project_name
         self.output_dir = output_dir
         self.path_utils = PathUtils()
-        self.templates = ReportTemplates()
+        self.templates = ERDDagreTemplates()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -306,17 +306,18 @@ class ERDDagreReportGenerator:
                 
                 # 노드 데이터 생성
                 node_data = {
-                    'id': f"table:{table_info['table_owner']}.{table_name}",
-                    'type': 'table',
-                    'label': f"{table_info['table_owner']}.{table_name}",
-                    'group': 'DB',
-                    'meta': {
-                        'owner': table_info['table_owner'],
-                        'table_name': table_name,
-                        'status': 'VALID',
-                        'pk_columns': pk_column_names,
-                        'comment': table_info['table_comments'] or '',
-                        'columns': []
+                    'data': {
+                        'id': f"table:{table_info['table_owner']}.{table_name}",
+                        'type': 'table',
+                        'label': f"{table_info['table_owner']}.{table_name}",
+                        'meta': {
+                            'owner': table_info['table_owner'],
+                            'table_name': table_name,
+                            'status': 'VALID',
+                            'pk_columns': pk_column_names,
+                            'comment': table_info['table_comments'] or '',
+                            'columns': []
+                        }
                     }
                 }
                 
@@ -333,7 +334,7 @@ class ERDDagreReportGenerator:
                         'data_length': col['data_length'],
                         'data_default': col['data_default']
                     }
-                    node_data['meta']['columns'].append(column_data)
+                    node_data['data']['meta']['columns'].append(column_data)
                 
                 nodes.append(node_data)
             
@@ -356,25 +357,27 @@ class ERDDagreReportGenerator:
                 
                 # 엣지 데이터 생성
                 edge_data = {
-                    'id': f"edge:{src_id}->{dst_id}",
-                    'source': src_id,
-                    'target': dst_id,
-                    'type': rel['rel_type'],
-                    'label': f"{rel['src_column']} -> {rel['dst_column']}",
-                    'meta': {
-                        'rel_type': rel['rel_type'],
-                        'confidence': rel['confidence'],
-                        'frequency': rel['frequency'],
-                        'src_table': rel['src_table'],
-                        'src_owner': rel['src_owner'],
-                        'dst_table': rel['dst_table'],
-                        'dst_owner': rel['dst_owner'],
-                        'src_column': rel['src_column'],
-                        'dst_column': rel['dst_column'],
-                        'src_data_type': rel['src_data_type'],
-                        'dst_data_type': rel['dst_data_type'],
-                        'join_condition': rel['join_condition'],
-                        'rel_comment': rel['rel_comment']
+                    'data': {
+                        'id': f"edge:{src_id}->{dst_id}",
+                        'source': src_id,
+                        'target': dst_id,
+                        'type': rel['rel_type'],
+                        'label': f"{rel['src_column']} -> {rel['dst_column']}",
+                        'meta': {
+                            'rel_type': rel['rel_type'],
+                            'confidence': rel['confidence'],
+                            'frequency': rel['frequency'],
+                            'src_table': rel['src_table'],
+                            'src_owner': rel['src_owner'],
+                            'dst_table': rel['dst_table'],
+                            'dst_owner': rel['dst_owner'],
+                            'src_column': rel['src_column'],
+                            'dst_column': rel['dst_column'],
+                            'src_data_type': rel['src_data_type'],
+                            'dst_data_type': rel['dst_data_type'],
+                            'join_condition': rel['join_condition'],
+                            'rel_comment': rel['rel_comment']
+                        }
                     }
                 }
                 
