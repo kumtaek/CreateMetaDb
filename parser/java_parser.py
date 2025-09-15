@@ -1418,7 +1418,16 @@ class JavaParser:
                 r'enum\s+(\w+)'
             ],
             'method_extraction_patterns': [
-                r'(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:\w+\s+)*(\w+)\s*\([^)]*\)\s*\{'
+                # 기존 패턴 (어노테이션 없는 경우)
+                r'(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:\w+\s+)*(\w+)\s*\([^)]*\)\s*\{',
+                # @Override 등 어노테이션이 있는 메소드 - 정확한 들여쓰기 패턴
+                r'@\w+\s*\n\s*(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:\w+)\s+(\w+)\s*\([^)]*\)\s*\n\s+throws\s+[^{]+\{',
+                # @Override 메소드 - throws 없는 경우
+                r'@\w+\s*\n\s*(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:\w+)\s+(\w+)\s*\([^)]*\)\s*\{',
+                # @Override 메소드 - 매개변수가 여러 줄인 경우
+                r'@\w+\s*\n\s*(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:\w+)\s+(\w+)\s*\([^)]*\)\s*(?:\n\s+throws\s+[^{]+)?\s*\{',
+                # 여러 어노테이션이 연속으로 있는 경우
+                r'(?:@\w+\s*\n\s*)+(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:\w+)\s+(\w+)\s*\([^)]*\)\s*(?:\n\s+throws\s+[^{]+)?\s*\{'
             ],
             'complex_method_filtering': {
                 'business_getter_patterns': [r'^get.+With.+', r'^get.+By.+'],

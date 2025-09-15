@@ -469,32 +469,37 @@ class ERDDagreTemplates:
                 animate: true,
                 animationDuration: 1000,
                 fit: true,
-                padding: 50,  // 패딩 증가로 고아 엔티티 간격 확대
+                padding: 100,  // 패딩 대폭 증가로 고아 엔티티 간격 확대
                 nodeDimensionsIncludeLabels: true,
                 uniformNodeDimensions: false,
                 packComponents: false,  // 컴포넌트 패킹 비활성화로 고아 엔티티 분산
                 step: 'all',
                 samplingType: false,
                 sampleSize: 25,
-                nodeSeparation: 200,  // 노드 간격 대폭 증가 (더 넓게)
+                nodeSeparation: 300,  // 노드 간격 대폭 증가 (더 넓게)
                 piTol: 0.0000001,
                 nodeRepulsion: function( node ){ 
                     // 고아 노드(연결이 적은 노드)에 더 강한 반발력 적용
                     const degree = node.degree();
-                    return degree < 2 ? 400000 : 200000;  // 고아 노드에 2배 반발력
+                    if (degree === 0) return 800000;  // 완전 고아 노드에 최대 반발력
+                    if (degree === 1) return 600000;  // 1개 연결 노드에 강한 반발력
+                    return degree < 3 ? 400000 : 200000;  // 2개 이하 연결 노드에 강한 반발력
                 },
                 idealEdgeLength: function( edge ){ 
                     // 관계선 길이를 동적으로 조정
                     const sourceDegree = edge.source().degree();
                     const targetDegree = edge.target().degree();
                     const avgDegree = (sourceDegree + targetDegree) / 2;
-                    return avgDegree > 5 ? 120 : 100;  // 연결이 많은 노드는 더 긴 거리
+                    if (avgDegree < 2) return 200;  // 고아 노드들은 더 멀리
+                    return avgDegree > 5 ? 150 : 120;  // 연결이 많은 노드는 더 긴 거리
                 },
                 edgeElasticity: function( edge ){ 
                     // 관계선 탄성도 동적 조정
                     const sourceDegree = edge.source().degree();
                     const targetDegree = edge.target().degree();
-                    return Math.max(30, 100 - (sourceDegree + targetDegree) * 5);  // 연결이 많을수록 탄성도 감소
+                    const totalDegree = sourceDegree + targetDegree;
+                    if (totalDegree <= 2) return 20;  // 고아 노드들은 강한 탄성도
+                    return Math.max(30, 100 - totalDegree * 8);  // 연결이 많을수록 탄성도 감소
                 },
                 nestingFactor: 0.1,
                 gravity: 0.15,  // 중력 감소로 고아 엔티티가 더 분산되도록
@@ -510,10 +515,12 @@ class ERDDagreTemplates:
             dagre: {
                 name: 'dagre',
                 rankDir: 'TB',
-                rankSep: 200,  // 랭크 간격 대폭 증가
-                nodeSep: 120,  // 노드 간격 대폭 증가
-                edgeSep: 30,   // 엣지 간격 증가
-                ranker: 'tight-tree'
+                rankSep: 300,  // 랭크 간격 대폭 증가 (고아 엔티티 분산)
+                nodeSep: 200,  // 노드 간격 대폭 증가 (고아 엔티티 분산)
+                edgeSep: 50,   // 엣지 간격 증가
+                ranker: 'tight-tree',
+                spacingFactor: 2.0,  // 전체적인 간격 배율 증가
+                nodeDimensionsIncludeLabels: true
             }
         };
         
@@ -523,8 +530,8 @@ class ERDDagreTemplates:
                 container: document.getElementById('cy'),
                 elements: DATA,
                 minZoom: 0.1,
-                maxZoom: 3,
-                wheelSensitivity: 0.1,  // 휠 줌 감도 줄이기
+                maxZoom: 3
+                // wheelSensitivity 제거 - 기본값 사용으로 경고 해결
                 style: [
                     {
                         selector: 'node',
@@ -574,7 +581,7 @@ class ERDDagreTemplates:
                             'line-color': '#7f8c8d',
                             'target-arrow-color': '#7f8c8d',
                             'target-arrow-shape': 'triangle',
-                            'target-arrow-size': 8,
+                            'arrow-scale': 1.5,
                             'curve-style': 'straight',  // 깔끔한 직선 스타일
                             'label': 'data(label)',
                             'font-size': '10px',
@@ -630,7 +637,7 @@ class ERDDagreTemplates:
             optimizeNodeSpacing();
         }
         
-        // 노드 간격을 더 넓게 하여 관계선 겹침 방지
+        // 노드 간격을 더 넓게 하여 관계선 겹침 방지 및 고아 엔티티 분산
         function optimizeNodeSpacing() {
             const nodes = cy.nodes();
             const edges = cy.edges();
@@ -638,28 +645,75 @@ class ERDDagreTemplates:
             // 고아 노드들(연결이 적은 노드)을 더 넓게 분산
             nodes.forEach(node => {
                 const degree = node.degree();
-                if (degree <= 1) {
-                    // 고아 노드의 경우 더 큰 크기로 설정
+                if (degree === 0) {
+                    // 완전 고아 노드: 최대 크기
+                    node.style({
+                        'width': '160px',
+                        'height': '90px',
+                        'font-size': '14px'
+                    });
+                } else if (degree === 1) {
+                    // 1개 연결 노드: 큰 크기
+                    node.style({
+                        'width': '150px',
+                        'height': '85px',
+                        'font-size': '13px'
+                    });
+                } else if (degree <= 2) {
+                    // 2개 이하 연결 노드: 중간 크기
                     node.style({
                         'width': '140px',
-                        'height': '80px'
+                        'height': '80px',
+                        'font-size': '12px'
+                    });
+                } else {
+                    // 연결이 많은 노드: 기본 크기
+                    node.style({
+                        'width': '120px',
+                        'height': '60px',
+                        'font-size': '12px'
                     });
                 }
             });
             
             // 엣지 라벨 위치 최적화
             edges.forEach(edge => {
-                const sourcePos = edge.source().position();
-                const targetPos = edge.target().position();
-                const midX = (sourcePos.x + targetPos.x) / 2;
-                const midY = (sourcePos.y + targetPos.y) / 2;
+                const sourceDegree = edge.source().degree();
+                const targetDegree = edge.target().degree();
+                const totalDegree = sourceDegree + targetDegree;
                 
-                // 라벨을 엣지 중앙에서 약간 오프셋
-                edge.style({
-                    'text-margin-y': -15,
-                    'text-margin-x': 10
-                });
+                // 고아 노드들 사이의 엣지는 더 큰 마진
+                if (totalDegree <= 2) {
+                    edge.style({
+                        'text-margin-y': -20,
+                        'text-margin-x': 15,
+                        'font-size': '11px'
+                    });
+                } else {
+                    edge.style({
+                        'text-margin-y': -15,
+                        'text-margin-x': 10,
+                        'font-size': '10px'
+                    });
+                }
             });
+            
+            // 고아 노드들을 강제로 분산시키는 추가 로직
+            const orphanNodes = nodes.filter(node => node.degree() <= 1);
+            if (orphanNodes.length > 0) {
+                const bounds = cy.extent();
+                const width = bounds.x2 - bounds.x1;
+                const height = bounds.y2 - bounds.y1;
+                
+                orphanNodes.forEach((node, index) => {
+                    const angle = (2 * Math.PI * index) / orphanNodes.length;
+                    const radius = Math.min(width, height) * 0.3; // 반지름을 더 크게
+                    const x = bounds.x1 + width/2 + radius * Math.cos(angle);
+                    const y = bounds.y1 + height/2 + radius * Math.sin(angle);
+                    
+                    node.position({ x: x, y: y });
+                });
+            }
         }
         
         // 이벤트 리스너 설정
@@ -901,13 +955,44 @@ class ERDDagreTemplates:
             try {
                 // Cytoscape.js 컨테이너에서 SVG 요소 직접 추출
                 const container = document.getElementById('cy');
-                const svgElement = container.querySelector('svg');
-                
-                if (!svgElement) {
-                    throw new Error('SVG 요소를 찾을 수 없습니다.');
+                if (!container) {
+                    throw new Error('Cytoscape 컨테이너를 찾을 수 없습니다.');
                 }
                 
-                // SVG 내용을 문자열로 변환
+                // SVG 요소를 여러 방법으로 찾기
+                let svgElement = container.querySelector('svg');
+                
+                // 첫 번째 방법이 실패하면 다른 방법 시도
+                if (!svgElement) {
+                    const canvas = container.querySelector('canvas');
+                    if (canvas) {
+                        // Canvas가 있는 경우, Cytoscape의 내장 SVG 내보내기 사용
+                        const svgData = cy.svg({
+                            full: true,
+                            scale: 1,
+                            quality: 1
+                        });
+                        
+                        if (svgData) {
+                            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                            const svgUrl = URL.createObjectURL(svgBlob);
+                            
+                            const link = document.createElement('a');
+                            link.href = svgUrl;
+                            link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(svgUrl);
+                            return;
+                        }
+                    }
+                    
+                    // 모든 방법이 실패한 경우
+                    throw new Error('SVG 요소를 찾을 수 없습니다. 다이어그램이 완전히 로드된 후 다시 시도해주세요.');
+                }
+                
+                // SVG 요소를 찾은 경우
                 const svgData = new XMLSerializer().serializeToString(svgElement);
                 const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
                 const svgUrl = URL.createObjectURL(svgBlob);

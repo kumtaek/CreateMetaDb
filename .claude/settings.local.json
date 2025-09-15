@@ -8,7 +8,10 @@
       "Bash(sqlite3:*)",
       "Bash(findstr:*)",
       "Bash(timeout 30 tail -f logs/SourceAnalyzer_20250915_192053.log)",
-      "Bash(timeout 20 tail -n 20 logs/SourceAnalyzer_20250915_192512.log)"
+      "Bash(timeout 20 tail -n 20 logs/SourceAnalyzer_20250915_192512.log)",
+      "Bash(find:*)",
+      "Bash(timeout 10 tail -n 30 logs/SourceAnalyzer_20250915_222415.log)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

@@ -176,8 +176,15 @@ class BackendEntryLoadingEngine:
                 if all_backend_entries:
                     self._save_results_to_db(all_backend_entries)
                     app_logger.info("분석 결과 DB 저장 완료")
-                
-                # 5. 통계 출력
+
+                    # 5. API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성
+                    project_id = self._get_project_id()
+                    if project_id:
+                        self._create_api_method_relationships(all_backend_entries, project_id)
+                    else:
+                        app_logger.warning("프로젝트 ID를 찾을 수 없어 API-METHOD 관계를 생성할 수 없습니다")
+
+                # 6. 통계 출력
                 self._print_backend_entry_statistics()
                 
                 app_logger.info("=== 백엔드 진입점 분석 완료 ===")
@@ -770,11 +777,173 @@ class BackendEntryLoadingEngine:
             # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
             handle_error(e, f"API 컴포넌트 hash_value 조회 실패: {component_id}")
     
+    def _create_api_method_relationships(self, entries: List[BackendEntryInfo], project_id: int) -> None:
+        """
+        API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성
+
+        Args:
+            entries: 백엔드 진입점 리스트
+            project_id: 프로젝트 ID
+        """
+        try:
+            app_logger.info("API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성 시작")
+
+            relationships_created = 0
+            methods_inferred = 0
+
+            for entry in entries:
+                try:
+                    # 1. API_ENTRY 컴포넌트 ID 조회
+                    api_entry_id = self._get_api_entry_component_id(entry, project_id)
+                    if not api_entry_id:
+                        app_logger.warning(f"API_ENTRY 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name}")
+                        continue
+
+                    # 2. 기존 METHOD 컴포넌트 찾기
+                    method_id = self._find_existing_method(entry, project_id)
+
+                    if not method_id:
+                        # 3. 기존 METHOD 없으면 inferred METHOD 생성
+                        method_id = self._create_inferred_method(entry, project_id)
+                        if method_id:
+                            methods_inferred += 1
+                            app_logger.debug(f"inferred METHOD 생성: {entry.method_name} (ID: {method_id})")
+
+                    if method_id:
+                        # 4. CALL_METHOD 관계 생성
+                        relationship_created = self._create_call_method_relationship(api_entry_id, method_id, project_id)
+                        if relationship_created:
+                            relationships_created += 1
+                            app_logger.debug(f"CALL_METHOD 관계 생성: API_ENTRY({api_entry_id}) -> METHOD({method_id})")
+
+                except Exception as e:
+                    app_logger.error(f"API-METHOD 관계 생성 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
+                    continue
+
+            app_logger.info(f"API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성 완료: {relationships_created}개 관계, {methods_inferred}개 inferred METHOD 생성")
+
+        except Exception as e:
+            handle_error(e, "API_ENTRY와 METHOD 간 관계 생성 실패")
+
+    def _get_api_entry_component_id(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
+        """API_ENTRY 컴포넌트 ID 조회"""
+        try:
+            url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
+            class_name_safe = entry.class_name.replace('.', '_')
+            component_name = f"API_ENTRY.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
+
+            query = """
+                SELECT component_id
+                FROM components
+                WHERE component_name = ? AND component_type = 'API_ENTRY'
+                AND project_id = ? AND del_yn = 'N'
+            """
+
+            results = self.db.execute_query(query, (component_name, project_id))
+            return results[0]['component_id'] if results else None
+
+        except Exception as e:
+            app_logger.error(f"API_ENTRY 컴포넌트 ID 조회 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
+            return None
+
+    def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
+        """기존 METHOD 컴포넌트 찾기"""
+        try:
+            # 같은 클래스 파일에서 메소드명으로 검색
+            query = """
+                SELECT c.component_id
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                WHERE c.component_type = 'METHOD'
+                AND c.component_name = ?
+                AND f.file_path LIKE ?
+                AND c.project_id = ? AND c.del_yn = 'N'
+            """
+
+            # 클래스명에서 파일 경로 패턴 생성
+            class_simple_name = entry.class_name.split('.')[-1]
+            file_pattern = f"%{class_simple_name}.java"
+
+            results = self.db.execute_query(query, (entry.method_name, file_pattern, project_id))
+            return results[0]['component_id'] if results else None
+
+        except Exception as e:
+            app_logger.error(f"기존 METHOD 컴포넌트 찾기 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
+            return None
+
+    def _create_inferred_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
+        """inferred METHOD 컴포넌트 생성"""
+        try:
+            # inferred 파일 ID 조회
+            inferred_file_id = self._get_inferred_file_id(project_id)
+            if not inferred_file_id:
+                return None
+
+            # 해시값 생성 (inferred 메소드용)
+            hash_value = self.hash_utils.generate_content_hash(f"INFERRED_METHOD_{entry.class_name}_{entry.method_name}")
+
+            method_data = {
+                'project_id': project_id,
+                'file_id': inferred_file_id,
+                'component_name': entry.method_name,
+                'component_type': 'METHOD',
+                'parent_id': None,  # 클래스 정보가 있으면 나중에 연결
+                'layer': 'APPLICATION',
+                'line_start': None,
+                'line_end': None,
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': hash_value,
+                'del_yn': 'N'
+            }
+
+            return self.db.insert_or_replace_with_id('components', method_data)
+
+        except Exception as e:
+            app_logger.error(f"inferred METHOD 생성 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
+            return None
+
+    def _create_call_method_relationship(self, api_entry_id: int, method_id: int, project_id: int) -> bool:
+        """CALL_METHOD 관계 생성"""
+        try:
+            relationship_data = {
+                'src_id': api_entry_id,
+                'dst_id': method_id,
+                'rel_type': 'CALL_METHOD',
+                'confidence': 0.9,  # API 메타데이터 기반이므로 높은 신뢰도
+                'has_error': 'N',
+                'error_message': None,
+                'del_yn': 'N'
+            }
+
+            relationship_id = self.db.insert_or_replace_with_id('relationships', relationship_data)
+            return relationship_id is not None
+
+        except Exception as e:
+            app_logger.error(f"CALL_METHOD 관계 생성 실패: API_ENTRY({api_entry_id}) -> METHOD({method_id}) - {str(e)}")
+            return False
+
+    def _get_project_id(self) -> Optional[int]:
+        """프로젝트 ID 조회"""
+        try:
+            query = """
+                SELECT project_id
+                FROM projects
+                WHERE project_name = ? AND del_yn = 'N'
+            """
+
+            results = self.db.execute_query(query, (self.project_name,))
+            return results[0]['project_id'] if results else None
+
+        except Exception as e:
+            app_logger.error(f"프로젝트 ID 조회 실패: {self.project_name} - {str(e)}")
+            return None
+
     def _print_backend_entry_statistics(self) -> None:
         """백엔드 진입점 분석 통계 출력"""
         try:
             self.stats.print_summary()
-            
+
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"통계 출력 실패")

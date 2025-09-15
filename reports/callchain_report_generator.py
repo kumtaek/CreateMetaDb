@@ -220,41 +220,29 @@ class CallChainReportGenerator:
                 GROUP BY q.component_name, f.file_name, q.component_type
             """
             
-            # FRONTEND_API -> API_ENTRY -> Method -> Query -> Table 체인
+            # FRONTEND_API -> API_ENTRY 체인 (간단한 버전)
             api_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name, m.component_name) as chain_id,
+                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name) as chain_id,
                     '' as jsp_file,
                     api.component_name as api_entry,
                     frontend.component_name as virtual_endpoint,
                     f.file_name as class_name,
-                    m.component_name as method_name,
-                    xml_file.file_name as xml_file,
-                    q.component_name as query_id,
-                    q.component_type as query_type,
-                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                    '' as method_name,
+                    '' as xml_file,
+                    '' as query_id,
+                    '' as query_type,
+                    '' as related_tables
                 FROM components frontend
                 JOIN relationships r1 ON frontend.component_id = r1.src_id AND r1.rel_type = 'CALL_API_F2B'
                 JOIN components api ON r1.dst_id = api.component_id
                 JOIN files f ON api.file_id = f.file_id
-                JOIN components m ON m.file_id = f.file_id AND m.component_type = 'METHOD'
-                JOIN relationships r2 ON m.component_id = r2.src_id AND r2.rel_type = 'CALL_METHOD'
-                JOIN components target_m ON r2.dst_id = target_m.component_id AND target_m.component_type = 'METHOD'
-                JOIN relationships r3 ON target_m.component_id = r3.src_id AND r3.rel_type = 'CALL_QUERY'
-                JOIN components q ON r3.dst_id = q.component_id AND (q.component_type = 'QUERY' OR q.component_type LIKE 'SQL_%')
-                JOIN files xml_file ON q.file_id = xml_file.file_id
-                LEFT JOIN relationships r4 ON q.component_id = r4.src_id AND r4.rel_type = 'USE_TABLE'
-                LEFT JOIN tables t ON r4.dst_id = t.component_id
                 JOIN projects p ON frontend.project_id = p.project_id
                 WHERE p.project_name = ? 
                   AND frontend.component_type = 'FRONTEND_API'
                   AND api.component_type = 'API_ENTRY'
                   AND frontend.del_yn = 'N'
                   AND api.del_yn = 'N'
-                  AND m.del_yn = 'N'
-                  AND target_m.del_yn = 'N'
-                  AND q.del_yn = 'N'
-                GROUP BY frontend.component_name, api.component_name, m.component_name, target_m.component_name, xml_file.file_name, q.component_name, q.component_type
             """
             
             # 세 쿼리를 UNION으로 결합
@@ -281,13 +269,28 @@ class CallChainReportGenerator:
                 # 쿼리 타입 변환
                 query_type = self._convert_query_type(row['query_type'])
                 
-                # 관련 테이블 별도 조회
+                # 관련 테이블 별도 조회 (API_ENTRY 체인에서도 적용)
                 related_tables = self._get_related_tables_for_query(query_id)
                 
-                # API_ENTRY 접두사 제거
+                # API_ENTRY 접두사 제거 및 의미있는 표시로 변환
                 api_entry = row.get('api_entry', '')
                 if api_entry.startswith('API_ENTRY.'):
                     api_entry = api_entry[10:]  # 'API_ENTRY.' 제거
+                    # HTTP 메소드와 URL 패턴만 표시
+                    if '_' in api_entry:
+                        parts = api_entry.split('_', 1)
+                        if len(parts) == 2:
+                            api_entry = f"{parts[0]} {parts[1]}"
+                
+                # FRONTEND_API 접두사 제거 및 의미있는 표시로 변환
+                virtual_endpoint = row.get('virtual_endpoint', '')
+                if virtual_endpoint.startswith('FRONTEND_API.'):
+                    virtual_endpoint = virtual_endpoint[13:]  # 'FRONTEND_API.' 제거
+                    # HTTP 메소드와 URL 패턴만 표시
+                    if '_' in virtual_endpoint:
+                        parts = virtual_endpoint.split('_', 1)
+                        if len(parts) == 2:
+                            virtual_endpoint = f"{parts[0]} {parts[1]}"
                 
                 # 메서드명에서도 API_ENTRY 접두사 제거
                 method_name = row['method_name']
@@ -298,7 +301,7 @@ class CallChainReportGenerator:
                     'chain_id': row['chain_id'],
                     'jsp_file': row['jsp_file'],
                     'api_entry': api_entry,
-                    'virtual_endpoint': row.get('virtual_endpoint', ''),
+                    'virtual_endpoint': virtual_endpoint,
                     'class_name': row['class_name'],
                     'method_name': method_name,
                     'xml_file': row['xml_file'],
