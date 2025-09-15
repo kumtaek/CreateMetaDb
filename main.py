@@ -9,7 +9,8 @@ import os
 from util import (
     ArgUtils, validate_and_get_project_name, print_usage_and_exit,
     PathUtils, get_project_source_path, project_exists,
-    app_logger, info, error, handle_error, cleanup_old_log_files
+    app_logger, info, error, handle_error, cleanup_old_log_files,
+    get_global_project_id, set_global_project_info
 )
 
 # recursion limit 설정 (XML 파싱 오류 방지)  
@@ -21,7 +22,8 @@ def main():
     """메인 함수"""
     try:
         # 0. 오래된 로그 파일 정리 (24시간 지난 파일 삭제)
-        log_directory = os.path.join(os.path.dirname(__file__), 'logs')
+        path_utils = PathUtils()
+        log_directory = path_utils.join_path('logs')
         info("오래된 로그 파일 정리 시작")
         deleted_count = cleanup_old_log_files(log_directory, 24)
         if deleted_count > 0:
@@ -158,6 +160,18 @@ def main():
         
         if success:
             info("4단계 완료: Java 소스코드 분석 및 관계 생성")
+
+            # 간접 USE_TABLE 관계 생성
+            info("간접 USE_TABLE 관계 생성 시작")
+            project_id = get_global_project_id()
+            if project_id:
+                success_indirect = java_engine._create_indirect_use_table_relationships(project_id)
+                if success_indirect:
+                    info("간접 USE_TABLE 관계 생성 완료")
+                else:
+                    warning("간접 USE_TABLE 관계 생성 실패")
+            else:
+                warning("프로젝트 ID를 찾을 수 없어 간접 USE_TABLE 관계를 생성할 수 없습니다")
         else:
             error("4단계 실패: Java 로딩")
             sys.exit(1)

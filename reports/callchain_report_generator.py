@@ -12,13 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-# 크로스플랫폼 경로 처리
-if sys.platform.startswith('win'):
-    import ntpath
-    path_module = ntpath
-else:
-    import posixpath
-    path_module = posixpath
+# 크로스플랫폼 경로 처리는 PathUtils 공통함수 사용
 
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
@@ -224,11 +218,7 @@ class CallChainReportGenerator:
         """SqlContent.db에서 정제된 SQL 내용 조회 및 압축 해제 (크로스플랫폼 지원)"""
         try:
             # 크로스플랫폼 경로 생성 (공통함수 사용)
-            project_path = self.path_utils.get_project_path(self.project_name)
-            sql_content_db_path = path_module.join(project_path, "SqlContent.db")
-            
-            # 경로 정규화 (크로스플랫폼 대응)
-            sql_content_db_path = path_module.normpath(sql_content_db_path)
+            sql_content_db_path = self.path_utils.join_path("projects", self.project_name, "SqlContent.db")
             
             if not os.path.exists(sql_content_db_path):
                 app_logger.warning(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}")

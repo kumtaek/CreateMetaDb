@@ -901,6 +901,91 @@ class JavaLoadingEngine:
             handle_error(e, "USE_TABLE 관계 저장 실패")
             return False
 
+    def _create_indirect_use_table_relationships(self, project_id: int) -> bool:
+        """
+        CALL_QUERY 관계와 SQL의 테이블 사용 정보를 조합하여 USE_TABLE 관계 생성
+
+        Args:
+            project_id: 프로젝트 ID
+
+        Returns:
+            생성 성공 여부
+        """
+        try:
+            info("간접 USE_TABLE 관계 생성 시작")
+
+            # CALL_QUERY 관계 조회 (Method -> SQL)
+            query = """
+                SELECT r.src_id as method_id, r.dst_id as sql_id,
+                       c1.component_name as method_name, c2.component_name as sql_name
+                FROM relationships r
+                JOIN components c1 ON r.src_id = c1.component_id
+                JOIN components c2 ON r.dst_id = c2.component_id
+                WHERE r.rel_type = 'CALL_QUERY'
+                AND r.del_yn = 'N'
+                AND c1.project_id = ?
+            """
+
+            call_query_results = self.db_utils.execute_query(query, (project_id,))
+            if not call_query_results:
+                warning("CALL_QUERY 관계가 없습니다")
+                return True
+
+            info(f"CALL_QUERY 관계 {len(call_query_results)}개 발견")
+
+            use_table_relationships = []
+
+            for call_query in call_query_results:
+                method_id = call_query['method_id']
+                sql_id = call_query['sql_id']
+                method_name = call_query['method_name']
+                sql_name = call_query['sql_name']
+
+                # 해당 SQL이 사용하는 테이블들 조회 (USE_TABLE 관계에서 추출)
+                table_query = """
+                    SELECT DISTINCT c.component_id, c.component_name
+                    FROM relationships r
+                    JOIN components c ON r.dst_id = c.component_id
+                    WHERE r.src_id = ?
+                    AND r.rel_type = 'USE_TABLE'
+                    AND c.component_type = 'TABLE'
+                    AND r.del_yn = 'N'
+                    AND c.del_yn = 'N'
+                """
+
+                table_results = self.db_utils.execute_query(table_query, (sql_id,))
+
+                for table_result in table_results:
+                    table_id = table_result['component_id']
+                    table_name = table_result['component_name']
+
+                    # Method -> Table USE_TABLE 관계 생성
+                    if method_id != table_id:  # 자기 참조 방지
+                        use_table_relationships.append({
+                            'src_id': method_id,
+                            'dst_id': table_id,
+                            'rel_type': 'USE_TABLE',
+                            'confidence': 1.0,
+                            'has_error': 'N',
+                            'error_message': None,
+                            'del_yn': 'N'
+                        })
+
+                        debug(f"간접 USE_TABLE 관계 생성: {method_name} -> {table_name}")
+
+            # 배치 저장
+            if use_table_relationships:
+                processed_count = self.db_utils.batch_insert_or_replace('relationships', use_table_relationships)
+                info(f"간접 USE_TABLE 관계 저장 완료: {processed_count}개")
+                return True
+            else:
+                warning("생성할 간접 USE_TABLE 관계가 없습니다")
+                return True
+
+        except Exception as e:
+            handle_error(e, "간접 USE_TABLE 관계 생성 실패")
+            return False
+
     def _get_method_component_id(self, project_id: int, method_name: str) -> Optional[int]:
         """
         메서드 컴포넌트 ID 조회
@@ -1290,24 +1375,18 @@ class JavaLoadingEngine:
             # USER RULES: 경로 구분자 정규화 - Unix 스타일로 통일 (1단계에서 저장된 형태와 일치)
             relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
 
-            # 파일 ID 조회 - file_path와 file_name을 합쳐서 조회
-            # relative_path에서 디렉토리와 파일명 분리
-            import os
-            dir_path = os.path.dirname(relative_path)
-            file_name = os.path.basename(relative_path)
-            
+            # 파일 ID 조회 - file_path에 전체 경로(파일명 포함)가 저장됨
             # 경로 구분자 정규화 (Windows 스타일로 변환 - 1단계에서 저장된 형태와 일치)
-            dir_path = path_utils.normalize_path_separator(dir_path, 'windows')
+            relative_path = path_utils.normalize_path_separator(relative_path, 'windows')
             
             file_query = """
                 SELECT file_id FROM files
                 WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?)
                 AND file_path = ?
-                AND file_name = ?
                 AND del_yn = 'N'
             """
 
-            file_results = self.db_utils.execute_query(file_query, (self.project_name, dir_path, file_name))
+            file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
 
             if file_results:
                 return file_results[0]['file_id']

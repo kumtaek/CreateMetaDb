@@ -91,7 +91,8 @@ class BackendEntryLoadingEngine:
             for row in results:
                 try:
                     # 공통함수 사용 - 하드코딩 금지
-                    web_xml_path = self.path_utils.join_path("projects", self.project_name, row['file_path'], row['file_name'])
+                    # file_path에 이미 전체 경로(파일명 포함)가 저장됨
+                    web_xml_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
                     web_xml_content = self._read_file_content(web_xml_path)
                     
                     if web_xml_content:
@@ -213,9 +214,9 @@ class BackendEntryLoadingEngine:
             
             java_files = []
             for row in results:
-                # 파일 내용 읽기 (file_path는 디렉토리 경로, file_name과 결합 필요) - 공통함수 사용
+                # 파일 내용 읽기 (file_path에 이미 전체 경로(파일명 포함)가 저장됨) - 공통함수 사용
                 # 공통함수 사용 - 하드코딩 금지
-                full_file_path = self.path_utils.join_path("projects", self.project_name, row['file_path'], row['file_name'])
+                full_file_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
                 content = self._read_file_content(full_file_path)
                 
                 if content is not None:

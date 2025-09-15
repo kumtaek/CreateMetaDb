@@ -117,12 +117,11 @@ class XmlLoadingEngine:
                         relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
                         # Windows 경로 구분자로 통일 (files 테이블과 일치시키기 위해)
                         relative_path = relative_path.replace('/', '\\')
-                        # 디렉토리 경로만 추출 (files 테이블에는 디렉토리 경로만 저장됨)
-                        relative_path = os.path.dirname(relative_path)
+                        # file_loading.py 수정으로 이제 file_path에 전체 경로(파일명 포함)가 저장됨
                         
                         # 로그: 경로 정보 출력
                         info(f"XML 파일: {xml_file}")
-                        info(f"디렉토리 경로: {relative_path}")
+                        info(f"상대경로: {relative_path}")
                         
                         # 파일 ID 조회
                         file_query = """
@@ -139,9 +138,9 @@ class XmlLoadingEngine:
                             file_id = file_results[0]['file_id']
                             info(f"file_id 조회 성공: {file_id}")
                         else:
-                            handle_error(f"파일 ID를 찾을 수 없음: {xml_file} (상대경로: {relative_path})")
+                            handle_error(Exception(f"파일 ID를 찾을 수 없음: {xml_file} (상대경로: {relative_path})"), "파일 ID 조회 실패")
                     except Exception as e:
-                        handle_error(f"파일 ID 조회 실패: {xml_file}, 오류: {e}")
+                        handle_error(e, f"파일 ID 조회 실패: {xml_file}")
                     
                     debug(f"현재 처리 중인 XML 파일: {xml_file}, file_id: {file_id}")
                     
@@ -350,6 +349,10 @@ class XmlLoadingEngine:
                         except Exception as e:
                             # SQL Content 저장 실패는 무시하고 계속 진행
                             error(f"SQL Content 저장 중 오류 발생 (무시): {sql_id} - {str(e)}")
+
+                        # SQL과 테이블 간의 USE_TABLE 관계 생성
+                        self._create_sql_table_relationships(component_id, sql_content, project_id)
+
                     else:
                         handle_error(f"SQL 컴포넌트 저장 실패: {sql_id}")
                         
@@ -358,10 +361,148 @@ class XmlLoadingEngine:
             
             info(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
             return success_count > 0
-                
+
         except Exception as e:
             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "SQL 컴포넌트 저장 실패")
+            return False
+
+    def _create_sql_table_relationships(self, sql_component_id: int, sql_content: str, project_id: int) -> None:
+        """
+        SQL 컴포넌트와 테이블 간의 USE_TABLE 관계를 생성
+
+        Args:
+            sql_component_id: SQL 컴포넌트 ID
+            sql_content: SQL 내용
+            project_id: 프로젝트 ID
+        """
+        try:
+            # SQL에서 사용되는 테이블명 추출
+            table_names = self._extract_table_names_from_sql(sql_content)
+            if not table_names:
+                return
+
+            debug(f"SQL에서 추출된 테이블명들: {table_names}")
+
+            for table_name in table_names:
+                # 테이블 컴포넌트 ID 조회
+                table_component_id = self._get_table_component_id(project_id, table_name)
+                if table_component_id:
+                    # USE_TABLE 관계 생성
+                    relationship_data = {
+                        'src_id': sql_component_id,
+                        'dst_id': table_component_id,
+                        'rel_type': 'USE_TABLE',
+                        'confidence': 0.8,  # SQL 파싱 기반이므로 높은 신뢰도
+                        'has_error': 'N',
+                        'error_message': None,
+                        'del_yn': 'N'
+                    }
+
+                    relationship_id = self.db_utils.insert_or_replace_with_id('relationships', relationship_data)
+                    if relationship_id:
+                        debug(f"USE_TABLE 관계 생성 성공: SQL({sql_component_id}) -> TABLE({table_component_id}) : {table_name}")
+                    else:
+                        debug(f"USE_TABLE 관계 생성 실패: SQL({sql_component_id}) -> TABLE({table_component_id}) : {table_name}")
+                else:
+                    debug(f"테이블 컴포넌트를 찾을 수 없음: {table_name}")
+
+        except Exception as e:
+            debug(f"SQL-테이블 관계 생성 중 오류: {str(e)}")
+
+    def _extract_table_names_from_sql(self, sql_content: str) -> set:
+        """
+        SQL 내용에서 테이블명 추출
+
+        Args:
+            sql_content: SQL 내용
+
+        Returns:
+            추출된 테이블명 집합
+        """
+        try:
+            import re
+            from util import debug
+
+            table_names = set()
+
+            # SQL 내용을 대문자로 변환하고 정제
+            sql_upper = sql_content.upper().strip()
+
+            # FROM 절에서 테이블명 추출
+            from_pattern = r'\bFROM\s+([A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?)'
+            from_matches = re.findall(from_pattern, sql_upper)
+            for match in from_matches:
+                # 별칭이 있는 경우 첫 번째가 테이블명
+                table_name = match.split()[0].strip()
+                if self._is_valid_table_name_simple(table_name):
+                    table_names.add(table_name)
+
+            # JOIN 절에서 테이블명 추출
+            join_pattern = r'\b(?:JOIN|INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|OUTER\s+JOIN)\s+([A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?)'
+            join_matches = re.findall(join_pattern, sql_upper)
+            for match in join_matches:
+                table_name = match.split()[0].strip()
+                if self._is_valid_table_name_simple(table_name):
+                    table_names.add(table_name)
+
+            # UPDATE 절에서 테이블명 추출
+            update_pattern = r'\bUPDATE\s+([A-Z_][A-Z0-9_]*)'
+            update_matches = re.findall(update_pattern, sql_upper)
+            for match in update_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            # INSERT INTO 절에서 테이블명 추출
+            insert_pattern = r'\bINSERT\s+INTO\s+([A-Z_][A-Z0-9_]*)'
+            insert_matches = re.findall(insert_pattern, sql_upper)
+            for match in insert_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            # DELETE FROM 절에서 테이블명 추출
+            delete_pattern = r'\bDELETE\s+FROM\s+([A-Z_][A-Z0-9_]*)'
+            delete_matches = re.findall(delete_pattern, sql_upper)
+            for match in delete_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            return table_names
+
+        except Exception as e:
+            debug(f"SQL에서 테이블명 추출 중 오류: {str(e)}")
+            return set()
+
+    def _is_valid_table_name_simple(self, table_name: str) -> bool:
+        """
+        간단한 테이블명 유효성 검사
+
+        Args:
+            table_name: 검사할 테이블명
+
+        Returns:
+            유효한 테이블명이면 True
+        """
+        try:
+            if not table_name or len(table_name) < 3:
+                return False
+
+            # 기본적인 패턴 검사
+            import re
+            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
+                return False
+
+            # _ID로 끝나는 컬럼명 패턴 제외
+            if table_name.endswith('_ID'):
+                return False
+
+            # 단독 ID 제외
+            if table_name == 'ID':
+                return False
+
+            return True
+
+        except Exception:
             return False
     
     
@@ -574,16 +715,26 @@ class XmlLoadingEngine:
     def _create_inferred_table(self, project_id: int, table_name: str, join_relationships: List[Dict[str, Any]] = None) -> Optional[int]:
         """
         inferred 테이블 생성 (USER RULES: 공통함수 사용)
-        
+
         Args:
             project_id: 프로젝트 ID
             table_name: 테이블명
             join_relationships: JOIN 관계 리스트 (inferred 컬럼 생성용)
-            
+
         Returns:
             컴포넌트 ID
         """
         try:
+            # 먼저 기존 테이블 컴포넌트가 있는지 확인
+            existing_query = """
+                SELECT component_id FROM components
+                WHERE project_id = ? AND component_name = ? AND component_type = 'TABLE' AND del_yn = 'N'
+            """
+            existing_result = self.db_utils.execute_query(existing_query, (project_id, table_name))
+            if existing_result:
+                info(f"기존 테이블 컴포넌트 발견: {table_name} (ID: {existing_result[0]['component_id']})")
+                return existing_result[0]['component_id']
+
             # inferred 테이블용 file_id 찾기 (XML 파일 중 하나 선택)
             inferred_file_id = self._get_inferred_file_id(project_id)
             if not inferred_file_id:

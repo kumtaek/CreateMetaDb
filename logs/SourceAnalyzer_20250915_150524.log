@@ -1,4 +1,0 @@
-2025-09-15 15:05:24,837 - SourceAnalyzer - INFO - entry_analyzer_factory.py:178 - 총 1개 분석기 로드 완료
-2025-09-15 15:05:24,838 - SourceAnalyzer - INFO - backend_entry_loading.py:57 - 분석기 로드 완료: 1개
-2025-09-15 15:05:24,838 - SourceAnalyzer - INFO - backend_entry_loading.py:44 - 로드된 분석기: ['spring']
-2025-09-15 15:05:24,838 - SourceAnalyzer - INFO - backend_entry_loading.py:46 - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc

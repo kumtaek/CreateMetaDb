@@ -18,6 +18,10 @@ from .arg_utils import (
     ArgUtils, parse_command_line_args, get_project_name_from_args, validate_and_get_project_name,
     create_simple_parser, print_usage_and_exit
 )
+from .global_project import (
+    set_global_project_info, get_global_project_name, get_global_project_id,
+    is_global_project_info_set, get_global_project_info
+)
 
 __all__ = [
     # Logger
@@ -92,5 +96,12 @@ __all__ = [
     'get_project_name_from_args',
     'validate_and_get_project_name',
     'create_simple_parser',
-    'print_usage_and_exit'
+    'print_usage_and_exit',
+
+    # Global Project Utils
+    'set_global_project_info',
+    'get_global_project_name',
+    'get_global_project_id',
+    'is_global_project_info_set',
+    'get_global_project_info'
 ]

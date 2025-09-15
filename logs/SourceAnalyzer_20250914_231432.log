@@ -1,3 +1,0 @@
-2025-09-14 23:14:32,186 - SourceAnalyzer - INFO - jsp_parser.py:50 - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
-2025-09-14 23:14:32,227 - SourceAnalyzer - INFO - jsp_parser.py:86 - JSP 파일 수집 완료: 9개
-2025-09-14 23:14:32,228 - SourceAnalyzer - INFO - jsp_parser.py:203 - JSP list.jsp에서 0개 메서드 호출 발견

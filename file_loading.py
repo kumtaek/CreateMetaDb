@@ -207,11 +207,11 @@ class FileLoadingEngine:
             if not file_info.get('exists', False):
                 # 파일이 존재하지 않는 경우 오류로 처리
                 relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-                file_name = os.path.basename(file_path)
+                file_name = self.path_utils.get_path_components(file_path)['file_name']
                 # 파일명에서 확장자 추출
                 file_type = FileUtils.get_file_type(file_path).upper()
                 return {
-                    'file_path': os.path.dirname(relative_path),  # 디렉토리 경로만
+                    'file_path': relative_path,  # 전체 상대경로
                     'file_name': file_name,
                     'file_type': file_type,
                     'hash_value': '-',
@@ -224,9 +224,9 @@ class FileLoadingEngine:
             # 프로젝트 기준 상대경로
             relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
             
-            # 파일 정보 구성 (file_path는 디렉토리 경로만)
+            # 파일 정보 구성 (file_path는 전체 상대경로)
             return {
-                'file_path': os.path.dirname(relative_path),  # 디렉토리 경로만
+                'file_path': relative_path,  # 전체 상대경로
                 'file_name': file_info['file_name'],
                 'file_type': file_info['file_type'].upper(),  # 대문자로 변경
                 'hash_value': file_info['hash_value'],
@@ -242,11 +242,11 @@ class FileLoadingEngine:
             handle_error(e, f"파일 정보 수집 실패: {file_path}")
             try:
                 relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-                file_name = os.path.basename(file_path)
+                file_name = self.path_utils.get_path_components(file_path)['file_name']
                 # 파일명에서 확장자 추출
                 file_type = FileUtils.get_file_type(file_path).upper()
                 return {
-                    'file_path': os.path.dirname(relative_path),  # 디렉토리 경로만
+                    'file_path': relative_path,  # 전체 상대경로
                     'file_name': file_name,
                     'file_type': file_type,
                     'hash_value': '-',

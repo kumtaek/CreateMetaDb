@@ -616,11 +616,25 @@ class XmlParser:
         try:
             relationships = []
             implicit_patterns = analysis_patterns.get('implicit_joins', [])
+
+            # WHERE 절 추출
             where_match = re.search(r'\bWHERE\b(.*?)(?:\bGROUP\b|\bORDER\b|\bHAVING\b|$)', sql_content, re.IGNORECASE | re.DOTALL)
             if not where_match:
                 return relationships
             where_clause = where_match.group(1)
-            
+
+            # FROM 절에서 콤마로 구분된 테이블들도 IMPLICIT JOIN으로 처리 (기존 alias_map 업데이트만)
+            from_match = re.search(r'\bFROM\b([^WHERE^GROUP^ORDER^HAVING]+)', sql_content, re.IGNORECASE | re.DOTALL)
+            if from_match:
+                from_clause = from_match.group(1)
+                # 콤마로 구분된 테이블들 찾기
+                table_matches = re.findall(r'([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*)', from_clause)
+                for table_match in table_matches:
+                    table_name = table_match[0].upper()
+                    alias = table_match[1].upper()
+                    alias_map[alias] = table_name
+
+            # WHERE 절에서 조인 조건 분석
             for pattern in implicit_patterns:
                 matches = re.findall(pattern, where_clause, re.IGNORECASE)
                 for match in matches:
@@ -629,7 +643,10 @@ class XmlParser:
                             alias1, col1, alias2, col2 = match
                             table1 = alias_map.get(alias1.upper(), alias1.upper())
                             table2 = alias_map.get(alias2.upper(), alias2.upper())
-                            if table1 != table2:
+
+                            # 유효한 테이블명인지 확인 (컬럼명 필터링)
+                            if (table1 != table2 and table1 and table2 and
+                                self._is_valid_table_name(table1) and self._is_valid_table_name(table2)):
                                 join_type = "ORACLE_OUTER_JOIN" if "(+)" in str(match) else "IMPLICIT_JOIN"
                                 relationships.append({
                                     'source_table': table1,
@@ -638,6 +655,22 @@ class XmlParser:
                                     'join_type': join_type,
                                     'description': f"WHERE {alias1}.{col1} = {alias2}.{col2}"
                                 })
+                        elif len(match) == 2: # 단순한 경우
+                            alias1, alias2 = match
+                            table1 = alias_map.get(alias1.upper(), alias1.upper())
+                            table2 = alias_map.get(alias2.upper(), alias2.upper())
+
+                            # 유효한 테이블명인지 확인 (컬럼명 필터링)
+                            if (table1 != table2 and table1 and table2 and
+                                self._is_valid_table_name(table1) and self._is_valid_table_name(table2)):
+                                relationships.append({
+                                    'source_table': table1,
+                                    'target_table': table2,
+                                    'rel_type': 'JOIN_IMPLICIT',
+                                    'join_type': 'IMPLICIT_JOIN',
+                                    'description': f"Implicit JOIN: {table1} = {table2}"
+                                })
+
             return relationships
         except Exception as e:
             # exception은 handle_error()로 exit해야 에러 인지가 가능하다
@@ -922,39 +955,115 @@ class XmlParser:
 
     def _is_valid_table_name(self, table_name: str) -> bool:
         """
-        테이블명 유효성 검증 (별칭 오탐 방지)
-        
+        테이블명 유효성 검증 (별칭 및 컬럼명 오탐 방지)
+        실제 데이터베이스 스키마를 참조하여 검증
+
         Args:
             table_name: 검증할 테이블명
-            
+
         Returns:
             유효한 테이블명이면 True, 아니면 False
         """
         try:
             if not table_name:
                 return False
-            
+
             # 단일 문자 또는 2글자 이하 필터링 (별칭 가능성 높음)
             if len(table_name) <= 2:
                 return False
-            
+
             # 대문자로만 구성된 경우 (별칭 가능성 높음)
             if table_name.isupper() and len(table_name) <= 3:
                 return False
-            
+
             # 실제 테이블명 패턴 검증 (대문자, 언더스코어 포함)
             if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
                 return False
-            
+
             # 예약어 체크 (자주 사용되는 단일 문자 별칭)
             reserved_words = {'B', 'C', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z'}
             if table_name in reserved_words:
                 return False
-            
+
+            # 실제 데이터베이스에 존재하는 테이블인지 확인
+            if self._is_existing_table(table_name):
+                return True
+
+            # 실제 데이터베이스에 존재하는 컬럼명인지 확인
+            if self._is_existing_column(table_name):
+                return False
+
+            # 기본적인 컬럼명 패턴 확인 (_ID로 끝나는 경우)
+            if table_name.endswith('_ID'):
+                return False
+
+            # 단독 ID 패턴
+            if table_name == 'ID':
+                return False
+
+            # 그 외의 경우는 유효한 테이블명으로 간주
             return True
-            
+
         except Exception as e:
             handle_error(e, f"테이블명 유효성 검증 실패: {table_name}")
+
+    def _is_existing_table(self, table_name: str) -> bool:
+        """
+        실제 데이터베이스에 존재하는 테이블인지 확인
+
+        Args:
+            table_name: 확인할 테이블명
+
+        Returns:
+            존재하면 True, 아니면 False
+        """
+        try:
+            from util.database_utils import get_database_manager
+
+            db_manager = get_database_manager()
+            query = """
+                SELECT COUNT(*) FROM components c
+                JOIN tables t ON c.component_id = t.component_id
+                WHERE c.component_type = 'TABLE'
+                AND UPPER(c.component_name) = UPPER(?)
+                AND c.del_yn = 'N' AND t.del_yn = 'N'
+            """
+
+            result = db_manager.execute_query(query, (table_name,))
+            return result and len(result) > 0 and result[0][0] > 0
+
+        except Exception:
+            # 에러 발생시 False 반환 (보수적 접근)
+            return False
+
+    def _is_existing_column(self, column_name: str) -> bool:
+        """
+        실제 데이터베이스에 존재하는 컬럼명인지 확인
+
+        Args:
+            column_name: 확인할 컬럼명
+
+        Returns:
+            존재하면 True, 아니면 False
+        """
+        try:
+            from util.database_utils import get_database_manager
+
+            db_manager = get_database_manager()
+            query = """
+                SELECT COUNT(*) FROM components c
+                JOIN columns col ON c.component_id = col.component_id
+                WHERE c.component_type = 'COLUMN'
+                AND UPPER(c.component_name) = UPPER(?)
+                AND c.del_yn = 'N' AND col.del_yn = 'N'
+            """
+
+            result = db_manager.execute_query(query, (column_name,))
+            return result and len(result) > 0 and result[0][0] > 0
+
+        except Exception:
+            # 에러 발생시 False 반환 (보수적 접근)
+            return False
 
     def _resolve_table_alias(self, alias: str, alias_map: dict) -> str:
         """

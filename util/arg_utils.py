@@ -303,7 +303,7 @@ class ArgUtils:
             SQL Content 기능 활성화 여부 (True/False)
         """
         if self.args:
-            return getattr(self.args, 'sql_content', False)
+            return getattr(self.args, 'sql_content', True)
         return False
     
     def get_all_args(self) -> Dict[str, Any]:

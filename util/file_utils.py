@@ -291,23 +291,8 @@ class FileUtils:
             handle_error(e, f"디렉토리 생성 실패: {directory_path}")
             return False
     
-    @staticmethod
-    def get_relative_path(file_path: str, base_path: str) -> str:
-        """
-        기본 경로를 기준으로 한 상대 경로를 반환
-        
-        Args:
-            file_path: 파일 경로
-            base_path: 기준 경로
-            
-        Returns:
-            상대 경로
-        """
-        try:
-            return os.path.relpath(file_path, base_path)
-        except ValueError:
-            # 다른 드라이브에 있는 경우 절대 경로 반환
-            return file_path
+    # get_relative_path 함수는 PathUtils.get_relative_path()로 통합됨
+    # 중복 공통함수 제거 - PathUtils 사용 권장
     
     @staticmethod
     def cleanup_old_log_files(log_directory: str, hours_threshold: int = 24) -> int:
