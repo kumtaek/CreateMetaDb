@@ -779,3 +779,4 @@ if __name__ == '__main__':
         filter_options={'tables': ['USERS', 'PRODUCTS'], 'query_types': ['SELECT', 'INSERT']}
     )
     print(html[:500] + '...')
+

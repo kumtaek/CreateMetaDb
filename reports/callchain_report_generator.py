@@ -91,9 +91,9 @@ class CallChainReportGenerator:
             # Java 클래스 수
             query = """
                 SELECT COUNT(*) as count
-                FROM components c
+                FROM classes c
                 JOIN projects p ON c.project_id = p.project_id
-                WHERE p.project_name = ? AND c.component_type = 'CLASS' AND c.del_yn = 'N'
+                WHERE p.project_name = ? AND c.del_yn = 'N'
             """
             result = self.db_utils.execute_query(query, (self.project_name,))
             stats['java_classes'] = result[0]['count'] if result else 0
@@ -162,9 +162,9 @@ class CallChainReportGenerator:
             # JSP -> Method -> Class -> Method -> XML -> Query -> Table 연계 체인 조회
             query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY jsp_file.file_name, cls.component_name, m.component_name) as chain_id,
+                    ROW_NUMBER() OVER (ORDER BY jsp_file.file_name, cls.class_name, m.component_name) as chain_id,
                     jsp_file.file_name as jsp_file,
-                    cls.component_name as class_name,
+                    cls.class_name as class_name,
                     m.component_name as method_name,
                     xml_file.file_name as xml_file,
                     q.component_name as query_id,
@@ -173,7 +173,7 @@ class CallChainReportGenerator:
                 FROM files jsp_file
                 JOIN relationships r1 ON jsp_file.file_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
                 JOIN components m ON r1.dst_id = m.component_id AND m.component_type = 'METHOD'
-                JOIN components cls ON m.parent_id = cls.component_id AND cls.component_type = 'CLASS'
+                JOIN classes cls ON m.parent_id = cls.class_id
                 JOIN relationships r2 ON m.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
                 JOIN components q ON r2.dst_id = q.component_id AND q.component_type IN ('QUERY', 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE')
                 JOIN files xml_file ON q.file_id = xml_file.file_id
@@ -186,8 +186,8 @@ class CallChainReportGenerator:
                   AND m.del_yn = 'N'
                   AND cls.del_yn = 'N'
                   AND q.del_yn = 'N'
-                GROUP BY jsp_file.file_name, cls.component_name, m.component_name, xml_file.file_name, q.component_name, q.component_type
-                ORDER BY jsp_file.file_name, cls.component_name, m.component_name
+                GROUP BY jsp_file.file_name, cls.class_name, m.component_name, xml_file.file_name, q.component_name, q.component_type
+                ORDER BY jsp_file.file_name, cls.class_name, m.component_name
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
