@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from reports.architecture_templates import ArchitectureTemplates
+from reports.report_templates import ReportTemplates
 
 
 class ArchitectureReportGenerator:
@@ -31,7 +31,7 @@ class ArchitectureReportGenerator:
         self.project_name = project_name
         self.output_dir = output_dir
         self.path_utils = PathUtils()
-        self.templates = ArchitectureTemplates()
+        self.templates = ReportTemplates()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)

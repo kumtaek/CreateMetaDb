@@ -22,7 +22,7 @@ else:
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from reports.erd_templates import ERDTemplates
+from reports.report_templates import ReportTemplates
 
 
 class ERDReportGenerator:
@@ -39,7 +39,7 @@ class ERDReportGenerator:
         self.project_name = project_name
         self.output_dir = output_dir
         self.path_utils = PathUtils()
-        self.templates = ERDTemplates()
+        self.templates = ReportTemplates()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -206,7 +206,7 @@ class ERDReportGenerator:
             return {'tables': {}, 'relationships': [], 'mermaid_code': ''}
     
     def _get_relationships(self) -> List[Dict[str, Any]]:
-        """관계 정보 조회"""
+        """관계 정보 조회 - 실제 쿼리에서 분석된 JOIN 관계만 사용"""
         try:
             query = """
                 SELECT 
@@ -220,10 +220,11 @@ class ERDReportGenerator:
                 JOIN components dst_comp ON r.dst_id = dst_comp.component_id
                 JOIN tables src_table ON src_comp.component_id = src_table.component_id
                 JOIN tables dst_table ON dst_comp.component_id = dst_table.component_id
-                JOIN columns src_col ON src_table.table_id = src_col.table_id AND src_col.position_pk > 0
+                JOIN columns src_col ON src_table.table_id = src_col.table_id
                 JOIN columns dst_col ON dst_table.table_id = dst_col.table_id
                 JOIN projects p ON src_comp.project_id = p.project_id
                 WHERE p.project_name = ? 
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src_comp.del_yn = 'N'
                   AND dst_comp.del_yn = 'N'
@@ -281,11 +282,24 @@ class ERDReportGenerator:
                 
                 mermaid_lines.append("    }")
             
-            # 관계 정의
+            # 관계 정의 (중복 제거 및 수 제한)
+            seen_relationships = set()
+            relationship_count = 0
+            max_relationships = 50  # Mermaid ERD 렌더링 한계 고려
+            
             for rel in relationships:
+                if relationship_count >= max_relationships:
+                    break
+                    
                 src_table = rel['src_table'].replace(' ', '_').replace('-', '_')
                 dst_table = rel['dst_table'].replace(' ', '_').replace('-', '_')
                 rel_type = rel['rel_type']
+                
+                # 중복 관계 제거 (테이블 간 관계는 하나만 표시)
+                rel_key = f"{src_table}-{dst_table}" if src_table < dst_table else f"{dst_table}-{src_table}"
+                if rel_key in seen_relationships:
+                    continue
+                seen_relationships.add(rel_key)
                 
                 # 관계 유형별 Mermaid 문법 적용
                 if rel_type == 'FK':
@@ -297,6 +311,8 @@ class ERDReportGenerator:
                 else:
                     # 기타 관계 (기본)
                     mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : \"{rel['src_column']} -> {rel['dst_column']}\"")
+                
+                relationship_count += 1
             
             mermaid_code = '\n'.join(mermaid_lines)
             app_logger.debug("Mermaid ERD 코드 생성 완료")

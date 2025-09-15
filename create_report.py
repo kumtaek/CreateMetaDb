@@ -7,7 +7,6 @@ SourceAnalyzer 리포트 생성 메인 실행 파일
 
 import sys
 import argparse
-import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -19,8 +18,8 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from reports.callchain_report_generator import CallChainReportGenerator
 from reports.erd_report_generator import ERDReportGenerator
-from reports.erd_dagre_report_generator import ERDDagreReportGenerator
 from reports.architecture_report_generator import ArchitectureReportGenerator
+from reports.erd_dagre_report_generator import ERDDagreReportGenerator
 
 
 def parse_arguments():
@@ -33,7 +32,6 @@ def parse_arguments():
   python create_report.py --project-name sampleSrc
   python create_report.py --project-name sampleSrc --report-type callchain
   python create_report.py --project-name sampleSrc --report-type erd
-  python create_report.py --project-name sampleSrc --report-type erd-dagre
   python create_report.py --project-name sampleSrc --report-type architecture
         """
     )
@@ -102,35 +100,6 @@ def create_output_directory(project_name: str, path_utils: PathUtils, output_dir
         handle_error(e, f"출력 디렉토리 생성 실패: {output_path}")
 
 
-def copy_js_assets(output_dir: str) -> bool:
-    """JavaScript 자산 파일들을 출력 디렉토리에 복사"""
-    try:
-        # 소스 JavaScript 폴더 경로
-        source_js_dir = Path(__file__).parent / "reports" / "js"
-        
-        # 대상 JavaScript 폴더 경로
-        target_js_dir = Path(output_dir) / "js"
-        
-        # 대상 폴더 생성 (존재하지 않으면)
-        target_js_dir.mkdir(parents=True, exist_ok=True)
-        
-        # JavaScript 파일들 복사 (덮어쓰기)
-        if source_js_dir.exists():
-            for js_file in source_js_dir.glob("*.js"):
-                target_file = target_js_dir / js_file.name
-                shutil.copy2(js_file, target_file)
-            
-            app_logger.info(f"JavaScript 자산 파일 복사 완료: {target_js_dir}")
-            return True
-        else:
-            app_logger.warning(f"소스 JavaScript 폴더가 존재하지 않습니다: {source_js_dir}")
-            return False
-            
-    except Exception as e:
-        handle_error(e, f"JavaScript 자산 파일 복사 실패: {output_dir}")
-        return False
-
-
 def generate_callchain_report(project_name: str, output_dir: str) -> bool:
     """CallChain Report 생성"""
     try:
@@ -167,6 +136,8 @@ def generate_erd_report(project_name: str, output_dir: str) -> bool:
             
     except Exception as e:
         handle_error(e, "ERD Report 생성 중 오류 발생")
+
+
 
 
 def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
@@ -224,9 +195,6 @@ def main():
         
         # 출력 디렉토리 생성
         output_dir = create_output_directory(args.project_name, path_utils, args.output_dir)
-        
-        # JavaScript 자산 파일 복사
-        copy_js_assets(output_dir)
         
         # 리포트 생성
         success_count = 0

@@ -131,6 +131,7 @@ class ERDDagreTemplates:
             margin: 0; 
             height: 100%; 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2px;
         }
         .container {
             height: 100vh;
@@ -140,68 +141,77 @@ class ERDDagreTemplates:
         .header {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 20px;
+            padding: 4px;
             text-align: center;
         }
         .header h1 {
             margin: 0;
-            font-size: 2em;
+            font-size: 1.0em;
             font-weight: 300;
         }
         .header .subtitle {
-            margin: 10px 0 0 0;
+            margin: 1px 0 0 0;
             opacity: 0.8;
-            font-size: 1em;
+            font-size: 0.6em;
         }
         .stats {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            padding: 15px;
+            gap: 2px;
+            padding: 4px;
             background: #f8f9fa;
             flex-wrap: wrap;
         }
         .stat-card {
             background: white;
-            padding: 15px 20px;
-            border-radius: 8px;
+            padding: 3px;
+            border-radius: 3px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            min-width: 120px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            min-width: 60px;
         }
         .stat-number {
-            font-size: 1.8em;
+            font-size: 1.0em;
             font-weight: bold;
             color: #3498db;
-            margin-bottom: 5px;
+            margin-bottom: 1px;
         }
         .stat-label {
             color: #7f8c8d;
-            font-size: 0.9em;
+            font-size: 0.6em;
         }
         #toolbar { 
-            padding: 12px; 
+            padding: 4px; 
             border-bottom: 1px solid #ddd; 
             background: #f8f9fa;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 2px;
             flex-wrap: wrap;
         }
         #cy { 
             width: 100%; 
-            height: calc(100vh - 200px); 
+            height: calc(100vh - 120px); 
             flex: 1;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         button {
             background: #007bff;
             border: none;
             color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 4px 8px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.8em;
         }
         button:hover {
             background: #0056b3;
@@ -459,35 +469,50 @@ class ERDDagreTemplates:
                 animate: true,
                 animationDuration: 1000,
                 fit: true,
-                padding: 30,
+                padding: 50,  // 패딩 증가로 고아 엔티티 간격 확대
                 nodeDimensionsIncludeLabels: true,
                 uniformNodeDimensions: false,
-                packComponents: true,
+                packComponents: false,  // 컴포넌트 패킹 비활성화로 고아 엔티티 분산
                 step: 'all',
                 samplingType: false,
                 sampleSize: 25,
-                nodeSeparation: 75,
+                nodeSeparation: 200,  // 노드 간격 대폭 증가 (더 넓게)
                 piTol: 0.0000001,
-                nodeRepulsion: function( node ){ return 400000; },
-                idealEdgeLength: function( edge ){ return 10; },
-                edgeElasticity: function( edge ){ return 100; },
+                nodeRepulsion: function( node ){ 
+                    // 고아 노드(연결이 적은 노드)에 더 강한 반발력 적용
+                    const degree = node.degree();
+                    return degree < 2 ? 400000 : 200000;  // 고아 노드에 2배 반발력
+                },
+                idealEdgeLength: function( edge ){ 
+                    // 관계선 길이를 동적으로 조정
+                    const sourceDegree = edge.source().degree();
+                    const targetDegree = edge.target().degree();
+                    const avgDegree = (sourceDegree + targetDegree) / 2;
+                    return avgDegree > 5 ? 120 : 100;  // 연결이 많은 노드는 더 긴 거리
+                },
+                edgeElasticity: function( edge ){ 
+                    // 관계선 탄성도 동적 조정
+                    const sourceDegree = edge.source().degree();
+                    const targetDegree = edge.target().degree();
+                    return Math.max(30, 100 - (sourceDegree + targetDegree) * 5);  // 연결이 많을수록 탄성도 감소
+                },
                 nestingFactor: 0.1,
-                gravity: 0.25,
-                numIter: 2500,
+                gravity: 0.15,  // 중력 감소로 고아 엔티티가 더 분산되도록
+                numIter: 3000,  // 반복 횟수 증가로 더 나은 배치
                 tile: true,
-                tilingPaddingVertical: 10,
-                tilingPaddingHorizontal: 10,
+                tilingPaddingVertical: 20,  // 타일링 패딩 증가
+                tilingPaddingHorizontal: 20,
                 gravityRangeCompound: 1.5,
                 gravityCompound: 1.0,
-                gravityRange: 3.8,
+                gravityRange: 4.5,  // 중력 범위 증가
                 initialEnergyOnIncremental: 0.3
             },
             dagre: {
                 name: 'dagre',
                 rankDir: 'TB',
-                rankSep: 100,
-                nodeSep: 50,
-                edgeSep: 10,
+                rankSep: 200,  // 랭크 간격 대폭 증가
+                nodeSep: 120,  // 노드 간격 대폭 증가
+                edgeSep: 30,   // 엣지 간격 증가
                 ranker: 'tight-tree'
             }
         };
@@ -497,11 +522,16 @@ class ERDDagreTemplates:
             cy = cytoscape({
                 container: document.getElementById('cy'),
                 elements: DATA,
+                minZoom: 0.1,
+                maxZoom: 3,
+                wheelSensitivity: 0.1,  // 휠 줌 감도 줄이기
                 style: [
                     {
                         selector: 'node',
                         style: {
-                            'background-color': '#3498db',
+                            'background-color': '#1e3a8a',  // 남색으로 변경
+                            'background-gradient-stop-colors': '#1e3a8a #1e40af #1d4ed8',
+                            'background-gradient-direction': 'to-bottom-right',
                             'label': 'data(label)',
                             'text-valign': 'center',
                             'text-halign': 'center',
@@ -509,33 +539,52 @@ class ERDDagreTemplates:
                             'font-size': '12px',
                             'font-weight': 'bold',
                             'text-outline-width': 2,
-                            'text-outline-color': '#2c3e50',
+                            'text-outline-color': '#1e40af',
                             'width': '120px',
                             'height': '60px',
-                            'border-width': 2,
-                            'border-color': '#2c3e50',
-                            'border-style': 'solid'
+                            'border-width': 3,
+                            'border-color': '#1e40af',
+                            'border-style': 'solid',
+                            'border-opacity': 0.8,
+                            'overlay-opacity': 0,
+                            'transition-property': 'background-color, border-color',
+                            'transition-duration': '0.3s',
+                            'transition-timing-function': 'ease-in-out'
                         }
                     },
                     {
                         selector: 'node[type="table"]',
                         style: {
-                            'background-color': '#e74c3c',
-                            'shape': 'roundrectangle'
+                            'background-color': '#1e3a8a',  // 남색으로 변경
+                            'background-gradient-stop-colors': '#1e3a8a #1e40af #1d4ed8',
+                            'background-gradient-direction': 'to-bottom-right',
+                            'shape': 'roundrectangle',
+                            'border-width': 3,
+                            'border-color': '#1e40af',
+                            'border-opacity': 0.8,
+                            'transition-property': 'background-color, border-color',
+                            'transition-duration': '0.3s',
+                            'transition-timing-function': 'ease-in-out'
                         }
                     },
                     {
                         selector: 'edge',
                         style: {
-                            'width': 2,
+                            'width': 3,
                             'line-color': '#7f8c8d',
                             'target-arrow-color': '#7f8c8d',
                             'target-arrow-shape': 'triangle',
-                            'curve-style': 'bezier',
+                            'target-arrow-size': 8,
+                            'curve-style': 'straight',  // 깔끔한 직선 스타일
                             'label': 'data(label)',
                             'font-size': '10px',
                             'text-rotation': 'autorotate',
-                            'text-margin-y': -10
+                            'text-margin-y': -10,
+                            'line-opacity': 0.8,
+                            'overlay-opacity': 0,
+                            'transition-property': 'line-color, target-arrow-color, width',
+                            'transition-duration': '0.3s',
+                            'transition-timing-function': 'ease-in-out'
                         }
                     },
                     {
@@ -576,6 +625,41 @@ class ERDDagreTemplates:
             
             // 이벤트 리스너 등록
             setupEventListeners();
+            
+            // 노드 간격 최적화로 관계선 겹침 방지
+            optimizeNodeSpacing();
+        }
+        
+        // 노드 간격을 더 넓게 하여 관계선 겹침 방지
+        function optimizeNodeSpacing() {
+            const nodes = cy.nodes();
+            const edges = cy.edges();
+            
+            // 고아 노드들(연결이 적은 노드)을 더 넓게 분산
+            nodes.forEach(node => {
+                const degree = node.degree();
+                if (degree <= 1) {
+                    // 고아 노드의 경우 더 큰 크기로 설정
+                    node.style({
+                        'width': '140px',
+                        'height': '80px'
+                    });
+                }
+            });
+            
+            // 엣지 라벨 위치 최적화
+            edges.forEach(edge => {
+                const sourcePos = edge.source().position();
+                const targetPos = edge.target().position();
+                const midX = (sourcePos.x + targetPos.x) / 2;
+                const midY = (sourcePos.y + targetPos.y) / 2;
+                
+                // 라벨을 엣지 중앙에서 약간 오프셋
+                edge.style({
+                    'text-margin-y': -15,
+                    'text-margin-x': 10
+                });
+            });
         }
         
         // 이벤트 리스너 설정
@@ -609,6 +693,14 @@ class ERDDagreTemplates:
                 clearTimeout(tooltipTimeout);
                 hideEdgeTooltip();
                 
+                // 호버 효과: 그림자 강화 및 크기 증가
+                node.style({
+                    'width': '130px',
+                    'height': '70px',
+                    'border-width': 4,
+                    'border-color': '#3b82f6'
+                });
+                
                 tooltipTimeout = setTimeout(() => {
                     const renderedPosition = event.renderedPosition;
                     showTooltip(node, renderedPosition.x, renderedPosition.y);
@@ -616,7 +708,17 @@ class ERDDagreTemplates:
             });
             
             cy.on('mouseout', 'node', function(event) {
+                const node = event.target;
                 clearTimeout(tooltipTimeout);
+                
+                // 호버 효과 복원: 원래 스타일로 되돌리기
+                node.style({
+                    'width': '120px',
+                    'height': '60px',
+                    'border-width': 3,
+                    'border-color': '#1e40af'
+                });
+                
                 setTimeout(() => {
                     if (!isTooltipVisible) return;
                     hideTooltip();
@@ -629,6 +731,13 @@ class ERDDagreTemplates:
                 clearTimeout(edgeTooltipTimeout);
                 hideTooltip();
                 
+                // 엣지 호버 효과: 두께 증가 및 그림자 강화
+                edge.style({
+                    'width': 5,
+                    'line-color': '#4a5568',
+                    'target-arrow-color': '#4a5568'
+                });
+                
                 edgeTooltipTimeout = setTimeout(() => {
                     const renderedPosition = event.renderedPosition;
                     showEdgeTooltip(edge, renderedPosition.x, renderedPosition.y);
@@ -636,7 +745,16 @@ class ERDDagreTemplates:
             });
             
             cy.on('mouseout', 'edge', function(event) {
+                const edge = event.target;
                 clearTimeout(edgeTooltipTimeout);
+                
+                // 엣지 호버 효과 복원: 원래 스타일로 되돌리기
+                edge.style({
+                    'width': 3,
+                    'line-color': '#7f8c8d',
+                    'target-arrow-color': '#7f8c8d'
+                });
+                
                 setTimeout(() => {
                     if (!isEdgeTooltipVisible) return;
                     hideEdgeTooltip();
@@ -696,7 +814,7 @@ class ERDDagreTemplates:
             });
             
             tooltip.style.left = Math.min(x + 10, window.innerWidth - 420) + 'px';
-            tooltip.style.top = Math.max(y - 10, 10) + 'px';
+            tooltip.style.top = Math.min(y + 20, window.innerHeight - 300) + 'px';  // 아래쪽으로 변경
             tooltip.style.display = 'block';
             isTooltipVisible = true;
         }
@@ -738,7 +856,7 @@ class ERDDagreTemplates:
                 `빈도: ${meta.frequency}회`;
             
             edgeTooltip.style.left = Math.min(x + 10, window.innerWidth - 390) + 'px';
-            edgeTooltip.style.top = Math.max(y - 10, 10) + 'px';
+            edgeTooltip.style.top = Math.min(y + 20, window.innerHeight - 200) + 'px';  // 아래쪽으로 변경
             edgeTooltip.style.display = 'block';
             isEdgeTooltipVisible = true;
         }
@@ -758,7 +876,12 @@ class ERDDagreTemplates:
         function toggleLayout() {
             currentLayout = currentLayout === 'fcose' ? 'dagre' : 'fcose';
             document.getElementById('current-layout').textContent = currentLayout;
-            resetView();
+            
+            // 레이아웃 변경 후 노드 간격 최적화 재적용
+            cy.layout(layoutOptions[currentLayout]).run().promiseOn('layoutstop').then(() => {
+                optimizeNodeSpacing();
+                resetView();
+            });
         }
         
         function exportPng() {
@@ -775,20 +898,33 @@ class ERDDagreTemplates:
         }
         
         function exportSvg() {
-            const svg = cy.svg({
-                full: true,
-                bg: 'white'
-            });
-            
-            const blob = new Blob([svg], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
-            link.href = url;
-            link.click();
-            
-            URL.revokeObjectURL(url);
+            try {
+                // Cytoscape.js 컨테이너에서 SVG 요소 직접 추출
+                const container = document.getElementById('cy');
+                const svgElement = container.querySelector('svg');
+                
+                if (!svgElement) {
+                    throw new Error('SVG 요소를 찾을 수 없습니다.');
+                }
+                
+                // SVG 내용을 문자열로 변환
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                // 다운로드 링크 생성
+                const link = document.createElement('a');
+                link.href = svgUrl;
+                link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(svgUrl);
+                
+            } catch (error) {
+                console.error('SVG 내보내기 오류:', error);
+                alert('SVG 내보내기 중 오류가 발생했습니다: ' + error.message);
+            }
         }
         
         // 페이지 로드 시 초기화

@@ -304,14 +304,13 @@ class ERDDagreReportGenerator:
                 pk_columns = [col for col in table_info['columns'] if col['is_primary_key']]
                 pk_column_names = [col['column_name'] for col in pk_columns]
                 
-                # 노드 데이터 생성
+                # 노드 데이터 생성 (owner 제거)
                 node_data = {
                     'data': {
-                        'id': f"table:{table_info['table_owner']}.{table_name}",
+                        'id': f"table:{table_name}",
                         'type': 'table',
-                        'label': f"{table_info['table_owner']}.{table_name}",
+                        'label': table_name,
                         'meta': {
-                            'owner': table_info['table_owner'],
                             'table_name': table_name,
                             'status': 'VALID',
                             'pk_columns': pk_column_names,
@@ -351,9 +350,9 @@ class ERDDagreReportGenerator:
             edges = []
             
             for rel in relationships_data:
-                # 소스와 타겟 노드 ID 생성
-                src_id = f"table:{rel['src_owner']}.{rel['src_table']}"
-                dst_id = f"table:{rel['dst_owner']}.{rel['dst_table']}"
+                # 소스와 타겟 노드 ID 생성 (owner 제거)
+                src_id = f"table:{rel['src_table']}"
+                dst_id = f"table:{rel['dst_table']}"
                 
                 # 엣지 데이터 생성
                 edge_data = {
@@ -368,9 +367,7 @@ class ERDDagreReportGenerator:
                             'confidence': rel['confidence'],
                             'frequency': rel['frequency'],
                             'src_table': rel['src_table'],
-                            'src_owner': rel['src_owner'],
                             'dst_table': rel['dst_table'],
-                            'dst_owner': rel['dst_owner'],
                             'src_column': rel['src_column'],
                             'dst_column': rel['dst_column'],
                             'src_data_type': rel['src_data_type'],

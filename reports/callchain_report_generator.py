@@ -17,7 +17,7 @@ from typing import List, Dict, Any, Optional
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from reports.callchain_templates import CallChainTemplates
+from reports.report_templates import ReportTemplates
 
 
 class CallChainReportGenerator:
@@ -34,7 +34,7 @@ class CallChainReportGenerator:
         self.project_name = project_name
         self.output_dir = output_dir
         self.path_utils = PathUtils()
-        self.templates = CallChainTemplates()
+        self.templates = ReportTemplates()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -143,6 +143,16 @@ class CallChainReportGenerator:
             result = self.db_utils.execute_query(query, (self.project_name,))
             stats['join_relations'] = result[0]['count'] if result else 0
             
+            # API ENTRY 수
+            query = """
+                SELECT COUNT(*) as count
+                FROM components c
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? AND c.component_type = 'API_ENTRY' AND c.del_yn = 'N'
+            """
+            result = self.db_utils.execute_query(query, (self.project_name,))
+            stats['api_entries'] = result[0]['count'] if result else 0
+            
             app_logger.debug(f"통계 정보 조회 완료: {stats}")
             return stats
             
@@ -151,13 +161,15 @@ class CallChainReportGenerator:
             return {}
     
     def _get_call_chain_data(self) -> List[Dict[str, Any]]:
-        """연계 체인 데이터 조회 (JSP 연계 경로 포함, SqlContent.db 연동)"""
+        """연계 체인 데이터 조회 (API_ENTRY 포함, JSP 제외, SqlContent.db 연동)"""
         try:
-            # Method -> Class -> Method -> XML -> Query -> Table 연계 체인 조회
-            query = """
+            # 기존 Method -> Class -> Method -> XML -> Query -> Table 연계 체인
+            method_chain_query = """
                 SELECT 
                     ROW_NUMBER() OVER (ORDER BY src_m.component_name, cls.class_name, dst_m.component_name) as chain_id,
                     '' as jsp_file,
+                    '' as api_entry,
+                    '' as virtual_endpoint,
                     cls.class_name as class_name,
                     src_m.component_name as method_name,
                     xml_file.file_name as xml_file,
@@ -169,9 +181,9 @@ class CallChainReportGenerator:
                 JOIN relationships r1 ON src_m.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
                 JOIN components dst_m ON r1.dst_id = dst_m.component_id AND dst_m.component_type = 'METHOD'
                 JOIN relationships r2 ON dst_m.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
-                JOIN components q ON r2.dst_id = q.component_id AND q.component_type IN ('QUERY', 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE')
+                JOIN components q ON r2.dst_id = q.component_id AND q.component_type = 'QUERY'
                 JOIN files xml_file ON q.file_id = xml_file.file_id
-                LEFT JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'QUERY_TABLE'
+                LEFT JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
                 LEFT JOIN tables t ON r3.dst_id = t.component_id
                 JOIN projects p ON src_m.project_id = p.project_id
                 WHERE p.project_name = ? 
@@ -181,10 +193,81 @@ class CallChainReportGenerator:
                   AND dst_m.del_yn = 'N'
                   AND q.del_yn = 'N'
                 GROUP BY src_m.component_name, cls.class_name, dst_m.component_name, xml_file.file_name, q.component_name, q.component_type
-                ORDER BY src_m.component_name, cls.class_name, dst_m.component_name
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name,))
+            # SQL_% 타입 쿼리 체인 (USE_TABLE 관계를 통해)
+            sql_chain_query = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY q.component_name) as chain_id,
+                    '' as jsp_file,
+                    '' as api_entry,
+                    '' as virtual_endpoint,
+                    f.file_name as class_name,
+                    q.component_name as method_name,
+                    f.file_name as xml_file,
+                    q.component_name as query_id,
+                    q.component_type as query_type,
+                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                FROM components q
+                JOIN files f ON q.file_id = f.file_id
+                JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
+                JOIN tables t ON r3.dst_id = t.component_id
+                JOIN projects p ON q.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND q.component_type LIKE 'SQL_%'
+                  AND q.del_yn = 'N'
+                  AND f.del_yn = 'N'
+                GROUP BY q.component_name, f.file_name, q.component_type
+            """
+            
+            # FRONTEND_API -> API_ENTRY -> Method -> Query -> Table 체인
+            api_chain_query = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name, m.component_name) as chain_id,
+                    '' as jsp_file,
+                    api.component_name as api_entry,
+                    frontend.component_name as virtual_endpoint,
+                    f.file_name as class_name,
+                    m.component_name as method_name,
+                    xml_file.file_name as xml_file,
+                    q.component_name as query_id,
+                    q.component_type as query_type,
+                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                FROM components frontend
+                JOIN relationships r1 ON frontend.component_id = r1.src_id AND r1.rel_type = 'CALL_API_F2B'
+                JOIN components api ON r1.dst_id = api.component_id
+                JOIN files f ON api.file_id = f.file_id
+                JOIN components m ON m.file_id = f.file_id AND m.component_type = 'METHOD'
+                JOIN relationships r2 ON m.component_id = r2.src_id AND r2.rel_type = 'CALL_METHOD'
+                JOIN components target_m ON r2.dst_id = target_m.component_id AND target_m.component_type = 'METHOD'
+                JOIN relationships r3 ON target_m.component_id = r3.src_id AND r3.rel_type = 'CALL_QUERY'
+                JOIN components q ON r3.dst_id = q.component_id AND (q.component_type = 'QUERY' OR q.component_type LIKE 'SQL_%')
+                JOIN files xml_file ON q.file_id = xml_file.file_id
+                LEFT JOIN relationships r4 ON q.component_id = r4.src_id AND r4.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r4.dst_id = t.component_id
+                JOIN projects p ON frontend.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND frontend.component_type = 'FRONTEND_API'
+                  AND api.component_type = 'API_ENTRY'
+                  AND frontend.del_yn = 'N'
+                  AND api.del_yn = 'N'
+                  AND m.del_yn = 'N'
+                  AND target_m.del_yn = 'N'
+                  AND q.del_yn = 'N'
+                GROUP BY frontend.component_name, api.component_name, m.component_name, target_m.component_name, xml_file.file_name, q.component_name, q.component_type
+            """
+            
+            # 세 쿼리를 UNION으로 결합
+            query = f"""
+                {method_chain_query}
+                UNION ALL
+                {sql_chain_query}
+                UNION ALL
+                {api_chain_query}
+                ORDER BY method_name, class_name
+            """
+            
+            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name))
             
             # SqlContent.db에서 정제된 SQL 내용 조회
             sql_content_map = self._get_sql_contents()
@@ -195,15 +278,33 @@ class CallChainReportGenerator:
                 query_id = row['query_id']
                 sql_content = sql_content_map.get(query_id, '')
                 
+                # 쿼리 타입 변환
+                query_type = self._convert_query_type(row['query_type'])
+                
+                # 관련 테이블 별도 조회
+                related_tables = self._get_related_tables_for_query(query_id)
+                
+                # API_ENTRY 접두사 제거
+                api_entry = row.get('api_entry', '')
+                if api_entry.startswith('API_ENTRY.'):
+                    api_entry = api_entry[10:]  # 'API_ENTRY.' 제거
+                
+                # 메서드명에서도 API_ENTRY 접두사 제거
+                method_name = row['method_name']
+                if method_name.startswith('API_ENTRY.'):
+                    method_name = method_name[10:]  # 'API_ENTRY.' 제거
+                
                 chain_data.append({
                     'chain_id': row['chain_id'],
                     'jsp_file': row['jsp_file'],
+                    'api_entry': api_entry,
+                    'virtual_endpoint': row.get('virtual_endpoint', ''),
                     'class_name': row['class_name'],
-                    'method_name': row['method_name'],
+                    'method_name': method_name,
                     'xml_file': row['xml_file'],
                     'query_id': query_id,
-                    'query_type': row['query_type'],
-                    'related_tables': row['related_tables'] or '',
+                    'query_type': query_type,
+                    'related_tables': related_tables,
                     'sql_content': sql_content  # 정제된 SQL 내용 추가
                 })
             
@@ -213,6 +314,32 @@ class CallChainReportGenerator:
         except Exception as e:
             handle_error(e, "연계 체인 데이터 조회 실패")
             return []
+    
+    def _get_related_tables_for_query(self, query_id: str) -> str:
+        """특정 쿼리의 관련 테이블 조회"""
+        try:
+            query = """
+                SELECT GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                FROM components q
+                LEFT JOIN relationships r ON q.component_id = r.src_id AND r.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r.dst_id = t.component_id
+                WHERE q.component_name = ? AND q.del_yn = 'N'
+            """
+            
+            result = self.db_utils.execute_query(query, (query_id,))
+            if result and result[0]['related_tables']:
+                return result[0]['related_tables']
+            return ''
+            
+        except Exception as e:
+            app_logger.warning(f"관련 테이블 조회 실패: {query_id}, {e}")
+            return ''
+    
+    def _convert_query_type(self, component_type: str) -> str:
+        """컴포넌트 타입을 쿼리 타입으로 변환 (SQL_ 뒤의 부분 사용)"""
+        if component_type.startswith('SQL_'):
+            return component_type[4:]  # SQL_ 제거하고 뒤의 부분만 반환
+        return component_type
     
     def _get_sql_contents(self) -> Dict[str, str]:
         """SqlContent.db에서 정제된 SQL 내용 조회 및 압축 해제 (크로스플랫폼 지원)"""
