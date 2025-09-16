@@ -530,8 +530,8 @@ class ERDDagreTemplates:
                 container: document.getElementById('cy'),
                 elements: DATA,
                 minZoom: 0.1,
-                maxZoom: 3
-                // wheelSensitivity 제거 - 기본값 사용으로 경고 해결
+                maxZoom: 3,
+                wheelSensitivity: 0.3  // 마우스 휠 줌 민감도를 0.3으로 설정 (기본값 1.0보다 둔감)
                 style: [
                     {
                         selector: 'node',

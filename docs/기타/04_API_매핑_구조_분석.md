@@ -6,25 +6,21 @@ CallChain 리포트에서 **단순화된 API 호출 구조**를 분석합니다.
 
 ## 단순화된 API 호출 구조
 
-### **기존 vs 개선**
+### **핵심 개념**
 
-| 구분 | 기존 (복잡) | 개선 (단순) | 설명 |
-|------|-------------|-------------|------|
-| **구조** | FRONTEND_API + API_ENTRY | API_CALL | 단일 컴포넌트로 통합 |
-| **테이블** | api_components 테이블 | components 테이블 | 기존 테이블 활용 |
-| **관계** | CALL_API_F2B + CALL_API_BE | CALL_API | 단일 관계로 통합 |
-| **분석** | 3단계 복잡한 분석 | 1단계 단순한 정리 | 기존 결과 활용 |
+| 구분 | 설명 | 예시 |
+|------|------|------|
+| **프론트엔드 API 호출 = 백엔드 API 진입점** | 동일한 URL이므로 중복 저장 불필요 | /api/user-profile |
+| **file_id로 프론트 파일 연결** | JSP/JSX 파일에서 호출하는 API임을 명시 | JSP 파일 ID |
+| **component_name에 모든 정보 포함** | URL:HTTP_METHOD 형태로 고유 식별 | /api/user-profile:GET |
 
-### **API_CALL 컴포넌트 구조**
+### **API_URL 컴포넌트 구조**
 
 | 컬럼명 | 설명 | 예시 |
 |--------|------|------|
-| component_type | API_CALL | API_CALL |
-| component_name | 컨트롤러명 | MicroserviceController |
-| api_url | API URL | /api/user-profile |
-| call_method | HTTP 메서드 | GET |
-| class_name | 클래스명 | MicroserviceController |
-| method_name | 메서드명 | getUserProfile |
+| component_type | API_URL | API_URL |
+| component_name | API URL과 HTTP 메서드 조합 | /api/user-profile:GET |
+| file_id | JSP/JSX 파일 ID | 201 (프론트엔드 파일) |
 
 ## 실제 사례 분석
 
@@ -43,20 +39,19 @@ public class MicroserviceController {
 }
 ```
 
-**API_CALL 컴포넌트**:
+**API_URL 컴포넌트**:
 ```sql
 INSERT INTO components VALUES (
-    1001, 1, 201, 'MicroserviceController', 'API_CALL', 
-    NULL, 'CONTROLLER', 19, 26, 'N', NULL, 'hash123', 
-    '2024-01-01', '2024-01-01', 'N',
-    '/api/user-profile', 'GET', 'MicroserviceController', 'getUserProfile'
+    1001, 1, 201, '/api/user-profile:GET', 'API_URL', 
+    NULL, 'FRONTEND', NULL, NULL, 'N', NULL, 'hash123', 
+    '2024-01-01', '2024-01-01', 'N'
 );
 ```
 
 **관계**:
 ```sql
 INSERT INTO relationships VALUES (
-    1001, 2001, 'CALL_API', 1.0, 'N', NULL, 'hash_rel1', 
+    1001, 2001, 'CALL_METHOD', 1.0, 'N', NULL, 'hash_rel1', 
     '2024-01-01', '2024-01-01', 'N'
 );
 ```
@@ -147,7 +142,7 @@ INSERT INTO components VALUES (
 
 ```mermaid
 graph TD
-    A[JSP/JSX 파일] --> B[API_CALL 컴포넌트]
+    A[JSP/JSX 파일] --> B[API_URL 컴포넌트]
     B --> C[METHOD 컴포넌트]
     C --> D[SQL_* 컴포넌트]
     D --> E[TABLE 컴포넌트]
@@ -162,38 +157,37 @@ graph TD
 ### **실제 예시**
 
 ```
-MicroserviceDashboard.jsp → API_CALL(/api/user-profile) → METHOD(getUserProfile) → SQL_SELECT → TABLE(USERS)
+MicroserviceDashboard.jsp → API_URL(/api/user-profile:GET) → METHOD(getUserProfile) → SQL_SELECT → TABLE(USERS)
 ```
 
 ## 주요 개선사항
 
 ### 1. 단순화된 구조
-- **기존**: FRONTEND_API + API_ENTRY (복잡한 2단계)
-- **개선**: API_CALL (단순한 1단계)
+- **중복 제거**: 프론트엔드 API 호출 = 백엔드 API 진입점 (동일한 URL)
+- **단일 컴포넌트**: API_URL 하나로 프론트엔드와 백엔드 연결
+- **명확한 연결**: file_id로 프론트엔드 파일과 API_URL 연결
 
-### 2. 효율적인 처리
-- **기존**: 중복 분석 (같은 URL을 여러 번 분석)
-- **개선**: 기존 결과 활용 (4단계 결과를 API_CALL로 변환)
+### 2. 3가지 핵심 관계
+- **CALL_METHOD**: 컴포넌트 → METHOD (API_URL → METHOD, METHOD → METHOD)
+- **CALL_QUERY**: METHOD → SQL (메서드 → 쿼리)
+- **USE_TABLE**: SQL → TABLE (쿼리 → 테이블)
 
-### 3. 명확한 관계
-- **기존**: CALL_API_F2B + CALL_API_BE (복잡한 2단계 관계)
-- **개선**: CALL_API (단순한 1단계 관계)
-
-### 4. 통합된 관리
-- **기존**: api_components 테이블 (별도 테이블)
-- **개선**: components 테이블 (기존 테이블 활용)
+### 3. 직관적인 호출 체인
+```
+JSP 파일 → API_URL → METHOD → SQL → TABLE
+```
 
 ## 데이터베이스 구조
 
-### **components 테이블 (API_CALL 타입)**
+### **components 테이블 (API_URL 타입)**
 
-| component_id | component_name | component_type | api_url | call_method | class_name | method_name |
-|-------------|----------------|----------------|---------|-------------|------------|-------------|
-| 1001 | MicroserviceController | API_CALL | /api/user-profile | GET | MicroserviceController | getUserProfile |
-| 1002 | UserManagementController | API_CALL | /api/user-management/users | GET | UserManagementController | getUsers |
-| 1003 | UserManagementController | API_CALL | /api/user-management/users | POST | UserManagementController | createUser |
-| 1004 | ProxyController | API_CALL | /api/users | GET | ProxyController | getUsers |
-| 1005 | ProxyController | API_CALL | /api/payment | POST | ProxyController | processPayment |
+| component_id | component_name | component_type | file_id |
+|-------------|----------------|----------------|---------|
+| 1001 | /api/user-profile:GET | API_URL | 201 (JSP 파일) |
+| 1002 | /api/user-management/users:GET | API_URL | 201 (JSP 파일) |
+| 1003 | /api/user-management/users:POST | API_URL | 201 (JSP 파일) |
+| 1004 | /api/users:GET | API_URL | 201 (JSP 파일) |
+| 1005 | /api/payment:POST | API_URL | 201 (JSP 파일) |
 
 ### **relationships 테이블**
 
