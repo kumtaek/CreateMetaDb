@@ -223,7 +223,7 @@ class CallChainReportGenerator:
             # FRONTEND_API -> API_ENTRY -> Method -> Query -> Table 체인
             api_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend.component_name, api.component_name, m.component_name) as chain_id,
+                    0 as chain_id,
                     '' as jsp_file,
                     api.component_name as api_entry,
                     frontend.component_name as virtual_endpoint,
@@ -232,7 +232,7 @@ class CallChainReportGenerator:
                     xml_file.file_name as xml_file,
                     q.component_name as query_id,
                     q.component_type as query_type,
-                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                    '' as related_tables
                 FROM components frontend
                 JOIN relationships r1 ON frontend.component_id = r1.src_id AND r1.rel_type = 'CALL_API_F2B'
                 JOIN components api ON r1.dst_id = api.component_id
@@ -242,8 +242,6 @@ class CallChainReportGenerator:
                 JOIN relationships r3 ON m.component_id = r3.src_id AND r3.rel_type = 'CALL_QUERY'
                 JOIN components q ON r3.dst_id = q.component_id AND (q.component_type = 'QUERY' OR q.component_type LIKE 'SQL_%')
                 JOIN files xml_file ON q.file_id = xml_file.file_id
-                LEFT JOIN relationships r4 ON q.component_id = r4.src_id AND r4.rel_type = 'USE_TABLE'
-                LEFT JOIN tables t ON r4.dst_id = t.component_id
                 JOIN projects p ON frontend.project_id = p.project_id
                 WHERE p.project_name = ? 
                   AND frontend.component_type = 'FRONTEND_API'
@@ -252,17 +250,16 @@ class CallChainReportGenerator:
                   AND api.del_yn = 'N'
                   AND m.del_yn = 'N'
                   AND q.del_yn = 'N'
-                GROUP BY frontend.component_name, api.component_name, m.component_name, xml_file.file_name, q.component_name, q.component_type
             """
             
             # 세 쿼리를 UNION으로 결합
             query = f"""
+                {api_chain_query}
+                UNION ALL
                 {method_chain_query}
                 UNION ALL
                 {sql_chain_query}
-                UNION ALL
-                {api_chain_query}
-                ORDER BY method_name, class_name
+                ORDER BY api_entry DESC, method_name, class_name
             """
             
             results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name))
