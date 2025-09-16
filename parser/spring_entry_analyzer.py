@@ -45,8 +45,7 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             app_logger.debug("Spring 분석기 정규식 패턴 컴파일 완료")
             
         except Exception as e:
-            app_logger.warning(f"정규식 패턴 컴파일 실패, 기본 패턴 사용: {str(e)}")
-            self._set_default_regex_patterns()
+            handle_error(e, "정규식 패턴 컴파일 실패")
     
     def _set_default_regex_patterns(self) -> None:
         """기본 정규식 패턴 설정"""

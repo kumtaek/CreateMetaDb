@@ -11,13 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
-# 크로스플랫폼 경로 처리
-if sys.platform.startswith('win'):
-    import ntpath
-    path_module = ntpath
-else:
-    import posixpath
-    path_module = posixpath
+# 크로스플랫폼 경로 처리는 PathUtils 공통함수 사용
 
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
@@ -69,6 +63,9 @@ class ERDDagreReportGenerator:
             
             # 4. 파일 저장
             output_file = self._save_report(html_content)
+            
+            # 5. js 폴더 복사
+            self._copy_js_folder()
             
             app_logger.info(f"ERD(Dagre) Report 생성 완료: {output_file}")
             return True
@@ -280,6 +277,17 @@ class ERDDagreReportGenerator:
                         row['dst_table'], dst_column
                     )
                     
+                    # PK-FK 관계 여부 확인
+                    is_pk_fk_relation = self._is_pk_fk_relation(
+                        row['src_table'], src_column, 
+                        row['dst_table'], dst_column
+                    )
+                    
+                    # 관계 불명확한 경우 필터링 (PK-FK 관계가 아니고 신뢰도가 낮은 경우)
+                    if not is_pk_fk_relation and (row['confidence'] or 0.8) < 0.7:
+                        app_logger.debug(f"관계 불명확하여 제외: {row['src_table']}.{src_column} -> {row['dst_table']}.{dst_column} (신뢰도: {row['confidence'] or 0.8})")
+                        continue
+                    
                     relationships.append({
                         'rel_type': row['rel_type'],
                         'confidence': row['confidence'] or 0.8,
@@ -293,15 +301,15 @@ class ERDDagreReportGenerator:
                         'src_data_type': src_data_type,
                         'dst_data_type': dst_data_type,
                         'join_condition': row['condition_expression'],
-                        'rel_comment': ''
+                        'rel_comment': '',
+                        'is_pk_fk': is_pk_fk_relation
                     })
             
             app_logger.debug(f"관계 정보 조회 완료: {len(relationships)}개")
             return relationships
             
         except Exception as e:
-            app_logger.warning(f"관계 정보 조회 실패: {str(e)}")
-            return []
+            handle_error(e, "관계 정보 조회 실패")
     
     def _extract_join_columns(self, condition_expression: str, src_table: str, dst_table: str) -> tuple:
         """조인 조건에서 소스와 대상 컬럼 추출"""
@@ -333,8 +341,7 @@ class ERDDagreReportGenerator:
             return self._find_foreign_key_columns(src_table, dst_table)
             
         except Exception as e:
-            app_logger.warning(f"조인 컬럼 추출 실패: {condition_expression}, 오류: {str(e)}")
-            return self._find_foreign_key_columns(src_table, dst_table)
+            handle_error(e, f"조인 컬럼 추출 실패: {condition_expression}")
     
     def _is_valid_column_pair(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """실제 데이터베이스 스키마를 기반으로 컬럼 쌍의 유효성 검증"""
@@ -360,13 +367,12 @@ class ERDDagreReportGenerator:
             return result[0]['count'] > 0 if result else False
             
         except Exception as e:
-            app_logger.warning(f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
-            return False
+            handle_error(e, f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
     
     def _find_foreign_key_columns(self, src_table: str, dst_table: str) -> tuple:
         """CSV에서 업로드된 정확한 PK 정보를 기반으로 외래키 컬럼 찾기"""
         try:
-            # CSV에서 업로드된 PK 정보를 기반으로 정확한 외래키 매칭
+            # 1. 먼저 PK-PK 매칭 시도 (동일한 PK 컬럼명)
             query = """
                 SELECT 
                     src_col.column_name as src_column,
@@ -394,13 +400,67 @@ class ERDDagreReportGenerator:
                 column_name = result[0]['src_column']
                 return column_name, column_name
             
+            # 2. FK-PK 매칭 시도 (소스는 PK가 아니고, 대상은 PK)
+            query = """
+                SELECT 
+                    src_col.column_name as src_column,
+                    dst_col.column_name as dst_column
+                FROM tables src_t
+                JOIN columns src_col ON src_t.table_id = src_col.table_id
+                JOIN tables dst_t ON dst_t.table_name = ?
+                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
+                JOIN projects p ON src_t.project_id = p.project_id
+                WHERE src_t.table_name = ? 
+                  AND p.project_name = ?
+                  AND src_t.del_yn = 'N' 
+                  AND dst_t.del_yn = 'N'
+                  AND src_col.del_yn = 'N'
+                  AND dst_col.del_yn = 'N'
+                  AND src_col.column_name = dst_col.column_name
+                  AND src_col.position_pk IS NULL
+                  AND dst_col.position_pk IS NOT NULL
+                LIMIT 1
+            """
+            
+            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
+            
+            if result:
+                column_name = result[0]['src_column']
+                return column_name, column_name
+            
+            # 3. 일반적인 컬럼명 매칭 시도 (ID로 끝나는 컬럼)
+            query = """
+                SELECT 
+                    src_col.column_name as src_column,
+                    dst_col.column_name as dst_column
+                FROM tables src_t
+                JOIN columns src_col ON src_t.table_id = src_col.table_id
+                JOIN tables dst_t ON dst_t.table_name = ?
+                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
+                JOIN projects p ON src_t.project_id = p.project_id
+                WHERE src_t.table_name = ? 
+                  AND p.project_name = ?
+                  AND src_t.del_yn = 'N' 
+                  AND dst_t.del_yn = 'N'
+                  AND src_col.del_yn = 'N'
+                  AND dst_col.del_yn = 'N'
+                  AND src_col.column_name = dst_col.column_name
+                  AND src_col.column_name LIKE '%_ID'
+                LIMIT 1
+            """
+            
+            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
+            
+            if result:
+                column_name = result[0]['src_column']
+                return column_name, column_name
+            
             # 매칭되는 컬럼이 없으면 None 반환 (관계 제외)
             app_logger.debug(f"외래키 컬럼 매칭 실패: {src_table} -> {dst_table}")
             return None, None
                 
         except Exception as e:
-            app_logger.warning(f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}, 오류: {str(e)}")
-            return None, None
+            handle_error(e, f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}")
     
     def _get_column_data_types(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> tuple:
         """컬럼의 데이터 타입 조회"""
@@ -432,8 +492,7 @@ class ERDDagreReportGenerator:
                 return 'VARCHAR2', 'VARCHAR2'  # 기본값
                 
         except Exception as e:
-            app_logger.warning(f"컬럼 데이터 타입 조회 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
-            return 'VARCHAR2', 'VARCHAR2'  # 기본값
+            handle_error(e, f"컬럼 데이터 타입 조회 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
     
     def _generate_cytoscape_nodes(self, tables_data: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         """Cytoscape.js 노드 데이터 생성"""
@@ -498,8 +557,8 @@ class ERDDagreReportGenerator:
                 # 엣지 데이터 생성 - 동일한 키로 조인되는 경우 중복 표시 제거
                 relationship_label = self._format_relationship_label(rel['src_column'], rel['dst_column'])
                 
-                # PK-FK 관계인지 확인 (CSV에서 업로드된 정확한 PK 정보 기반)
-                is_pk_fk_relation = self._is_pk_fk_relation(rel['src_table'], rel['src_column'], rel['dst_table'], rel['dst_column'])
+                # PK-FK 관계 여부는 이미 관계 정보에서 가져옴
+                is_pk_fk_relation = rel.get('is_pk_fk', False)
                 
                 edge_data = {
                     'data': {
@@ -538,7 +597,7 @@ class ERDDagreReportGenerator:
     def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인"""
         try:
-            # 소스 컬럼이 FK이고 대상 컬럼이 PK인지 확인
+            # 소스 컬럼과 대상 컬럼의 PK 여부 확인
             query = """
                 SELECT 
                     src_col.position_pk as src_is_pk,
@@ -564,14 +623,15 @@ class ERDDagreReportGenerator:
                 src_is_pk = result[0]['src_is_pk'] is not None
                 dst_is_pk = result[0]['dst_is_pk'] is not None
                 
-                # FK -> PK 관계: 소스는 PK가 아니고, 대상은 PK
-                return not src_is_pk and dst_is_pk
+                # PK-FK 관계 판단: 한쪽은 PK이고 다른 쪽은 PK가 아닌 경우
+                # 1. 소스가 PK이고 대상이 PK가 아닌 경우 (PK -> FK)
+                # 2. 소스가 PK가 아니고 대상이 PK인 경우 (FK -> PK)
+                return (src_is_pk and not dst_is_pk) or (not src_is_pk and dst_is_pk)
             
             return False
                 
         except Exception as e:
-            app_logger.warning(f"PK-FK 관계 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
-            return False
+            handle_error(e, f"PK-FK 관계 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
 
     def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
         """관계 라벨 포맷팅 - 동일한 키로 조인되는 경우 중복 표시 제거"""
@@ -594,8 +654,7 @@ class ERDDagreReportGenerator:
                 return f"{src_column} -> {dst_column}"
                 
         except Exception as e:
-            app_logger.warning(f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}, 오류: {str(e)}")
-            return f"{src_column} -> {dst_column}"
+            handle_error(e, f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
     
     def _generate_html(self, stats: Dict[str, int], erd_data: Dict[str, Any]) -> str:
         """HTML 생성"""
@@ -622,7 +681,7 @@ class ERDDagreReportGenerator:
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{self.project_name}_ERD_Dagre_{timestamp}.html"
-            output_path = os.path.join(self.output_dir, filename)
+            output_path = self.path_utils.join_path(self.output_dir, filename)
             
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
@@ -632,7 +691,71 @@ class ERDDagreReportGenerator:
             
         except Exception as e:
             handle_error(e, "ERD(Dagre) 리포트 파일 저장 실패")
-            return ""
+    
+    def _copy_js_folder(self) -> bool:
+        """js 폴더를 출력 디렉토리로 복사 (권한 오류 방지)"""
+        try:
+            import shutil
+            import time
+            
+            # JS 디렉토리 생성
+            js_dir = self.path_utils.join_path(self.output_dir, "js")
+            if not os.path.exists(js_dir):
+                os.makedirs(js_dir)
+            
+            # 올바른 JS 파일들 복사 (재시도 로직 포함)
+            # reports 폴더에서 찾기
+            reports_path = self.path_utils.get_reports_path()
+            source_js_dir = self.path_utils.join_path(reports_path, "js")
+            
+            if os.path.exists(source_js_dir):
+                for js_file in os.listdir(source_js_dir):
+                    if js_file.endswith('.js'):
+                        source_js = self.path_utils.join_path(source_js_dir, js_file)
+                        dest_js = self.path_utils.join_path(js_dir, js_file)
+                        self._safe_copy_file(source_js, dest_js, f"JS ({js_file})")
+                return True
+            else:
+                app_logger.warning(f"소스 JS 디렉토리가 존재하지 않습니다: {source_js_dir}")
+                return False
+            
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, "JS 폴더 복사 실패")
+    
+    def _safe_copy_file(self, source: str, dest: str, file_type: str, max_retries: int = 3):
+        """파일 복사 (권한 오류 방지를 위한 재시도 로직)"""
+        import shutil
+        import time
+        
+        for attempt in range(max_retries):
+            try:
+                # 대상 파일이 이미 존재하고 사용 중인 경우 삭제 시도
+                if os.path.exists(dest):
+                    try:
+                        os.remove(dest)
+                    except PermissionError:
+                        # 삭제 실패 시 잠시 대기 후 재시도
+                        time.sleep(0.1)
+                        continue
+                
+                # 파일 복사
+                shutil.copy2(source, dest)
+                app_logger.info(f"{file_type} 파일 복사 완료: {dest}")
+                return True
+                
+            except PermissionError as e:
+                if attempt < max_retries - 1:
+                    app_logger.warning(f"{file_type} 파일 복사 재시도 {attempt + 1}/{max_retries}: {e}")
+                    time.sleep(0.2)  # 200ms 대기
+                else:
+                    app_logger.warning(f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
+                    return False
+            except Exception as e:
+                app_logger.warning(f"{file_type} 파일 복사 실패: {e}")
+                return False
+        
+        return False
 
 
 if __name__ == '__main__':

@@ -4,11 +4,11 @@ SQL Content 처리 모듈
 - 경로 변환 및 데이터 정규화 처리
 """
 
-import os
 from typing import List, Dict, Any, Optional
 from .database_utils import DatabaseUtils
 from .sql_content_manager import SqlContentManager
 from .logger import app_logger, info, warning, error, handle_error
+from .path_utils import PathUtils
 
 
 class SqlContentProcessor:
@@ -60,7 +60,7 @@ class SqlContentProcessor:
             for row in results:
                 # 공통함수 사용: 크로스플랫폼 경로 정규화
                 # file_path는 디렉토리 경로, file_name은 파일명
-                full_path = os.path.join(row['file_path'], row['file_name'])
+                full_path = path_utils.join_path(row['file_path'], row['file_name'])
                 
                 # 프로젝트 루트 기준으로 상대경로 생성 (project_source_path가 아닌 project_root 사용)
                 relative_path = path_utils.get_project_relative_path(full_path)
@@ -315,10 +315,9 @@ class SqlContentProcessor:
 
             app_logger.debug(f"SQL Content 저장 시작: {query_info.get('query_id', 'unknown')} (component_id: {component_id})")
             
-            from .path_utils import PathUtils
             path_utils = PathUtils()
             relative_file_path = path_utils.get_relative_path(query_info['file_path'], self.project_source_path)
-            relative_file_path = os.path.dirname(relative_file_path)
+            relative_file_path = path_utils.get_directory_path(relative_file_path)
             relative_file_path = path_utils.normalize_path_separator(relative_file_path, 'unix')
             
             app_logger.debug(f"SQL Content 상대경로: {relative_file_path}")
@@ -331,7 +330,7 @@ class SqlContentProcessor:
                 query_type=f"SQL_{query_info['tag_name'].upper()}",
                 file_path=relative_file_path,
                 component_name=query_info['query_id'],
-                file_name=os.path.basename(query_info['file_path']),
+                file_name=path_utils.get_filename(query_info['file_path']),
                 line_start=query_info.get('line_start'),
                 line_end=query_info.get('line_end'),
                 hash_value=query_info['hash_value']
@@ -354,22 +353,24 @@ class SqlContentProcessor:
     def _convert_to_directory_path(self, absolute_path: str) -> str:
         """절대경로를 상대경로로 변환 (디렉토리 경로만)"""
         try:
+            path_utils = PathUtils()
+            
             # 프로젝트 소스 경로를 기준으로 상대경로 계산
             if absolute_path.startswith(self.project_source_path):
-                relative_path = os.path.relpath(absolute_path, self.project_source_path)
+                relative_path = path_utils.get_relative_path(absolute_path, self.project_source_path)
                 # 파일명 제거 (디렉토리 경로만)
-                dir_path = os.path.dirname(relative_path)
+                dir_path = path_utils.get_directory_path(relative_path)
                 app_logger.debug(f"경로 변환: 절대경로={absolute_path}, 상대경로={relative_path}, 디렉토리경로={dir_path}")
                 return dir_path
             else:
                 # 프로젝트 경로에 포함되지 않은 경우 원본 경로 사용
-                dir_path = os.path.dirname(absolute_path)
+                dir_path = path_utils.get_directory_path(absolute_path)
                 app_logger.debug(f"경로 변환 (프로젝트 외부): 절대경로={absolute_path}, 디렉토리경로={dir_path}")
                 return dir_path
         except Exception as e:
             from .logger import handle_error
             handle_error(e, f"경로 변환 실패: {absolute_path}")
-            return os.path.dirname(absolute_path)
+            return path_utils.get_directory_path(absolute_path)
     
     def close(self):
         """리소스 정리"""

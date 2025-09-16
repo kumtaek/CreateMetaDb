@@ -461,4 +461,4 @@ def print_usage_and_exit(message: str = None):
         app_logger.error(message)
     
     app_logger.error("사용법: python main.py --project-name {project_name}")
-    sys.exit(1)
+    handle_error(Exception("인자 검증 실패"), "사용법 오류")

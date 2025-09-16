@@ -52,22 +52,37 @@ class FileUtils:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(Exception(f"파일을 찾을 수 없습니다: {file_path}"), f"파일 읽기 실패: {file_path}")
         except UnicodeDecodeError:
-            info(f"인코딩 문제 감지, 다른 인코딩으로 재시도: {os.path.basename(file_path)}")
+            from util.path_utils import PathUtils
+            path_utils = PathUtils()
+            filename = path_utils.get_filename(file_path)
+            info(f"인코딩 문제 감지, 다른 인코딩으로 재시도: {filename}")
+            
+            # UTF-8 BOM 처리 시도
             try:
-                with open(file_path, 'r', encoding='cp949') as file:
+                with open(file_path, 'r', encoding='utf-8-sig') as file:
                     content = file.read()
-                    app_logger.debug(f"파일 읽기 성공 (cp949): {file_path}")
+                    app_logger.debug(f"파일 읽기 성공 (utf-8-sig): {file_path}")
                     return content
             except UnicodeDecodeError:
-                # CP949도 실패하면 다른 인코딩 시도
+                # UTF-8 BOM 실패하면 CP949 시도
                 try:
-                    with open(file_path, 'r', encoding='euc-kr') as file:
+                    with open(file_path, 'r', encoding='cp949') as file:
                         content = file.read()
-                        app_logger.debug(f"파일 읽기 성공 (euc-kr): {file_path}")
+                        app_logger.debug(f"파일 읽기 성공 (cp949): {file_path}")
                         return content
                 except UnicodeDecodeError:
-                    # 모든 인코딩 실패 시 에러 처리
-                    handle_error(Exception(f"모든 인코딩 시도 실패 (utf-8, cp949, euc-kr): {file_path}"), f"파일 인코딩 문제: {file_path}")
+                    # CP949도 실패하면 EUC-KR 시도
+                    try:
+                        with open(file_path, 'r', encoding='euc-kr') as file:
+                            content = file.read()
+                            app_logger.debug(f"파일 읽기 성공 (euc-kr): {file_path}")
+                            return content
+                    except UnicodeDecodeError:
+                        # 모든 인코딩 실패 시 에러 처리
+                        handle_error(Exception(f"모든 인코딩 시도 실패 (utf-8, utf-8-sig, cp949, euc-kr): {file_path}"), f"파일 인코딩 문제: {file_path}")
+                        return None
+                except Exception as e:
+                    handle_error(e, f"파일 읽기 실패: {file_path}")
                     return None
             except Exception as e:
                 handle_error(e, f"파일 읽기 실패: {file_path}")
@@ -90,8 +105,11 @@ class FileUtils:
             성공 여부 (True/False)
         """
         try:
-            # 디렉토리가 없으면 생성
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            # 디렉토리가 없으면 생성 (공통함수 사용)
+            from util.path_utils import PathUtils
+            path_utils = PathUtils()
+            dir_path = path_utils.get_directory_path(file_path)
+            os.makedirs(dir_path, exist_ok=True)
             
             with open(file_path, 'w', encoding=encoding) as file:
                 file.write(content)
@@ -215,10 +233,18 @@ class FileUtils:
                 return sum(1 for _ in file)
         except UnicodeDecodeError:
             try:
-                with open(file_path, 'r', encoding='cp949') as file:
+                with open(file_path, 'r', encoding='utf-8-sig') as file:
                     return sum(1 for _ in file)
-            except Exception:
-                return 0
+            except UnicodeDecodeError:
+                try:
+                    with open(file_path, 'r', encoding='cp949') as file:
+                        return sum(1 for _ in file)
+                except UnicodeDecodeError:
+                    try:
+                        with open(file_path, 'r', encoding='euc-kr') as file:
+                            return sum(1 for _ in file)
+                    except Exception:
+                        return 0
         except Exception:
             return 0
     

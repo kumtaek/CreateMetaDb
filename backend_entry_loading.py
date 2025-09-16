@@ -441,9 +441,31 @@ class BackendEntryLoadingEngine:
                 app_logger.debug(f"JSP 파일 매칭 실패: {entry.url_pattern} → Java file_id: {entry.file_id}")
             
             # API_URL 컴포넌트명 생성 (URL:HTTP_METHOD 형태)
-            # 잘못된 URL 패턴 필터링 (/:GET, /:POST 등)
+            # 잘못된 URL 패턴 필터링 강화
             url_pattern = entry.url_pattern.strip()
-            if url_pattern in ['/', ''] or url_pattern.startswith(':') or not url_pattern.startswith('/'):
+            
+            # 1. 빈 문자열이나 루트 경로만 있는 경우
+            if url_pattern in ['/', '']:
+                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                return None
+            
+            # 2. 콜론으로 시작하는 경우 (HTTP 메서드만 있는 경우)
+            if url_pattern.startswith(':'):
+                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                return None
+            
+            # 3. 슬래시로 시작하지 않는 경우
+            if not url_pattern.startswith('/'):
+                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                return None
+            
+            # 4. HTTP 메서드만 있는 경우 (예: GET, POST, PUT, DELETE)
+            if url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']:
+                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                return None
+            
+            # 5. 콜론이 포함된 경우 (이미 HTTP 메서드가 포함된 패턴)
+            if ':' in url_pattern:
                 app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
@@ -776,8 +798,7 @@ class BackendEntryLoadingEngine:
             return results[0]['project_id'] if results else None
 
         except Exception as e:
-            app_logger.error(f"프로젝트 ID 조회 실패: {self.project_name} - {str(e)}")
-            return None
+            handle_error(e, f"프로젝트 ID 조회 실패: {self.project_name}")
 
     def _print_backend_entry_statistics(self) -> None:
         """백엔드 진입점 분석 통계 출력"""

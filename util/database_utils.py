@@ -8,7 +8,6 @@ SourceAnalyzer 데이터베이스 처리 공통 유틸리티 모듈
 
 import sqlite3
 import os
-from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 from contextlib import contextmanager
 from .logger import app_logger, handle_error, error
@@ -432,8 +431,7 @@ class DatabaseUtils:
             return result is not None
             
         except Exception as e:
-            app_logger.error(f"UPSERT 실패: {table_name}, 오류: {str(e)}")
-            return False
+            handle_error(e, f"UPSERT 실패: {table_name}")
     
     def batch_insert_or_replace(self, table_name: str, data_list: List[Dict[str, Any]]) -> int:
         """

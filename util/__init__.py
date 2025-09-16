@@ -9,7 +9,7 @@ from .config_utils import ConfigUtils, load_yaml_config, load_project_config, ge
 from .hash_utils import HashUtils, generate_md5, generate_sha256, generate_file_hash, is_file_changed
 from .validation_utils import ValidationUtils, is_valid_project_name, is_valid_file_path, validate_file_exists, validate_directory_exists, validate_required_fields
 from .path_utils import (
-    PathUtils, DatabaseCache, normalize_path, get_relative_path, get_absolute_path, is_within_project, join_path,
+    PathUtils, normalize_path, get_relative_path, get_absolute_path, is_within_project, join_path,
     get_project_source_path, get_project_config_path, get_project_src_path, get_project_db_schema_path,
     get_project_report_path, get_project_metadata_db_path, get_config_path, get_database_schema_path,
     get_parser_config_path, list_projects, project_exists
@@ -72,7 +72,6 @@ __all__ = [
     
     # Path Utils
     'PathUtils',
-    'DatabaseCache',
     'normalize_path',
     'get_relative_path',
     'get_absolute_path',

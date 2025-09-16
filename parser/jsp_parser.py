@@ -436,8 +436,7 @@ class JspParser:
             }
 
         except Exception as e:
-            # 파싱 에러로 has_error='Y' 처리하고 계속 진행
-            return None
+            handle_error(e, f"메서드 호출 파싱 실패: {jsp_name}")
 
     def _extract_class_name_from_object(self, object_name: str) -> str:
         """
@@ -1376,8 +1375,7 @@ class JspParser:
                             if api_call:
                                 api_calls.append(api_call)
                         except Exception as e:
-                            warning(f"API 호출 정보 추출 실패 (라인 {line_num}): {str(e)}")
-                            continue
+                            handle_error(e, f"API 호출 정보 추출 실패 (라인 {line_num})")
             
             debug(f"JSP API 호출 분석 완료: {jsp_name}, {len(api_calls)}개 발견")
             return api_calls
@@ -1425,8 +1423,7 @@ class JspParser:
             return api_call
             
         except Exception as e:
-            warning(f"API 호출 정보 추출 실패: {str(e)}")
-            return None
+            handle_error(e, "API 호출 정보 추출 실패")
 
     def _extract_http_method(self, match, line: str, groups: tuple, default_methods: Dict[str, str]) -> str:
         """
@@ -1480,5 +1477,4 @@ class JspParser:
             return 'GET'
             
         except Exception as e:
-            warning(f"HTTP 메서드 추출 실패: {str(e)}")
-            return 'GET'
+            handle_error(e, "HTTP 메서드 추출 실패")

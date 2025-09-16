@@ -5,6 +5,7 @@
 """
 
 from typing import Dict, List, Any
+from util.logger import handle_error
 
 
 class ReportTemplates:
@@ -29,27 +30,25 @@ class ReportTemplates:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CallChain Report - {project_name}</title>
-    <style>
-        {self._get_callchain_css()}
-    </style>
+    <link rel="stylesheet" href="css/woori.css">
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="callchain-body">
+    <div class="callchain-container">
+        <div class="callchain-header">
             <h1>CallChain Report</h1>
             <div class="subtitle">Method-Class-Method-XML-Query-Table 연계 정보</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
         {stats_html}
-        <div class="content">
-            <div class="section">
+        <div class="callchain-content">
+            <div class="callchain-section">
                 <h2>필터 및 검색</h2>
                 {filter_html}
             </div>
-            <div class="section">
-                <h2>완전한 연계 경로</h2>
-                <div class="table-container">
-                    <table id="chainTable">
+            <div class="callchain-section">
+                <h2>연계 경로</h2>
+                <div class="callchain-table-container">
+                    <table id="chainTable" class="callchain-table">
                         <thead>
                             <tr>
                                 <th>연계ID</th>
@@ -81,26 +80,26 @@ class ReportTemplates:
     def _generate_stats_html(self, stats: Dict[str, int]) -> str:
         """통계 카드 HTML 생성"""
         return f"""
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('java_classes', 0)}</div>
-                <div class="stat-label">Java 클래스</div>
+        <div class="callchain-stats">
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">{stats.get('java_classes', 0)}</div>
+                <div class="callchain-stat-label">Java 클래스</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('database_tables', 0)}</div>
-                <div class="stat-label">데이터베이스 테이블</div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">{stats.get('database_tables', 0)}</div>
+                <div class="callchain-stat-label">데이터베이스 테이블</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('xml_files', 0)}</div>
-                <div class="stat-label">XML 파일</div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">{stats.get('xml_files', 0)}</div>
+                <div class="callchain-stat-label">XML 파일</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('frontend_files', 0)}</div>
-                <div class="stat-label">Frontend Files</div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">{stats.get('frontend_files', 0)}</div>
+                <div class="callchain-stat-label">Frontend Files</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('join_relations', 0)}</div>
-                <div class="stat-label">JOIN 관계</div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">{stats.get('join_relations', 0)}</div>
+                <div class="callchain-stat-label">JOIN 관계</div>
             </div>
         </div>"""
     
@@ -113,7 +112,7 @@ class ReportTemplates:
         query_type_options = ''.join([f'<option value="{qt}">{qt}</option>' for qt in filter_options.get('query_types', [])])
         
         return f"""
-        <div class="filter-controls">
+        <div class="callchain-filter-controls">
             <input type="text" id="searchInput" placeholder="클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
             <select id="tableFilter">
                 <option value="">모든 테이블</option>
@@ -155,15 +154,15 @@ class ReportTemplates:
             # 안전한 HTML 생성 (크로스플랫폼 호환)
             rows.append(f"""
                 <tr>
-                    <td><span class="chain-id">{data['chain_id']}</span></td>
-                    <td><span class="frontend">{data.get('jsp_file', '')}</span></td>
-                    <td><span class="api-url">{data.get('api_entry', '')}</span></td>
-                    <td><span class="class-name">{data['class_name']}</span></td>
-                    <td><span class="method-name">{data['method_name']}</span></td>
-                    <td><span class="xml-file">{data['xml_file']}</span></td>
-                    <td><span class="query-id">{data['query_id']}</span></td>
-                    <td>{query_type_html}</td>
-                    <td><span class="tables">{related_tables_display}</span></td>
+                    <td><span class="callchain-badge">{data['chain_id']}</span></td>
+                    <td><span class="callchain-badge">{data.get('jsp_file', '')}</span></td>
+                    <td><span class="callchain-badge">{data.get('api_entry', '')}</span></td>
+                    <td><span class="callchain-badge">{data['class_name']}</span></td>
+                    <td><span class="callchain-badge">{data['method_name']}</span></td>
+                    <td><span class="callchain-badge">{data['xml_file']}</span></td>
+                    <td><span class="callchain-badge">{data['query_id']}</span></td>
+                    <td><span class="callchain-badge">{data['query_type']}</span></td>
+                    <td><span class="callchain-badge">{related_tables_display}</span></td>
                 </tr>""")
         
         return '\n'.join(rows)
@@ -189,32 +188,39 @@ class ReportTemplates:
             min-height: 100vh;
         }
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 4px;
+            background: var(--gradient-header);
+            color: var(--text-on-primary);
+            padding: 8px;
             text-align: center;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
         }
         .header h1 {
             margin: 0;
-            font-size: 1.0em;
+            font-size: 1.4em;
             font-weight: 300;
+            color: var(--text-on-primary);
         }
         .header .subtitle {
-            margin: 1px 0 0 0;
-            opacity: 0.8;
-            font-size: 0.6em;
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
+            color: var(--text-on-primary);
         }
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 2px;
-            padding: 4px;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
             background: #f8f9fa;
+            margin-bottom: 3px;
         }
         .stat-card {
             background: white;
-            padding: 3px;
-            border-radius: 3px;
+            padding: 6px;
+            border-radius: 4px;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
@@ -549,6 +555,7 @@ class ReportTemplates:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERD Report - {project_name}</title>
+    <link rel="stylesheet" href="css/woori.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
         {self._get_erd_css()}
@@ -571,6 +578,10 @@ class ReportTemplates:
                     <button onclick="resetZoom()">원래 크기</button>
                     <button onclick="exportPng()">PNG 내보내기</button>
                     <button onclick="exportSvg()">SVG 내보내기</button>
+                    <div class="zoom-hint">
+                        <span class="hint-icon">🔍</span>
+                        <span class="hint-text">Ctrl + 마우스 휠로 확대/축소 가능</span>
+                    </div>
                 </div>
                 <div class="diagram-container">
                     {erd_diagram_html}
@@ -642,50 +653,6 @@ class ReportTemplates:
             overflow: hidden;
             min-height: 100vh;
         }
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 4px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 1.0em;
-            font-weight: 300;
-        }
-        .header .subtitle {
-            margin: 1px 0 0 0;
-            opacity: 0.8;
-            font-size: 0.6em;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 2px;
-            padding: 4px;
-            background: #f8f9fa;
-        }
-        .stat-card {
-            background: white;
-            padding: 3px;
-            border-radius: 3px;
-            text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-        .stat-number {
-            font-size: 1.0em;
-            font-weight: bold;
-            color: #3498db;
-            margin-bottom: 1px;
-        }
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.6em;
-        }
         .content {
             padding: 4px;
         }
@@ -714,6 +681,43 @@ class ReportTemplates:
         }
         .diagram-controls button:hover {
             background: #2980b9;
+        }
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-left: 15px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+            animation: pulse 2s infinite;
+        }
+        .hint-icon {
+            font-size: 16px;
+            animation: bounce 1.5s infinite;
+        }
+        .hint-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
+        }
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+                transform: scale(1.02);
+            }
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
         }
         .mermaid-container {
             background: #f8f9fa;
@@ -800,12 +804,6 @@ class ReportTemplates:
             .container {
                 margin: 10px;
                 border-radius: 10px;
-            }
-            .header {
-                padding: 20px;
-            }
-            .header h1 {
-                font-size: 2em;
             }
             .content {
                 padding: 20px;
@@ -1071,16 +1069,13 @@ class ReportTemplates:
 
     def get_architecture_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 
                                 layer_data: Dict[str, List[Dict[str, Any]]], relationships: Dict[str, List[Dict[str, Any]]]) -> str:
-        """Architecture Report HTML 템플릿 생성 (오프라인 지원, SVG 기반)"""
+        """Architecture Report HTML 템플릿 생성 (기존 리포트와 동일한 구조)"""
         
         # 통계 카드 HTML 생성
         stats_html = self._generate_architecture_stats_html(stats)
         
-        # 아키텍처 다이어그램 SVG 생성
-        diagram_svg = self._generate_architecture_diagram_svg(layer_data)
-        
-        # 관계 분석 HTML 생성
-        relationships_html = self._generate_relationships_html(relationships)
+        # 아키텍처 다이어그램 HTML 생성 (기존 구조)
+        diagram_html = self._generate_architecture_diagram_html(layer_data)
         
         return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -1103,11 +1098,9 @@ class ReportTemplates:
         <div class="section">
             <h2>아키텍처 구조 다이어그램</h2>
             <div class="diagram-container">
-                {diagram_svg}
+                {diagram_html}
             </div>
         </div>
-        
-        {relationships_html}
         
         {stats_html}
         
@@ -1155,8 +1148,8 @@ class ReportTemplates:
             </table>
         </div>"""
     
-    def _generate_architecture_diagram_svg(self, layer_data: Dict[str, List[Dict[str, Any]]]) -> str:
-        """SVG 기반 아키텍처 다이어그램 생성 (오프라인 지원)"""
+    def _generate_architecture_diagram_html(self, layer_data: Dict[str, List[Dict[str, Any]]]) -> str:
+        """HTML 기반 아키텍처 다이어그램 생성 (기존 리포트와 동일한 구조)"""
         try:
             # 레이어별 컴포넌트 수 계산
             controller_count = len(layer_data.get('controller', []))
@@ -1164,205 +1157,280 @@ class ReportTemplates:
             mapper_count = len(layer_data.get('mapper', []))
             model_count = len(layer_data.get('model', []))
             
-            # SVG 다이어그램 생성
-            svg_content = f"""<svg width="100%" height="500" viewBox="0 0 1000 500">
-                <!-- Controller Layer -->
-                <rect x="50" y="50" width="900" height="80" 
-                      fill="#e1f5fe" stroke="#01579b" 
-                      stroke-width="2" rx="10"/>
-                <text x="500" y="70" text-anchor="middle" 
-                      fill="#01579b" font-weight="bold" font-size="14">
-                      Controller Layer</text>
-                
-                {self._generate_layer_components_svg(layer_data.get('controller', []), 80, 85, '#01579b')}
-                
-                <!-- Service Layer -->
-                <rect x="50" y="150" width="900" height="80" 
-                      fill="#f3e5f5" stroke="#4a148c" 
-                      stroke-width="2" rx="10"/>
-                <text x="500" y="170" text-anchor="middle" 
-                      fill="#4a148c" font-weight="bold" font-size="14">
-                      Service Layer</text>
-                
-                {self._generate_layer_components_svg(layer_data.get('service', []), 180, 185, '#4a148c')}
-                
-                <!-- Mapper Layer -->
-                <rect x="50" y="250" width="900" height="80" 
-                      fill="#e8f5e8" stroke="#1b5e20" 
-                      stroke-width="2" rx="10"/>
-                <text x="500" y="270" text-anchor="middle" 
-                      fill="#1b5e20" font-weight="bold" font-size="14">
-                      Mapper Layer</text>
-                
-                {self._generate_layer_components_svg(layer_data.get('mapper', []), 280, 285, '#1b5e20')}
-                
-                <!-- Model Layer -->
-                <rect x="50" y="350" width="900" height="80" 
-                      fill="#fff3e0" stroke="#e65100" 
-                      stroke-width="2" rx="10"/>
-                <text x="500" y="370" text-anchor="middle" 
-                      fill="#e65100" font-weight="bold" font-size="14">
-                      Model Layer</text>
-                
-                {self._generate_layer_components_svg(layer_data.get('model', []), 380, 385, '#e65100')}
-                
-                <!-- Layer Arrows -->
-                <defs>
-                    <marker id="layer-arrow" markerWidth="10" markerHeight="7" 
-                            refX="10" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
-                    </marker>
-                </defs>
-                <line x1="500" y1="130" x2="500" y2="150" 
-                      stroke="#333" stroke-width="2" marker-end="url(#layer-arrow)"/>
-                <line x1="500" y1="230" x2="500" y2="250" 
-                      stroke="#333" stroke-width="2" marker-end="url(#layer-arrow)"/>
-                <line x1="500" y1="330" x2="500" y2="350" 
-                      stroke="#333" stroke-width="2" marker-end="url(#layer-arrow)"/>
-            </svg>"""
+            # HTML 다이어그램 생성
+            diagram_html = f"""
+            <div class="architecture-diagram">
+                <div class="layer-container">
+                    
+        <div class="layer controller-layer" style="background-color: #e3f2fd; border-color: #1976d2;">
+            <div class="layer-header">
+                <h3>Controller Layer ({controller_count}개)</h3>
+            </div>
+            <div class="components-container">
+                {self._generate_layer_components_html(layer_data.get('controller', []))}
+            </div>
+        </div>
+        
+                    <div class="layer-arrow">↓</div>
+                    
+        <div class="layer service-layer" style="background-color: #e1f5fe; border-color: #1565c0;">
+            <div class="layer-header">
+                <h3>Service Layer ({service_count}개)</h3>
+            </div>
+            <div class="components-container">
+                {self._generate_layer_components_html(layer_data.get('service', []))}
+            </div>
+        </div>
+        
+                    <div class="layer-arrow">↓</div>
+                    
+        <div class="layer mapper-layer" style="background-color: #e8f5e8; border-color: #1b5e20;">
+            <div class="layer-header">
+                <h3>Mapper Layer ({mapper_count}개)</h3>
+            </div>
+            <div class="components-container">
+                {self._generate_layer_components_html(layer_data.get('mapper', []))}
+            </div>
+        </div>
+        
+                    <div class="layer-arrow">↓</div>
+                    
+        <div class="layer model-layer" style="background-color: #f1f8ff; border-color: #0d47a1;">
+            <div class="layer-header">
+                <h3>Model Layer ({model_count}개)</h3>
+            </div>
+            <div class="components-container">
+                {self._generate_layer_components_html(layer_data.get('model', []))}
+            </div>
+        </div>
+        
+                </div>
+            </div>"""
             
-            return svg_content
+            return diagram_html
             
         except Exception as e:
-            app_logger.warning(f"SVG 다이어그램 생성 실패: {str(e)}")
-            return """<svg width="100%" height="500" viewBox="0 0 1000 500">
-                <rect x="50" y="50" width="900" height="400" fill="#f5f5f5" stroke="#ccc" stroke-width="2" rx="10"/>
-                <text x="500" y="250" text-anchor="middle" fill="#666" font-size="16">다이어그램 생성 중 오류 발생</text>
-            </svg>"""
-    
-    def _generate_layer_components_svg(self, components: List[Dict[str, Any]], layer_y: int, component_y: int, stroke_color: str) -> str:
-        """레이어별 컴포넌트 SVG 생성"""
-        if not components:
+            handle_error(e, "HTML 다이어그램 생성 실패")
             return ""
-        
-        svg_elements = []
-        max_components_per_row = 8
-        component_width = 100
-        component_height = 25
-        start_x = 80
-        spacing = 10
-        
-        for i, component in enumerate(components[:max_components_per_row]):
-            x = start_x + i * (component_width + spacing)
-            component_name = component.get('component_name', 'Unknown')
-            
-            # 컴포넌트명 길이 제한 (12자)
-            display_name = component_name[:12] + '...' if len(component_name) > 12 else component_name
-            
-            svg_elements.append(f"""
-                <rect x="{x}" y="{component_y}" width="{component_width}" height="{component_height}" 
-                      fill="white" stroke="{stroke_color}" rx="3"/>
-                <text x="{x + component_width//2}" y="{component_y + component_height//2 + 3}" text-anchor="middle" 
-                      fill="#333" font-size="9">{display_name}</text>""")
-        
-        return ''.join(svg_elements)
     
-    def _generate_relationships_html(self, relationships: Dict[str, List[Dict[str, Any]]]) -> str:
-        """관계 분석 HTML 생성"""
-        dependency_html = self._generate_relationship_card_html("의존성 관계", relationships.get('dependency', []))
-        implementation_html = self._generate_relationship_card_html("구현 관계", relationships.get('implementation', []))
-        call_html = self._generate_relationship_card_html("호출 관계", relationships.get('call', []))
+    def _generate_layer_components_html(self, components: List[Dict[str, Any]]) -> str:
+        """레이어별 컴포넌트 HTML 생성 (30개 이상 시 생략 표시)"""
+        if not components:
+            return '<div class="empty-layer">컴포넌트가 없습니다.</div>'
         
-        return f"""
-        <div class="section">
-            <h2>컴포넌트 관계 분석</h2>
-            <div class="relationship-grid">
-                {dependency_html}
-                {implementation_html}
-                {call_html}
-            </div>
-        </div>"""
+        max_display = 30
+        if len(components) <= max_display:
+            # 모든 컴포넌트 표시
+            component_htmls = []
+            for component in components:
+                component_name = component.get('component_name', 'Unknown')
+                component_htmls.append(f'<div class="component">{component_name}</div>')
+            return ''.join(component_htmls)
+        else:
+            # 처음 30개만 표시하고 나머지는 생략
+            component_htmls = []
+            for component in components[:max_display]:
+                component_name = component.get('component_name', 'Unknown')
+                component_htmls.append(f'<div class="component">{component_name}</div>')
+            
+            remaining_count = len(components) - max_display
+            component_htmls.append(f'<div class="component more-indicator">...외 {remaining_count}건</div>')
+            return ''.join(component_htmls)
     
-    def _generate_relationship_card_html(self, title: str, relationships: List[Dict[str, Any]]) -> str:
-        """관계 카드 HTML 생성"""
-        relationship_items = []
-        for rel in relationships:
-            src = rel.get('src_component', 'Unknown')
-            dst = rel.get('dst_component', 'Unknown')
-            relationship_items.append(f'<div class="relationship-item">{src} ➜ {dst}</div>')
-        
-        return f"""
-        <div class="relationship-card">
-            <div class="relationship-header">{title} ({len(relationships)}개)</div>
-            <div class="relationship-body">
-                {''.join(relationship_items)}
-            </div>
-        </div>"""
     
     def _get_architecture_css(self) -> str:
-        """Architecture Report CSS 스타일 (크로스플랫폼 호환)"""
+        """Architecture Report CSS 스타일 (크로스플랫폼 호환, 반응형 지원)"""
         return """
+        
+        :root {
+            /* === 메인 컬러 === */
+            --primary-blue: #1976d2;         /* 메인 브랜드 블루 */
+            --primary-dark: #0d47a1;         /* 진한 블루 (강조용) */
+            --primary-light: #42a5f5;        /* 밝은 블루 (액션 버튼) */
+            --primary-pale: #e3f2fd;         /* 아주 연한 블루 (배경) */
+            
+            /* === 보조 컬러 === */
+            --secondary-blue: #1565c0;       /* 보조 블루 */
+            --accent-blue: #2196f3;          /* 액센트 블루 */
+            --sky-blue: #81d4fa;             /* 하늘색 */
+            --ice-blue: #f1f8ff;             /* 아이스 블루 (최상단 배경) */
+            
+            /* === 그라데이션 === */
+            --gradient-main: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+            --gradient-subtle: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+            --gradient-header: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            
+            /* === 중성 컬러 === */
+            --gray-50: #fafafa;
+            --gray-100: #f5f5f5;
+            --gray-200: #eeeeee;
+            --gray-300: #e0e0e0;
+            --gray-400: #bdbdbd;
+            --gray-500: #9e9e9e;
+            --gray-600: #757575;
+            --gray-700: #616161;
+            --gray-800: #424242;
+            --gray-900: #212121;
+            
+            /* === 텍스트 컬러 === */
+            --text-primary: #212121;
+            --text-secondary: #616161;
+            --text-hint: #9e9e9e;
+            --text-on-primary: #ffffff;
+            
+            /* === 상태 컬러 === */
+            --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
+            --info: var(--primary-blue);
+            
+            /* === 쉐도우 === */
+            --shadow-light: 0 2px 4px rgba(25, 118, 210, 0.12);
+            --shadow-medium: 0 4px 8px rgba(25, 118, 210, 0.16);
+            --shadow-heavy: 0 8px 16px rgba(25, 118, 210, 0.24);
+            
+            /* === 보더 === */
+            --border-light: 1px solid rgba(25, 118, 210, 0.12);
+            --border-medium: 1px solid rgba(25, 118, 210, 0.24);
+            --border-radius: 8px;
+            --border-radius-small: 4px;
+            --border-radius-large: 12px;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 15px;
-            background-color: #f5f5f5;
-            line-height: 1.6;
+            padding: 5px;
+            background-color: var(--ice-blue);
+            line-height: 1.4;
         }
         .container {
             max-width: 95%;
             margin: 0 auto;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 8px;
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow-medium);
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #007acc;
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            background: var(--gradient-header);
+            color: var(--text-on-primary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
         }
         .header h1 {
-            color: #007acc;
+            color: var(--text-on-primary);
             margin: 0;
-            font-size: 2.2em;
+            font-size: 1.4em;
         }
         .header .subtitle {
-            color: #666;
-            font-size: 1.1em;
-            margin-top: 10px;
+            color: var(--text-on-primary);
+            font-size: 0.8em;
+            margin-top: 2px;
+            opacity: 0.9;
         }
         .section {
-            margin: 30px 0;
-            padding: 20px;
-            border-left: 4px solid #007acc;
-            background-color: #f8f9fa;
+            margin: 2px 0;
+            padding: 3px;
+            border-left: 3px solid var(--primary-blue);
+            background-color: var(--primary-pale);
         }
         .section h2 {
-            color: #007acc;
+            color: var(--primary-blue);
             margin-top: 0;
-            font-size: 1.6em;
+            margin-bottom: 2px;
+            font-size: 1.1em;
+        }
+        .diagram-controls {
+            margin-bottom: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .diagram-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        .diagram-controls button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+            animation: pulse 2s infinite;
+        }
+        .hint-icon {
+            font-size: 16px;
+            animation: bounce 1.5s infinite;
+        }
+        .hint-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
+        }
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+                transform: scale(1.02);
+            }
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
         }
         .diagram-container {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            padding: 2px;
+            border-radius: var(--border-radius);
+            margin: 2px 0;
+            box-shadow: var(--shadow-light);
+            width: 100%;
+            box-sizing: border-box;
         }
         .stats-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 5px 0;
             background: white;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-light);
         }
         .stats-table th, .stats-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
+            border: var(--border-light);
+            padding: 4px;
             text-align: left;
         }
         .stats-table th {
-            background-color: #007acc;
-            color: white;
+            background-color: var(--primary-blue);
+            color: var(--text-on-primary);
             font-weight: bold;
         }
         .stats-table tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: var(--gray-50);
         }
         .relationship-grid {
             display: grid;
@@ -1398,12 +1466,106 @@ class ReportTemplates:
         }
         .timestamp {
             text-align: center;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 0.9em;
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: var(--border-light);
         }
+        
+        /* 반응형 아키텍처 다이어그램 스타일 */
+        .architecture-diagram {
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        .layer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .layer {
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 15px;
+            /* 높이 자동 조정 - min-height 제거 */
+        }
+        
+        .layer-header {
+            margin-bottom: 15px;
+        }
+        
+        .layer-header h3 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .components-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .component {
+            background: white;
+            border: 1px solid var(--primary-blue);
+            border-radius: var(--border-radius-small);
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        .component:hover {
+            background-color: var(--primary-pale);
+            border-color: var(--primary-dark);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .layer-arrow {
+            text-align: center;
+            font-size: 24px;
+            color: var(--primary-blue);
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .empty-layer {
+            text-align: center;
+            color: var(--text-hint);
+            font-style: italic;
+        }
+        
+        .more-indicator {
+            background: var(--primary-pale) !important;
+            border-color: var(--primary-blue) !important;
+            color: var(--primary-blue) !important;
+            font-weight: bold !important;
+        }
+        
+        /* 반응형 브레이크포인트 */
+        @media (max-width: 1200px) {
+            .component {
+                min-width: 110px;
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .component {
+                min-width: 100px;
+                font-size: 10px;
+                padding: 5px 8px;
+            }
+        }
+        
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -1412,34 +1574,64 @@ class ReportTemplates:
             .header h1 {
                 font-size: 1.8em;
             }
+            .component {
+                min-width: 90px;
+                font-size: 9px;
+                padding: 4px 6px;
+            }
+            .layer {
+                padding: 10px;
+            }
             .relationship-grid {
                 grid-template-columns: 1fr;
+            }
+            .diagram-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .diagram-controls button {
+                margin: 2px 0;
+            }
+            .zoom-hint {
+                margin: 10px 0;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .component {
+                min-width: 80px;
+                font-size: 8px;
+                padding: 3px 5px;
+            }
+            .layer-header h3 {
+                font-size: 1em;
             }
         }
         """
     
     def _get_architecture_javascript(self) -> str:
-        """Architecture Report JavaScript (오프라인 지원)"""
+        """Architecture Report JavaScript (기존 리포트와 동일한 간단한 구조)"""
         return """
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
         
-        // 다이어그램 확대/축소 기능
+        // 다이어그램 확대/축소 기능 (간단한 버전)
         function zoomDiagram(scale) {
-            const svg = document.querySelector('svg');
-            if (svg) {
-                svg.style.transform = `scale(${scale})`;
-                svg.style.transformOrigin = 'center center';
+            const diagram = document.querySelector('.architecture-diagram');
+            if (diagram) {
+                diagram.style.transform = `scale(${scale})`;
+                diagram.style.transformOrigin = 'center center';
             }
         }
         
         // 다이어그램 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // SVG 반응형 처리
-            const svg = document.querySelector('svg');
-            if (svg) {
-                svg.style.maxWidth = '100%';
-                svg.style.height = 'auto';
+            // 반응형 처리
+            const diagram = document.querySelector('.architecture-diagram');
+            if (diagram) {
+                diagram.style.maxWidth = '100%';
+                diagram.style.height = 'auto';
             }
         });
         
@@ -1693,49 +1885,46 @@ class ReportTemplates:
         }
         
         .header {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 20px;
+            background: var(--gradient-header);
+            color: var(--text-on-primary);
+            padding: 8px;
+            border-radius: var(--border-radius);
             text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            border: 1px solid #2d3748;
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            box-shadow: var(--shadow-light);
         }
         
         .header h1 {
-            font-size: 3em;
+            font-size: 1.4em;
             font-weight: 300;
-            margin-bottom: 15px;
-            background: linear-gradient(45deg, #00d4ff, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin: 0;
+            color: var(--text-on-primary);
         }
         
         .header .subtitle {
             opacity: 0.9;
-            font-size: 1.2em;
-            color: #a0aec0;
+            font-size: 0.8em;
+            color: var(--text-on-primary);
+            margin-top: 2px;
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: #f8f9fa;
+            margin-bottom: 3px;
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 30px;
-            border-radius: 20px;
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
             text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            border: 1px solid #2d3748;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
         
         .stat-card::before {
@@ -1760,20 +1949,15 @@ class ReportTemplates:
         }
         
         .stat-number {
-            font-size: 3em;
+            font-size: 1.2em;
             font-weight: bold;
-            background: linear-gradient(45deg, #00d4ff, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 15px;
+            color: #3498db;
+            margin-bottom: 2px;
         }
         
         .stat-label {
-            color: #a0aec0;
-            font-size: 1em;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            color: #7f8c8d;
+            font-size: 0.7em;
             font-weight: 500;
         }
         

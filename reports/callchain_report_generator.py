@@ -17,6 +17,7 @@ from typing import List, Dict, Any, Optional
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
+from util.report_utils import ReportUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -35,6 +36,7 @@ class CallChainReportGenerator:
         self.output_dir = output_dir
         self.path_utils = PathUtils()
         self.templates = ReportTemplates()
+        self.report_utils = ReportUtils(project_name, output_dir)
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -65,8 +67,11 @@ class CallChainReportGenerator:
             # 4. HTML 생성
             html_content = self._generate_html(stats, chain_data, filter_options)
             
-            # 5. 파일 저장
-            output_file = self._save_report(html_content)
+            # 5. CSS 및 JS 파일 복사
+            self.report_utils.copy_assets()
+            
+            # 6. 파일 저장
+            output_file = self.report_utils.save_report(html_content, "CallChainReport")
             
             app_logger.info(f"CallChain Report 생성 완료: {output_file}")
             return True
@@ -408,8 +413,7 @@ class CallChainReportGenerator:
             return ''
             
         except Exception as e:
-            app_logger.warning(f"관련 테이블 조회 실패: {query_id}, {e}")
-            return ''
+            handle_error(e, f"관련 테이블 조회 실패: {query_id}")
     
     def _convert_query_type(self, component_type: str) -> str:
         """컴포넌트 타입을 쿼리 타입으로 변환 (SQL_ 뒤의 부분 사용)"""
@@ -423,7 +427,8 @@ class CallChainReportGenerator:
         """SqlContent.db에서 정제된 SQL 내용 조회 및 압축 해제 (크로스플랫폼 지원)"""
         try:
             # 크로스플랫폼 경로 생성 (공통함수 사용)
-            sql_content_db_path = self.path_utils.join_path("projects", self.project_name, "SqlContent.db")
+            project_path = self.path_utils.get_project_source_path(self.project_name)
+            sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent.db")
             
             if not os.path.exists(sql_content_db_path):
                 app_logger.warning(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}")
@@ -458,8 +463,7 @@ class CallChainReportGenerator:
                         decompressed_content = gzip.decompress(compressed_content).decode('utf-8')
                         sql_content_map[component_name] = decompressed_content
                     except Exception as decompress_error:
-                        app_logger.warning(f"SQL 내용 압축 해제 실패: {component_name}, 오류: {str(decompress_error)}")
-                        sql_content_map[component_name] = ''
+                        handle_error(decompress_error, f"SQL 내용 압축 해제 실패: {component_name}")
                 
                 app_logger.debug(f"정제된 SQL 내용 조회 완료: {len(sql_content_map)}건")
                 return sql_content_map
@@ -468,8 +472,7 @@ class CallChainReportGenerator:
                 sql_content_db.disconnect()
                 
         except Exception as e:
-            app_logger.warning(f"SqlContent.db 조회 실패: {str(e)}")
-            return {}
+            handle_error(e, "SqlContent.db 조회 실패")
     
     def _get_filter_options(self) -> Dict[str, List[str]]:
         """필터링 옵션 데이터 조회 (동적 생성)"""
@@ -537,22 +540,6 @@ class CallChainReportGenerator:
             handle_error(e, "HTML 생성 실패")
             return ""
     
-    def _save_report(self, html_content: str) -> str:
-        """리포트 파일 저장"""
-        try:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"{self.project_name}_CallChainReport_{timestamp}.html"
-            output_path = os.path.join(self.output_dir, filename)
-            
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            
-            app_logger.info(f"리포트 파일 저장 완료: {output_path}")
-            return output_path
-            
-        except Exception as e:
-            handle_error(e, "리포트 파일 저장 실패")
-            return ""
 
 
 if __name__ == '__main__':

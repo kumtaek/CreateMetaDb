@@ -99,6 +99,9 @@
             cursor: grab;
             width: 100%;
             box-sizing: border-box;
+            /* 반응형 컨테이너 설정 */
+            min-height: 400px;
+            transition: all 0.3s ease;
         }
         
         .mermaid {
@@ -106,6 +109,55 @@
             min-width: 100%;
             min-height: 400px;
             overflow: visible;
+            /* 반응형 다이어그램 설정 */
+            width: 100%;
+            height: auto;
+            transition: transform 0.2s ease;
+        }
+        
+        /* 반응형 그리드 레이아웃 */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 10px;
+        }
+        
+        /* 컴포넌트 카드 스타일 */
+        .component-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .component-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .component-card.controller {
+            border-color: #e1f5fe;
+            background: linear-gradient(135deg, #e1f5fe 0%, #f0f8ff 100%);
+        }
+        
+        .component-card.service {
+            border-color: #f3e5f5;
+            background: linear-gradient(135deg, #f3e5f5 0%, #faf0ff 100%);
+        }
+        
+        .component-card.mapper {
+            border-color: #e8f5e8;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
+        }
+        
+        .component-card.model {
+            border-color: #fff3e0;
+            background: linear-gradient(135deg, #fff3e0 0%, #fffaf0 100%);
         }
         
         /* 스크롤바 스타일링 */
@@ -688,12 +740,12 @@ graph TB
             startOnLoad: true,
             theme: 'default',
             flowchart: {
-                useMaxWidth: false,
+                useMaxWidth: true,  // 반응형을 위해 true로 변경
                 htmlLabels: true,
                 curve: 'basis'
             },
             er: {
-                useMaxWidth: false,
+                useMaxWidth: true,  // 반응형을 위해 true로 변경
                 htmlLabels: true
             }
         });
@@ -729,11 +781,31 @@ graph TB
             const indicator = document.getElementById('zoom-indicator');
             if (diagram) {
                 diagram.style.transform = `scale(${currentZoom})`;
-                diagram.style.transformOrigin = 'center top';
-                diagram.style.transition = 'transform 0.2s ease';
+                diagram.style.transformOrigin = 'center center';
+                diagram.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                // 줌 시 컨테이너 스크롤 조정
+                const container = document.getElementById('mermaid-container');
+                if (container && currentZoom > 1) {
+                    const centerX = container.scrollLeft + container.clientWidth / 2;
+                    const centerY = container.scrollTop + container.clientHeight / 2;
+                    
+                    setTimeout(() => {
+                        container.scrollLeft = centerX - container.clientWidth / 2;
+                        container.scrollTop = centerY - container.clientHeight / 2;
+                    }, 100);
+                }
             }
             if (indicator) {
                 indicator.textContent = Math.round(currentZoom * 100) + '%';
+                // 줌 레벨에 따른 색상 변경
+                if (currentZoom > 1.5) {
+                    indicator.style.background = 'rgba(231, 76, 60, 0.8)';
+                } else if (currentZoom < 0.8) {
+                    indicator.style.background = 'rgba(52, 152, 219, 0.8)';
+                } else {
+                    indicator.style.background = 'rgba(0,0,0,0.7)';
+                }
             }
         }
         
@@ -758,6 +830,9 @@ graph TB
             const container = document.getElementById('mermaid-container');
             if (!container) return;
             
+            // 터치 이벤트 지원
+            let touchStartX, touchStartY, touchScrollLeft, touchScrollTop;
+            
             // 마우스 드래그로 팬
             container.addEventListener('mousedown', function(e) {
                 if (e.button === 0) { // 왼쪽 마우스 버튼
@@ -767,6 +842,19 @@ graph TB
                     scrollLeft = container.scrollLeft;
                     scrollTop = container.scrollTop;
                     container.style.cursor = 'grabbing';
+                    container.style.userSelect = 'none';
+                    e.preventDefault();
+                }
+            });
+            
+            // 터치 시작
+            container.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    isPanning = true;
+                    touchStartX = e.touches[0].pageX - container.offsetLeft;
+                    touchStartY = e.touches[0].pageY - container.offsetTop;
+                    touchScrollLeft = container.scrollLeft;
+                    touchScrollTop = container.scrollTop;
                     e.preventDefault();
                 }
             });
@@ -774,11 +862,18 @@ graph TB
             container.addEventListener('mouseleave', function() {
                 isPanning = false;
                 container.style.cursor = 'grab';
+                container.style.userSelect = 'auto';
             });
             
             container.addEventListener('mouseup', function() {
                 isPanning = false;
                 container.style.cursor = 'grab';
+                container.style.userSelect = 'auto';
+            });
+            
+            // 터치 종료
+            container.addEventListener('touchend', function() {
+                isPanning = false;
             });
             
             container.addEventListener('mousemove', function(e) {
@@ -786,20 +881,39 @@ graph TB
                 e.preventDefault();
                 const x = e.pageX - container.offsetLeft;
                 const y = e.pageY - container.offsetTop;
-                const walkX = (x - startX) * 2;
-                const walkY = (y - startY) * 2;
+                const walkX = (x - startX) * 1.5; // 드래그 민감도 조정
+                const walkY = (y - startY) * 1.5;
                 container.scrollLeft = scrollLeft - walkX;
                 container.scrollTop = scrollTop - walkY;
+            });
+            
+            // 터치 이동
+            container.addEventListener('touchmove', function(e) {
+                if (!isPanning || e.touches.length !== 1) return;
+                e.preventDefault();
+                const x = e.touches[0].pageX - container.offsetLeft;
+                const y = e.touches[0].pageY - container.offsetTop;
+                const walkX = (x - touchStartX) * 1.5;
+                const walkY = (y - touchStartY) * 1.5;
+                container.scrollLeft = touchScrollLeft - walkX;
+                container.scrollTop = touchScrollTop - walkY;
             });
             
             // 마우스 휠로 줌 (Ctrl + 휠)
             container.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
                     e.preventDefault();
-                    if (e.deltaY < 0) {
-                        zoomIn();
-                    } else {
-                        zoomOut();
+                    const rect = container.getBoundingClientRect();
+                    const centerX = e.clientX - rect.left;
+                    const centerY = e.clientY - rect.top;
+                    
+                    // 마우스 위치를 기준으로 줌
+                    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                    const newZoom = Math.max(0.3, Math.min(3, currentZoom * zoomFactor));
+                    
+                    if (newZoom !== currentZoom) {
+                        currentZoom = newZoom;
+                        applyZoom();
                     }
                 }
             });
@@ -829,11 +943,64 @@ graph TB
             }
         });
         
+        // 반응형 레이아웃 처리
+        function handleResize() {
+            const container = document.getElementById('mermaid-container');
+            const diagram = document.getElementById('diagram');
+            
+            if (container && diagram) {
+                // 컨테이너 크기에 따른 다이어그램 크기 조정
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
+                
+                // 최소 크기 보장
+                const minWidth = Math.max(containerWidth - 40, 300);
+                const minHeight = Math.max(containerHeight - 40, 200);
+                
+                diagram.style.minWidth = minWidth + 'px';
+                diagram.style.minHeight = minHeight + 'px';
+                
+                // Mermaid 다이어그램 재렌더링 (필요시)
+                if (window.mermaid) {
+                    mermaid.init(undefined, '.mermaid');
+                }
+            }
+        }
+        
+        // 윈도우 리사이즈 이벤트 처리
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(handleResize, 250);
+        });
+        
+        // 다이어그램 자동 크기 조정
+        function autoResizeDiagram() {
+            const svg = document.querySelector('#diagram svg');
+            if (svg) {
+                const container = document.getElementById('mermaid-container');
+                if (container) {
+                    const containerWidth = container.clientWidth - 40;
+                    const containerHeight = container.clientHeight - 40;
+                    
+                    // SVG 크기 조정
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', 'auto');
+                    svg.style.maxWidth = containerWidth + 'px';
+                    svg.style.maxHeight = containerHeight + 'px';
+                }
+            }
+        }
+        
         // 페이지 로드 시 다이어그램 렌더링 및 기능 초기화
         window.addEventListener('load', function() {
             mermaid.init(undefined, '.mermaid').then(function() {
                 // 렌더링 완료 후 팬/줌 기능 초기화
-                setTimeout(initPanAndZoom, 500);
+                setTimeout(function() {
+                    initPanAndZoom();
+                    handleResize();
+                    autoResizeDiagram();
+                }, 500);
                 // 초기 줌 표시 업데이트
                 applyZoom();
             });

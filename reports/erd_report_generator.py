@@ -11,13 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
-# 크로스플랫폼 경로 처리
-if sys.platform.startswith('win'):
-    import ntpath
-    path_module = ntpath
-else:
-    import posixpath
-    path_module = posixpath
+# 크로스플랫폼 경로 처리는 PathUtils 공통함수 사용
 
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
@@ -67,7 +61,10 @@ class ERDReportGenerator:
             # 3. HTML 생성
             html_content = self._generate_html(stats, erd_data)
             
-            # 4. 파일 저장
+            # 4. CSS 및 JS 파일 복사
+            self._copy_assets()
+            
+            # 5. 파일 저장
             output_file = self._save_report(html_content)
             
             app_logger.info(f"ERD Report 생성 완료: {output_file}")
@@ -255,8 +252,7 @@ class ERDReportGenerator:
             return relationships
             
         except Exception as e:
-            app_logger.warning(f"관계 정보 조회 실패: {str(e)}")
-            return []
+            handle_error(e, "관계 정보 조회 실패")
     
     def _extract_join_columns(self, condition_expression: str, src_table: str, dst_table: str) -> tuple:
         """조인 조건에서 소스와 대상 컬럼 추출"""
@@ -288,8 +284,7 @@ class ERDReportGenerator:
             return self._guess_foreign_key_columns(src_table, dst_table)
             
         except Exception as e:
-            app_logger.warning(f"조인 컬럼 추출 실패: {condition_expression}, 오류: {str(e)}")
-            return self._guess_foreign_key_columns(src_table, dst_table)
+            handle_error(e, f"조인 컬럼 추출 실패: {condition_expression}")
     
     def _is_valid_column_pair(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """실제 데이터베이스 스키마를 기반으로 컬럼 쌍의 유효성 검증"""
@@ -315,8 +310,7 @@ class ERDReportGenerator:
             return result[0]['count'] > 0 if result else False
             
         except Exception as e:
-            app_logger.warning(f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
-            return False
+            handle_error(e, f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
     
     def _guess_foreign_key_columns(self, src_table: str, dst_table: str) -> tuple:
         """실제 데이터베이스 스키마를 기반으로 외래키 컬럼 추측"""
@@ -353,8 +347,7 @@ class ERDReportGenerator:
             return None, None
                 
         except Exception as e:
-            app_logger.warning(f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}, 오류: {str(e)}")
-            return None, None
+            handle_error(e, f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}")
     
     def _generate_mermaid_erd(self, tables_data: Dict[str, List[Dict[str, Any]]], relationships: List[Dict[str, Any]]) -> str:
         """Mermaid ERD 코드 생성"""
@@ -363,18 +356,21 @@ class ERDReportGenerator:
             
             # 테이블 정의
             for table_name, columns in tables_data.items():
-                # 테이블명 정리 (Mermaid 호환)
-                clean_table_name = table_name.replace(' ', '_').replace('-', '_')
+                # 테이블명 정리 (Mermaid 호환) - 특수문자 제거
+                clean_table_name = table_name.replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
                 mermaid_lines.append(f"    {clean_table_name} {{")
                 
                 for column in columns:
                     # 데이터 타입 정규화
                     normalized_type = self._normalize_data_type(column['data_type'])
                     
-                    # 컬럼 정의
-                    column_def = f"        {normalized_type} {column['column_name']}"
+                    # 컬럼명 정리 (특수문자 제거)
+                    clean_column_name = column['column_name'].replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
                     
-                    # Primary Key 표시 (Mermaid 문법에 맞게)
+                    # 컬럼 정의 (PK 표시 포함)
+                    column_def = f"        {normalized_type} {clean_column_name}"
+                    
+                    # Primary Key 표시 (Mermaid ERD 문법에 맞게)
                     if column['is_primary_key']:
                         column_def += " PK"
                     
@@ -395,13 +391,14 @@ class ERDReportGenerator:
                 if relationship_count >= max_relationships:
                     break
                     
-                src_table = rel['src_table'].replace(' ', '_').replace('-', '_')
-                dst_table = rel['dst_table'].replace(' ', '_').replace('-', '_')
+                src_table = rel['src_table'].replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+                dst_table = rel['dst_table'].replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
                 rel_type = rel['rel_type']
                 
-                # 중복 관계 제거 (테이블 간 관계는 하나만 표시)
-                rel_key = f"{src_table}-{dst_table}" if src_table < dst_table else f"{dst_table}-{src_table}"
-                if rel_key in seen_relationships:
+                # 중복 관계 제거 (방향성 고려하여 중복 제거)
+                rel_key = f"{src_table}-{dst_table}"
+                reverse_key = f"{dst_table}-{src_table}"
+                if rel_key in seen_relationships or reverse_key in seen_relationships:
                     continue
                 seen_relationships.add(rel_key)
                 
@@ -415,20 +412,14 @@ class ERDReportGenerator:
                 src_nullable = rel_info['src_nullable']
                 dst_nullable = rel_info['dst_nullable']
                 
-                if is_pk_fk_relation:
-                    # 정확한 PK-FK 관계: 1:N 관계
-                    if src_nullable:
-                        # FK가 nullable: 선택적 관계 (점선)
-                        mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
-                    else:
-                        # FK가 NOT NULL: 필수 관계 (실선)
-                        mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : \"{relationship_label}\"")
-                elif rel_type.startswith('JOIN_'):
-                    # JOIN 관계 (점선)
-                    mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
-                else:
-                    # PK-FK 관계가 아닌 경우: 일반 선 (관계 불명확)
-                    mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
+                # 관계 불명확한 경우 필터링 (PK-FK 관계가 아니고 신뢰도가 낮은 경우)
+                if not is_pk_fk_relation and rel.get('confidence', 0.8) < 0.7:
+                    app_logger.debug(f"Mermaid ERD에서 관계 불명확하여 제외: {rel['src_table']}.{rel['src_column']} -> {rel['dst_table']}.{rel['dst_column']} (신뢰도: {rel.get('confidence', 0.8)})")
+                    continue
+                
+                # ERD는 단순 문법만 지원: A ||--o{ B : has 형태만 사용
+                # PK-FK 관계든 JOIN 관계든 동일한 문법 사용
+                mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : {relationship_label}")
                 
                 relationship_count += 1
             
@@ -437,8 +428,7 @@ class ERDReportGenerator:
             return mermaid_code
             
         except Exception as e:
-            app_logger.warning(f"Mermaid ERD 코드 생성 실패: {str(e)}")
-            return "erDiagram\n    EMPTY_TABLE {\n        string message\n    }"
+            handle_error(e, "Mermaid ERD 코드 생성 실패")
     
     def _get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> dict:
         """CSV에서 업로드된 정보를 기반으로 관계 정보 확인 (PK-FK 여부, nullable 여부)"""
@@ -474,7 +464,7 @@ class ERDReportGenerator:
                 dst_nullable = result[0]['dst_nullable'] == 'Y'
                 
                 return {
-                    'is_pk_fk': not src_is_pk and dst_is_pk,  # FK -> PK 관계
+                    'is_pk_fk': (src_is_pk and not dst_is_pk) or (not src_is_pk and dst_is_pk),  # PK-FK 관계 (양방향)
                     'src_nullable': src_nullable,
                     'dst_nullable': dst_nullable
                 }
@@ -482,8 +472,7 @@ class ERDReportGenerator:
             return {'is_pk_fk': False, 'src_nullable': True, 'dst_nullable': True}
                 
         except Exception as e:
-            app_logger.warning(f"관계 정보 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
-            return {'is_pk_fk': False, 'src_nullable': True, 'dst_nullable': True}
+            handle_error(e, f"관계 정보 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
 
     def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인 (하위 호환성)"""
@@ -491,8 +480,12 @@ class ERDReportGenerator:
         return rel_info['is_pk_fk']
 
     def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
-        """관계 라벨 포맷팅 - 동일한 키로 조인되는 경우 중복 표시 제거"""
+        """관계 라벨 포맷팅 - Mermaid 호환성 고려"""
         try:
+            # HTML 태그 오인식 방지: <, > 문자를 &lt;, &gt;로 변환
+            def escape_html_chars(text: str) -> str:
+                return text.replace('<', '&lt;').replace('>', '&gt;')
+            
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
                 src_keys = [key.strip() for key in src_column.split(',')]
@@ -500,19 +493,26 @@ class ERDReportGenerator:
                 
                 # 동일한 키로 조인되는 경우 하나만 표시
                 if src_keys == dst_keys:
-                    return f"[{', '.join(src_keys)}]"
+                    label = f"[{', '.join(src_keys)}]"
                 else:
-                    return f"[{', '.join(src_keys)}] -> [{', '.join(dst_keys)}]"
-            
-            # 단일 키 처리
-            elif src_column == dst_column:
-                return src_column
+                    # -> 대신 화살표 기호 사용하지 않고 단순 텍스트로
+                    label = f"[{', '.join(src_keys)}] to [{', '.join(dst_keys)}]"
             else:
-                return f"{src_column} -> {dst_column}"
+                # 단일 키 처리
+                if src_column == dst_column:
+                    label = src_column
+                else:
+                    # -> 대신 화살표 기호 사용하지 않고 단순 텍스트로
+                    label = f"{src_column} to {dst_column}"
+            
+            # HTML 특수문자 이스케이프 처리
+            label = escape_html_chars(label)
+            
+            # ERD 안정성을 위해 모든 라벨을 따옴표로 감싸기
+            return f'"{label}"'
                 
         except Exception as e:
-            app_logger.warning(f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}, 오류: {str(e)}")
-            return f"{src_column} -> {dst_column}"
+            handle_error(e, f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
     
     def _normalize_data_type(self, data_type: str) -> str:
         """데이터 타입 정규화 (길이 정보 보존)"""
@@ -541,8 +541,7 @@ class ERDReportGenerator:
                 return data_type
             
         except Exception as e:
-            app_logger.warning(f"데이터 타입 정규화 실패: {data_type}, 오류: {str(e)}")
-            return "string"
+            handle_error(e, f"데이터 타입 정규화 실패: {data_type}")
     
     def _generate_html(self, stats: Dict[str, int], erd_data: Dict[str, Any]) -> str:
         """HTML 생성"""
@@ -569,7 +568,7 @@ class ERDReportGenerator:
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{self.project_name}_ERD_{timestamp}.html"
-            output_path = os.path.join(self.output_dir, filename)
+            output_path = self.path_utils.join_path(self.output_dir, filename)
             
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
@@ -580,6 +579,81 @@ class ERDReportGenerator:
         except Exception as e:
             handle_error(e, "ERD 리포트 파일 저장 실패")
             return ""
+    
+    def _copy_assets(self):
+        """CSS 및 JS 파일 복사 (권한 오류 방지)"""
+        try:
+            import shutil
+            import time
+            
+            # CSS 디렉토리 생성
+            css_dir = self.path_utils.join_path(self.output_dir, "css")
+            if not os.path.exists(css_dir):
+                os.makedirs(css_dir)
+            
+            # JS 디렉토리 생성
+            js_dir = self.path_utils.join_path(self.output_dir, "js")
+            if not os.path.exists(js_dir):
+                os.makedirs(js_dir)
+            
+            # 올바른 CSS 파일 복사 (재시도 로직 포함)
+            # reports 폴더에서 찾기
+            reports_path = self.path_utils.get_reports_path()
+            source_css = self.path_utils.join_path(reports_path, "css", "woori.css")
+            
+            if os.path.exists(source_css):
+                dest_css = self.path_utils.join_path(css_dir, "woori.css")
+                self._safe_copy_file(source_css, dest_css, "CSS")
+            
+            # 올바른 JS 파일들 복사 (재시도 로직 포함)
+            # reports 폴더에서 찾기
+            reports_path = self.path_utils.get_reports_path()
+            source_js_dir = self.path_utils.join_path(reports_path, "js")
+            
+            if os.path.exists(source_js_dir):
+                for js_file in os.listdir(source_js_dir):
+                    if js_file.endswith('.js'):
+                        source_js = self.path_utils.join_path(source_js_dir, js_file)
+                        dest_js = self.path_utils.join_path(js_dir, js_file)
+                        self._safe_copy_file(source_js, dest_js, f"JS ({js_file})")
+            
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, "CSS/JS 파일 복사 실패")
+    
+    def _safe_copy_file(self, source: str, dest: str, file_type: str, max_retries: int = 3):
+        """파일 복사 (권한 오류 방지를 위한 재시도 로직)"""
+        import shutil
+        import time
+        
+        for attempt in range(max_retries):
+            try:
+                # 대상 파일이 이미 존재하고 사용 중인 경우 삭제 시도
+                if os.path.exists(dest):
+                    try:
+                        os.remove(dest)
+                    except PermissionError:
+                        # 삭제 실패 시 잠시 대기 후 재시도
+                        time.sleep(0.1)
+                        continue
+                
+                # 파일 복사
+                shutil.copy2(source, dest)
+                app_logger.info(f"{file_type} 파일 복사 완료: {dest}")
+                return True
+                
+            except PermissionError as e:
+                if attempt < max_retries - 1:
+                    app_logger.warning(f"{file_type} 파일 복사 재시도 {attempt + 1}/{max_retries}: {e}")
+                    time.sleep(0.2)  # 200ms 대기
+                else:
+                    app_logger.warning(f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
+                    return False
+            except Exception as e:
+                from util.logger import handle_error
+                handle_error(e, f"{file_type} 파일 복사 실패")
+        
+        return False
 
 
 if __name__ == '__main__':

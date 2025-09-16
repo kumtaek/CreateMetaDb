@@ -24,6 +24,7 @@ class ERDDagreTemplates:
 <head>
     <meta charset="utf-8" />
     <title>Source Analyzer - 고도화 ERD</title>
+    <link rel="stylesheet" href="css/woori.css">
     <style>
         {self._get_erd_dagre_css()}
     </style>
@@ -50,6 +51,10 @@ class ERDDagreTemplates:
             <button onclick="exportSvg()">SVG 내보내기</button>
             <input type="text" id="search" placeholder="테이블명으로 검색..." />
             <span id="current-layout">fcose</span>
+            <div class="zoom-hint">
+                <span class="hint-icon">🔍</span>
+                <span class="hint-text">Ctrl + 마우스 휠로 확대/축소 가능</span>
+            </div>
         </div>
         <div id="cy"></div>
         
@@ -130,55 +135,20 @@ class ERDDagreTemplates:
         body, html { 
             margin: 0; 
             height: 100%; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
             height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 4px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 1.0em;
-            font-weight: 300;
-        }
-        .header .subtitle {
-            margin: 1px 0 0 0;
-            opacity: 0.8;
-            font-size: 0.6em;
-        }
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 2px;
-            padding: 4px;
-            background: #f8f9fa;
-            flex-wrap: wrap;
-        }
-        .stat-card {
             background: white;
-            padding: 3px;
-            border-radius: 3px;
-            text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            min-width: 60px;
-        }
-        .stat-number {
-            font-size: 1.0em;
-            font-weight: bold;
-            color: #3498db;
-            margin-bottom: 1px;
-        }
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.6em;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
         }
         #toolbar { 
             padding: 4px; 
@@ -191,7 +161,7 @@ class ERDDagreTemplates:
         }
         #cy { 
             width: 100%; 
-            height: calc(100vh - 120px); 
+            height: calc(100vh - 60px); 
             flex: 1;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
             background-size: 400% 400%;
@@ -223,6 +193,44 @@ class ERDDagreTemplates:
             border-radius: 4px;
             font-size: 14px;
             min-width: 200px;
+        }
+        
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-left: 15px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+            animation: pulse 2s infinite;
+        }
+        .hint-icon {
+            font-size: 16px;
+            animation: bounce 1.5s infinite;
+        }
+        .hint-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
+        }
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+                transform: scale(1.02);
+            }
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
         }
         
         /* 향상된 툴팁 스타일 */
@@ -425,20 +433,6 @@ class ERDDagreTemplates:
         }
         
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.5em;
-            }
-            .stats {
-                gap: 10px;
-                padding: 10px;
-            }
-            .stat-card {
-                padding: 10px 15px;
-                min-width: 100px;
-            }
-            .stat-number {
-                font-size: 1.5em;
-            }
             #toolbar {
                 padding: 8px;
                 gap: 5px;

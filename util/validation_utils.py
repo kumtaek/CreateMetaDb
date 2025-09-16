@@ -8,7 +8,6 @@ SourceAnalyzer 데이터 검증 공통 유틸리티 모듈
 
 import os
 import re
-from pathlib import Path
 from typing import Optional, List, Dict, Any, Union, Callable
 from .logger import app_logger, handle_error
 
@@ -57,10 +56,11 @@ class ValidationUtils:
             return False
         
         try:
-            # 경로가 유효한지 확인
-            Path(file_path)
-            return True
-        except (OSError, ValueError):
+            # 경로가 유효한지 확인 (공통함수 사용)
+            from .file_utils import FileUtils
+            file_info = FileUtils.get_file_info(file_path)
+            return file_info['exists'] or file_info['is_valid_path']
+        except Exception:
             return False
     
     @staticmethod

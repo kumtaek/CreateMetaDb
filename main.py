@@ -174,7 +174,7 @@ def main():
                 warning("프로젝트 ID를 찾을 수 없어 간접 USE_TABLE 관계를 생성할 수 없습니다")
         else:
             error("4단계 실패: Java 로딩")
-            sys.exit(1)
+            handle_error(Exception("Java 로딩 실패"), "4단계 실패: Java 로딩")
         
         # 11. 5단계 실행: Spring API 진입점 분석 (Phase 1)
         info("5단계 실행: Spring API 진입점 분석 (Phase 1)")
@@ -187,13 +187,13 @@ def main():
             info("5단계 완료: Spring API 진입점 분석 (Phase 1)")
         else:
             error("5단계 실패: 백엔드 진입점 분석")
-            sys.exit(1)
+            handle_error(Exception("백엔드 진입점 분석 실패"), "5단계 실패: 백엔드 진입점 분석")
         
         info("1-5단계 테스트 완료")
         
     except KeyboardInterrupt:
         info("사용자에 의해 중단됨")
-        sys.exit(0)
+        return
     except Exception as e:
         # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
         handle_error(e, "프로그램 실행 중 오류 발생")

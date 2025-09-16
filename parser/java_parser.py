@@ -197,9 +197,7 @@ class JavaParser:
                  f"USE_TABLE {len(self.compiled_use_table_patterns)}개")
 
         except Exception as e:
-            handle_error(f"정규식 패턴 컴파일 실패: {str(e)}")
-            self.compiled_class_patterns = []
-            self.compiled_method_patterns = []
+            handle_error(e, "정규식 패턴 컴파일 실패")
             self.compiled_business_patterns = {}
             self.compiled_package_patterns = []
             self.compiled_extends_patterns = []

@@ -7,61 +7,8 @@ SourceAnalyzer 경로 처리 공통 유틸리티 모듈
 """
 
 import os
-from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from .logger import app_logger, handle_error, error
-import threading
-
-
-class DatabaseCache:
-    """데이터베이스 조회 결과 캐싱을 위한 싱글톤 클래스"""
-    _instance = None
-    _lock = threading.Lock()
-    
-    def __new__(cls):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(DatabaseCache, cls).__new__(cls)
-                    cls._instance._initialized = False
-        return cls._instance
-    
-    def __init__(self):
-        if not self._initialized:
-            self._project_id_cache = {}  # {project_name: project_id}
-            self._table_id_cache = {}    # {(project_name, table_name): table_id}
-            self._table_component_id_cache = {}  # {(project_name, table_name): component_id}
-            self._initialized = True
-    
-    def get_project_id(self, project_name: str) -> Optional[int]:
-        """프로젝트 ID 캐시에서 조회"""
-        return self._project_id_cache.get(project_name)
-    
-    def set_project_id(self, project_name: str, project_id: int):
-        """프로젝트 ID 캐시에 저장"""
-        self._project_id_cache[project_name] = project_id
-    
-    def get_table_id(self, project_name: str, table_name: str) -> Optional[int]:
-        """테이블 ID 캐시에서 조회"""
-        return self._table_id_cache.get((project_name, table_name))
-    
-    def set_table_id(self, project_name: str, table_name: str, table_id: int):
-        """테이블 ID 캐시에 저장"""
-        self._table_id_cache[(project_name, table_name)] = table_id
-    
-    def get_table_component_id(self, project_name: str, table_name: str) -> Optional[int]:
-        """테이블 컴포넌트 ID 캐시에서 조회"""
-        return self._table_component_id_cache.get((project_name, table_name))
-    
-    def set_table_component_id(self, project_name: str, table_name: str, component_id: int):
-        """테이블 컴포넌트 ID 캐시에 저장"""
-        self._table_component_id_cache[(project_name, table_name)] = component_id
-    
-    def clear_cache(self):
-        """캐시 초기화"""
-        self._project_id_cache.clear()
-        self._table_id_cache.clear()
-        self._table_component_id_cache.clear()
 
 
 class PathUtils:
@@ -288,6 +235,38 @@ class PathUtils:
         except Exception as e:
             handle_error(e, f"경로 구성 요소 분해 실패: {path}")
             return {}
+    
+    def get_filename(self, path: str) -> str:
+        """
+        경로에서 파일명 추출
+        
+        Args:
+            path: 파일 경로
+            
+        Returns:
+            파일명
+        """
+        try:
+            return os.path.basename(self.normalize_path(path))
+        except Exception as e:
+            handle_error(e, f"파일명 추출 실패: {path}")
+            return ""
+    
+    def get_directory_path(self, path: str) -> str:
+        """
+        경로에서 디렉토리 경로 추출
+        
+        Args:
+            path: 파일 경로
+            
+        Returns:
+            디렉토리 경로
+        """
+        try:
+            return os.path.dirname(self.normalize_path(path))
+        except Exception as e:
+            handle_error(e, f"디렉토리 경로 추출 실패: {path}")
+            return ""
     
     def convert_to_unix_path(self, path: str) -> str:
         """

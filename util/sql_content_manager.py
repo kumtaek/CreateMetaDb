@@ -36,11 +36,11 @@ class SqlContentManager:
         try:
             # 프로젝트별 데이터베이스 경로 생성 (공통함수 사용)
             path_utils = PathUtils()
-            project_path = path_utils.get_project_path(self.project_name)
-            db_path = os.path.join(project_path, "SqlContent.db")
+            db_path = path_utils.join_path("projects", self.project_name, "SqlContent.db")
             
             # 디렉토리 생성
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            project_dir = path_utils.join_path("projects", self.project_name)
+            os.makedirs(project_dir, exist_ok=True)
             
             # DatabaseUtils 초기화
             self.db_utils = DatabaseUtils(db_path)
@@ -49,12 +49,8 @@ class SqlContentManager:
             if not self.db_utils.connect():
                 return False
             
-            # 스키마 생성
-            schema_path = os.path.join(
-                os.path.dirname(__file__), 
-                '..', 'database', 'create_sql_content_db.sql'
-            )
-            schema_path = os.path.abspath(schema_path)
+            # 스키마 생성 (공통함수 사용)
+            schema_path = path_utils.join_path("database", "create_sql_content_db.sql")
             
             if not self.db_utils.create_schema(schema_path):
                 app_logger.error("SQL Content 데이터베이스 스키마 생성 실패")
@@ -112,8 +108,7 @@ class SqlContentManager:
             return success
             
         except Exception as e:
-            app_logger.error(f"SQL 내용 저장 실패 (무시하고 계속 진행): {str(e)}")
-            return False
+            handle_error(e, "SQL 내용 저장 실패")
     
     def _upsert_sql_content(self, sql_content_data: Dict[str, Any]) -> bool:
         """
@@ -195,8 +190,7 @@ class SqlContentManager:
                 return success
                 
         except Exception as e:
-            app_logger.error(f"SQL Content UPSERT 실패 (무시하고 계속 진행): {str(e)}")
-            return False
+            handle_error(e, "SQL Content UPSERT 실패")
     
     def cleanup_deleted_sql_contents(self, project_id: int, current_component_ids: List[int]) -> int:
         """

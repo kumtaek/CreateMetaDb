@@ -105,7 +105,7 @@ class JspLoadingEngine:
                                 analysis_result['api_calls'] = api_calls
                                 debug(f"API 호출 {len(api_calls)}개 발견: {jsp_file}")
                         except Exception as e:
-                            warning(f"API 호출 분석 실패: {jsp_file}, 오류: {str(e)}")
+                            handle_error(e, f"API 호출 분석 실패: {jsp_file}")
 
                     # 파싱 에러 체크 (USER RULES: 파싱 에러는 계속 진행)
                     if analysis_result.get('has_error') == 'Y':
@@ -139,8 +139,7 @@ class JspLoadingEngine:
 
                 except Exception as e:
                     # USER RULES: 파싱 에러는 has_error='Y', error_message 저장 후 계속 진행
-                    warning(f"JSP 파일 처리 중 오류: {jsp_file}, 오류: {str(e)}")
-                    self.stats['errors'] += 1
+                    handle_error(e, f"JSP 파일 처리 중 오류: {jsp_file}")
                     continue
 
             # 3. 통계 정보 출력
@@ -531,8 +530,7 @@ class JspLoadingEngine:
                             app_logger.warning(f"API_URL inferred 생성 실패: {api_url_name}")
                             
                 except Exception as e:
-                    app_logger.warning(f"API_URL 처리 중 오류: {api_call['component_name']} - {str(e)}")
-                    continue
+                    handle_error(e, f"API_URL 처리 중 오류: {api_call['component_name']}")
 
             info(f"API_URL 처리 완료: 매칭 성공 {updated_count}개, inferred 생성 {created_count}개")
             return True
@@ -554,8 +552,7 @@ class JspLoadingEngine:
         try:
             return self.db_utils.get_component_id(project_id, api_url_name, 'API_URL')
         except Exception as e:
-            app_logger.warning(f"기존 API_URL 컴포넌트 조회 실패: {api_url_name} - {str(e)}")
-            return None
+            handle_error(e, f"기존 API_URL 컴포넌트 조회 실패: {api_url_name}")
 
     def _update_api_url_file_id(self, api_url_id: int, jsp_file_id: int) -> bool:
         """
@@ -577,8 +574,7 @@ class JspLoadingEngine:
             self.db_utils.execute_query(update_sql, (jsp_file_id, api_url_id))
             return True
         except Exception as e:
-            app_logger.warning(f"API_URL file_id 업데이트 실패: {api_url_id} → {jsp_file_id} - {str(e)}")
-            return False
+            handle_error(e, f"API_URL file_id 업데이트 실패: {api_url_id} → {jsp_file_id}")
 
     def _create_inferred_api_url_component(self, api_call: Dict[str, Any], project_id: int) -> bool:
         """
@@ -617,8 +613,7 @@ class JspLoadingEngine:
             return True
             
         except Exception as e:
-            app_logger.warning(f"inferred API_URL 컴포넌트 생성 실패: {api_call['component_name']} - {str(e)}")
-            return False
+            handle_error(e, f"inferred API_URL 컴포넌트 생성 실패: {api_call['component_name']}")
 
     def _create_api_url_method_relationships(self, api_calls: List[Dict[str, Any]]) -> bool:
         """
@@ -677,8 +672,7 @@ class JspLoadingEngine:
                         debug(f"매칭되는 METHOD 컴포넌트를 찾을 수 없음: {api_url_name}")
                         
                 except Exception as e:
-                    warning(f"API_URL → METHOD 관계 생성 실패: {api_call['component_name']}, 오류: {str(e)}")
-                    continue
+                    handle_error(e, f"API_URL → METHOD 관계 생성 실패: {api_call['component_name']}")
                     
             if not relationship_data_list:
                 return True

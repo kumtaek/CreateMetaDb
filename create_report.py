@@ -8,10 +8,9 @@ SourceAnalyzer 리포트 생성 메인 실행 파일
 import sys
 import argparse
 from datetime import datetime
-from pathlib import Path
 
-# 프로젝트 루트를 Python 경로에 추가
-sys.path.append(str(Path(__file__).parent))
+# 프로젝트 루트를 Python 경로에 추가 (공통함수 사용)
+sys.path.append(str(__file__).replace('create_report.py', ''))
 
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
@@ -71,9 +70,10 @@ def validate_project(project_name: str, path_utils: PathUtils) -> bool:
             app_logger.error(f"프로젝트가 존재하지 않습니다: {project_name}")
             return False
         
-        # 메타데이터베이스 파일 존재 확인
+        # 메타데이터베이스 파일 존재 확인 (공통함수 사용)
         metadata_db_path = path_utils.get_project_metadata_db_path(project_name)
-        if not Path(metadata_db_path).exists():
+        from util.file_utils import FileUtils
+        if not FileUtils.get_file_info(metadata_db_path)['exists']:
             app_logger.error(f"메타데이터베이스가 존재하지 않습니다: {metadata_db_path}")
             return False
         
@@ -82,6 +82,7 @@ def validate_project(project_name: str, path_utils: PathUtils) -> bool:
         
     except Exception as e:
         handle_error(e, f"프로젝트 유효성 검증 실패: {project_name}")
+        return False
 
 
 def create_output_directory(project_name: str, path_utils: PathUtils, output_dir: str = None) -> str:
@@ -92,12 +93,17 @@ def create_output_directory(project_name: str, path_utils: PathUtils, output_dir
         else:
             output_path = path_utils.get_project_report_path(project_name)
         
-        Path(output_path).mkdir(parents=True, exist_ok=True)
+        # 공통함수 사용 (하드코딩 금지)
+        from util.file_utils import FileUtils
+        if not FileUtils.ensure_directory_exists(output_path):
+            handle_error(Exception(f"디렉토리 생성 실패: {output_path}"), f"출력 디렉토리 생성 실패: {output_path}")
+        
         app_logger.info(f"출력 디렉토리 준비 완료: {output_path}")
         return output_path
         
     except Exception as e:
         handle_error(e, f"출력 디렉토리 생성 실패: {output_path}")
+        return ""
 
 
 def generate_callchain_report(project_name: str, output_dir: str) -> bool:
@@ -117,6 +123,7 @@ def generate_callchain_report(project_name: str, output_dir: str) -> bool:
             
     except Exception as e:
         handle_error(e, "CallChain Report 생성 중 오류 발생")
+        return False
 
 
 def generate_erd_report(project_name: str, output_dir: str) -> bool:
@@ -136,6 +143,7 @@ def generate_erd_report(project_name: str, output_dir: str) -> bool:
             
     except Exception as e:
         handle_error(e, "ERD Report 생성 중 오류 발생")
+        return False
 
 
 
@@ -157,6 +165,7 @@ def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
             
     except Exception as e:
         handle_error(e, "ERD(Dagre) Report 생성 중 오류 발생")
+        return False
 
 
 def generate_architecture_report(project_name: str, output_dir: str) -> bool:
@@ -176,6 +185,7 @@ def generate_architecture_report(project_name: str, output_dir: str) -> bool:
             
     except Exception as e:
         handle_error(e, "Architecture Report 생성 중 오류 발생")
+        return False
 
 
 def main():
@@ -191,10 +201,12 @@ def main():
         
         # 프로젝트 유효성 검증
         if not validate_project(args.project_name, path_utils):
-            sys.exit(1)
+            handle_error(Exception("프로젝트 유효성 검증 실패"), "프로젝트 유효성 검증 실패")
         
         # 출력 디렉토리 생성
         output_dir = create_output_directory(args.project_name, path_utils, args.output_dir)
+        if not output_dir:
+            handle_error(Exception("출력 디렉토리 생성 실패"), "출력 디렉토리 생성 실패")
         
         # 리포트 생성
         success_count = 0
@@ -227,14 +239,13 @@ def main():
         
         if success_count == total_count:
             app_logger.info("모든 리포트가 성공적으로 생성되었습니다.")
-            sys.exit(0)
+            return
         else:
-            app_logger.error("일부 리포트 생성에 실패했습니다.")
-            sys.exit(1)
+            handle_error(Exception("일부 리포트 생성 실패"), "일부 리포트 생성에 실패했습니다.")
             
     except KeyboardInterrupt:
         app_logger.info("사용자에 의해 중단되었습니다.")
-        sys.exit(0)
+        return
     except Exception as e:
         handle_error(e, "리포트 생성 도구 실행 중 치명적 오류 발생")
 
