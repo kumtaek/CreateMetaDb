@@ -531,7 +531,7 @@ class ERDDagreTemplates:
                 elements: DATA,
                 minZoom: 0.1,
                 maxZoom: 3,
-                wheelSensitivity: 0.3  // 마우스 휠 줌 민감도를 0.3으로 설정 (기본값 1.0보다 둔감)
+                wheelSensitivity: 0.3,  // 마우스 휠 줌 민감도를 0.3으로 설정 (기본값 1.0보다 둔감)
                 style: [
                     {
                         selector: 'node',
@@ -580,7 +580,7 @@ class ERDDagreTemplates:
                             'width': 3,
                             'line-color': '#7f8c8d',
                             'target-arrow-color': '#7f8c8d',
-                            'target-arrow-shape': 'triangle',
+                            'target-arrow-shape': 'triangle',  // 기본적으로 N쪽으로 화살표
                             'arrow-scale': 1.5,
                             'curve-style': 'straight',  // 깔끔한 직선 스타일
                             'label': 'data(label)',
@@ -600,6 +600,26 @@ class ERDDagreTemplates:
                             'line-color': '#e74c3c',
                             'target-arrow-color': '#e74c3c',
                             'line-style': 'solid'
+                        }
+                    },
+                    {
+                        selector: 'edge[is_pk_fk="true"]',
+                        style: {
+                            'line-color': '#e74c3c',
+                            'target-arrow-color': '#e74c3c',
+                            'target-arrow-shape': 'triangle-tee',  // 닭발(까마귀발) 모양
+                            'line-style': 'solid',
+                            'width': 4
+                        }
+                    },
+                    {
+                        selector: 'edge[is_pk_fk="false"]',
+                        style: {
+                            'line-color': '#7f8c8d',
+                            'target-arrow-color': '#7f8c8d',
+                            'target-arrow-shape': 'triangle',  // N쪽으로 일반 화살표
+                            'line-style': 'solid',
+                            'width': 3
                         }
                     },
                     {

@@ -1,9 +1,0 @@
-XML 파일별 SQL 쿼리 수:
-  UserMapper.xml: 22개
-  ImplicitJoinMapper.xml: 0개
-  ImplicitJoinTestMapper.xml: 0개
-  MixedErrorMapper.xml: 0개
-  ProductMapper.xml: 0개
-  UserMapper.xml: 0개
-
-ProductMapper.xml: 0개 SQL 쿼리

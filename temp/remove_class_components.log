@@ -1,6 +1,0 @@
-=== CLASS 컴포넌트 제거 ===
-제거할 CLASS 컴포넌트 수: 2
-  250: ConcreteService (file_id: 4)
-  251: BaseService (file_id: 4)
-CLASS 컴포넌트 삭제 완료: 2개
-남은 CLASS 컴포넌트 수: 0개

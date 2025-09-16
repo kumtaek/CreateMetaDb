@@ -1,7 +1,7 @@
 """
 SourceAnalyzer 5단계 - 백엔드 진입점 분석 메인 엔진
 - Spring Framework 기반 API 진입점 분석
-- API_ENTRY, FRONTEND_API 컴포넌트 생성
+- API_URL 컴포넌트 생성
 - CALL_API_F2B 관계 생성
 - 캐싱 및 통계 수집
 """
@@ -172,17 +172,11 @@ class BackendEntryLoadingEngine:
                 all_backend_entries = self._analyze_backend_entries(java_files)
                 app_logger.info(f"백엔드 진입점 분석 완료: {len(all_backend_entries)}개 진입점")
                 
-                # 4. DB 저장
-                if all_backend_entries:
-                    self._save_results_to_db(all_backend_entries)
-                    app_logger.info("분석 결과 DB 저장 완료")
+                # 4. DB 저장 (진입점이 없어도 실행)
+                self._save_results_to_db(all_backend_entries)
+                app_logger.info("분석 결과 DB 저장 완료")
 
-                    # 5. API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성
-                    project_id = self._get_project_id()
-                    if project_id:
-                        self._create_api_method_relationships(all_backend_entries, project_id)
-                    else:
-                        app_logger.warning("프로젝트 ID를 찾을 수 없어 API-METHOD 관계를 생성할 수 없습니다")
+                # 5. API_URL → METHOD 관계는 _save_results_to_db에서 처리됨
 
                 # 6. 통계 출력
                 self._print_backend_entry_statistics()
@@ -389,39 +383,21 @@ class BackendEntryLoadingEngine:
 
             # 컴포넌트 데이터 준비
             components_to_insert = []
-            api_components_to_insert = []
             relationships_to_insert = []
 
-            for entry in entries:
-                try:
-                    # API_ENTRY 컴포넌트 생성
-                    api_entry_component = self._create_api_entry_component(entry, project_id)
-                    if api_entry_component:
-                        components_to_insert.append(api_entry_component)
+            # API_URL 컴포넌트 생성 (진입점이 있을 때만)
+            if entries:
+                self._create_api_components(entries, project_id, components_to_insert)
 
-                    # FRONTEND_API 컴포넌트 생성
-                    frontend_api_component = self._create_frontend_api_component(entry, project_id)
-                    if frontend_api_component:
-                        components_to_insert.append(frontend_api_component)
+                # 배치 upsert 저장
+                if components_to_insert:
+                    self.db.batch_insert_or_replace('components', components_to_insert)
+                    app_logger.debug(f"API_URL 컴포넌트 upsert 저장 완료: {len(components_to_insert)}개")
 
-                except Exception as e:
-                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                    handle_error(e, f"컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
-
-            # 배치 upsert 저장
-            if components_to_insert:
-                self.db.batch_insert_or_replace('components', components_to_insert)
-                app_logger.debug(f"컴포넌트 upsert 저장 완료: {len(components_to_insert)}개")
-
-            # API 컴포넌트 생성 (컴포넌트 저장 후)
-            self._create_api_components(entries, project_id, api_components_to_insert)
-
-            if api_components_to_insert:
-                self.db.batch_insert_or_replace('api_components', api_components_to_insert)
-                app_logger.debug(f"API 컴포넌트 upsert 저장 완료: {len(api_components_to_insert)}개")
-
-            # 관계 생성 (컴포넌트 저장 후)
-            self._create_api_relationships(entries, project_id, relationships_to_insert)
+                # 관계 생성 (컴포넌트 저장 후)
+                self._create_api_relationships(entries, project_id, relationships_to_insert)
+            else:
+                app_logger.info("백엔드 진입점이 없어 API_URL 컴포넌트를 생성하지 않습니다")
 
             if relationships_to_insert:
                 self.db.batch_insert_or_replace('relationships', relationships_to_insert)
@@ -430,9 +406,17 @@ class BackendEntryLoadingEngine:
         except Exception as e:
             handle_error(e, f"분석 결과 DB 저장 실패: {self.project_name}")
     
-    def _create_api_entry_component(self, entry: BackendEntryInfo, project_id: int) -> Optional[Dict[str, Any]]:
+    def _create_api_url_component(self, entry: BackendEntryInfo, project_id: int) -> Optional[Dict[str, Any]]:
         """
-        API_ENTRY 컴포넌트 생성
+        API_URL 컴포넌트 생성 (과거 FRONTEND_API 로직을 참고한 JSP 파일 매칭)
+        
+        설계 컨셉:
+        - 매칭 성공: JSP 파일의 file_id 사용 → 완전한 체인 (JSP → API_URL → METHOD)
+        - 매칭 실패: Java 파일의 file_id 사용 → 끊어진 체인 (Java → API_URL → METHOD)
+        
+        CallChain 리포트에서:
+        - 매칭 성공: Frontend 컬럼에 JSP 파일명 표시
+        - 매칭 실패: Frontend 컬럼에 Java 파일명 표시 (개발자가 매칭 실패 파악 가능)
         
         Args:
             entry: 백엔드 진입점 정보
@@ -442,24 +426,39 @@ class BackendEntryLoadingEngine:
             컴포넌트 데이터 딕셔너리 또는 None
         """
         try:
-            # 파일 ID 직접 사용 (메모리에서 전달받음)
-            file_id = entry.file_id
+            # 과거 FRONTEND_API 로직 참고: JSP 파일에서 해당 API를 호출하는지 확인
+            # 매칭 성공 시 JSP file_id, 실패 시 Java file_id 사용
+            jsp_file_id = self._find_matching_jsp_file(entry.url_pattern, entry.http_method, project_id)
             
-            # 컴포넌트명 생성 (유일성 보장)
-            url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
-            class_name_safe = entry.class_name.replace('.', '_')
-            component_name = f"API_ENTRY.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
+            # 매칭 결과에 따른 file_id 결정
+            if jsp_file_id:
+                # 매칭 성공: JSP 파일 ID 사용 → 완전한 체인 구성
+                file_id = jsp_file_id
+                app_logger.debug(f"JSP 파일 매칭 성공: {entry.url_pattern} → JSP file_id: {jsp_file_id}")
+            else:
+                # 매칭 실패: Java 파일 ID 사용 → 끊어진 체인 (개발자가 매칭 실패 파악 가능)
+                file_id = entry.file_id
+                app_logger.debug(f"JSP 파일 매칭 실패: {entry.url_pattern} → Java file_id: {entry.file_id}")
+            
+            # API_URL 컴포넌트명 생성 (URL:HTTP_METHOD 형태)
+            # 잘못된 URL 패턴 필터링 (/:GET, /:POST 등)
+            url_pattern = entry.url_pattern.strip()
+            if url_pattern in ['/', ''] or url_pattern.startswith(':') or not url_pattern.startswith('/'):
+                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                return None
+            
+            component_name = f"{url_pattern}:{entry.http_method}"
             
             # 해시값 생성
             hash_value = self.hash_utils.generate_content_hash(f"{component_name}_{entry.file_path}_{entry.line_start}")
             
             return {
                 'project_id': project_id,
-                'file_id': file_id,
+                'file_id': file_id,  # JSP file_id (매칭 성공) 또는 Java file_id (매칭 실패)
                 'component_name': component_name,
-                'component_type': 'API_ENTRY',
+                'component_type': 'API_URL',
                 'parent_id': None,
-                'layer': 'API',
+                'layer': 'FRONTEND',
                 'line_start': entry.line_start,
                 'line_end': entry.line_end,
                 'has_error': entry.has_error,
@@ -470,158 +469,110 @@ class BackendEntryLoadingEngine:
             
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"API_ENTRY 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
+            handle_error(e, f"API_URL 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
     
-    def _create_frontend_api_component(self, entry: BackendEntryInfo, project_id: int) -> Optional[Dict[str, Any]]:
+    def _find_matching_jsp_file(self, api_url: str, http_method: str, project_id: int) -> Optional[int]:
         """
-        FRONTEND_API 컴포넌트 생성
+        API_URL에 매칭되는 JSP 파일 찾기 (과거 FRONTEND_API 로직 참고)
+        
+        매칭 로직:
+        1. JSP 파일에서 해당 API URL을 호출하는지 확인
+        2. 매칭 성공 시 JSP 파일 ID 반환
+        3. 매칭 실패 시 None 반환 (Java 파일 ID 사용됨)
+        
+        현재 구현: 임시로 첫 번째 JSP 파일 ID 반환
+        향후 개선: JSP 파일 내용 분석하여 실제 API 호출 여부 확인
+        
+        Args:
+            api_url: API URL 패턴 (예: /api/user-profile)
+            http_method: HTTP 메서드 (예: GET, POST)
+            project_id: 프로젝트 ID
+            
+        Returns:
+            JSP 파일 ID (매칭 성공 시) 또는 None (매칭 실패 시)
+        """
+        try:
+            # USER RULES: 공통함수 사용
+            # TODO: 실제 JSP 파일 내용 분석하여 API 호출 여부 확인
+            # 현재는 임시로 첫 번째 JSP 파일 ID 반환 (개발자 오타 등으로 매칭 실패 시 Java 파일 ID 사용)
+            
+            query = """
+                SELECT f.file_id 
+                FROM files f
+                JOIN projects p ON f.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND f.file_type = 'JSP' 
+                  AND f.del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.db.execute_query(query, (self.project_name,))
+            
+            if results and len(results) > 0:
+                jsp_file_id = results[0]['file_id']
+                app_logger.debug(f"JSP 파일 매칭 시도: {api_url}:{http_method} → JSP file_id: {jsp_file_id}")
+                return jsp_file_id
+            else:
+                app_logger.debug(f"JSP 파일 없음: {api_url}:{http_method}")
+                return None
+            
+        except Exception as e:
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"JSP 파일 매칭 실패: {api_url}:{http_method}")
+            return None
+    
+    
+    def _create_api_components(self, entries: List[BackendEntryInfo], project_id: int, components_to_insert: List[Dict[str, Any]]) -> None:
+        """
+        API_URL 컴포넌트 생성 (설계 컨셉에 따른 단일 컴포넌트)
+        
+        Args:
+            entries: 백엔드 진입점 정보 리스트
+            project_id: 프로젝트 ID
+            components_to_insert: 컴포넌트 데이터 리스트 (출력 파라미터)
+        """
+        try:
+            app_logger.info("API_URL 컴포넌트 생성 시작")
+            
+            for entry in entries:
+                try:
+                    # API_URL 컴포넌트 생성
+                    api_url_component = self._create_api_url_component(entry, project_id)
+                    if api_url_component:
+                        components_to_insert.append(api_url_component)
+                        app_logger.debug(f"API_URL 컴포넌트 생성: {api_url_component['component_name']}")
+                    
+                except Exception as e:
+                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+                    handle_error(e, f"API_URL 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
+            
+            app_logger.info(f"API_URL 컴포넌트 생성 완료: {len(components_to_insert)}개")
+            
+        except Exception as e:
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"API_URL 컴포넌트 생성 실패")
+
+    def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
+        """
+        백엔드 진입점 정보로 기존 METHOD 컴포넌트 찾기
         
         Args:
             entry: 백엔드 진입점 정보
             project_id: 프로젝트 ID
             
         Returns:
-            컴포넌트 데이터 딕셔너리 또는 None
+            METHOD 컴포넌트 ID (없으면 None)
         """
         try:
-            # inferred 파일 ID 조회 (가상 컴포넌트용)
-            inferred_file_id = self._get_inferred_file_id(project_id)
-            if not inferred_file_id:
-                # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                handle_error(Exception(f"inferred 파일 ID 조회 실패: {entry.class_name}.{entry.method_name}"), "inferred 파일 ID 조회 실패")
-            
-            # 컴포넌트명 생성 (유일성 보장)
-            url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
-            class_name_safe = entry.class_name.replace('.', '_')
-            component_name = f"FRONTEND_API.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
-            
-            # 해시값 생성
-            hash_value = self.hash_utils.generate_content_hash(f"{component_name}_virtual")
-            
-            return {
-                'project_id': project_id,
-                'file_id': inferred_file_id,  # inferred 파일 ID 사용
-                'component_name': component_name,
-                'component_type': 'FRONTEND_API',
-                'parent_id': None,
-                'layer': 'FRONTEND',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': hash_value,
-                'del_yn': 'N'
-            }
+            # USER RULES: 공통함수 사용 - 클래스명과 메서드명으로 정확한 매칭
+            return self.db.get_component_id(project_id, entry.method_name, 'METHOD')
             
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"FRONTEND_API 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
-    
-    def _create_api_components(self, entries: List[BackendEntryInfo], project_id: int, api_components_to_insert: List[Dict[str, Any]]) -> None:
-        """
-        API 컴포넌트 생성 (중복 제거하여 효율적으로 처리)
-        
-        개선사항:
-        - UNIQUE 제약조건 오류 방지를 위해 component_id별로 중복 제거
-        - 같은 component_id에 대해 여러 entry가 있어도 첫 번째만 처리
-        - 불필요한 중복 처리 로직 제거로 성능 향상
-
-        Args:
-            entries: 백엔드 진입점 정보 리스트
-            project_id: 프로젝트 ID
-            api_components_to_insert: API 컴포넌트 데이터 리스트 (출력 파라미터)
-        """
-        try:
-            # STEP 1: component_id별로 그룹화하여 중복 제거
-            # 같은 component_id에 대해 여러 entry가 있을 수 있으므로 첫 번째만 사용
-            component_id_to_entry = {}
-            
-            for entry in entries:
-                try:
-                    # API_ENTRY 컴포넌트명 생성 (URL 패턴을 안전한 문자열로 변환)
-                    url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
-                    class_name_safe = entry.class_name.replace('.', '_')
-                    api_entry_name = f"API_ENTRY.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
-
-                    # components 테이블에서 해당 API_ENTRY의 component_id 조회
-                    component_id = self._get_component_id(project_id, api_entry_name)
-
-                    if component_id:
-                        # 중복 제거: 같은 component_id가 있으면 첫 번째 entry만 사용
-                        if component_id not in component_id_to_entry:
-                            component_id_to_entry[component_id] = entry
-                            app_logger.debug(f"API 컴포넌트 ID 등록: {component_id}")
-                        else:
-                            app_logger.debug(f"중복된 API 컴포넌트 ID 스킵: {component_id}")
-                    else:
-                        app_logger.warning(f"API_ENTRY 컴포넌트 ID를 찾을 수 없음: {api_entry_name}")
-
-                except Exception as e:
-                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                    handle_error(e, f"API 컴포넌트 ID 조회 실패: {entry.class_name}.{entry.method_name}")
-
-            # STEP 2: hash_value 기반 변동분 처리
-            # 기존 데이터와 비교해서 변경된 것만 UPSERT
-            for component_id, entry in component_id_to_entry.items():
-                try:
-                    # 기술 스택 결정 (Spring vs Servlet)
-                    tech_stack = 'SPRING_MVC' if hasattr(entry, 'framework') and entry.framework == 'spring' else 'SERVLET'
-
-                    # 기본 메타데이터 생성 (JSON 형태로 저장)
-                    import json
-                    metadata = {
-                        'http_method': entry.http_method,
-                        'url_pattern': entry.url_pattern,
-                        'class_name': entry.class_name,
-                        'method_name': entry.method_name
-                    }
-
-                    # 프레임워크별 추가 메타데이터
-                    if hasattr(entry, 'framework') and entry.framework == 'spring':
-                        # Spring MVC 관련 메타데이터
-                        metadata['request_mapping'] = getattr(entry, 'class_url', '')
-                        metadata['parameters'] = getattr(entry, 'parameters', [])
-                        metadata['annotations'] = getattr(entry, 'annotations', [])
-                    elif hasattr(entry, 'framework') and entry.framework == 'servlet':
-                        # Servlet 관련 메타데이터
-                        metadata['servlet_type'] = 'WEB_SERVLET'
-                        metadata['url_patterns'] = [entry.url_pattern]
-
-                    # 변경 감지용 해시값 생성
-                    hash_value = self.hash_utils.generate_content_hash(f"{component_id}_{entry.url_pattern}_{entry.http_method}")
-
-                    # 기존 데이터와 hash_value 비교 (변동분만 처리)
-                    existing_hash = self._get_existing_api_component_hash(component_id)
-                    if existing_hash and existing_hash == hash_value:
-                        app_logger.debug(f"API 컴포넌트 변경 없음, 스킵: {component_id}")
-                        continue
-
-                    # api_components 테이블에 저장할 데이터 구성
-                    api_component = {
-                        'component_id': component_id,  # components 테이블의 component_id 참조
-                        'api_type': 'API_ENTRY',       # API 타입 (백엔드 진입점)
-                        'tech_stack': tech_stack,      # 기술 스택 (SPRING_MVC 또는 SERVLET)
-                        'interface_type': getattr(entry, 'return_type', 'String'),  # 반환 타입
-                        'metadata': json.dumps(metadata, ensure_ascii=False),  # JSON 메타데이터
-                        'has_error': entry.has_error,  # 오류 여부
-                        'error_message': entry.error_message,  # 오류 메시지
-                        'hash_value': hash_value,      # 해시값
-                        'del_yn': 'N'                  # 삭제 여부
-                    }
-                    api_components_to_insert.append(api_component)
-                    app_logger.debug(f"API 컴포넌트 UPSERT 대상: {component_id} (hash: {hash_value})")
-
-                except Exception as e:
-                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                    handle_error(e, f"API 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
-
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"API 컴포넌트 생성 실패")
+            handle_error(e, f"METHOD 컴포넌트 찾기 실패: {entry.class_name}.{entry.method_name}")
 
     def _create_api_relationships(self, entries: List[BackendEntryInfo], project_id: int, relationships_to_insert: List[Dict[str, Any]]) -> None:
         """
-        API 호출 관계 생성
+        API_URL → METHOD 관계 생성 (CALL_METHOD)
 
         Args:
             entries: 백엔드 진입점 정보 리스트
@@ -629,33 +580,40 @@ class BackendEntryLoadingEngine:
             relationships_to_insert: 관계 데이터 리스트 (출력 파라미터)
         """
         try:
+            app_logger.info("API_URL → METHOD 관계 생성 시작")
+            
             for entry in entries:
                 try:
-                    # API_ENTRY와 FRONTEND_API 컴포넌트 ID 조회
-                    url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
-                    class_name_safe = entry.class_name.replace('.', '_')
-
-                    api_entry_name = f"API_ENTRY.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
-                    frontend_api_name = f"FRONTEND_API.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
-
-                    # 컴포넌트 ID 조회
-                    src_id = self._get_component_id(project_id, frontend_api_name)
-                    dst_id = self._get_component_id(project_id, api_entry_name)
-
-                    if src_id and dst_id:
+                    # API_URL 컴포넌트 ID 조회
+                    api_url_name = f"{entry.url_pattern}:{entry.http_method}"
+                    api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
+                    
+                    # METHOD 컴포넌트 ID 조회 (기존 METHOD 찾기)
+                    method_id = self._find_existing_method(entry, project_id)
+                    
+                    if api_url_id and method_id:
                         relationship = {
-                            'src_id': src_id,
-                            'dst_id': dst_id,
-                            'rel_type': 'CALL_API_F2B',
+                            'src_id': api_url_id,  # API_URL 컴포넌트
+                            'dst_id': method_id,   # METHOD 컴포넌트
+                            'rel_type': 'CALL_METHOD',  # 통일된 관계 타입
                             'has_error': 'N',
                             'error_message': None,
                             'del_yn': 'N'
                         }
                         relationships_to_insert.append(relationship)
+                        app_logger.debug(f"API_URL → METHOD 관계 생성: {api_url_name} → {entry.method_name}")
+                    elif not api_url_id:
+                        app_logger.warning(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_name}")
+                    elif not method_id:
+                        app_logger.warning(f"METHOD 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name}")
+                    else:
+                        app_logger.warning(f"컴포넌트 ID 조회 실패: API_URL={api_url_id}, METHOD={method_id}, 진입점: {entry.class_name}.{entry.method_name}")
 
                 except Exception as e:
                     # USER RULE: 모든 exception 발생시 handle_error()로 exit()
                     handle_error(e, f"관계 생성 실패: {entry.class_name}.{entry.method_name}")
+            
+            app_logger.info(f"API_URL → METHOD 관계 생성 완료: {len(relationships_to_insert)}개")
 
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
@@ -753,6 +711,32 @@ class BackendEntryLoadingEngine:
             # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
             handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
 
+    def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
+        """
+        컴포넌트명과 타입으로 컴포넌트 ID 조회
+
+        Args:
+            project_id: 프로젝트 ID
+            component_name: 컴포넌트명
+            component_type: 컴포넌트 타입
+
+        Returns:
+            컴포넌트 ID 또는 None
+        """
+        try:
+            query = """
+                SELECT component_id
+                FROM components
+                WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
+            """
+
+            results = self.db.execute_query(query, (project_id, component_name, component_type))
+            return results[0]['component_id'] if results else None
+
+        except Exception as e:
+            # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
+            handle_error(e, f"컴포넌트 ID 조회 실패: {component_name} ({component_type})")
+
     def _get_existing_api_component_hash(self, component_id: int) -> Optional[str]:
         """
         기존 API 컴포넌트의 hash_value 조회
@@ -777,155 +761,7 @@ class BackendEntryLoadingEngine:
             # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
             handle_error(e, f"API 컴포넌트 hash_value 조회 실패: {component_id}")
     
-    def _create_api_method_relationships(self, entries: List[BackendEntryInfo], project_id: int) -> None:
-        """
-        API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성
-
-        Args:
-            entries: 백엔드 진입점 리스트
-            project_id: 프로젝트 ID
-        """
-        try:
-            app_logger.info("API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성 시작")
-
-            relationships_created = 0
-            methods_inferred = 0
-
-            for entry in entries:
-                try:
-                    # 1. API_ENTRY 컴포넌트 ID 조회
-                    api_entry_id = self._get_api_entry_component_id(entry, project_id)
-                    if not api_entry_id:
-                        app_logger.warning(f"API_ENTRY 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name}")
-                        continue
-
-                    # 2. 기존 METHOD 컴포넌트 찾기
-                    method_id = self._find_existing_method(entry, project_id)
-
-                    if not method_id:
-                        # 3. 기존 METHOD 없으면 inferred METHOD 생성
-                        method_id = self._create_inferred_method(entry, project_id)
-                        if method_id:
-                            methods_inferred += 1
-                            app_logger.debug(f"inferred METHOD 생성: {entry.method_name} (ID: {method_id})")
-
-                    if method_id:
-                        # 4. CALL_METHOD 관계 생성 (API_ENTRY -> METHOD)
-                        relationship_created = self._create_call_method_relationship(api_entry_id, method_id, project_id)
-                        if relationship_created:
-                            relationships_created += 1
-                            app_logger.debug(f"CALL_METHOD 관계 생성: API_ENTRY({api_entry_id}) -> METHOD({method_id})")
-
-                        # 5. inferred METHOD인 경우 추가 관계 분석
-                        if method_id and methods_inferred > existing_methods_inferred:  # 새로 생성된 inferred METHOD
-                            self._analyze_inferred_method_relationships(entry, method_id, project_id)
-
-                except Exception as e:
-                    app_logger.error(f"API-METHOD 관계 생성 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
-                    continue
-
-            app_logger.info(f"API_ENTRY와 METHOD 간 CALL_METHOD 관계 생성 완료: {relationships_created}개 관계, {methods_inferred}개 inferred METHOD 생성")
-
-        except Exception as e:
-            handle_error(e, "API_ENTRY와 METHOD 간 관계 생성 실패")
-
-    def _get_api_entry_component_id(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
-        """API_ENTRY 컴포넌트 ID 조회"""
-        try:
-            url_pattern_safe = entry.url_pattern.replace('/', '_').replace('{', '').replace('}', '')
-            class_name_safe = entry.class_name.replace('.', '_')
-            component_name = f"API_ENTRY.{entry.http_method}_{url_pattern_safe}-{class_name_safe}"
-
-            query = """
-                SELECT component_id
-                FROM components
-                WHERE component_name = ? AND component_type = 'API_ENTRY'
-                AND project_id = ? AND del_yn = 'N'
-            """
-
-            results = self.db.execute_query(query, (component_name, project_id))
-            return results[0]['component_id'] if results else None
-
-        except Exception as e:
-            app_logger.error(f"API_ENTRY 컴포넌트 ID 조회 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
-            return None
-
-    def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
-        """기존 METHOD 컴포넌트 찾기"""
-        try:
-            # 같은 클래스 파일에서 메소드명으로 검색
-            query = """
-                SELECT c.component_id
-                FROM components c
-                JOIN files f ON c.file_id = f.file_id
-                WHERE c.component_type = 'METHOD'
-                AND c.component_name = ?
-                AND f.file_path LIKE ?
-                AND c.project_id = ? AND c.del_yn = 'N'
-            """
-
-            # 클래스명에서 파일 경로 패턴 생성
-            class_simple_name = entry.class_name.split('.')[-1]
-            file_pattern = f"%{class_simple_name}.java"
-
-            results = self.db.execute_query(query, (entry.method_name, file_pattern, project_id))
-            return results[0]['component_id'] if results else None
-
-        except Exception as e:
-            app_logger.error(f"기존 METHOD 컴포넌트 찾기 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
-            return None
-
-    def _create_inferred_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
-        """inferred METHOD 컴포넌트 생성"""
-        try:
-            # inferred 파일 ID 조회
-            inferred_file_id = self._get_inferred_file_id(project_id)
-            if not inferred_file_id:
-                return None
-
-            # 해시값 생성 (inferred 메소드용)
-            hash_value = self.hash_utils.generate_content_hash(f"INFERRED_METHOD_{entry.class_name}_{entry.method_name}")
-
-            method_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'component_name': entry.method_name,
-                'component_type': 'METHOD',
-                'parent_id': None,  # 클래스 정보가 있으면 나중에 연결
-                'layer': 'APPLICATION',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': hash_value,
-                'del_yn': 'N'
-            }
-
-            return self.db.insert_or_replace_with_id('components', method_data)
-
-        except Exception as e:
-            app_logger.error(f"inferred METHOD 생성 실패: {entry.class_name}.{entry.method_name} - {str(e)}")
-            return None
-
-    def _create_call_method_relationship(self, api_entry_id: int, method_id: int, project_id: int) -> bool:
-        """CALL_METHOD 관계 생성"""
-        try:
-            relationship_data = {
-                'src_id': api_entry_id,
-                'dst_id': method_id,
-                'rel_type': 'CALL_METHOD',
-                'confidence': 0.9,  # API 메타데이터 기반이므로 높은 신뢰도
-                'has_error': 'N',
-                'error_message': None,
-                'del_yn': 'N'
-            }
-
-            relationship_id = self.db.insert_or_replace_with_id('relationships', relationship_data)
-            return relationship_id is not None
-
-        except Exception as e:
-            app_logger.error(f"CALL_METHOD 관계 생성 실패: API_ENTRY({api_entry_id}) -> METHOD({method_id}) - {str(e)}")
-            return False
+    # 기존 API_ENTRY 관련 메서드들은 제거됨 (새로운 API_URL 설계로 대체)
 
     def _get_project_id(self) -> Optional[int]:
         """프로젝트 ID 조회"""

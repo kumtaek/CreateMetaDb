@@ -143,15 +143,15 @@ class CallChainReportGenerator:
             result = self.db_utils.execute_query(query, (self.project_name,))
             stats['join_relations'] = result[0]['count'] if result else 0
             
-            # API ENTRY 수
+            # Frontend Files 수 (JSP + JSX)
             query = """
                 SELECT COUNT(*) as count
-                FROM components c
-                JOIN projects p ON c.project_id = p.project_id
-                WHERE p.project_name = ? AND c.component_type = 'API_ENTRY' AND c.del_yn = 'N'
+                FROM files f
+                JOIN projects p ON f.project_id = p.project_id
+                WHERE p.project_name = ? AND f.file_type IN ('JSP', 'JSX') AND f.del_yn = 'N'
             """
             result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['api_entries'] = result[0]['count'] if result else 0
+            stats['frontend_files'] = result[0]['count'] if result else 0
             
             app_logger.debug(f"통계 정보 조회 완료: {stats}")
             return stats
@@ -220,49 +220,115 @@ class CallChainReportGenerator:
                 GROUP BY q.component_name, f.file_name, q.component_type
             """
             
-            # FRONTEND_API -> API_ENTRY -> Method -> Query -> Table 체인
-            api_chain_query = """
+            # 부분 체인 쿼리 (API_URL → METHOD에서 끝나는 경우, SQL 호출이 없는 메서드)
+            partial_chain_query = """
                 SELECT 
-                    0 as chain_id,
-                    '' as jsp_file,
-                    api.component_name as api_entry,
-                    frontend.component_name as virtual_endpoint,
-                    f.file_name as class_name,
-                    m.component_name as method_name,
-                    xml_file.file_name as xml_file,
-                    q.component_name as query_id,
-                    q.component_type as query_type,
-                    '' as related_tables
-                FROM components frontend
-                JOIN relationships r1 ON frontend.component_id = r1.src_id AND r1.rel_type = 'CALL_API_F2B'
-                JOIN components api ON r1.dst_id = api.component_id
-                JOIN relationships r2 ON api.component_id = r2.src_id AND r2.rel_type = 'CALL_METHOD'
-                JOIN components m ON r2.dst_id = m.component_id AND m.component_type = 'METHOD'
-                JOIN files f ON m.file_id = f.file_id
-                JOIN relationships r3 ON m.component_id = r3.src_id AND r3.rel_type = 'CALL_QUERY'
-                JOIN components q ON r3.dst_id = q.component_id AND (q.component_type = 'QUERY' OR q.component_type LIKE 'SQL_%')
-                JOIN files xml_file ON q.file_id = xml_file.file_id
-                JOIN projects p ON frontend.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND frontend.component_type = 'FRONTEND_API'
-                  AND api.component_type = 'API_ENTRY'
-                  AND frontend.del_yn = 'N'
-                  AND api.del_yn = 'N'
-                  AND m.del_yn = 'N'
-                  AND q.del_yn = 'N'
+                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
+                    frontend_file.file_name as jsp_file,
+                    api_url.component_name as api_entry,
+                    '' as virtual_endpoint,
+                    cls.class_name as class_name,
+                    method.component_name as method_name,
+                    'NO-QUERY' as xml_file,
+                    'NO-QUERY' as query_id,
+                    'CALCULATION_ONLY' as query_type,
+                    'NO-QUERY' as related_tables
+                FROM components api_url
+                JOIN files frontend_file ON api_url.file_id = frontend_file.file_id
+                JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
+                JOIN components method ON r1.dst_id = method.component_id
+                JOIN classes cls ON method.parent_id = cls.class_id
+                LEFT JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY' AND r2.del_yn = 'N'
+                JOIN projects p ON api_url.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND api_url.component_type = 'API_URL'
+                  AND method.component_type = 'METHOD'
+                  AND api_url.del_yn = 'N'
+                  AND method.del_yn = 'N'
+                  AND cls.del_yn = 'N'
+                  AND r1.del_yn = 'N'
+                  AND r2.src_id IS NULL
             """
             
-            # 세 쿼리를 UNION으로 결합
+            # 끊어진 프론트 체인 쿼리 (JSP → API_URL은 있지만 METHOD 연결이 없는 경우)
+            broken_frontend_query = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
+                    frontend_file.file_name as jsp_file,
+                    api_url.component_name as api_entry,
+                    '' as virtual_endpoint,
+                    '' as class_name,
+                    '' as method_name,
+                    '' as xml_file,
+                    '' as query_id,
+                    '' as query_type,
+                    '' as related_tables
+                FROM components api_url
+                JOIN files frontend_file ON api_url.file_id = frontend_file.file_id
+                LEFT JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD' AND r1.del_yn = 'N'
+                JOIN projects p ON api_url.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND api_url.component_type = 'API_URL'
+                  AND api_url.del_yn = 'N'
+                  AND frontend_file.del_yn = 'N'
+                  AND r1.src_id IS NULL
+            """
+            
+            # API_URL -> Method -> Query -> Table 체인 (API_URL file_id는 JSP 또는 Java, relationships로 연결)
+            api_chain_query = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
+                    frontend_file.file_name as jsp_file,
+                    api_url.component_name as api_entry,
+                    '' as virtual_endpoint,
+                    cls.class_name as class_name,
+                    method.component_name as method_name,
+                    xml_file.file_name as xml_file,
+                    sql.component_name as query_id,
+                    sql.component_type as query_type,
+                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                FROM components api_url
+                JOIN files frontend_file ON api_url.file_id = frontend_file.file_id
+                JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
+                JOIN components method ON r1.dst_id = method.component_id
+                JOIN classes cls ON method.parent_id = cls.class_id
+                JOIN files java_file ON method.file_id = java_file.file_id
+                JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
+                JOIN components sql ON r2.dst_id = sql.component_id
+                JOIN files xml_file ON sql.file_id = xml_file.file_id
+                LEFT JOIN relationships r3 ON sql.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r3.dst_id = t.component_id
+                JOIN projects p ON api_url.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND api_url.component_type = 'API_URL'
+                  AND method.component_type = 'METHOD'
+                  AND (sql.component_type LIKE 'SQL_%' OR sql.component_type = 'QUERY')
+                  AND api_url.del_yn = 'N'
+                  AND method.del_yn = 'N'
+                  AND sql.del_yn = 'N'
+                  AND cls.del_yn = 'N'
+                  AND r1.del_yn = 'N'
+                  AND r2.del_yn = 'N'
+                  AND (r3.rel_type = 'USE_TABLE' OR r3.rel_type IS NULL)
+                GROUP BY frontend_file.file_name, api_url.component_name, cls.class_name, 
+                         method.component_name, xml_file.file_name, sql.component_name, sql.component_type
+            """
+            
+            # 다섯 쿼리를 UNION으로 결합
             query = f"""
                 {api_chain_query}
                 UNION ALL
                 {method_chain_query}
                 UNION ALL
                 {sql_chain_query}
+                UNION ALL
+                {partial_chain_query}
+                UNION ALL
+                {broken_frontend_query}
                 ORDER BY api_entry DESC, method_name, class_name
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name))
+            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name, self.project_name, self.project_name))
             
             # SqlContent.db에서 정제된 SQL 내용 조회
             sql_content_map = self._get_sql_contents()
@@ -276,7 +342,7 @@ class CallChainReportGenerator:
                 # 쿼리 타입 변환
                 query_type = self._convert_query_type(row['query_type'])
                 
-                # 관련 테이블 별도 조회 (API_ENTRY 체인에서도 적용)
+                # 관련 테이블 별도 조회
                 related_tables = self._get_related_tables_for_query(query_id)
                 
                 # API_ENTRY 접두사 제거 및 의미있는 표시로 변환
@@ -349,6 +415,8 @@ class CallChainReportGenerator:
         """컴포넌트 타입을 쿼리 타입으로 변환 (SQL_ 뒤의 부분 사용)"""
         if component_type.startswith('SQL_'):
             return component_type[4:]  # SQL_ 제거하고 뒤의 부분만 반환
+        elif component_type == 'CALCULATION_ONLY':
+            return 'NO-QUERY'  # SQL 호출이 없는 메서드
         return component_type
     
     def _get_sql_contents(self) -> Dict[str, str]:

@@ -1,9 +1,0 @@
-현재 저장된 API 컴포넌트:
-  API_ENTRY: 2개
-  FRONTEND_API: 2개
-
-저장된 API 컴포넌트 상세:
-  API_ENTRY.GET__-SyntaxErrorController (API_ENTRY) - SyntaxErrorController.java
-  FRONTEND_API.GET__-SyntaxErrorController (FRONTEND_API) - UserDao.java
-  API_ENTRY.POST__-SyntaxErrorController (API_ENTRY) - SyntaxErrorController.java
-  FRONTEND_API.POST__-SyntaxErrorController (FRONTEND_API) - UserDao.java

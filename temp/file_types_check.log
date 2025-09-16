@@ -1,4 +1,0 @@
-  File "<string>", line 1
-    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT DISTINCT file_type FROM files'); file_types = cursor.fetchall(); print('File types found:'); for ft in file_types: print(f'  {ft[0]}'); cursor.execute('SELECT COUNT(*) FROM files'); total_files = cursor.fetchone()[0]; print(f'Total files: {total_files}'); conn.close()
-                                                                                                                                                                                                                          ^^^
-SyntaxError: invalid syntax

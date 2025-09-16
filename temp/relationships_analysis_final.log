@@ -1,4 +1,0 @@
-  File "<string>", line 1
-    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM relationships'); relationships = cursor.fetchone()[0]; print(f'관계 수: {relationships}'); cursor.execute('SELECT src_id, dst_id, rel_type, confidence FROM relationships ORDER BY rel_type'); rels = cursor.fetchall(); print('\\n관계 목록:'); for src_id, dst_id, rel_type, confidence in rels: print(f'  {src_id} -> {dst_id}: {rel_type} (신뢰도: {confidence})'); conn.close()
-                                                                                                                                                                                                                                                                                                                                                                                     ^^^
-SyntaxError: invalid syntax

@@ -1,4 +1,0 @@
-  File "<string>", line 1
-    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('PRAGMA table_info(files)'); schema = cursor.fetchall(); print('files 테이블 스키마:'); for col in schema: print(f'  {col[1]} ({col[2]})'); conn.close()
-                                                                                                                                                                                                       ^^^
-SyntaxError: invalid syntax

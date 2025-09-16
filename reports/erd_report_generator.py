@@ -108,13 +108,13 @@ class ERDReportGenerator:
             result = self.db_utils.execute_query(query, (self.project_name,))
             stats['total_columns'] = result[0]['count'] if result else 0
             
-            # Primary Key 수
+            # Primary Key 수 (실제 쿼리에서 사용된 컬럼 기준)
             query = """
-                SELECT COUNT(*) as count
+                SELECT COUNT(DISTINCT c.column_name) as count
                 FROM columns c
                 JOIN tables t ON c.table_id = t.table_id
                 JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND c.position_pk > 0 AND c.del_yn = 'N' AND t.del_yn = 'N'
+                WHERE p.project_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
             """
             result = self.db_utils.execute_query(query, (self.project_name,))
             stats['primary_keys'] = result[0]['count'] if result else 0
@@ -208,20 +208,18 @@ class ERDReportGenerator:
     def _get_relationships(self) -> List[Dict[str, Any]]:
         """관계 정보 조회 - 실제 쿼리에서 분석된 JOIN 관계만 사용"""
         try:
+            # 먼저 테이블 간 관계만 조회 (컬럼 정보는 별도 처리)
             query = """
                 SELECT 
                     r.rel_type,
+                    r.condition_expression,
                     src_table.table_name as src_table,
-                    dst_table.table_name as dst_table,
-                    src_col.column_name as src_column,
-                    dst_col.column_name as dst_column
+                    dst_table.table_name as dst_table
                 FROM relationships r
                 JOIN components src_comp ON r.src_id = src_comp.component_id
                 JOIN components dst_comp ON r.dst_id = dst_comp.component_id
                 JOIN tables src_table ON src_comp.component_id = src_table.component_id
                 JOIN tables dst_table ON dst_comp.component_id = dst_table.component_id
-                JOIN columns src_col ON src_table.table_id = src_col.table_id
-                JOIN columns dst_col ON dst_table.table_id = dst_col.table_id
                 JOIN projects p ON src_comp.project_id = p.project_id
                 WHERE p.project_name = ? 
                   AND r.rel_type LIKE 'JOIN_%'
@@ -237,13 +235,21 @@ class ERDReportGenerator:
             
             relationships = []
             for row in results:
-                relationships.append({
-                    'rel_type': row['rel_type'],
-                    'src_table': row['src_table'],
-                    'dst_table': row['dst_table'],
-                    'src_column': row['src_column'],
-                    'dst_column': row['dst_column']
-                })
+                # 조인 조건에서 컬럼 정보 추출
+                src_column, dst_column = self._extract_join_columns(
+                    row['condition_expression'], 
+                    row['src_table'], 
+                    row['dst_table']
+                )
+                
+                if src_column and dst_column:
+                    relationships.append({
+                        'rel_type': row['rel_type'],
+                        'src_table': row['src_table'],
+                        'dst_table': row['dst_table'],
+                        'src_column': src_column,
+                        'dst_column': dst_column
+                    })
             
             app_logger.debug(f"관계 정보 조회 완료: {len(relationships)}개")
             return relationships
@@ -251,6 +257,104 @@ class ERDReportGenerator:
         except Exception as e:
             app_logger.warning(f"관계 정보 조회 실패: {str(e)}")
             return []
+    
+    def _extract_join_columns(self, condition_expression: str, src_table: str, dst_table: str) -> tuple:
+        """조인 조건에서 소스와 대상 컬럼 추출"""
+        try:
+            if not condition_expression:
+                # 조건이 없으면 실제 데이터베이스 스키마 기반으로 추측
+                return self._guess_foreign_key_columns(src_table, dst_table)
+            
+            # 조건에서 컬럼 추출 (예: "p.brand_id = b.brand_id")
+            import re
+            
+            # 테이블별칭.컬럼명 = 테이블별칭.컬럼명 패턴 매칭
+            pattern = r'(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
+            match = re.search(pattern, condition_expression, re.IGNORECASE)
+            
+            if match:
+                left_table_alias, left_column, right_table_alias, right_column = match.groups()
+                
+                # 실제 데이터베이스 스키마를 기반으로 컬럼 유효성 검증
+                if self._is_valid_column_pair(src_table, left_column, dst_table, right_column):
+                    return left_column, right_column
+                elif self._is_valid_column_pair(src_table, right_column, dst_table, left_column):
+                    return right_column, left_column
+                else:
+                    # 유효한 컬럼 쌍이 없으면 스키마 기반 추측
+                    return self._guess_foreign_key_columns(src_table, dst_table)
+            
+            # 패턴 매칭 실패시 실제 데이터베이스 스키마 기반으로 추측
+            return self._guess_foreign_key_columns(src_table, dst_table)
+            
+        except Exception as e:
+            app_logger.warning(f"조인 컬럼 추출 실패: {condition_expression}, 오류: {str(e)}")
+            return self._guess_foreign_key_columns(src_table, dst_table)
+    
+    def _is_valid_column_pair(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
+        """실제 데이터베이스 스키마를 기반으로 컬럼 쌍의 유효성 검증"""
+        try:
+            query = """
+                SELECT COUNT(*) as count
+                FROM tables src_t
+                JOIN columns src_col ON src_t.table_id = src_col.table_id
+                JOIN tables dst_t ON dst_t.table_name = ?
+                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
+                JOIN projects p ON src_t.project_id = p.project_id
+                WHERE src_t.table_name = ? 
+                  AND p.project_name = ?
+                  AND src_t.del_yn = 'N' 
+                  AND dst_t.del_yn = 'N'
+                  AND src_col.del_yn = 'N'
+                  AND dst_col.del_yn = 'N'
+                  AND src_col.column_name = ?
+                  AND dst_col.column_name = ?
+            """
+            
+            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
+            return result[0]['count'] > 0 if result else False
+            
+        except Exception as e:
+            app_logger.warning(f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
+            return False
+    
+    def _guess_foreign_key_columns(self, src_table: str, dst_table: str) -> tuple:
+        """실제 데이터베이스 스키마를 기반으로 외래키 컬럼 추측"""
+        try:
+            # 실제 테이블의 컬럼 정보를 조회하여 정확한 외래키 매칭
+            query = """
+                SELECT 
+                    src_col.column_name as src_column,
+                    dst_col.column_name as dst_column
+                FROM tables src_t
+                JOIN columns src_col ON src_t.table_id = src_col.table_id
+                JOIN tables dst_t ON dst_t.table_name = ?
+                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
+                JOIN projects p ON src_t.project_id = p.project_id
+                WHERE src_t.table_name = ? 
+                  AND p.project_name = ?
+                  AND src_t.del_yn = 'N' 
+                  AND dst_t.del_yn = 'N'
+                  AND src_col.del_yn = 'N'
+                  AND dst_col.del_yn = 'N'
+                  AND src_col.column_name = dst_col.column_name
+                  AND src_col.column_name LIKE '%_ID'
+                LIMIT 1
+            """
+            
+            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
+            
+            if result:
+                column_name = result[0]['src_column']
+                return column_name, column_name
+            
+            # 매칭되는 컬럼이 없으면 None 반환 (관계 제외)
+            app_logger.debug(f"외래키 컬럼 매칭 실패: {src_table} -> {dst_table}")
+            return None, None
+                
+        except Exception as e:
+            app_logger.warning(f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}, 오류: {str(e)}")
+            return None, None
     
     def _generate_mermaid_erd(self, tables_data: Dict[str, List[Dict[str, Any]]], relationships: List[Dict[str, Any]]) -> str:
         """Mermaid ERD 코드 생성"""
@@ -302,15 +406,29 @@ class ERDReportGenerator:
                 seen_relationships.add(rel_key)
                 
                 # 관계 유형별 Mermaid 문법 적용
-                if rel_type == 'FK':
-                    # Foreign Key 관계 (실선)
-                    mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : \"{rel['src_column']} -> {rel['dst_column']}\"")
+                # 동일한 키로 조인되는 경우 중복 표시 제거
+                relationship_label = self._format_relationship_label(rel['src_column'], rel['dst_column'])
+                
+                # 관계 정보 확인 (PK-FK 여부, nullable 여부)
+                rel_info = self._get_relationship_info(rel['src_table'], rel['src_column'], rel['dst_table'], rel['dst_column'])
+                is_pk_fk_relation = rel_info['is_pk_fk']
+                src_nullable = rel_info['src_nullable']
+                dst_nullable = rel_info['dst_nullable']
+                
+                if is_pk_fk_relation:
+                    # 정확한 PK-FK 관계: 1:N 관계
+                    if src_nullable:
+                        # FK가 nullable: 선택적 관계 (점선)
+                        mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
+                    else:
+                        # FK가 NOT NULL: 필수 관계 (실선)
+                        mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : \"{relationship_label}\"")
                 elif rel_type.startswith('JOIN_'):
                     # JOIN 관계 (점선)
-                    mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{rel['src_column']} -> {rel['dst_column']}\"")
+                    mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
                 else:
-                    # 기타 관계 (기본)
-                    mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : \"{rel['src_column']} -> {rel['dst_column']}\"")
+                    # PK-FK 관계가 아닌 경우: 일반 선 (관계 불명확)
+                    mermaid_lines.append(f"    {src_table} }}o--o{{ {dst_table} : \"{relationship_label}\"")
                 
                 relationship_count += 1
             
@@ -321,6 +439,80 @@ class ERDReportGenerator:
         except Exception as e:
             app_logger.warning(f"Mermaid ERD 코드 생성 실패: {str(e)}")
             return "erDiagram\n    EMPTY_TABLE {\n        string message\n    }"
+    
+    def _get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> dict:
+        """CSV에서 업로드된 정보를 기반으로 관계 정보 확인 (PK-FK 여부, nullable 여부)"""
+        try:
+            # 소스 컬럼과 대상 컬럼의 PK 여부와 nullable 여부 확인
+            query = """
+                SELECT 
+                    src_col.position_pk as src_is_pk,
+                    dst_col.position_pk as dst_is_pk,
+                    src_col.nullable as src_nullable,
+                    dst_col.nullable as dst_nullable
+                FROM tables src_t
+                JOIN columns src_col ON src_t.table_id = src_col.table_id
+                JOIN tables dst_t ON dst_t.table_name = ?
+                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
+                JOIN projects p ON src_t.project_id = p.project_id
+                WHERE src_t.table_name = ? 
+                  AND p.project_name = ?
+                  AND src_t.del_yn = 'N' 
+                  AND dst_t.del_yn = 'N'
+                  AND src_col.del_yn = 'N'
+                  AND dst_col.del_yn = 'N'
+                  AND src_col.column_name = ?
+                  AND dst_col.column_name = ?
+            """
+            
+            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
+            
+            if result:
+                src_is_pk = result[0]['src_is_pk'] is not None
+                dst_is_pk = result[0]['dst_is_pk'] is not None
+                src_nullable = result[0]['src_nullable'] == 'Y'  # Y면 nullable, N이면 NOT NULL
+                dst_nullable = result[0]['dst_nullable'] == 'Y'
+                
+                return {
+                    'is_pk_fk': not src_is_pk and dst_is_pk,  # FK -> PK 관계
+                    'src_nullable': src_nullable,
+                    'dst_nullable': dst_nullable
+                }
+            
+            return {'is_pk_fk': False, 'src_nullable': True, 'dst_nullable': True}
+                
+        except Exception as e:
+            app_logger.warning(f"관계 정보 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}, 오류: {str(e)}")
+            return {'is_pk_fk': False, 'src_nullable': True, 'dst_nullable': True}
+
+    def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
+        """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인 (하위 호환성)"""
+        rel_info = self._get_relationship_info(src_table, src_column, dst_table, dst_column)
+        return rel_info['is_pk_fk']
+
+    def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
+        """관계 라벨 포맷팅 - 동일한 키로 조인되는 경우 중복 표시 제거"""
+        try:
+            # 복합키(결합키) 처리 - 콤마로 구분된 경우
+            if ',' in src_column and ',' in dst_column:
+                src_keys = [key.strip() for key in src_column.split(',')]
+                dst_keys = [key.strip() for key in dst_column.split(',')]
+                
+                # 동일한 키로 조인되는 경우 하나만 표시
+                if src_keys == dst_keys:
+                    return f"[{', '.join(src_keys)}]"
+                else:
+                    return f"[{', '.join(src_keys)}] -> [{', '.join(dst_keys)}]"
+            
+            # 단일 키 처리
+            elif src_column == dst_column:
+                return src_column
+            else:
+                return f"{src_column} -> {dst_column}"
+                
+        except Exception as e:
+            app_logger.warning(f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}, 오류: {str(e)}")
+            return f"{src_column} -> {dst_column}"
     
     def _normalize_data_type(self, data_type: str) -> str:
         """데이터 타입 정규화 (길이 정보 보존)"""

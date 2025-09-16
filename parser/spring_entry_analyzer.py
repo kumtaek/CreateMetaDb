@@ -55,6 +55,48 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
         self.method_annotation_regex = re.compile(r'(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\(.*?\))?)\s+(?:public|private|protected|)\s*[\w\<\>\[\]]+\s+(\w+)\s*\(')
         self.url_from_attribute_regex = re.compile(r'(?:path|value)\s*=\s*"(.*?)"')
     
+    def extract_url_from_annotation(self, annotation_text: str) -> Optional[str]:
+        """
+        Spring 어노테이션에서 URL 추출 (모든 매핑 어노테이션 지원)
+        
+        Args:
+            annotation_text: 어노테이션 텍스트
+            
+        Returns:
+            추출된 URL 또는 None
+        """
+        try:
+            import re
+            
+            # 모든 Spring 매핑 어노테이션에서 URL 추출
+            mapping_patterns = [
+                r'@GetMapping\s*\(\s*"([^"]*)"\s*\)',
+                r'@PostMapping\s*\(\s*"([^"]*)"\s*\)',
+                r'@PutMapping\s*\(\s*"([^"]*)"\s*\)',
+                r'@DeleteMapping\s*\(\s*"([^"]*)"\s*\)',
+                r'@PatchMapping\s*\(\s*"([^"]*)"\s*\)',
+                r'@RequestMapping\s*\(\s*"([^"]*)"\s*\)',
+                # 속성 형태도 지원
+                r'(?:path|value)\s*=\s*"([^"]*)"'
+            ]
+            
+            for pattern in mapping_patterns:
+                match = re.search(pattern, annotation_text)
+                if match:
+                    return match.group(1)
+            
+            # 어노테이션이 있지만 URL이 없는 경우 (예: @GetMapping())
+            if any(anno in annotation_text for anno in ['@GetMapping', '@PostMapping', '@PutMapping', '@DeleteMapping', '@PatchMapping', '@RequestMapping']):
+                # URL이 명시되지 않은 경우 빈 문자열 반환 (클래스 URL만 사용)
+                return ""
+            
+            return None
+            
+        except Exception as e:
+            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            handle_error(e, f"Spring URL 추출 실패: {annotation_text}")
+            return None
+    
     def _combine_urls(self, class_url: str, method_url: str) -> str:
         """
         클래스 URL과 메서드 URL을 결합

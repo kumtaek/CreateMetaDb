@@ -1334,3 +1334,151 @@ class JspParser:
 
         except Exception as e:
             handle_error(e, f"태그 라이브러리 속성 파싱 실패: {attributes}")
+
+    def analyze_api_calls(self, jsp_content: str, jsp_name: str) -> List[Dict[str, Any]]:
+        """
+        JSP 파일에서 API 호출 패턴 분석
+
+        Args:
+            jsp_content: JSP 파일 내용
+            jsp_name: JSP 파일명
+
+        Returns:
+            List[Dict[str, Any]]: API 호출 정보 리스트
+        """
+        try:
+            api_calls = []
+            
+            # 설정에서 API 호출 패턴 가져오기
+            api_patterns_text = self.config.get('api_call_patterns', '')
+            default_methods = self.config.get('default_http_methods', {})
+            
+            if not api_patterns_text:
+                debug("API 호출 패턴이 설정되지 않음")
+                return api_calls
+            
+            # 리터럴 블록을 리스트로 변환
+            api_patterns = [line.strip() for line in api_patterns_text.strip().split('\n') if line.strip()]
+            
+            # 각 라인별로 API 호출 패턴 분석
+            lines = jsp_content.split('\n')
+            for line_num, line in enumerate(lines, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # 각 패턴에 대해 매칭 시도
+                for pattern in api_patterns:
+                    matches = re.finditer(pattern, line, re.IGNORECASE)
+                    for match in matches:
+                        try:
+                            api_call = self._extract_api_call_info(match, line, line_num, jsp_name, default_methods)
+                            if api_call:
+                                api_calls.append(api_call)
+                        except Exception as e:
+                            warning(f"API 호출 정보 추출 실패 (라인 {line_num}): {str(e)}")
+                            continue
+            
+            debug(f"JSP API 호출 분석 완료: {jsp_name}, {len(api_calls)}개 발견")
+            return api_calls
+            
+        except Exception as e:
+            handle_error(e, f"JSP API 호출 분석 실패: {jsp_name}")
+
+    def _extract_api_call_info(self, match, line: str, line_num: int, jsp_name: str, default_methods: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        """
+        매칭된 API 호출에서 정보 추출
+
+        Args:
+            match: 정규식 매칭 결과
+            line: 분석 중인 라인
+            line_num: 라인 번호
+            jsp_name: JSP 파일명
+            default_methods: 기본 HTTP 메서드 매핑
+
+        Returns:
+            Optional[Dict[str, Any]]: API 호출 정보
+        """
+        try:
+            groups = match.groups()
+            if not groups:
+                return None
+            
+            # URL 추출 (첫 번째 그룹)
+            api_url = groups[0].strip()
+            if not api_url:
+                return None
+            
+            # HTTP 메서드 추출
+            http_method = self._extract_http_method(match, line, groups, default_methods)
+            
+            # API 호출 정보 생성
+            api_call = {
+                'jsp_name': jsp_name,
+                'api_url': api_url,
+                'http_method': http_method,
+                'line_number': line_num,
+                'source_line': line.strip(),
+                'component_name': f"{api_url}:{http_method}"
+            }
+            
+            return api_call
+            
+        except Exception as e:
+            warning(f"API 호출 정보 추출 실패: {str(e)}")
+            return None
+
+    def _extract_http_method(self, match, line: str, groups: tuple, default_methods: Dict[str, str]) -> str:
+        """
+        HTTP 메서드 추출
+
+        Args:
+            match: 정규식 매칭 결과
+            line: 분석 중인 라인
+            groups: 매칭 그룹
+            default_methods: 기본 HTTP 메서드 매핑
+
+        Returns:
+            str: HTTP 메서드
+        """
+        try:
+            # 두 번째 그룹이 있으면 HTTP 메서드로 사용
+            if len(groups) > 1 and groups[1]:
+                return groups[1].strip().upper()
+            
+            # 라인에서 HTTP 메서드 패턴 찾기
+            method_patterns = [
+                r'type\s*:\s*["\']([^"\']+)["\']',
+                r'method\s*:\s*["\']([^"\']+)["\']',
+                r'\.(get|post|put|delete)\s*\('
+            ]
+            
+            for pattern in method_patterns:
+                method_match = re.search(pattern, line, re.IGNORECASE)
+                if method_match:
+                    method = method_match.group(1) if method_match.groups() else method_match.group(0)
+                    if method.startswith('.'):
+                        method = method[1:].split('(')[0]
+                    return method.strip().upper()
+            
+            # 기본값: 라인에서 메서드 타입 추론
+            line_lower = line.lower()
+            if '.get(' in line_lower:
+                return 'GET'
+            elif '.post(' in line_lower:
+                return 'POST'
+            elif '.put(' in line_lower:
+                return 'PUT'
+            elif '.delete(' in line_lower:
+                return 'DELETE'
+            elif 'ajax' in line_lower:
+                return default_methods.get('ajax', 'GET')
+            elif 'fetch' in line_lower:
+                return default_methods.get('fetch', 'GET')
+            
+            # 기본값
+            return 'GET'
+            
+        except Exception as e:
+            warning(f"HTTP 메서드 추출 실패: {str(e)}")
+            return 'GET'

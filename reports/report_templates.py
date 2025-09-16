@@ -53,8 +53,8 @@ class ReportTemplates:
                         <thead>
                             <tr>
                                 <th>연계ID</th>
-                                <th>FRONTEND_API</th>
-                                <th>API_ENTRY</th>
+                                <th>Frontend</th>
+                                <th>API_URL</th>
                                 <th>클래스</th>
                                 <th>메서드</th>
                                 <th>XML파일</th>
@@ -95,8 +95,8 @@ class ReportTemplates:
                 <div class="stat-label">XML 파일</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">{stats.get('api_entries', 0)}</div>
-                <div class="stat-label">API ENTRY</div>
+                <div class="stat-number">{stats.get('frontend_files', 0)}</div>
+                <div class="stat-label">Frontend Files</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">{stats.get('join_relations', 0)}</div>
@@ -146,18 +146,24 @@ class ReportTemplates:
             else:
                 query_type_html = f'<span class="query-type">{data["query_type"]}</span>'
             
+            # 관련테이블 표시 로직: NO-QUERY인 경우는 NO-QUERY, QUERY인 경우는 빈 값일 때 공란
+            if data.get('query_type') == 'CALCULATION_ONLY' or data.get('query_id') == 'NO-QUERY':
+                related_tables_display = 'NO-QUERY'
+            else:
+                related_tables_display = data['related_tables'] if data['related_tables'] else ''
+            
             # 안전한 HTML 생성 (크로스플랫폼 호환)
             rows.append(f"""
                 <tr>
                     <td><span class="chain-id">{data['chain_id']}</span></td>
-                    <td><span class="frontend-api">{data.get('virtual_endpoint', '')}</span></td>
-                    <td><span class="api-entry">{data.get('api_entry', '')}</span></td>
+                    <td><span class="frontend">{data.get('jsp_file', '')}</span></td>
+                    <td><span class="api-url">{data.get('api_entry', '')}</span></td>
                     <td><span class="class-name">{data['class_name']}</span></td>
                     <td><span class="method-name">{data['method_name']}</span></td>
                     <td><span class="xml-file">{data['xml_file']}</span></td>
                     <td><span class="query-id">{data['query_id']}</span></td>
                     <td>{query_type_html}</td>
-                    <td><span class="tables">{data['related_tables']}</span></td>
+                    <td><span class="tables">{related_tables_display}</span></td>
                 </tr>""")
         
         return '\n'.join(rows)
@@ -270,7 +276,7 @@ class ReportTemplates:
         tr:hover {
             background-color: #f8f9fa;
         }
-        .chain-id, .jsp-file, .class-name, .method-name, .xml-file, .query-id, .query-type, .tables, .frontend-api, .api-entry {
+        .chain-id, .frontend, .api-url, .jsp-file, .class-name, .method-name, .xml-file, .query-id, .query-type, .tables, .frontend-api, .api-entry {
             background: #f8f9fa;
             color: #495057;
             padding: 2px 4px;
@@ -278,6 +284,7 @@ class ReportTemplates:
             border-radius: 2px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 0.8em;
+            white-space: nowrap;
         }
         .filter-controls {
             background: #ecf0f1;

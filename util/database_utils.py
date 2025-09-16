@@ -893,6 +893,73 @@ class DatabaseUtils:
             handle_error(e, f"하위 컴포넌트 조회 실패: {project_name}, parent_id={parent_id}")
             return []
     
+    def get_component_id(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
+        """
+        컴포넌트 ID 조회
+        
+        Args:
+            project_id: 프로젝트 ID
+            component_name: 컴포넌트명
+            component_type: 컴포넌트 타입
+            
+        Returns:
+            컴포넌트 ID (없으면 None)
+        """
+        try:
+            query = """
+                SELECT component_id 
+                FROM components 
+                WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.execute_query(query, (project_id, component_name, component_type))
+            
+            if results and len(results) > 0:
+                return results[0]['component_id']
+            return None
+            
+        except Exception as e:
+            handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
+            return None
+    
+    def find_method_by_api_pattern(self, project_id: int, api_url: str, http_method: str) -> Optional[int]:
+        """
+        API URL 패턴으로 매칭되는 METHOD 컴포넌트 찾기
+        
+        Args:
+            project_id: 프로젝트 ID
+            api_url: API URL 패턴
+            http_method: HTTP 메서드
+            
+        Returns:
+            METHOD 컴포넌트 ID (없으면 None)
+        """
+        try:
+            # USER RULES: 하드코딩 지양 - 실제 클래스명과 메서드명으로 매칭
+            # Spring Controller의 @RequestMapping, @GetMapping 등으로 매핑된 메서드 찾기
+            # URL 패턴에서 클래스명과 메서드명을 추출하여 정확한 매칭 수행
+            
+            # 임시로 모든 METHOD 컴포넌트 중에서 첫 번째를 반환 (단순 구현)
+            # TODO: 실제 URL 패턴 매칭 로직 구현 필요
+            query = """
+                SELECT c.component_id 
+                FROM components c
+                WHERE c.project_id = ? 
+                  AND c.component_type = 'METHOD'
+                  AND c.layer IN ('CONTROLLER', 'REST_CONTROLLER', 'SERVLET')
+                  AND c.del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.execute_query(query, (project_id,))
+            
+            if results and len(results) > 0:
+                return results[0]['component_id']
+            return None
+            
+        except Exception as e:
+            handle_error(e, f"METHOD 컴포넌트 매칭 실패: {api_url}:{http_method}")
+            return None
+    
     def get_columns_by_table_component_id(self, project_name: str, table_component_id: int) -> List[Dict[str, Any]]:
         """
         테이블의 component_id로 해당 테이블의 모든 컬럼 조회

@@ -1,4 +1,0 @@
-  File "<string>", line 1
-    import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM files WHERE file_type = "java"'); java_files = cursor.fetchone()[0]; print(f'Java 파일 수: {java_files}'); cursor.execute('SELECT file_name, line_count FROM files WHERE file_type = "java" ORDER BY file_name'); files = cursor.fetchall(); print('\\nJava 파일 목록:'); for name, lines in files: print(f'  {name}: {lines}줄'); conn.close()
-                                                                                                                                                                                                                                                                                                                                                                                                              ^^^
-SyntaxError: invalid syntax

@@ -1,5 +1,0 @@
-로깅 설정 파일 로드 실패: cannot import name 'PathUtils' from partially initialized module 'util' (most likely due to a circular import) (D:\Analyzer\CreateMetaDb\util\__init__.py)
-Traceback (most recent call last):
-  File "D:\Analyzer\CreateMetaDb\temp\test_productmapper_fix.py", line 8, in <module>
-    from xml_loading import XmlLoading
-ImportError: cannot import name 'XmlLoading' from 'xml_loading' (D:\Analyzer\CreateMetaDb\xml_loading.py)

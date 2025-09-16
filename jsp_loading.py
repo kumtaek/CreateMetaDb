@@ -49,6 +49,8 @@ class JspLoadingEngine:
             'jsp_files_processed': 0,
             'jsp_components_created': 0,
             'jsp_method_relationships_created': 0,
+            'api_url_components_created': 0,
+            'api_url_method_relationships_created': 0,
             'errors': 0,
             'processing_time': 0.0
         }
@@ -92,6 +94,18 @@ class JspLoadingEngine:
                     debug(f"JSP 파일 파싱 시작: {jsp_file}")
                     analysis_result = self.jsp_parser.parse_jsp_file(jsp_file)
                     debug(f"JSP 파일 파싱 완료: {jsp_file}")
+                    
+                    # API 호출 분석 추가
+                    if not analysis_result.get('has_error'):
+                        try:
+                            with open(jsp_file, 'r', encoding='utf-8', errors='ignore') as f:
+                                jsp_content = f.read()
+                            api_calls = self.jsp_parser.analyze_api_calls(jsp_content, os.path.basename(jsp_file))
+                            if api_calls:
+                                analysis_result['api_calls'] = api_calls
+                                debug(f"API 호출 {len(api_calls)}개 발견: {jsp_file}")
+                        except Exception as e:
+                            warning(f"API 호출 분석 실패: {jsp_file}, 오류: {str(e)}")
 
                     # 파싱 에러 체크 (USER RULES: 파싱 에러는 계속 진행)
                     if analysis_result.get('has_error') == 'Y':
@@ -107,12 +121,21 @@ class JspLoadingEngine:
                     if analysis_result.get('java_method_relationships'):
                         self._save_jsp_method_relationships_to_database(analysis_result['java_method_relationships'])
 
+                    # API 호출 분석 및 API_URL 컴포넌트 생성
+                    if analysis_result.get('api_calls'):
+                        self._save_api_url_components_to_database(analysis_result['api_calls'])
+                        # API_URL과 METHOD 간의 관계 생성
+                        self._create_api_url_method_relationships(analysis_result['api_calls'])
+
                     # 통계 업데이트
                     self.stats['jsp_files_processed'] += 1
                     if analysis_result.get('jsp_component'):
                         self.stats['jsp_components_created'] += 1
                     if analysis_result.get('java_method_relationships'):
                         self.stats['jsp_method_relationships_created'] += len(analysis_result['java_method_relationships'])
+                    if analysis_result.get('api_calls'):
+                        self.stats['api_url_components_created'] += len(analysis_result['api_calls'])
+                        # API_URL → METHOD 관계 통계는 _create_api_url_method_relationships에서 업데이트
 
                 except Exception as e:
                     # USER RULES: 파싱 에러는 has_error='Y', error_message 저장 후 계속 진행
@@ -447,12 +470,269 @@ class JspLoadingEngine:
             info(f"처리된 JSP 파일: {self.stats['jsp_files_processed']}개")
             info(f"생성된 JSP 컴포넌트: {self.stats['jsp_components_created']}개")
             info(f"생성된 JSP → METHOD 관계: {self.stats['jsp_method_relationships_created']}개")
+            info(f"생성된 API_URL 컴포넌트: {self.stats['api_url_components_created']}개")
+            info(f"생성된 API_URL → METHOD 관계: {self.stats['api_url_method_relationships_created']}개")
             info(f"오류 발생: {self.stats['errors']}개")
             info(f"처리 시간: {self.stats['processing_time']:.2f}초")
             info("==================")
 
         except Exception as e:
             handle_error(e, "통계 정보 출력 실패")
+
+    def _save_api_url_components_to_database(self, api_calls: List[Dict[str, Any]]) -> bool:
+        """
+        API 호출 정보를 기존 API_URL 컴포넌트와 연결하거나 inferred로 등록
+        
+        설계 원칙:
+        1. 기존 API_URL 컴포넌트가 있으면 → file_id를 JSP 파일로 업데이트 (매칭 성공)
+        2. 기존 API_URL 컴포넌트가 없으면 → inferred로 새로 생성 (JSP에서만 호출되는 API)
+
+        Args:
+            api_calls: API 호출 정보 리스트
+
+        Returns:
+            처리 성공 여부
+        """
+        try:
+            if not api_calls:
+                return True
+
+            # 프로젝트 ID 조회
+            project_id = self._get_project_id()
+            if not project_id:
+                error("프로젝트 ID 조회 실패")
+                return False
+
+            updated_count = 0
+            created_count = 0
+            
+            for api_call in api_calls:
+                try:
+                    api_url_name = api_call['component_name']  # "URL:HTTP_METHOD" 형태
+                    
+                    # 1. 기존 API_URL 컴포넌트가 있는지 확인
+                    existing_api_url_id = self._find_existing_api_url_component(project_id, api_url_name)
+                    
+                    if existing_api_url_id:
+                        # 기존 API_URL이 있으면 → JSP 파일로 매칭 성공 (file_id 업데이트)
+                        success = self._update_api_url_file_id(existing_api_url_id, self.current_file_id)
+                        if success:
+                            updated_count += 1
+                            app_logger.debug(f"API_URL 매칭 성공: {api_url_name} → JSP file_id: {self.current_file_id}")
+                        else:
+                            app_logger.warning(f"API_URL file_id 업데이트 실패: {api_url_name}")
+                    else:
+                        # 기존 API_URL이 없으면 → inferred로 새로 생성 (JSP에서만 호출되는 API)
+                        success = self._create_inferred_api_url_component(api_call, project_id)
+                        if success:
+                            created_count += 1
+                            app_logger.debug(f"API_URL inferred 생성: {api_url_name}")
+                        else:
+                            app_logger.warning(f"API_URL inferred 생성 실패: {api_url_name}")
+                            
+                except Exception as e:
+                    app_logger.warning(f"API_URL 처리 중 오류: {api_call['component_name']} - {str(e)}")
+                    continue
+
+            info(f"API_URL 처리 완료: 매칭 성공 {updated_count}개, inferred 생성 {created_count}개")
+            return True
+
+        except Exception as e:
+            handle_error(e, "API_URL 컴포넌트 처리 실패")
+
+    def _find_existing_api_url_component(self, project_id: int, api_url_name: str) -> Optional[int]:
+        """
+        기존 API_URL 컴포넌트 ID 조회
+        
+        Args:
+            project_id: 프로젝트 ID
+            api_url_name: API_URL 컴포넌트명 (URL:HTTP_METHOD 형태)
+            
+        Returns:
+            컴포넌트 ID 또는 None
+        """
+        try:
+            return self.db_utils.get_component_id(project_id, api_url_name, 'API_URL')
+        except Exception as e:
+            app_logger.warning(f"기존 API_URL 컴포넌트 조회 실패: {api_url_name} - {str(e)}")
+            return None
+
+    def _update_api_url_file_id(self, api_url_id: int, jsp_file_id: int) -> bool:
+        """
+        API_URL 컴포넌트의 file_id를 JSP 파일 ID로 업데이트 (매칭 성공)
+        
+        Args:
+            api_url_id: API_URL 컴포넌트 ID
+            jsp_file_id: JSP 파일 ID
+            
+        Returns:
+            업데이트 성공 여부
+        """
+        try:
+            update_sql = """
+                UPDATE components 
+                SET file_id = ?, updated_at = datetime('now', '+9 hours')
+                WHERE component_id = ? AND component_type = 'API_URL'
+            """
+            self.db_utils.execute_query(update_sql, (jsp_file_id, api_url_id))
+            return True
+        except Exception as e:
+            app_logger.warning(f"API_URL file_id 업데이트 실패: {api_url_id} → {jsp_file_id} - {str(e)}")
+            return False
+
+    def _create_inferred_api_url_component(self, api_call: Dict[str, Any], project_id: int) -> bool:
+        """
+        inferred API_URL 컴포넌트 생성 (JSP에서만 호출되는 API)
+        
+        Args:
+            api_call: API 호출 정보
+            project_id: 프로젝트 ID
+            
+        Returns:
+            생성 성공 여부
+        """
+        try:
+            # 해시값 생성
+            hash_value = self.hash_utils.generate_content_hash(
+                f"inferred_{api_call['component_name']}_{api_call['source_line']}_{api_call['line_number']}"
+            )
+            
+            component_data = {
+                'project_id': project_id,
+                'component_type': 'API_URL',
+                'component_name': api_call['component_name'],
+                'parent_id': None,
+                'file_id': self.current_file_id,  # JSP 파일 ID
+                'layer': 'FRONTEND',  # 프론트엔드 계층
+                'line_start': api_call['line_number'],
+                'line_end': api_call['line_number'],
+                'hash_value': hash_value,
+                'has_error': 'N',
+                'error_message': 'inferred from JSP call',
+                'del_yn': 'N'
+            }
+            
+            # 단일 컴포넌트 저장
+            self.db_utils.insert_or_replace('components', component_data)
+            return True
+            
+        except Exception as e:
+            app_logger.warning(f"inferred API_URL 컴포넌트 생성 실패: {api_call['component_name']} - {str(e)}")
+            return False
+
+    def _create_api_url_method_relationships(self, api_calls: List[Dict[str, Any]]) -> bool:
+        """
+        API_URL → METHOD 관계 생성 (CALL_METHOD)
+        
+        Args:
+            api_calls: API 호출 정보 리스트
+            
+        Returns:
+            관계 생성 성공 여부
+        """
+        try:
+            if not api_calls:
+                return True
+                
+            # 프로젝트 ID 조회
+            project_id = self._get_project_id()
+            if not project_id:
+                error("프로젝트 ID 조회 실패")
+                return False
+                
+            # 관계 데이터 변환
+            relationship_data_list = []
+            for api_call in api_calls:
+                try:
+                    # API_URL 컴포넌트 ID 조회
+                    api_url_name = api_call['component_name']  # "URL:HTTP_METHOD" 형태
+                    api_url_id = self._get_api_url_component_id(project_id, api_url_name)
+                    
+                    if not api_url_id:
+                        warning(f"API_URL 컴포넌트 ID 조회 실패: {api_url_name}")
+                        continue
+                    
+                    # METHOD 컴포넌트 ID 조회 (URL 패턴으로 매칭)
+                    method_id = self._find_matching_method(api_call['api_url'], api_call['http_method'], project_id)
+                    
+                    if method_id:
+                        # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                        if api_url_id == method_id:
+                            warning(f"자기 참조 API_URL→METHOD 관계 스킵: {api_url_name} → METHOD (src_id == dst_id)")
+                            continue
+                            
+                        relationship_data = {
+                            'src_id': api_url_id,  # API_URL 컴포넌트
+                            'dst_id': method_id,   # METHOD 컴포넌트
+                            'rel_type': 'CALL_METHOD',  # 통일된 관계 타입
+                            'confidence': 1.0,
+                            'has_error': 'N',
+                            'error_message': None,
+                            'hash_value': '-',  # USER RULES: 하드코딩된 '-'
+                            'del_yn': 'N'
+                        }
+                        relationship_data_list.append(relationship_data)
+                        debug(f"API_URL → METHOD 관계 생성: {api_url_name} → METHOD")
+                    else:
+                        debug(f"매칭되는 METHOD 컴포넌트를 찾을 수 없음: {api_url_name}")
+                        
+                except Exception as e:
+                    warning(f"API_URL → METHOD 관계 생성 실패: {api_call['component_name']}, 오류: {str(e)}")
+                    continue
+                    
+            if not relationship_data_list:
+                return True
+                
+            # 배치 저장 (USER RULES: 공통함수 사용)
+            processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
+            
+            if processed_count > 0:
+                info(f"API_URL → METHOD 관계 배치 저장 완료: {processed_count}개")
+                self.stats['api_url_method_relationships_created'] += processed_count
+                return True
+            else:
+                error("API_URL → METHOD 관계 저장 실패")
+                return False
+                
+        except Exception as e:
+            handle_error(e, "API_URL → METHOD 관계 생성 실패")
+            
+    def _get_api_url_component_id(self, project_id: int, api_url_name: str) -> Optional[int]:
+        """
+        API_URL 컴포넌트 ID 조회
+        
+        Args:
+            project_id: 프로젝트 ID
+            api_url_name: API_URL 컴포넌트명 (URL:HTTP_METHOD 형태)
+            
+        Returns:
+            API_URL 컴포넌트 ID (없으면 None)
+        """
+        try:
+            # USER RULES: 공통함수 사용
+            return self.db_utils.get_component_id(project_id, api_url_name, 'API_URL')
+        except Exception as e:
+            handle_error(e, f"API_URL 컴포넌트 ID 조회 실패: {api_url_name}")
+            
+    def _find_matching_method(self, api_url: str, http_method: str, project_id: int) -> Optional[int]:
+        """
+        API_URL에 매칭되는 METHOD 컴포넌트 찾기
+        
+        Args:
+            api_url: API URL 패턴
+            http_method: HTTP 메서드
+            project_id: 프로젝트 ID
+            
+        Returns:
+            METHOD 컴포넌트 ID (없으면 None)
+        """
+        try:
+            # USER RULES: 공통함수 사용
+            # URL 패턴으로 매칭되는 METHOD 컴포넌트 조회
+            # Spring Controller의 @RequestMapping, @GetMapping 등으로 매핑된 메서드 찾기
+            return self.db_utils.find_method_by_api_pattern(project_id, api_url, http_method)
+        except Exception as e:
+            handle_error(e, f"METHOD 컴포넌트 매칭 실패: {api_url}:{http_method}")
 
 
 def execute_jsp_loading(project_name: str) -> bool:
