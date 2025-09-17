@@ -412,7 +412,37 @@ class XmlLoadingEngine:
 
     def _extract_table_names_from_sql(self, sql_content: str) -> set:
         """
-        SQL 내용에서 테이블명 추출
+        SQL 내용에서 테이블명 추출 (향상된 파서 사용)
+
+        Args:
+            sql_content: SQL 내용
+
+        Returns:
+            추출된 테이블명 집합
+        """
+        try:
+            from util import debug
+            from parser.sql_parser import SqlParser
+
+            # SQL 파서 사용
+            if not hasattr(self, '_sql_parser'):
+                self._sql_parser = SqlParser()
+
+            # 테이블명 추출
+            table_names = self._sql_parser.extract_table_names(sql_content)
+
+            debug(f"SQL 파서 결과: {table_names}")
+            return table_names
+
+        except Exception as e:
+            debug(f"SQL 파서 오류 - 기본 파서로 fallback: {str(e)}")
+
+            # 기존 파서로 fallback
+            return self._extract_table_names_from_sql_legacy(sql_content)
+
+    def _extract_table_names_from_sql_legacy(self, sql_content: str) -> set:
+        """
+        기존 SQL 파서 (향상된 파서 실패 시 fallback)
 
         Args:
             sql_content: SQL 내용
@@ -470,7 +500,7 @@ class XmlLoadingEngine:
             return table_names
 
         except Exception as e:
-            debug(f"SQL에서 테이블명 추출 중 오류: {str(e)}")
+            debug(f"기존 SQL 파서에서 테이블명 추출 중 오류: {str(e)}")
             return set()
 
     def _is_valid_table_name_simple(self, table_name: str) -> bool:

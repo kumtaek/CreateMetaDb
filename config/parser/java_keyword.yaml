@@ -468,20 +468,25 @@ domain_classification:
 # 아키텍처 레이어 분류 설정 (동적 레이어 분류용)
 layer_classification:
   controller:
-    suffixes: ["controller", "ctrl"]
-    keywords: ["controller", "rest", "api"]
+    suffixes: ["controller", "ctrl", "servlet"]
+    keywords: ["controller", "servlet", "Servlet"]
+    folder_patterns: ["*controller*", "*ctrl*", "*web*", "*api*", "*servlet*"]
   service:
     suffixes: ["service", "svc"]
-    keywords: ["service", "business", "logic"]
-  dao:
+    keywords: ["service"]
+    folder_patterns: ["*service*", "*business*", "*logic*"]
+  mapper:
     suffixes: ["dao", "repository", "repo", "mapper"]
-    keywords: ["dao", "repository", "mapper", "data"]
-  entity:
+    keywords: ["dao", "repository", "mapper"]
+    folder_patterns: ["*dao*", "*repository*", "*mapper*", "*data*"]
+  model:
     suffixes: ["entity", "model", "vo", "dto", "domain"]
-    keywords: ["entity", "model", "vo", "dto", "domain", "bean"]
+    keywords: ["entity", "model", "vo", "dto", "domain"]
+    folder_patterns: ["*model*", "*entity*", "*vo*", "*dto*", "*domain*", "*bean*", "*enums*"]
   util:
     suffixes: ["util", "utils", "helper", "common"]
     keywords: ["util", "helper", "common", "tool"]
+    folder_patterns: ["*util*", "*helper*", "*common*", "*tool*"]
 
 # 5단계 관계 분석 패턴 (4~5단계 통합용)
 relationship_analysis:
