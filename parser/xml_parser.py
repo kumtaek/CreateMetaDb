@@ -178,8 +178,10 @@ class XmlParser:
         XML 파일에서 SQL 쿼리를 추출하고 관계를 분석합니다.
         DOM → SAX → 정규식 순서로 파싱을 시도하고, 모두 실패하면 has_error='Y' 처리합니다.
         """
-        # 파일 읽기 시작 시 file_id를 변수에 저장 (외래키 문제 해결)
-        self.current_file_id = 6  # 간단하게 기본값 사용
+        # current_file_id는 외부(xml_loading.py)에서 설정되므로 여기서 재설정하지 않음
+        if self.current_file_id is None:
+            handle_error(Exception("file_id가 설정되지 않았습니다. xml_loading.py에서 current_file_id를 설정해야 합니다."), "file_id 설정 오류")
+        
         debug(f"현재 처리 중인 XML 파일: {xml_file}, file_id: {self.current_file_id}")
         
         # 1단계: DOM 기반 파싱 시도

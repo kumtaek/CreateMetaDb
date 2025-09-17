@@ -349,10 +349,18 @@ class CallChainReportGenerator:
             chain_data = []
             for row in results:
                 query_id = row['query_id']
-                sql_content = sql_content_map.get(query_id, '')
+                original_query_type = row['query_type']
+                
+                # SQL_% 타입은 SqlContent.db에서 쿼리 내용 조회, QUERY 타입은 쿼리 ID 정보 제공
+                sql_content = ''
+                if original_query_type and original_query_type.startswith('SQL_'):
+                    sql_content = sql_content_map.get(query_id, '')
+                elif original_query_type == 'QUERY':
+                    # QUERY 타입(inferred 쿼리)은 쿼리 ID 정보만 툴팁에 표시
+                    sql_content = f"Inferred Query\n쿼리 ID: {query_id}\n(Java 코드에서 호출되지만 XML에서 찾을 수 없는 쿼리)"
                 
                 # 쿼리 타입 변환
-                query_type = self._convert_query_type(row['query_type'])
+                query_type = self._convert_query_type(original_query_type)
                 
                 # 관련 테이블 별도 조회
                 related_tables = self._get_related_tables_for_query(query_id)
@@ -470,14 +478,15 @@ class CallChainReportGenerator:
                 handle_error(Exception("SqlContent.db 연결 실패"), "SqlContent.db 연결 실패")
             
             try:
-                # 정제된 SQL 내용 조회
+                # 정제된 SQL 내용 조회 (SQL_% 타입과 QUERY 타입 모두 포함)
                 query = """
-                    SELECT component_name, sql_content_compressed
+                    SELECT component_name, sql_content_compressed, query_type
                     FROM sql_contents
                     WHERE project_id = (
                         SELECT project_id FROM projects WHERE project_name = ?
                     )
                     AND del_yn = 'N'
+                    AND (query_type LIKE 'SQL_%' OR query_type = 'QUERY')
                 """
                 
                 results = sql_content_db.execute_query(query, (self.project_name,))
@@ -490,7 +499,9 @@ class CallChainReportGenerator:
                     # gzip 압축 해제 (크로스플랫폼 호환)
                     try:
                         decompressed_content = gzip.decompress(compressed_content).decode('utf-8')
-                        sql_content_map[component_name] = decompressed_content
+                        # XML 태그 제거하고 순수 SQL만 추출
+                        clean_sql = self._extract_pure_sql(decompressed_content)
+                        sql_content_map[component_name] = clean_sql
                     except Exception as decompress_error:
                         handle_error(decompress_error, f"SQL 내용 압축 해제 실패: {component_name}")
                 
@@ -502,6 +513,74 @@ class CallChainReportGenerator:
                 
         except Exception as e:
             handle_error(e, "SqlContent.db 조회 실패")
+    
+    def _extract_pure_sql(self, xml_content: str) -> str:
+        """XML 태그를 제거하고 순수한 SQL만 추출 (MyBatis 동적 쿼리 태그 포함)"""
+        try:
+            import re
+            
+            # 1단계: 메인 SQL 태그 내용 추출
+            tag_patterns = [
+                r'<select[^>]*>(.*?)</select>',
+                r'<insert[^>]*>(.*?)</insert>',
+                r'<update[^>]*>(.*?)</update>',
+                r'<delete[^>]*>(.*?)</delete>',
+                r'<merge[^>]*>(.*?)</merge>'
+            ]
+            
+            sql_content = xml_content
+            for pattern in tag_patterns:
+                match = re.search(pattern, xml_content, re.DOTALL | re.IGNORECASE)
+                if match:
+                    sql_content = match.group(1).strip()
+                    break
+            
+            # 2단계: MyBatis 동적 쿼리 태그들 제거
+            # <where>, <if>, <choose>, <when>, <otherwise>, <set>, <trim>, <foreach> 등
+            dynamic_tags = [
+                r'<where[^>]*>',
+                r'</where>',
+                r'<if[^>]*>',
+                r'</if>',
+                r'<choose[^>]*>',
+                r'</choose>',
+                r'<when[^>]*>',
+                r'</when>',
+                r'<otherwise[^>]*>',
+                r'</otherwise>',
+                r'<set[^>]*>',
+                r'</set>',
+                r'<trim[^>]*>',
+                r'</trim>',
+                r'<foreach[^>]*>',
+                r'</foreach>',
+                r'<bind[^>]*/>',
+                r'<include[^>]*/?>',
+                r'<sql[^>]*>.*?</sql>'
+            ]
+            
+            for tag_pattern in dynamic_tags:
+                sql_content = re.sub(tag_pattern, '', sql_content, flags=re.DOTALL | re.IGNORECASE)
+            
+            # 3단계: 파라미터 바인딩 정리 (옵션: 가독성을 위해 간소화)
+            # #{param} -> :param 형태로 변경 (선택사항)
+            # sql_content = re.sub(r'#\{([^}]+)\}', r':\1', sql_content)
+            # sql_content = re.sub(r'\$\{([^}]+)\}', r':\1', sql_content)
+            
+            # 4단계: 불필요한 공백 및 줄바꿈 정리
+            sql_content = re.sub(r'\s+', ' ', sql_content)
+            sql_content = sql_content.strip()
+            
+            # 5단계: 빈 내용이면 기본 메시지 반환
+            if not sql_content or sql_content.isspace():
+                return "SQL 내용이 동적 쿼리로만 구성되어 있습니다."
+            
+            return sql_content
+            
+        except Exception as e:
+            app_logger.warning(f"SQL 내용 추출 실패: {e}")
+            # 실패시 원본 반환
+            return xml_content
     
     
     def _generate_html(self, stats: Dict[str, int], chain_data: List[Dict[str, Any]]) -> str:

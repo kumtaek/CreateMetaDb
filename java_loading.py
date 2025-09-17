@@ -1058,37 +1058,33 @@ class JavaLoadingEngine:
 
     def _get_query_component_id(self, project_id: int, query_id: str) -> Optional[int]:
         """
-        쿼리 컴포넌트 ID 조회 (개선된 버전)
+        쿼리 컴포넌트 ID 조회 (XML 쿼리만 검색)
         
         INFERRED 쿼리 처리 개선 방안:
         - 기존: component_type = 'QUERY'로만 검색 (문제: XML에서 생성된 SQL_* 타입을 찾지 못함)
-        - 개선: SQL_* 타입과 QUERY 타입 모두 검색하여 중복 생성을 방지하고 기존 XML 쿼리를 활용
+        - 개선: 오직 SQL_* 타입만 검색하여 XML에서 파싱된 실제 쿼리만 매칭
+        - QUERY 타입(inferred 쿼리)은 제외하여 중복 생성 방지
         
-        검색 우선순위:
-        1. SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE 등 (XML에서 파싱된 쿼리)
-        2. QUERY 타입 (이전에 생성된 INFERRED 쿼리)
+        검색 대상:
+        - SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE 등 (XML에서 파싱된 쿼리만)
         
         Args:
             project_id: 프로젝트 ID
             query_id: 쿼리 ID (예: findUsersWithAnsiJoin)
 
         Returns:
-            컴포넌트 ID (SQL_* 타입 우선, 없으면 QUERY 타입)
+            컴포넌트 ID (XML에서 파싱된 SQL_* 타입만, 없으면 None)
         """
         try:
-            # 개선된 쿼리 검색: SQL_* 타입과 QUERY 타입 모두 검색
-            # 이렇게 하면 XML에서 생성된 SQL_SELECT 등을 정상적으로 찾을 수 있음
+            # XML에서 파싱된 SQL_* 타입 쿼리만 검색 (QUERY 타입 제외)
+            # 이렇게 하면 실제 XML 쿼리만 찾고, 없으면 inferred 쿼리를 생성함
             query = """
-                SELECT component_id FROM components
+                SELECT component_id, component_type FROM components
                 WHERE project_id = ?
                 AND component_name = ?
-                AND (component_type LIKE 'SQL_%' OR component_type = 'QUERY')
+                AND component_type LIKE 'SQL_%'
                 AND del_yn = 'N'
-                ORDER BY 
-                    CASE 
-                        WHEN component_type LIKE 'SQL_%' THEN 1  -- SQL_* 타입 우선
-                        WHEN component_type = 'QUERY' THEN 2     -- QUERY 타입 차순위
-                    END
+                ORDER BY component_id
             """
 
             results = self.db_utils.execute_query(query, (project_id, query_id))
@@ -1096,10 +1092,10 @@ class JavaLoadingEngine:
             if results and len(results) > 0:
                 component_id = results[0]['component_id']
                 component_type = results[0]['component_type'] if 'component_type' in results[0] else 'UNKNOWN'
-                debug(f"쿼리 컴포넌트 ID 조회 성공: {query_id} -> {component_id} ({component_type})")
+                debug(f"XML 쿼리 컴포넌트 ID 조회 성공: {query_id} -> {component_id} ({component_type})")
                 return component_id
             
-            debug(f"쿼리 컴포넌트 ID 조회 실패: {query_id} (XML과 DB 모두에서 찾을 수 없음)")
+            debug(f"XML 쿼리 컴포넌트 ID 조회 실패: {query_id} (XML에서 찾을 수 없음 - inferred 쿼리 생성 필요)")
             return None
 
         except Exception as e:

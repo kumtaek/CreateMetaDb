@@ -108,8 +108,12 @@ class ReportTemplates:
             query_id_class = ' no-query' if data.get('query_id') == 'NO-QUERY' else ''
             query_type_class = ' no-query' if data.get('query_type') == 'NO-QUERY' else ''
             
-            # 툴팁이 있는 경우와 없는 경우 분기
-            if sql_content:
+            # SQL_% 타입 또는 QUERY 타입이고 SQL 내용이 있는 경우에만 툴팁 표시
+            component_type = data.get('query_type', '')
+            original_component_type = f"SQL_{component_type}" if component_type not in ['NO-QUERY', 'CALCULATION_ONLY', 'QUERY'] else component_type
+            
+            # SQL_% 타입 또는 QUERY 타입이면서 SQL 내용이 있는 경우 툴팁 표시
+            if ((original_component_type.startswith('SQL_') or component_type == 'QUERY') and sql_content):
                 query_type_html = f'<span class="callchain-badge query-type{query_type_class} tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
             else:
                 query_type_html = f'<span class="callchain-badge query-type{query_type_class}">{data["query_type"]}</span>'
