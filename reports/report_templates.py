@@ -96,12 +96,23 @@ class ReportTemplates:
         rows = []
         for data in chain_data:
             sql_content = data.get('sql_content', '')
-            # HTML 특수문자 이스케이프 (크로스플랫폼 호환)
-            escaped_sql = (sql_content.replace('&', '&amp;')
-                          .replace('<', '&lt;')
-                          .replace('>', '&gt;')
-                          .replace('"', '&quot;')
-                          .replace("'", '&#39;'))
+            # HTML 특수문자 이스케이프 - 더 안전한 방식
+            import html
+            try:
+                # Python 내장 html.escape 사용
+                escaped_sql = html.escape(sql_content, quote=True)
+                # 추가로 특수 문자 처리
+                escaped_sql = escaped_sql.replace('\n', '&#10;').replace('\r', '&#13;').replace('\t', '&#9;')
+            except Exception:
+                # fallback 처리
+                escaped_sql = (sql_content.replace('&', '&amp;')
+                              .replace('<', '&lt;')
+                              .replace('>', '&gt;')
+                              .replace('"', '&quot;')
+                              .replace("'", '&#39;')
+                              .replace('\n', '&#10;')
+                              .replace('\r', '&#13;')
+                              .replace('\t', '&#9;'))
             
             # 각 셀별로 NO-QUERY 여부를 개별적으로 판단
             xml_file_class = ' no-query' if data.get('xml_file') == 'NO-QUERY' else ''
@@ -381,31 +392,48 @@ class ReportTemplates:
         return """
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
-        
+
         // 툴팁 기능 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tooltip initialization started');
+
             // query-type 툴팁 요소들을 찾아서 이벤트 리스너 추가
             const queryTypeElements = document.querySelectorAll('.query-type.tooltip');
-            
-            queryTypeElements.forEach(function(element) {
+            console.log('Found tooltip elements:', queryTypeElements.length);
+
+            queryTypeElements.forEach(function(element, index) {
+                console.log('Processing tooltip element', index, element);
+
                 element.addEventListener('mouseenter', function() {
                     const tooltip = this.querySelector('.tooltiptext');
+                    console.log('Mouse enter - tooltip found:', !!tooltip);
                     if (tooltip) {
+                        // HTML 엔티티 디코딩
+                        const content = tooltip.innerHTML;
+                        if (content && content.includes('&#')) {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = content;
+                            tooltip.textContent = tempDiv.textContent || tempDiv.innerText || content;
+                        }
+
                         tooltip.style.visibility = 'visible';
                         tooltip.style.opacity = '1';
                         tooltip.style.zIndex = '1000';
+                        tooltip.style.display = 'block';
+                        console.log('Tooltip displayed');
                     }
                 });
-                
+
                 element.addEventListener('mouseleave', function() {
                     const tooltip = this.querySelector('.tooltiptext');
                     if (tooltip) {
                         tooltip.style.visibility = 'hidden';
                         tooltip.style.opacity = '0';
+                        console.log('Tooltip hidden');
                     }
                 });
             });
-            
+
             // CSS 호버 방식도 함께 활성화 (백업)
             const style = document.createElement('style');
             style.textContent = `
@@ -413,9 +441,12 @@ class ReportTemplates:
                     visibility: visible !important;
                     opacity: 1 !important;
                     z-index: 1000 !important;
+                    display: block !important;
+                    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
                 }
             `;
             document.head.appendChild(style);
+            console.log('Tooltip initialization completed');
         });
         """
 

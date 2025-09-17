@@ -456,7 +456,11 @@
     display: inline-block;
     cursor: help;
     color: var(--primary-blue);
-    font-weight: 500;
+    font-weight: 500 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .query-type.tooltip .tooltiptext {
@@ -474,13 +478,17 @@
     margin-left: -250px;
     opacity: 0;
     transition: opacity 0.3s;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 0.9em;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    font-size: 0.85em;
+    font-weight: 400 !important;
     white-space: pre-wrap;
-    word-break: break-all;
+    word-break: break-word;
     max-height: 300px;
     overflow-y: auto;
     box-shadow: var(--shadow-heavy);
+    line-height: 1.4;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
 .query-type.tooltip .tooltiptext::after {
