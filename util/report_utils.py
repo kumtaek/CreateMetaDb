@@ -83,8 +83,7 @@ class ReportUtils:
                         self._safe_copy_file(source_js, dest_js, f"JS ({js_file})")
                 return True
             else:
-                app_logger.warning(f"소스 JS 디렉토리가 존재하지 않습니다: {source_js_dir}")
-                return False
+                handle_error(Exception(f"소스 JS 디렉토리가 존재하지 않습니다: {source_js_dir}"), "JS 디렉토리 부재")
             
         except Exception as e:
             handle_error(e, "JS 폴더 복사 실패")
@@ -104,16 +103,14 @@ class ReportUtils:
                 
                 # 파일 복사
                 shutil.copy2(source, dest)
-                app_logger.info(f"{file_type} 파일 복사 완료: {dest}")
+                app_logger.debug(f"{file_type} 파일 복사 완료: {dest}")
                 return True
                 
             except PermissionError as e:
                 if attempt < max_retries - 1:
-                    app_logger.warning(f"{file_type} 파일 복사 재시도 {attempt + 1}/{max_retries}: {e}")
                     time.sleep(0.2)  # 200ms 대기
                 else:
-                    app_logger.warning(f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
-                    return False
+                    handle_error(e, f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
             except Exception as e:
                 handle_error(e, f"{file_type} 파일 복사 실패")
         

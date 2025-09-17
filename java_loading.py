@@ -82,7 +82,7 @@ class JavaLoadingEngine:
                 warning("Java 파일이 없습니다")
                 return True
 
-            info(f"처리할 Java 파일 수: {len(java_files)}개")
+            debug(f"처리할 Java 파일 수: {len(java_files)}개")
 
             # 2. Java 파일별 통합 처리 (메모리 최적화)
             for java_file in java_files:
@@ -209,7 +209,7 @@ class JavaLoadingEngine:
                 handle_error(Exception(f"파일 ID를 찾을 수 없습니다: {java_file}"), "클래스 저장 실패")
                 return False
 
-            info(f"프로젝트 ID: {project_id}, 파일 ID: {file_id}")
+            debug(f"프로젝트 ID: {project_id}, 파일 ID: {file_id}")
 
             # 각 클래스별로 처리
             for class_info in classes:
@@ -241,7 +241,7 @@ class JavaLoadingEngine:
                     warning(f"클래스 처리 중 오류: {class_info.get('class_name', 'UNKNOWN')} - {str(e)}")
                     continue
 
-            info(f"=== Java 클래스 저장 완료: {java_file} ===")
+            debug(f"=== Java 클래스 저장 완료: {java_file} ===")
             return True
 
         except Exception as e:
@@ -437,7 +437,7 @@ class JavaLoadingEngine:
                 warning("저장할 상속 관계가 없습니다")
                 return True
 
-            info(f"저장할 상속 관계 수: {len(inheritance_relationships)}개")
+            debug(f"저장할 상속 관계 수: {len(inheritance_relationships)}개")
 
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
             project_id = self._get_project_id()
@@ -638,7 +638,7 @@ class JavaLoadingEngine:
                 return None
 
             # 2. inferred 클래스는 classes 테이블에만 저장 (components 테이블에는 저장하지 않음)
-            info(f"inferred 클래스 생성 완료: {class_name} (ID: {class_id})")
+            debug(f"inferred 클래스 생성 완료: {class_name} (ID: {class_id})")
             return class_id
 
         except Exception as e:
@@ -660,7 +660,7 @@ class JavaLoadingEngine:
                 info("저장할 CALL_QUERY 관계가 없습니다")
                 return True
 
-            info(f"저장할 CALL_QUERY 관계 수: {len(call_query_relationships)}개")
+                debug(f"저장할 CALL_QUERY 관계 수: {len(call_query_relationships)}개")
 
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
             project_id = self._get_project_id()
@@ -683,10 +683,10 @@ class JavaLoadingEngine:
                     dst_component_id = self._get_query_component_id(project_id, rel_info['dst_name'])
                     if not dst_component_id:
                         # inferred 쿼리 생성 시도
-                        info(f"inferred 쿼리 생성 시도: {rel_info['dst_name']}")
+                        debug(f"inferred 쿼리 생성 시도: {rel_info['dst_name']}")
                         dst_component_id = self._create_inferred_query(project_id, rel_info['dst_name'])
                         if dst_component_id:
-                            info(f"inferred 쿼리 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
+                            debug(f"inferred 쿼리 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
                         else:
                             # 시스템 에러: inferred 쿼리 생성 실패 - 프로그램 종료
                             handle_error(Exception(f"inferred 쿼리 생성 실패: {rel_info['dst_name']}"), "CALL_QUERY 관계 저장 실패")
@@ -714,7 +714,7 @@ class JavaLoadingEngine:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
 
                 if processed_count > 0:
-                    info(f"CALL_QUERY 관계 저장 완료: {processed_count}개")
+                    debug(f"CALL_QUERY 관계 저장 완료: {processed_count}개")
                     return True
                 else:
                     # 시스템 에러: 관계 저장 실패 - 프로그램 종료
@@ -742,7 +742,7 @@ class JavaLoadingEngine:
                 warning("저장할 CALL_METHOD 관계가 없습니다")
                 return True
 
-            info(f"저장할 CALL_METHOD 관계 수: {len(call_method_relationships)}개")
+                debug(f"저장할 CALL_METHOD 관계 수: {len(call_method_relationships)}개")
 
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
             project_id = self._get_project_id()
@@ -765,10 +765,10 @@ class JavaLoadingEngine:
                     dst_component_id = self._get_method_component_id(project_id, rel_info['dst_name'])
                     if not dst_component_id:
                         # inferred 메서드 생성 시도
-                        info(f"inferred 메서드 생성 시도: {rel_info['dst_name']}")
+                        debug(f"inferred 메서드 생성 시도: {rel_info['dst_name']}")
                         dst_component_id = self._create_inferred_method(project_id, rel_info['dst_name'])
                         if dst_component_id:
-                            info(f"inferred 메서드 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
+                            debug(f"inferred 메서드 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
                         else:
                             # 시스템 에러: inferred 메서드 생성 실패 - 프로그램 종료
                             handle_error(Exception(f"inferred 메서드 생성 실패: {rel_info['dst_name']}"), "CALL_METHOD 관계 저장 실패")
@@ -912,7 +912,7 @@ class JavaLoadingEngine:
             생성 성공 여부
         """
         try:
-            info("간접 USE_TABLE 관계 생성 시작")
+            debug("간접 USE_TABLE 관계 생성 시작")
 
             # CALL_QUERY 관계 조회 (Method -> SQL)
             query = """
@@ -931,7 +931,7 @@ class JavaLoadingEngine:
                 warning("CALL_QUERY 관계가 없습니다")
                 return True
 
-            info(f"CALL_QUERY 관계 {len(call_query_results)}개 발견")
+            debug(f"CALL_QUERY 관계 {len(call_query_results)}개 발견")
 
             use_table_relationships = []
 
@@ -976,7 +976,7 @@ class JavaLoadingEngine:
             # 배치 저장
             if use_table_relationships:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', use_table_relationships)
-                info(f"간접 USE_TABLE 관계 저장 완료: {processed_count}개")
+                debug(f"간접 USE_TABLE 관계 저장 완료: {processed_count}개")
                 return True
             else:
                 warning("생성할 간접 USE_TABLE 관계가 없습니다")
@@ -1127,7 +1127,7 @@ class JavaLoadingEngine:
             # components 테이블에 저장 (USER RULES: 공통함수 사용)
             component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
             if component_id:
-                info(f"inferred 쿼리 생성 완료: {query_id} (ID: {component_id})")
+                debug(f"inferred 쿼리 생성 완료: {query_id} (ID: {component_id})")
                 return component_id
             else:
                 handle_error(Exception(f"inferred 쿼리 컴포넌트 생성 실패: {query_id}"), f"inferred 쿼리 컴포넌트 생성 실패: {query_id}")
@@ -1180,7 +1180,7 @@ class JavaLoadingEngine:
             # components 테이블에 저장 (USER RULES: 공통함수 사용)
             component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
             if component_id:
-                info(f"inferred 메서드 생성 완료: {method_name} (ID: {component_id})")
+                debug(f"inferred 메서드 생성 완료: {method_name} (ID: {component_id})")
                 return component_id
             else:
                 handle_error(Exception(f"inferred 메서드 컴포넌트 생성 실패: {method_name}"), f"inferred 메서드 컴포넌트 생성 실패: {method_name}")
@@ -1233,7 +1233,7 @@ class JavaLoadingEngine:
             # components 테이블에 저장 (USER RULES: 공통함수 사용)
             component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
             if component_id:
-                info(f"inferred 테이블 생성 완료: {table_name} (ID: {component_id})")
+                debug(f"inferred 테이블 생성 완료: {table_name} (ID: {component_id})")
                 return component_id
             else:
                 handle_error(Exception(f"inferred 테이블 컴포넌트 생성 실패: {table_name}"), f"inferred 테이블 컴포넌트 생성 실패: {table_name}")

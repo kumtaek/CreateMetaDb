@@ -43,11 +43,12 @@ class JavaParser:
             self.project_name = project_name
             self.project_id = None
 
+        # PathUtils 인스턴스 생성 (공통함수 사용)
+        self.path_utils = PathUtils()
+        
         if config_path is None:
             # USER RULES: 하드코딩 지양 - 공통함수 사용 (크로스플랫폼 대응)
-            from util import PathUtils
-            path_utils = PathUtils()
-            java_config_path = path_utils.get_parser_config_path("java")
+            java_config_path = self.path_utils.get_parser_config_path("java")
             self.config = self._load_config(java_config_path)
         else:
             self.config_path = config_path
@@ -234,7 +235,7 @@ class JavaParser:
             for root, dirs, files in os.walk(project_path):
                 for file in files:
                     if file.endswith('.java'):
-                        file_path = os.path.join(root, file)
+                        file_path = self.path_utils.join_path(root, file)
                         if self._is_valid_java_file(file_path):
                             java_files.append(file_path)
 
@@ -352,8 +353,8 @@ class JavaParser:
         except Exception as e:
             # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
             error_message = f"Java 파싱 중 예외 발생: {str(e)}"
-            handle_error(f"parse_java_file에서 예외 발생: {java_file} - {str(e)}")
-            handle_error(f"{error_message} - {java_file}")
+            handle_error(e, f"parse_java_file에서 예외 발생: {java_file}")
+            # handle_error(Exception(f"{error_message} - {java_file}"), "Java 파싱 실패")
             self.stats['errors'] += 1
             return {
                 'classes': [],
@@ -380,7 +381,7 @@ class JavaParser:
                 return {'strategy': 'chunk', 'chunk_size': 512}
 
         except Exception as e:
-            handle_error(f"처리 전략 결정 실패: {str(e)}")
+            handle_error(e, "처리 전략 결정 실패")
             return {'strategy': 'memory', 'chunk_size': None}
 
     def _preprocess_java_content_safe(self, java_content: str) -> tuple:
@@ -763,9 +764,9 @@ class JavaParser:
                 if match:
                     package_path = match.group(1)
                     # 파일명 제거하고 디렉토리 경로만 추출
-                    package_path = os.path.dirname(package_path)
+                    package_path = self.path_utils.get_parent_directory(package_path)
                     # 경로 구분자를 점으로 변환
-                    package_name = package_path.replace(os.sep, '.').replace('/', '.')
+                    package_name = package_path.replace(self.path_utils.get_path_separator(), '.').replace('/', '.')
 
                     if package_name and package_name != '.':
                         return package_name

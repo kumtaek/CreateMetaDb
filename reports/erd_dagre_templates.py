@@ -53,7 +53,6 @@ class ERDDagreTemplates:
             <span id="current-layout">fcose</span>
             <div class="zoom-hint">
                 <span class="hint-icon">🔍</span>
-                <span class="hint-text">Ctrl + 마우스 휠로 확대/축소 가능</span>
             </div>
         </div>
         <div id="cy"></div>
@@ -203,7 +202,7 @@ class ERDDagreTemplates:
             border: 2px solid #2196f3;
             border-radius: 8px;
             padding: 8px 12px;
-            margin-left: 15px;
+            margin-left: 8px;
             box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
             animation: pulse 2s infinite;
         }

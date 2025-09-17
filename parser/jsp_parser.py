@@ -38,12 +38,12 @@ class JspParser:
             # USER RULES: 하드코딩 지양 - 설정 파일에서 패턴 로드
             # 설정 파일 로드 (크로스플랫폼 대응)
             from util import PathUtils, ConfigUtils
-            path_utils = PathUtils()
+            self.path_utils = PathUtils()
             config_utils = ConfigUtils()
             
             if config_path is None:
                 # 공통함수 사용 (크로스플랫폼 대응)
-                config_path = path_utils.get_parser_config_path("jsp")
+                config_path = self.path_utils.get_parser_config_path("jsp")
             
             self.config = config_utils.load_yaml_config(config_path)
             
@@ -164,7 +164,7 @@ class JspParser:
         """
         try:
             # JSP 파일명 추출
-            jsp_name = os.path.basename(file_path)
+            jsp_name = self.path_utils.get_filename(file_path)
             
             # 라인 수 계산
             line_count = len(jsp_content.splitlines())

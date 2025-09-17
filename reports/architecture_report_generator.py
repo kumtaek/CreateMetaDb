@@ -121,7 +121,7 @@ class ArchitectureReportGenerator:
             return {}
     
     def _get_layer_data(self) -> Dict[str, List[Dict[str, Any]]]:
-        """레이어별 컴포넌트 데이터 조회 (전체 클래스 대상 동적 분류)"""
+        """레이어별 컴포넌트 데이터 조회 (전체 클래스 대상 동적 분류, 기타 레이어 포함)"""
         try:
             # 전체 클래스 조회 (APPLICATION 레이어 제한 제거)
             all_classes = self._get_all_classes()
@@ -139,28 +139,40 @@ class ArchitectureReportGenerator:
                 if layer_name in layer_patterns:
                     patterns = layer_patterns[layer_name]
                     layer_classes = self._classify_classes_by_patterns(all_classes, layer_name, patterns, all_processed_classes)
+                    # ABCD 순으로 정렬
+                    layer_classes.sort(key=lambda x: x['component_name'])
                     layer_data[layer_name] = layer_classes
                     app_logger.info(f"{layer_name.title()} Layer: {len(layer_classes)}개 클래스")
+            
+            # 고아 클래스 (분류되지 않은 클래스들)를 기타 레이어로 추가
+            orphan_classes = []
+            for class_info in all_classes:
+                class_name = class_info['component_name']
+                if class_name not in all_processed_classes:
+                    orphan_classes.append(class_info)
+            
+            # ABCD 순으로 정렬
+            orphan_classes.sort(key=lambda x: x['component_name'])
+            layer_data['etc'] = orphan_classes
+            app_logger.info(f"Etc Layer: {len(orphan_classes)}개 클래스 (고아 클래스)")
             
             app_logger.debug(f"레이어별 데이터 조회 완료: {dict((k, len(v)) for k, v in layer_data.items())}")
             return layer_data
             
         except Exception as e:
             handle_error(e, "레이어별 데이터 조회 실패")
-            return {'controller': [], 'service': [], 'mapper': [], 'model': []}
+            return {'controller': [], 'service': [], 'mapper': [], 'model': [], 'etc': []}
     
     def _load_layer_classification_patterns(self) -> Dict[str, Dict[str, List[str]]]:
         """설정 파일에서 레이어 분류 패턴 로드"""
         try:
             import yaml
-            from pathlib import Path
             
-            # 설정 파일 경로
-            config_path = Path(__file__).parent.parent / "config" / "parser" / "java_keyword.yaml"
+            # 설정 파일 경로 (공통함수 사용)
+            config_path = self.path_utils.get_parser_config_path("java")
             
-            if not config_path.exists():
-                app_logger.warning(f"설정 파일이 존재하지 않습니다: {config_path}")
-                return self._get_default_layer_patterns()
+            if not self.path_utils.exists(config_path):
+                handle_error(Exception(f"설정 파일이 존재하지 않습니다: {config_path}"), "설정 파일 부재")
             
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
@@ -174,8 +186,7 @@ class ArchitectureReportGenerator:
             return layer_classification
             
         except Exception as e:
-            app_logger.warning(f"설정 파일 로드 실패, 기본 패턴 사용: {e}")
-            return self._get_default_layer_patterns()
+            handle_error(e, "설정 파일 로드 실패")
     
     def _get_default_layer_patterns(self) -> Dict[str, Dict[str, List[str]]]:
         """기본 레이어 분류 패턴 (설정 파일 로드 실패 시 사용)"""
@@ -307,7 +318,7 @@ class ArchitectureReportGenerator:
                             classified_classes.append(class_info)
                             all_processed_classes.add(class_name)
                             is_matched = True
-                            app_logger.info(f"{layer_name.title()} Layer: {class_name} 매칭됨 (폴더 패턴: {pattern})")
+                            app_logger.debug(f"{layer_name.title()} Layer: {class_name} 매칭됨 (폴더 패턴: {pattern})")
                             break
                 
                 # 2순위: 클래스명 keyword 매칭 (클래스명 기반 분류)
@@ -317,7 +328,7 @@ class ArchitectureReportGenerator:
                             classified_classes.append(class_info)
                             all_processed_classes.add(class_name)
                             is_matched = True
-                            app_logger.info(f"{layer_name.title()} Layer: {class_name} 매칭됨 (클래스명 keyword: {keyword})")
+                            app_logger.debug(f"{layer_name.title()} Layer: {class_name} 매칭됨 (클래스명 keyword: {keyword})")
                             break
                 
                 # 3순위: 파일명 패턴 매칭
@@ -327,12 +338,12 @@ class ArchitectureReportGenerator:
                             classified_classes.append(class_info)
                             all_processed_classes.add(class_name)
                             is_matched = True
-                            app_logger.info(f"{layer_name.title()} Layer: {class_name} 매칭됨 (파일명: {file_name}, suffix: {suffix})")
+                            app_logger.debug(f"{layer_name.title()} Layer: {class_name} 매칭됨 (파일명: {file_name}, suffix: {suffix})")
                             break
                 
                 # 서블릿 디버깅용 로그
                 if layer_name == 'controller' and 'servlet' in file_name.lower() and not is_matched:
-                    app_logger.info(f"Controller Layer: {class_name} 서블릿 매칭 실패 - file_name: {file_name}")
+                    app_logger.debug(f"Controller Layer: {class_name} 서블릿 매칭 실패 - file_name: {file_name}")
                 
                 # 3순위: 클래스명 suffix 패턴 매칭
                 if suffixes and not is_matched:
@@ -342,7 +353,7 @@ class ArchitectureReportGenerator:
                             all_processed_classes.add(class_name)
                             is_matched = True
                             if layer_name in ['model', 'service', 'mapper', 'controller'] and class_name in ['Product', 'User', 'OrderStatus']:
-                                app_logger.info(f"{layer_name.title()} Layer: {class_name} 매칭됨 (클래스명 suffix: {suffix})")
+                                app_logger.debug(f"{layer_name.title()} Layer: {class_name} 매칭됨 (클래스명 suffix: {suffix})")
                             break
                 
                 # 4순위: keyword 패턴 매칭
@@ -541,7 +552,7 @@ class ArchitectureReportGenerator:
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"architecture_mermaid_{timestamp}.html"
-            output_path = os.path.join(self.output_dir, filename)
+            output_path = self.path_utils.join_path(self.output_dir, filename)
             
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)

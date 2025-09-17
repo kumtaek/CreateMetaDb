@@ -319,7 +319,7 @@ class BackendEntryLoadingEngine:
                 if self._is_target_for_analyzer_with_full_path(java_file, analyzer, full_file_path):
                     app_logger.debug(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상임")
                     entries = analyzer.analyze_backend_entry(java_file, self.stats)
-                    app_logger.info(f"분석기 {analyzer.get_framework_name()}에서 {len(entries)}개 진입점 발견")
+                    app_logger.debug(f"분석기 {analyzer.get_framework_name()}에서 {len(entries)}개 진입점 발견")
                     file_entries.extend(entries)
                 else:
                     app_logger.debug(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상이 아님")
@@ -446,27 +446,27 @@ class BackendEntryLoadingEngine:
             
             # 1. 빈 문자열이나 루트 경로만 있는 경우
             if url_pattern in ['/', '']:
-                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                app_logger.debug(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
             # 2. 콜론으로 시작하는 경우 (HTTP 메서드만 있는 경우)
             if url_pattern.startswith(':'):
-                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                app_logger.debug(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
             # 3. 슬래시로 시작하지 않는 경우
             if not url_pattern.startswith('/'):
-                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                app_logger.debug(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
             # 4. HTTP 메서드만 있는 경우 (예: GET, POST, PUT, DELETE)
             if url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']:
-                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                app_logger.debug(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
             # 5. 콜론이 포함된 경우 (이미 HTTP 메서드가 포함된 패턴)
             if ':' in url_pattern:
-                app_logger.warning(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
+                app_logger.debug(f"잘못된 URL 패턴으로 인해 API_URL 생성 건너뜀: '{url_pattern}:{entry.http_method}'")
                 return None
             
             component_name = f"{url_pattern}:{entry.http_method}"
@@ -567,7 +567,7 @@ class BackendEntryLoadingEngine:
                     # USER RULE: 모든 exception 발생시 handle_error()로 exit()
                     handle_error(e, f"API_URL 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
             
-            app_logger.info(f"API_URL 컴포넌트 생성 완료: {len(components_to_insert)}개")
+            app_logger.debug(f"API_URL 컴포넌트 생성 완료: {len(components_to_insert)}개")
             
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
@@ -602,7 +602,7 @@ class BackendEntryLoadingEngine:
             relationships_to_insert: 관계 데이터 리스트 (출력 파라미터)
         """
         try:
-            app_logger.info("API_URL → METHOD 관계 생성 시작")
+            app_logger.debug("API_URL → METHOD 관계 생성 시작")
             
             for entry in entries:
                 try:
@@ -625,7 +625,7 @@ class BackendEntryLoadingEngine:
                         relationships_to_insert.append(relationship)
                         app_logger.debug(f"API_URL → METHOD 관계 생성: {api_url_name} → {entry.method_name}")
                     elif not api_url_id:
-                        app_logger.warning(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_name}")
+                        app_logger.debug(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_name}")
                     elif not method_id:
                         app_logger.warning(f"METHOD 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name}")
                     else:
@@ -635,7 +635,7 @@ class BackendEntryLoadingEngine:
                     # USER RULE: 모든 exception 발생시 handle_error()로 exit()
                     handle_error(e, f"관계 생성 실패: {entry.class_name}.{entry.method_name}")
             
-            app_logger.info(f"API_URL → METHOD 관계 생성 완료: {len(relationships_to_insert)}개")
+            app_logger.debug(f"API_URL → METHOD 관계 생성 완료: {len(relationships_to_insert)}개")
 
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()

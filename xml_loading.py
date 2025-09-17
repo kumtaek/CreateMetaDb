@@ -119,9 +119,9 @@ class XmlLoadingEngine:
                         relative_path = relative_path.replace('/', '\\')
                         # file_loading.py 수정으로 이제 file_path에 전체 경로(파일명 포함)가 저장됨
                         
-                        # 로그: 경로 정보 출력
-                        info(f"XML 파일: {xml_file}")
-                        info(f"상대경로: {relative_path}")
+                        # 로그: 경로 정보 출력 (debug로 변경)
+                        debug(f"XML 파일: {xml_file}")
+                        debug(f"상대경로: {relative_path}")
                         
                         # 파일 ID 조회
                         file_query = """
@@ -132,11 +132,11 @@ class XmlLoadingEngine:
                         """
                         
                         file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
-                        info(f"SQL 쿼리 결과: {len(file_results) if file_results else 0}개")
+                        debug(f"SQL 쿼리 결과: {len(file_results) if file_results else 0}개")
                         
                         if file_results:
                             file_id = file_results[0]['file_id']
-                            info(f"file_id 조회 성공: {file_id}")
+                            debug(f"file_id 조회 성공: {file_id}")
                         else:
                             handle_error(Exception(f"파일 ID를 찾을 수 없음: {xml_file} (상대경로: {relative_path})"), "파일 ID 조회 실패")
                     except Exception as e:
@@ -246,8 +246,8 @@ class XmlLoadingEngine:
             저장 성공 여부
         """
         try:
-            info(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===")
-            info(f"전달받은 SQL 쿼리 수: {len(sql_queries)}개")
+            debug(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===")
+            debug(f"전달받은 SQL 쿼리 수: {len(sql_queries)}개")
             
             # SQL 쿼리 타입별 통계
             if sql_queries:
@@ -255,7 +255,7 @@ class XmlLoadingEngine:
                 for query in sql_queries:
                     tag_name = query.get('tag_name', 'unknown')
                     query_types[tag_name] = query_types.get(tag_name, 0) + 1
-                info(f"XML에서 추출된 SQL 쿼리 타입별 통계: {query_types}")
+                debug(f"XML에서 추출된 SQL 쿼리 타입별 통계: {query_types}")
             
             if not sql_queries:
                 handle_error("저장할 SQL 쿼리가 없습니다")
@@ -268,7 +268,7 @@ class XmlLoadingEngine:
                 handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "SQL 컴포넌트 저장 실패")
                 return False
             
-            info(f"프로젝트 ID: {project_id}")
+            debug(f"프로젝트 ID: {project_id}")
             
             # SQL Content Processor를 사용하여 처리 (보류 상태)
             # if self.sql_content_processor:
@@ -359,7 +359,7 @@ class XmlLoadingEngine:
                 except Exception as e:
                     handle_error(f"SQL 쿼리 저장 중 오류: {sql_id}, 오류: {e}")
             
-            info(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
+            debug(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
             return success_count > 0
 
         except Exception as e:
@@ -626,7 +626,7 @@ class XmlLoadingEngine:
                 processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
                 
                 if processed_count > 0:
-                    info(f"JOIN 관계 저장 완료: {processed_count}개")
+                    debug(f"JOIN 관계 저장 완료: {processed_count}개")
                     return True
                 else:
                     # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.

@@ -116,7 +116,7 @@ class StatisticsCollector:
             if success:
                 app_logger.debug(f"파일 분석 성공: {file_path} ({framework}, {stage}, {processing_time:.3f}s, {entries_found}개 진입점)")
             else:
-                app_logger.warning(f"파일 분석 실패: {file_path} ({framework}, {stage}, {processing_time:.3f}s) - {error_message}")
+                app_logger.debug(f"파일 분석 실패: {file_path} ({framework}, {stage}, {processing_time:.3f}s) - {error_message}")
     
     def get_framework_stats(self, framework: str) -> Optional[FrameworkStats]:
         """

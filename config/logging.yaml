@@ -44,7 +44,7 @@ handlers:
   # 콘솔 출력 핸들러 - 터미널/콘솔에 로그 출력
   console:
     class: logging.StreamHandler  # 표준 출력 스트림 사용
-    level: INFO                  # INFO 레벨 이상의 로그만 출력 (중요 로그만 표시)
+    level: WARNING               # WARNING 레벨 이상의 로그만 출력 (중요 로그만 표시)
     formatter: simple            # 간단한 포맷터 사용
     stream: ext://sys.stdout     # 표준 출력 스트림 지정
   
@@ -65,18 +65,18 @@ handlers:
 loggers:
   # 루트 로거 - 모든 로거의 기본 설정
   root:
-    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
+    level: WARNING                # WARNING 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
   
   # SourceAnalyzer 전용 로거 - 메인 애플리케이션 로거
   SourceAnalyzer:
-    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
+    level: WARNING                # WARNING 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
   
   # XML 파서 관련 로거 - XML 파싱 관련 로그
   xml_parser:
-    level: INFO                   # INFO 레벨 이상의 로그만 처리 (중요 로그만 표시)
+    level: WARNING                # WARNING 레벨 이상의 로그만 처리 (중요 로그만 표시)
     handlers: [console, file]     # 콘솔과 파일 핸들러 모두 사용
     propagate: false              # 부모 로거로 전파하지 않음 (중복 출력 방지)
 

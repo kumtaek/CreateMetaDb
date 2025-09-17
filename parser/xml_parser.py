@@ -17,7 +17,7 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
 from util import (
-    ConfigUtils, FileUtils, HashUtils, ValidationUtils,
+    ConfigUtils, FileUtils, HashUtils, ValidationUtils, PathUtils,
     app_logger, info, error, debug, warning, handle_error
 )
 
@@ -48,13 +48,14 @@ class XmlParser:
         # 현재 처리 중인 파일의 file_id (메모리 최적화)
         self.current_file_id = None
 
+        # PathUtils 인스턴스 생성 (공통함수 사용)
+        self.path_utils = PathUtils()
+        
         if config_path is None:
             # USER RULES: 하드코딩 지양 - 공통함수 사용 (크로스플랫폼 대응)
-            from util import PathUtils
-            path_utils = PathUtils()
-            sql_config_path = path_utils.get_parser_config_path("sql")
-            xml_config_path = path_utils.get_config_path("parser/xml_parser_config.yaml")
-            dom_rules_path = path_utils.get_config_path("parser/mybatis_dom_rules.yaml")
+            sql_config_path = self.path_utils.get_parser_config_path("sql")
+            xml_config_path = self.path_utils.get_config_path("parser/xml_parser_config.yaml")
+            dom_rules_path = self.path_utils.get_config_path("parser/mybatis_dom_rules.yaml")
             sql_config = self._load_config(sql_config_path)
             xml_config = self._load_config(xml_config_path)
             self.dom_rules = self._load_config(dom_rules_path)
@@ -146,7 +147,7 @@ class XmlParser:
                     # USER RULES: 하드코딩 지양 - 설정에서 XML 확장자 가져오기
                     xml_extensions = self.config.get('xml_extensions', ['.xml'])
                     if any(file.endswith(ext) for ext in xml_extensions):
-                        file_path = os.path.join(root, file)
+                        file_path = self.path_utils.join_path(root, file)
                         if self._is_mybatis_xml_file(file_path):
                             xml_files.append(file_path)
             info(f"MyBatis XML 파일 수집 완료: {len(xml_files)}개")

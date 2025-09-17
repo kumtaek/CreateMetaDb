@@ -7,6 +7,7 @@ SourceAnalyzer 경로 처리 공통 유틸리티 모듈
 """
 
 import os
+from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from .logger import app_logger, handle_error, error
 
@@ -724,6 +725,76 @@ class PathUtils:
         project_path = self.get_project_source_path(project_name)
         return os.path.exists(project_path) and os.path.isdir(project_path)
     
+    def exists(self, path: str) -> bool:
+        """
+        경로 존재 여부 확인
+        
+        Args:
+            path: 확인할 경로
+            
+        Returns:
+            경로 존재 여부 (True/False)
+        """
+        try:
+            normalized_path = self.normalize_path(path)
+            return os.path.exists(normalized_path)
+        except Exception as e:
+            handle_error(e, f"경로 존재 여부 확인 실패: {path}")
+            return False
+    
+    def is_file(self, path: str) -> bool:
+        """
+        파일 여부 확인
+        
+        Args:
+            path: 확인할 경로
+            
+        Returns:
+            파일 여부 (True/False)
+        """
+        try:
+            normalized_path = self.normalize_path(path)
+            return os.path.isfile(normalized_path)
+        except Exception as e:
+            handle_error(e, f"파일 여부 확인 실패: {path}")
+            return False
+    
+    def is_dir(self, path: str) -> bool:
+        """
+        디렉토리 여부 확인
+        
+        Args:
+            path: 확인할 경로
+            
+        Returns:
+            디렉토리 여부 (True/False)
+        """
+        try:
+            normalized_path = self.normalize_path(path)
+            return os.path.isdir(normalized_path)
+        except Exception as e:
+            handle_error(e, f"디렉토리 여부 확인 실패: {path}")
+            return False
+    
+    def makedirs(self, path: str, exist_ok: bool = True) -> bool:
+        """
+        디렉토리 생성 (중간 디렉토리도 함께 생성)
+        
+        Args:
+            path: 생성할 디렉토리 경로
+            exist_ok: 이미 존재하는 경우 오류 무시 여부
+            
+        Returns:
+            생성 성공 여부 (True/False)
+        """
+        try:
+            normalized_path = self.normalize_path(path)
+            os.makedirs(normalized_path, exist_ok=exist_ok)
+            return True
+        except Exception as e:
+            handle_error(e, f"디렉토리 생성 실패: {path}")
+            return False
+    
     def get_table_component_id(self, project_name: str, table_name: str, table_owner: str = None) -> Optional[int]:
         """
         테이블명으로 테이블의 component_id 조회
@@ -1041,6 +1112,30 @@ def get_components_by_parent_id(project_name: str, parent_id: int, component_typ
     """parent_id로 하위 컴포넌트 조회 편의 함수"""
     path_utils = PathUtils(project_root)
     return path_utils.get_components_by_parent_id(project_name, parent_id, component_type)
+
+
+def exists(path: str, project_root: str = None) -> bool:
+    """경로 존재 여부 확인 편의 함수"""
+    path_utils = PathUtils(project_root)
+    return path_utils.exists(path)
+
+
+def is_file(path: str, project_root: str = None) -> bool:
+    """파일 여부 확인 편의 함수"""
+    path_utils = PathUtils(project_root)
+    return path_utils.is_file(path)
+
+
+def is_dir(path: str, project_root: str = None) -> bool:
+    """디렉토리 여부 확인 편의 함수"""
+    path_utils = PathUtils(project_root)
+    return path_utils.is_dir(path)
+
+
+def makedirs(path: str, exist_ok: bool = True, project_root: str = None) -> bool:
+    """디렉토리 생성 편의 함수"""
+    path_utils = PathUtils(project_root)
+    return path_utils.makedirs(path, exist_ok)
 
 
 def normalize_url_path(*parts: str) -> str:

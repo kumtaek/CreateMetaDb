@@ -634,7 +634,7 @@ class ERDDagreReportGenerator:
             handle_error(e, f"PK-FK 관계 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
 
     def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
-        """관계 라벨 포맷팅 - 동일한 키로 조인되는 경우 중복 표시 제거"""
+        """관계 라벨 포맷팅 - 양방향 관계에서 글자 겹침 방지"""
         try:
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
@@ -645,13 +645,15 @@ class ERDDagreReportGenerator:
                 if src_keys == dst_keys:
                     return f"[{', '.join(src_keys)}]"
                 else:
-                    return f"[{', '.join(src_keys)}] -> [{', '.join(dst_keys)}]"
+                    # 다른 경우 하이픈으로 연결
+                    return f"[{', '.join(src_keys)}]-[{', '.join(dst_keys)}]"
             
             # 단일 키 처리
             elif src_column == dst_column:
                 return src_column
             else:
-                return f"{src_column} -> {dst_column}"
+                # 다른 경우 하이픈으로 연결
+                return f"{src_column}-{dst_column}"
                 
         except Exception as e:
             handle_error(e, f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
@@ -716,8 +718,7 @@ class ERDDagreReportGenerator:
                         self._safe_copy_file(source_js, dest_js, f"JS ({js_file})")
                 return True
             else:
-                app_logger.warning(f"소스 JS 디렉토리가 존재하지 않습니다: {source_js_dir}")
-                return False
+                handle_error(Exception(f"소스 JS 디렉토리가 존재하지 않습니다: {source_js_dir}"), "JS 디렉토리 부재")
             
         except Exception as e:
             from util.logger import handle_error
@@ -741,19 +742,16 @@ class ERDDagreReportGenerator:
                 
                 # 파일 복사
                 shutil.copy2(source, dest)
-                app_logger.info(f"{file_type} 파일 복사 완료: {dest}")
+                app_logger.debug(f"{file_type} 파일 복사 완료: {dest}")
                 return True
                 
             except PermissionError as e:
                 if attempt < max_retries - 1:
-                    app_logger.warning(f"{file_type} 파일 복사 재시도 {attempt + 1}/{max_retries}: {e}")
                     time.sleep(0.2)  # 200ms 대기
                 else:
-                    app_logger.warning(f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
-                    return False
+                    handle_error(e, f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
             except Exception as e:
-                app_logger.warning(f"{file_type} 파일 복사 실패: {e}")
-                return False
+                handle_error(e, f"{file_type} 파일 복사 실패")
         
         return False
 

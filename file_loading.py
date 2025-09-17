@@ -104,7 +104,7 @@ class FileLoadingEngine:
             
             project_data = {
                 'project_name': self.project_name,
-                'project_path': f"projects/{self.project_name}",  # 상대경로로 직접 설정
+                'project_path': self.path_utils.join_path("projects", self.project_name),  # 공통함수 사용 (크로스플랫폼 대응)
                 'hash_value': project_hash,
                 'del_yn': 'N',
                 'total_files': 0  # 나중에 업데이트
@@ -544,7 +544,7 @@ class FileLoadingEngine:
                     if any(row.values()):
                         csv_data.append(row)
             
-            info(f"CSV 파일 로드 완료: {csv_path}, {len(csv_data)}개 행")
+            debug(f"CSV 파일 로드 완료: {csv_path}, {len(csv_data)}개 행")
             return csv_data
             
         except Exception as e:
@@ -641,7 +641,7 @@ class FileLoadingEngine:
                 error_count = sum(1 for table in table_data_list if table.get('has_error') == 'Y')
                 self.stats['tables_with_errors'] = error_count
                 
-                info(f"테이블 정보 저장 완료: {processed_count}개 테이블 (오류: {error_count}개)")
+                debug(f"테이블 정보 저장 완료: {processed_count}개 테이블 (오류: {error_count}개)")
                 return True
             else:
                 error("테이블 정보 저장 실패")
@@ -759,7 +759,7 @@ class FileLoadingEngine:
                 error_count = sum(1 for column in column_data_list if column.get('has_error') == 'Y')
                 self.stats['columns_with_errors'] = error_count
                 
-                info(f"컬럼 정보 저장 완료: {processed_count}개 컬럼 (오류: {error_count}개)")
+                debug(f"컬럼 정보 저장 완료: {processed_count}개 컬럼 (오류: {error_count}개)")
                 return True
             else:
                 error("컬럼 정보 저장 실패")
@@ -826,7 +826,7 @@ class FileLoadingEngine:
             
             if processed_count > 0:
                 self.stats['components_created'] = processed_count
-                info(f"테이블 컴포넌트 생성 완료: {processed_count}개")
+                debug(f"테이블 컴포넌트 생성 완료: {processed_count}개")
                 
                 # tables 테이블의 component_id 업데이트
                 self._update_table_component_ids(project_id)
@@ -906,7 +906,7 @@ class FileLoadingEngine:
             
             if processed_count > 0:
                 self.stats['components_created'] += processed_count
-                info(f"컬럼 컴포넌트 생성 완료: {processed_count}개")
+                debug(f"컬럼 컴포넌트 생성 완료: {processed_count}개")
                 
                 # 🔥 새로 추가: columns 테이블의 component_id 업데이트
                 self._update_columns_component_id(columns, component_data_list)
@@ -964,7 +964,7 @@ class FileLoadingEngine:
                         warning(f"컬럼 component_id 업데이트 실패: {column_name}")
             
             if updated_count > 0:
-                info(f"컬럼 component_id 업데이트 완료: {updated_count}개")
+                debug(f"컬럼 component_id 업데이트 완료: {updated_count}개")
                 return True
             else:
                 warning("컬럼 component_id 업데이트 실패")

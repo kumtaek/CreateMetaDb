@@ -18,9 +18,6 @@ class ReportTemplates:
         # 통계 카드 HTML 생성
         stats_html = self._generate_stats_html(stats)
         
-        # 필터링 옵션 HTML 생성
-        filter_html = self._generate_filter_html(filter_options)
-        
         # 연계 체인 테이블 HTML 생성
         table_html = self._generate_chain_table_html(chain_data)
         
@@ -42,16 +39,10 @@ class ReportTemplates:
         {stats_html}
         <div class="callchain-content">
             <div class="callchain-section">
-                <h2>필터 및 검색</h2>
-                {filter_html}
-            </div>
-            <div class="callchain-section">
-                <h2>연계 경로</h2>
                 <div class="callchain-table-container">
                     <table id="chainTable" class="callchain-table">
                         <thead>
                             <tr>
-                                <th>연계ID</th>
                                 <th>Frontend</th>
                                 <th>API_URL</th>
                                 <th>클래스</th>
@@ -78,54 +69,27 @@ class ReportTemplates:
 </html>"""
     
     def _generate_stats_html(self, stats: Dict[str, int]) -> str:
-        """통계 카드 HTML 생성"""
+        """통계 카드 HTML 생성 - 그리드 컬럼 순서와 동일하게 정렬"""
         return f"""
         <div class="callchain-stats">
             <div class="callchain-stat-card">
-                <div class="callchain-stat-number">{stats.get('java_classes', 0)}</div>
-                <div class="callchain-stat-label">Java 클래스</div>
+                <div class="callchain-stat-number">{stats.get('frontend_files', 0)}</div>
+                <div class="callchain-stat-label">Frontend Files</div>
             </div>
             <div class="callchain-stat-card">
-                <div class="callchain-stat-number">{stats.get('database_tables', 0)}</div>
-                <div class="callchain-stat-label">데이터베이스 테이블</div>
+                <div class="callchain-stat-number">{stats.get('java_classes', 0)}</div>
+                <div class="callchain-stat-label">Java 클래스</div>
             </div>
             <div class="callchain-stat-card">
                 <div class="callchain-stat-number">{stats.get('xml_files', 0)}</div>
                 <div class="callchain-stat-label">XML 파일</div>
             </div>
             <div class="callchain-stat-card">
-                <div class="callchain-stat-number">{stats.get('frontend_files', 0)}</div>
-                <div class="callchain-stat-label">Frontend Files</div>
-            </div>
-            <div class="callchain-stat-card">
-                <div class="callchain-stat-number">{stats.get('join_relations', 0)}</div>
-                <div class="callchain-stat-label">JOIN 관계</div>
+                <div class="callchain-stat-number">{stats.get('database_tables', 0)}</div>
+                <div class="callchain-stat-label">데이터베이스 테이블</div>
             </div>
         </div>"""
     
-    def _generate_filter_html(self, filter_options: Dict[str, List[str]]) -> str:
-        """필터링 옵션 HTML 생성"""
-        # 테이블 옵션
-        table_options = ''.join([f'<option value="{table}">{table}</option>' for table in filter_options.get('tables', [])])
-        
-        # 쿼리 타입 옵션
-        query_type_options = ''.join([f'<option value="{qt}">{qt}</option>' for qt in filter_options.get('query_types', [])])
-        
-        return f"""
-        <div class="callchain-filter-controls">
-            <input type="text" id="searchInput" placeholder="클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
-            <select id="tableFilter">
-                <option value="">모든 테이블</option>
-                {table_options}
-            </select>
-            <select id="queryTypeFilter">
-                <option value="">모든 쿼리 타입</option>
-                {query_type_options}
-            </select>
-            <button onclick="filterTable()">필터 적용</button>
-            <button onclick="clearFilters()">필터 초기화</button>
-            <button onclick="exportToCSV()">CSV 내보내기</button>
-        </div>"""
     
     def _generate_chain_table_html(self, chain_data: List[Dict[str, Any]]) -> str:
         """연계 체인 테이블 HTML 생성 (툴팁 포함, 오프라인 지원)"""
@@ -139,30 +103,36 @@ class ReportTemplates:
                           .replace('"', '&quot;')
                           .replace("'", '&#39;'))
             
+            # 각 셀별로 NO-QUERY 여부를 개별적으로 판단
+            xml_file_class = ' no-query' if data.get('xml_file') == 'NO-QUERY' else ''
+            query_id_class = ' no-query' if data.get('query_id') == 'NO-QUERY' else ''
+            query_type_class = ' no-query' if data.get('query_type') == 'NO-QUERY' else ''
+            
             # 툴팁이 있는 경우와 없는 경우 분기
             if sql_content:
-                query_type_html = f'<span class="query-type tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
+                query_type_html = f'<span class="callchain-badge query-type{query_type_class} tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
             else:
-                query_type_html = f'<span class="query-type">{data["query_type"]}</span>'
+                query_type_html = f'<span class="callchain-badge query-type{query_type_class}">{data["query_type"]}</span>'
             
             # 관련테이블 표시 로직: NO-QUERY인 경우는 NO-QUERY, QUERY인 경우는 빈 값일 때 공란
             if data.get('query_type') == 'CALCULATION_ONLY' or data.get('query_id') == 'NO-QUERY':
                 related_tables_display = 'NO-QUERY'
+                related_tables_class = ' no-query'
             else:
                 related_tables_display = data['related_tables'] if data['related_tables'] else ''
+                related_tables_class = ''
             
-            # 안전한 HTML 생성 (크로스플랫폼 호환)
+            # 안전한 HTML 생성 (크로스플랫폼 호환) - 각 셀별로 개별 판단하여 NO-QUERY만 흐리게 표시
             rows.append(f"""
                 <tr>
-                    <td><span class="callchain-badge">{data['chain_id']}</span></td>
                     <td><span class="callchain-badge">{data.get('jsp_file', '')}</span></td>
                     <td><span class="callchain-badge">{data.get('api_entry', '')}</span></td>
                     <td><span class="callchain-badge">{data['class_name']}</span></td>
                     <td><span class="callchain-badge">{data['method_name']}</span></td>
-                    <td><span class="callchain-badge">{data['xml_file']}</span></td>
-                    <td><span class="callchain-badge">{data['query_id']}</span></td>
-                    <td><span class="callchain-badge">{data['query_type']}</span></td>
-                    <td><span class="callchain-badge">{related_tables_display}</span></td>
+                    <td><span class="callchain-badge{xml_file_class}">{data['xml_file']}</span></td>
+                    <td><span class="callchain-badge{query_id_class}">{data['query_id']}</span></td>
+                    <td>{query_type_html}</td>
+                    <td><span class="callchain-badge{related_tables_class}">{related_tables_display}</span></td>
                 </tr>""")
         
         return '\n'.join(rows)
@@ -392,139 +362,18 @@ class ReportTemplates:
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
         
-        // 검색 기능
-        function filterTable() {
-            const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const tableFilter = document.getElementById('tableFilter').value;
-            const queryTypeFilter = document.getElementById('queryTypeFilter').value;
-            const table = document.getElementById('chainTable');
-            const rows = table.getElementsByTagName('tr');
-            
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                const cells = row.getElementsByTagName('td');
-                let shouldShow = true;
-                
-                // 텍스트 검색
-                if (searchInput) {
-                    let found = false;
-                    for (let j = 0; j < cells.length; j++) {
-                        if (cells[j].textContent.toLowerCase().indexOf(searchInput) !== -1) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) shouldShow = false;
-                }
-                
-                // 테이블 필터
-                if (tableFilter && shouldShow) {
-                    const tablesCell = cells[6];
-                    if (tablesCell.textContent.indexOf(tableFilter) === -1) {
-                        shouldShow = false;
-                    }
-                }
-                
-                // 쿼리 타입 필터
-                if (queryTypeFilter && shouldShow) {
-                    const queryTypeCell = cells[5];
-                    if (queryTypeCell.textContent.indexOf(queryTypeFilter) === -1) {
-                        shouldShow = false;
-                    }
-                }
-                
-                row.style.display = shouldShow ? '' : 'none';
-            }
-        }
-        
-        // 필터 초기화
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('tableFilter').value = '';
-            document.getElementById('queryTypeFilter').value = '';
-            const table = document.getElementById('chainTable');
-            const rows = table.getElementsByTagName('tr');
-            for (let i = 1; i < rows.length; i++) {
-                rows[i].style.display = '';
-            }
-        }
-        
-        // CSV 내보내기 (정제된 SQL 내용 포함)
-        function exportToCSV() {
-            const table = document.getElementById('chainTable');
-            const rows = table.getElementsByTagName('tr');
-            let csv = [];
-            
-            // 헤더 추가
-            csv.push('연계ID,FRONTEND_API,API_ENTRY,클래스,메서드,XML파일,쿼리ID,쿼리종류,정제된SQL내용,관련테이블들');
-            
-            for (let i = 1; i < rows.length; i++) {
-                const cells = rows[i].getElementsByTagName('td');
-                if (cells.length > 0 && rows[i].style.display !== 'none') {
-                    let row = [];
-                    for (let j = 0; j < cells.length; j++) {
-                        let cellText = cells[j].textContent.replace(/"/g, '""');
-                        
-                        // 쿼리종류 컬럼(인덱스 5)의 경우 정제된 SQL 내용도 포함
-                        if (j === 5) {
-                            const queryTypeSpan = cells[j].querySelector('.query-type');
-                            if (queryTypeSpan && queryTypeSpan.classList.contains('tooltip')) {
-                                const sqlContent = queryTypeSpan.getAttribute('data-query') || '';
-                                row.push('"' + cellText + '"'); // 쿼리종류
-                                row.push('"' + sqlContent.replace(/"/g, '""') + '"'); // 정제된 SQL 내용
-                            } else {
-                                row.push('"' + cellText + '"'); // 쿼리종류
-                                row.push('""'); // 빈 정제된 SQL 내용
-                            }
-                        } else {
-                            row.push('"' + cellText + '"');
-                        }
-                    }
-                    csv.push(row.join(','));
-                }
-            }
-            
-            const csvContent = csv.join('\\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'CallChainReport_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        // 이벤트 리스너 등록
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                filterTable();
-            }
-        });
-        
-        document.getElementById('searchInput').addEventListener('input', function() {
-            filterTable();
-        });
-        
-        document.getElementById('tableFilter').addEventListener('change', function() {
-            filterTable();
-        });
-        
-        document.getElementById('queryTypeFilter').addEventListener('change', function() {
-            filterTable();
-        });
-        
         // 툴팁 기능 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // query-type 요소에 툴팁 이벤트 리스너 추가
+            // query-type 툴팁 요소들을 찾아서 이벤트 리스너 추가
             const queryTypeElements = document.querySelectorAll('.query-type.tooltip');
+            
             queryTypeElements.forEach(function(element) {
                 element.addEventListener('mouseenter', function() {
                     const tooltip = this.querySelector('.tooltiptext');
                     if (tooltip) {
                         tooltip.style.visibility = 'visible';
                         tooltip.style.opacity = '1';
+                        tooltip.style.zIndex = '1000';
                     }
                 });
                 
@@ -536,6 +385,17 @@ class ReportTemplates:
                     }
                 });
             });
+            
+            // CSS 호버 방식도 함께 활성화 (백업)
+            const style = document.createElement('style');
+            style.textContent = `
+                .query-type.tooltip:hover .tooltiptext {
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    z-index: 1000 !important;
+                }
+            `;
+            document.head.appendChild(style);
         });
         """
 
@@ -580,7 +440,7 @@ class ReportTemplates:
                     <button onclick="exportSvg()">SVG 내보내기</button>
                     <div class="zoom-hint">
                         <span class="hint-icon">🔍</span>
-                        <span class="hint-text">Ctrl + 마우스 휠로 확대/축소 가능</span>
+                        <span class="hint-text">CTRL+휠: 확대/축소 | 드래그: 이동</span>
                     </div>
                 </div>
                 <div class="diagram-container">
@@ -683,14 +543,14 @@ class ReportTemplates:
             background: #2980b9;
         }
         .zoom-hint {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
             border: 2px solid #2196f3;
             border-radius: 8px;
             padding: 8px 12px;
-            margin-left: 15px;
+            margin-left: 8px;
             box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
             animation: pulse 2s infinite;
         }
@@ -1096,8 +956,15 @@ class ReportTemplates:
         </div>
         
         <div class="section">
-            <h2>아키텍처 구조 다이어그램</h2>
-            <div class="diagram-container">
+            <div class="diagram-header">
+                <h2>아키텍처 구조 다이어그램</h2>
+                <div class="diagram-controls">
+                    <button onclick="exportLayerCSV()">레이어별 컴포넌트 CSV 다운로드</button>
+                    <button onclick="exportDiagramSVG()">다이어그램 SVG 내보내기</button>
+                    <button onclick="exportDiagramPNG()">다이어그램 PNG 내보내기</button>
+                </div>
+            </div>
+            <div class="diagram-container" id="architecture-diagram-container">
                 {diagram_html}
             </div>
         </div>
@@ -1149,13 +1016,14 @@ class ReportTemplates:
         </div>"""
     
     def _generate_architecture_diagram_html(self, layer_data: Dict[str, List[Dict[str, Any]]]) -> str:
-        """HTML 기반 아키텍처 다이어그램 생성 (기존 리포트와 동일한 구조)"""
+        """HTML 기반 아키텍처 다이어그램 생성 (기존 리포트와 동일한 구조, 기타 레이어 포함)"""
         try:
             # 레이어별 컴포넌트 수 계산
             controller_count = len(layer_data.get('controller', []))
             service_count = len(layer_data.get('service', []))
             mapper_count = len(layer_data.get('mapper', []))
             model_count = len(layer_data.get('model', []))
+            etc_count = len(layer_data.get('etc', []))
             
             # HTML 다이어그램 생성
             diagram_html = f"""
@@ -1201,6 +1069,17 @@ class ReportTemplates:
             </div>
             <div class="components-container">
                 {self._generate_layer_components_html(layer_data.get('model', []))}
+            </div>
+        </div>
+        
+                    <div class="layer-arrow">↓</div>
+                    
+        <div class="layer etc-layer" style="background-color: #fafafa; border-color: #757575;">
+            <div class="layer-header">
+                <h3>Etc Layer ({etc_count}개)</h3>
+            </div>
+            <div class="components-container">
+                {self._generate_layer_components_html(layer_data.get('etc', []))}
             </div>
         </div>
         
@@ -1344,62 +1223,35 @@ class ReportTemplates:
             margin-bottom: 2px;
             font-size: 1.1em;
         }
-        .diagram-controls {
+        .diagram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 5px;
+        }
+        .diagram-header h2 {
+            margin: 0;
+            flex: 1;
+        }
+        .diagram-controls {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         .diagram-controls button {
             background: #3498db;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.7em;
             transition: all 0.3s ease;
         }
         .diagram-controls button:hover {
             background: #2980b9;
-            transform: translateY(-2px);
-        }
-        .zoom-hint {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border: 2px solid #2196f3;
-            border-radius: 8px;
-            padding: 8px 12px;
-            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-            animation: pulse 2s infinite;
-        }
-        .hint-icon {
-            font-size: 16px;
-            animation: bounce 1.5s infinite;
-        }
-        .hint-text {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1976d2;
-            white-space: nowrap;
-        }
-        @keyframes pulse {
-            0%, 100% { 
-                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-                transform: scale(1);
-            }
-            50% { 
-                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
-                transform: scale(1.02);
-            }
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-3px); }
-            60% { transform: translateY(-2px); }
+            transform: translateY(-1px);
         }
         .diagram-container {
             background: white;
@@ -1589,12 +1441,11 @@ class ReportTemplates:
                 flex-direction: column;
                 align-items: stretch;
             }
+            .controls-right {
+                justify-content: center;
+            }
             .diagram-controls button {
                 margin: 2px 0;
-            }
-            .zoom-hint {
-                margin: 10px 0;
-                justify-content: center;
             }
         }
         
@@ -1611,10 +1462,13 @@ class ReportTemplates:
         """
     
     def _get_architecture_javascript(self) -> str:
-        """Architecture Report JavaScript (기존 리포트와 동일한 간단한 구조)"""
+        """Architecture Report JavaScript (CSV, SVG, PNG 내보내기 기능 포함)"""
         return """
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
+        
+        // 레이어별 컴포넌트 데이터 (서버에서 주입)
+        let layerComponentData = {};
         
         // 다이어그램 확대/축소 기능 (간단한 버전)
         function zoomDiagram(scale) {
@@ -1623,6 +1477,290 @@ class ReportTemplates:
                 diagram.style.transform = `scale(${scale})`;
                 diagram.style.transformOrigin = 'center center';
             }
+        }
+        
+        // 레이어별 컴포넌트 CSV 내보내기
+        function exportLayerCSV() {
+            try {
+                // 각 레이어별로 컴포넌트 수집
+                const layers = ['controller', 'service', 'mapper', 'model'];
+                let csvContent = 'Layer,Component_Name,Component_Type,File_Path\\n';
+                
+                layers.forEach(layerName => {
+                    const layerDiv = document.querySelector(`.${layerName}-layer`);
+                    if (layerDiv) {
+                        const components = layerDiv.querySelectorAll('.component');
+                        components.forEach(component => {
+                            const componentName = component.textContent.trim();
+                            // "...외 N건" 형태는 제외
+                            if (!componentName.includes('...외') && !componentName.includes('컴포넌트가 없습니다')) {
+                                csvContent += `${layerName.toUpperCase()},${componentName},CLASS,\\n`;
+                            }
+                        });
+                    }
+                });
+                
+                // CSV 파일 다운로드
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'architecture_components_by_layer.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('레이어별 컴포넌트 CSV 파일이 다운로드되었습니다.');
+            } catch (error) {
+                console.error('CSV 내보내기 오류:', error);
+                alert('CSV 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // 다이어그램 SVG 내보내기
+        function exportDiagramSVG() {
+            try {
+                const diagramContainer = document.getElementById('architecture-diagram-container');
+                if (!diagramContainer) {
+                    alert('다이어그램을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // HTML을 SVG로 변환
+                const svgContent = createSVGFromHTML(diagramContainer);
+                const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'architecture_diagram.svg');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('다이어그램 SVG 파일이 다운로드되었습니다.');
+            } catch (error) {
+                console.error('SVG 내보내기 오류:', error);
+                alert('SVG 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // 다이어그램 PNG 내보내기
+        function exportDiagramPNG() {
+            try {
+                const diagramContainer = document.getElementById('architecture-diagram-container');
+                if (!diagramContainer) {
+                    alert('다이어그램을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // html2canvas 라이브러리 동적 로드 및 사용
+                if (typeof html2canvas === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    script.onload = () => performPNGExport(diagramContainer);
+                    script.onerror = () => {
+                        // 오프라인 환경에서는 캔버스 기반 대안 사용
+                        performCanvasPNGExport(diagramContainer);
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    performPNGExport(diagramContainer);
+                }
+            } catch (error) {
+                console.error('PNG 내보내기 오류:', error);
+                alert('PNG 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // html2canvas를 사용한 PNG 내보내기
+        function performPNGExport(container) {
+            html2canvas(container, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: 0,
+                width: container.scrollWidth,
+                height: container.scrollHeight
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'architecture_diagram.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                alert('다이어그램 PNG 파일이 다운로드되었습니다.');
+            }).catch(err => {
+                console.error('PNG 내보내기 실패:', err);
+                alert('PNG 내보내기에 실패했습니다.');
+            });
+        }
+        
+        // 대안 캔버스 기반 PNG 내보내기 (오프라인 환경용)
+        function performCanvasPNGExport(container) {
+            // 간단한 캔버스 기반 렌더링 (텍스트만)
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1200;
+            canvas.height = 800;
+            
+            // 배경 설정
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 제목 그리기
+            ctx.fillStyle = '#1976d2';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('시스템 아키텍처 다이어그램', canvas.width / 2, 50);
+            
+            // 레이어별 컴포넌트 텍스트 렌더링
+            let yPos = 100;
+            const layers = ['controller', 'service', 'mapper', 'model'];
+            const layerColors = ['#e3f2fd', '#e1f5fe', '#e8f5e8', '#f1f8ff'];
+            
+            layers.forEach((layerName, index) => {
+                const layerDiv = document.querySelector(`.${layerName}-layer`);
+                if (layerDiv) {
+                    // 레이어 박스 그리기
+                    ctx.fillStyle = layerColors[index];
+                    ctx.fillRect(100, yPos, canvas.width - 200, 120);
+                    ctx.strokeStyle = '#1976d2';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(100, yPos, canvas.width - 200, 120);
+                    
+                    // 레이어 제목
+                    ctx.fillStyle = '#1976d2';
+                    ctx.font = 'bold 18px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`${layerName.toUpperCase()} LAYER`, 120, yPos + 25);
+                    
+                    // 컴포넌트 나열
+                    const components = layerDiv.querySelectorAll('.component');
+                    let componentText = '';
+                    let count = 0;
+                    components.forEach(component => {
+                        const name = component.textContent.trim();
+                        if (!name.includes('...외') && !name.includes('컴포넌트가 없습니다') && count < 10) {
+                            componentText += name + ', ';
+                            count++;
+                        }
+                    });
+                    if (componentText) {
+                        componentText = componentText.slice(0, -2); // 마지막 쉼표 제거
+                        if (count >= 10) componentText += '...';
+                    }
+                    
+                    ctx.fillStyle = '#424242';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'left';
+                    const words = componentText.split(' ');
+                    let line = '';
+                    let lineY = yPos + 50;
+                    
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        const metrics = ctx.measureText(testLine);
+                        const testWidth = metrics.width;
+                        if (testWidth > canvas.width - 240 && n > 0) {
+                            ctx.fillText(line, 120, lineY);
+                            line = words[n] + ' ';
+                            lineY += 15;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    ctx.fillText(line, 120, lineY);
+                    
+                    yPos += 150;
+                }
+            });
+            
+            // PNG 다운로드
+            const link = document.createElement('a');
+            link.download = 'architecture_diagram.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            alert('다이어그램 PNG 파일이 다운로드되었습니다.');
+        }
+        
+        // HTML을 SVG로 변환하는 함수
+        function createSVGFromHTML(element) {
+            const rect = element.getBoundingClientRect();
+            const svgWidth = Math.max(rect.width, 1200);
+            const svgHeight = Math.max(rect.height, 800);
+            
+            let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <style>
+            .layer-box { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+            .layer-text { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1976d2; }
+            .component-text { font-family: Arial, sans-serif; font-size: 12px; fill: #424242; }
+        </style>
+    </defs>
+    <rect width="100%" height="100%" fill="white"/>
+    <text x="${svgWidth/2}" y="30" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#1976d2">시스템 아키텍처 다이어그램</text>
+`;
+            
+            let yPos = 80;
+            const layers = ['controller', 'service', 'mapper', 'model'];
+            const layerColors = ['#e3f2fd', '#e1f5fe', '#e8f5e8', '#f1f8ff'];
+            
+            layers.forEach((layerName, index) => {
+                const layerDiv = document.querySelector(`.${layerName}-layer`);
+                if (layerDiv) {
+                    // 레이어 박스
+                    svgContent += `<rect x="50" y="${yPos}" width="${svgWidth-100}" height="120" fill="${layerColors[index]}" stroke="#1976d2" stroke-width="2"/>`;
+                    
+                    // 레이어 제목
+                    svgContent += `<text x="70" y="${yPos + 25}" class="layer-text">${layerName.toUpperCase()} LAYER</text>`;
+                    
+                    // 컴포넌트 텍스트
+                    const components = layerDiv.querySelectorAll('.component');
+                    let componentText = '';
+                    let count = 0;
+                    components.forEach(component => {
+                        const name = component.textContent.trim();
+                        if (!name.includes('...외') && !name.includes('컴포넌트가 없습니다') && count < 15) {
+                            componentText += name + ', ';
+                            count++;
+                        }
+                    });
+                    if (componentText) {
+                        componentText = componentText.slice(0, -2);
+                        if (count >= 15) componentText += '...';
+                    }
+                    
+                    // 텍스트를 여러 줄로 분할
+                    const words = componentText.split(' ');
+                    let line = '';
+                    let lineY = yPos + 50;
+                    const maxWidth = svgWidth - 140;
+                    
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        if (testLine.length * 7 > maxWidth && n > 0) { // 대략적인 문자 폭 계산
+                            svgContent += `<text x="70" y="${lineY}" class="component-text">${line.trim()}</text>`;
+                            line = words[n] + ' ';
+                            lineY += 15;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    if (line.trim()) {
+                        svgContent += `<text x="70" y="${lineY}" class="component-text">${line.trim()}</text>`;
+                    }
+                    
+                    yPos += 150;
+                }
+            });
+            
+            svgContent += '</svg>';
+            return svgContent;
         }
         
         // 다이어그램 초기화

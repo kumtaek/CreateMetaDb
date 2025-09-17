@@ -61,11 +61,8 @@ class CallChainReportGenerator:
             # 2. 연계 체인 데이터 조회 (JSP 연계 경로 포함)
             chain_data = self._get_call_chain_data()
             
-            # 3. 필터링 옵션 데이터 조회 (동적 생성)
-            filter_options = self._get_filter_options()
-            
-            # 4. HTML 생성
-            html_content = self._generate_html(stats, chain_data, filter_options)
+            # 3. HTML 생성
+            html_content = self._generate_html(stats, chain_data)
             
             # 5. CSS 및 JS 파일 복사
             self.report_utils.copy_assets()
@@ -319,18 +316,26 @@ class CallChainReportGenerator:
                          method.component_name, xml_file.file_name, sql.component_name, sql.component_type
             """
             
-            # 다섯 쿼리를 UNION으로 결합
+            # 다섯 쿼리를 UNION으로 결합하고 서브쿼리로 감싸서 ORDER BY 적용
             query = f"""
-                {api_chain_query}
-                UNION ALL
-                {method_chain_query}
-                UNION ALL
-                {sql_chain_query}
-                UNION ALL
-                {partial_chain_query}
-                UNION ALL
-                {broken_frontend_query}
-                ORDER BY api_entry DESC, method_name, class_name
+                SELECT * FROM (
+                    {api_chain_query}
+                    UNION ALL
+                    {method_chain_query}
+                    UNION ALL
+                    {sql_chain_query}
+                    UNION ALL
+                    {partial_chain_query}
+                    UNION ALL
+                    {broken_frontend_query}
+                ) ORDER BY 
+                    CASE WHEN api_entry = '' THEN 1 ELSE 0 END,
+                    jsp_file,
+                    api_entry,
+                    class_name,
+                    method_name,
+                    xml_file,
+                    query_id
             """
             
             results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name, self.project_name, self.project_name))
@@ -431,14 +436,12 @@ class CallChainReportGenerator:
             sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent.db")
             
             if not os.path.exists(sql_content_db_path):
-                app_logger.warning(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}")
-                return {}
+                handle_error(Exception(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}"), "SqlContent.db 파일 부재")
             
             # SqlContent.db 연결
             sql_content_db = DatabaseUtils(sql_content_db_path)
             if not sql_content_db.connect():
-                app_logger.warning("SqlContent.db 연결 실패")
-                return {}
+                handle_error(Exception("SqlContent.db 연결 실패"), "SqlContent.db 연결 실패")
             
             try:
                 # 정제된 SQL 내용 조회
@@ -474,52 +477,8 @@ class CallChainReportGenerator:
         except Exception as e:
             handle_error(e, "SqlContent.db 조회 실패")
     
-    def _get_filter_options(self) -> Dict[str, List[str]]:
-        """필터링 옵션 데이터 조회 (동적 생성)"""
-        try:
-            filter_options = {}
-            
-            # 테이블 목록 (동적 조회)
-            query = """
-                SELECT DISTINCT t.table_name
-                FROM tables t
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND t.del_yn = 'N'
-                ORDER BY t.table_name
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            filter_options['tables'] = [row['table_name'] for row in result]
-            
-            # 쿼리 타입 목록 (동적 조회)
-            query = """
-                SELECT DISTINCT component_type 
-                FROM components 
-                WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?)
-                  AND (component_type LIKE 'SQL_%' OR component_type = 'QUERY')
-                  AND del_yn = 'N'
-                ORDER BY component_type
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            query_types = [row['component_type'] for row in result]
-            
-            # SQL_ 접두사 제거하여 표시용으로 변환
-            display_query_types = []
-            for qt in query_types:
-                if qt.startswith('SQL_'):
-                    display_query_types.append(qt[4:])  # SQL_ 제거
-                else:
-                    display_query_types.append(qt)
-            
-            filter_options['query_types'] = display_query_types
-            
-            app_logger.debug(f"필터링 옵션 조회 완료: {len(filter_options['tables'])}개 테이블, {len(filter_options['query_types'])}개 쿼리타입")
-            return filter_options
-            
-        except Exception as e:
-            handle_error(e, "필터링 옵션 조회 실패")
-            return {'tables': [], 'query_types': []}
     
-    def _generate_html(self, stats: Dict[str, int], chain_data: List[Dict[str, Any]], filter_options: Dict[str, List[str]]) -> str:
+    def _generate_html(self, stats: Dict[str, int], chain_data: List[Dict[str, Any]]) -> str:
         """HTML 생성"""
         try:
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -530,7 +489,7 @@ class CallChainReportGenerator:
                 timestamp=timestamp,
                 stats=stats,
                 chain_data=chain_data,
-                filter_options=filter_options
+                filter_options={}
             )
             
             app_logger.debug("HTML 생성 완료")

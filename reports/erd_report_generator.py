@@ -67,7 +67,7 @@ class ERDReportGenerator:
             # 5. 파일 저장
             output_file = self._save_report(html_content)
             
-            app_logger.info(f"ERD Report 생성 완료: {output_file}")
+            app_logger.info(f"ERD Report 생성 완료: {output_file}")  # 최종 완료는 info 유지
             return True
             
         except Exception as e:
@@ -495,15 +495,15 @@ class ERDReportGenerator:
                 if src_keys == dst_keys:
                     label = f"[{', '.join(src_keys)}]"
                 else:
-                    # -> 대신 화살표 기호 사용하지 않고 단순 텍스트로
-                    label = f"[{', '.join(src_keys)}] to [{', '.join(dst_keys)}]"
+                    # 다른 경우 하이픈으로 연결
+                    label = f"[{', '.join(src_keys)}]-[{', '.join(dst_keys)}]"
             else:
                 # 단일 키 처리
                 if src_column == dst_column:
                     label = src_column
                 else:
-                    # -> 대신 화살표 기호 사용하지 않고 단순 텍스트로
-                    label = f"{src_column} to {dst_column}"
+                    # 다른 경우 하이픈으로 연결
+                    label = f"{src_column}-{dst_column}"
             
             # HTML 특수문자 이스케이프 처리
             label = escape_html_chars(label)
@@ -573,7 +573,7 @@ class ERDReportGenerator:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             
-            app_logger.info(f"ERD 리포트 파일 저장 완료: {output_path}")
+            app_logger.debug(f"ERD 리포트 파일 저장 완료: {output_path}")
             return output_path
             
         except Exception as e:
@@ -588,20 +588,20 @@ class ERDReportGenerator:
             
             # CSS 디렉토리 생성
             css_dir = self.path_utils.join_path(self.output_dir, "css")
-            if not os.path.exists(css_dir):
-                os.makedirs(css_dir)
+            if not self.path_utils.exists(css_dir):
+                self.path_utils.makedirs(css_dir)
             
             # JS 디렉토리 생성
             js_dir = self.path_utils.join_path(self.output_dir, "js")
-            if not os.path.exists(js_dir):
-                os.makedirs(js_dir)
+            if not self.path_utils.exists(js_dir):
+                self.path_utils.makedirs(js_dir)
             
             # 올바른 CSS 파일 복사 (재시도 로직 포함)
             # reports 폴더에서 찾기
             reports_path = self.path_utils.get_reports_path()
             source_css = self.path_utils.join_path(reports_path, "css", "woori.css")
             
-            if os.path.exists(source_css):
+            if self.path_utils.exists(source_css):
                 dest_css = self.path_utils.join_path(css_dir, "woori.css")
                 self._safe_copy_file(source_css, dest_css, "CSS")
             
@@ -610,7 +610,7 @@ class ERDReportGenerator:
             reports_path = self.path_utils.get_reports_path()
             source_js_dir = self.path_utils.join_path(reports_path, "js")
             
-            if os.path.exists(source_js_dir):
+            if self.path_utils.exists(source_js_dir):
                 for js_file in os.listdir(source_js_dir):
                     if js_file.endswith('.js'):
                         source_js = self.path_utils.join_path(source_js_dir, js_file)
@@ -629,7 +629,7 @@ class ERDReportGenerator:
         for attempt in range(max_retries):
             try:
                 # 대상 파일이 이미 존재하고 사용 중인 경우 삭제 시도
-                if os.path.exists(dest):
+                if self.path_utils.exists(dest):
                     try:
                         os.remove(dest)
                     except PermissionError:
@@ -639,16 +639,14 @@ class ERDReportGenerator:
                 
                 # 파일 복사
                 shutil.copy2(source, dest)
-                app_logger.info(f"{file_type} 파일 복사 완료: {dest}")
+                app_logger.debug(f"{file_type} 파일 복사 완료: {dest}")
                 return True
                 
             except PermissionError as e:
                 if attempt < max_retries - 1:
-                    app_logger.warning(f"{file_type} 파일 복사 재시도 {attempt + 1}/{max_retries}: {e}")
                     time.sleep(0.2)  # 200ms 대기
                 else:
-                    app_logger.warning(f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
-                    return False
+                    handle_error(e, f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
             except Exception as e:
                 from util.logger import handle_error
                 handle_error(e, f"{file_type} 파일 복사 실패")
