@@ -22,6 +22,7 @@ from util import (
 # USER RULES: 공통함수 사용, 하드코딩 금지
 from parser.java_parser import JavaParser
 from util.layer_classification_utils import get_layer_classifier
+from util.component_filter_utils import get_component_filter
 
 
 class JavaLoadingEngine:
@@ -44,6 +45,9 @@ class JavaLoadingEngine:
         
         # Layer 분류 유틸리티 초기화 (USER RULES: 공통함수 사용)
         self.layer_classifier = get_layer_classifier()
+        
+        # 컴포넌트 필터링 유틸리티 초기화 (메타데이터 품질 향상)
+        self.component_filter = get_component_filter()
 
         # 통계 정보 (4~5단계 통합)
         self.stats = {
@@ -57,6 +61,7 @@ class JavaLoadingEngine:
             'call_method_relationships_created': 0,
             'use_table_relationships_created': 0,
             'business_methods_filtered': 0,
+            'invalid_components_filtered': 0,  # 새로운 통계 항목
             'errors': 0,
             'processing_time': 0.0
         }
@@ -342,6 +347,12 @@ class JavaLoadingEngine:
                 try:
                     method_name = method_info.get('method_name', 'UNKNOWN')
                     debug(f"메서드 처리 시작: {method_name}")
+                    
+                    # 새로운 필터링 로직: 잘못된 컴포넌트 이름 검사 (기존 로직에 영향 없음)
+                    if self.component_filter.is_invalid_component_name(method_name, 'METHOD'):
+                        debug(f"잘못된 메서드명 필터링: {method_name}")
+                        self.stats['invalid_components_filtered'] += 1
+                        continue  # 다음 메서드로 건너뛰기
                     
                     # 비즈니스 로직 메서드인지 확인 (USER RULES: 하드코딩 지양)
                     simple_complexity = self.java_parser.config.get('method_complexity', {}).get('simple_complexity', 'simple')
@@ -1477,6 +1488,7 @@ class JavaLoadingEngine:
             info(f"생성된 CALL_METHOD 관계: {self.stats['call_method_relationships_created']}개")
             info(f"생성된 USE_TABLE 관계: {self.stats['use_table_relationships_created']}개")
             info(f"비즈니스 로직 메서드: {self.stats['business_methods_filtered']}개")
+            info(f"필터링된 잘못된 컴포넌트: {self.stats['invalid_components_filtered']}개")
             info(f"처리 시간: {self.stats['processing_time']:.2f}초")
             info(f"오류 발생: {self.stats['errors']}개")
 

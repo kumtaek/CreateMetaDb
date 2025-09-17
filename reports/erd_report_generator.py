@@ -16,6 +16,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
+from util.report_utils import ReportUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -34,6 +35,7 @@ class ERDReportGenerator:
         self.output_dir = output_dir
         self.path_utils = PathUtils()
         self.templates = ReportTemplates()
+        self.report_utils = ReportUtils(project_name, output_dir)
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -62,7 +64,7 @@ class ERDReportGenerator:
             html_content = self._generate_html(stats, erd_data)
             
             # 4. CSS 및 JS 파일 복사
-            self._copy_assets()
+            self.report_utils.copy_assets()
             
             # 5. 파일 저장
             output_file = self._save_report(html_content)
@@ -580,78 +582,6 @@ class ERDReportGenerator:
             handle_error(e, "ERD 리포트 파일 저장 실패")
             return ""
     
-    def _copy_assets(self):
-        """CSS 및 JS 파일 복사 (권한 오류 방지)"""
-        try:
-            import shutil
-            import time
-            
-            # CSS 디렉토리 생성
-            css_dir = self.path_utils.join_path(self.output_dir, "css")
-            if not self.path_utils.exists(css_dir):
-                self.path_utils.makedirs(css_dir)
-            
-            # JS 디렉토리 생성
-            js_dir = self.path_utils.join_path(self.output_dir, "js")
-            if not self.path_utils.exists(js_dir):
-                self.path_utils.makedirs(js_dir)
-            
-            # 올바른 CSS 파일 복사 (재시도 로직 포함)
-            # reports 폴더에서 찾기
-            reports_path = self.path_utils.get_reports_path()
-            source_css = self.path_utils.join_path(reports_path, "css", "woori.css")
-            
-            if self.path_utils.exists(source_css):
-                dest_css = self.path_utils.join_path(css_dir, "woori.css")
-                self._safe_copy_file(source_css, dest_css, "CSS")
-            
-            # 올바른 JS 파일들 복사 (재시도 로직 포함)
-            # reports 폴더에서 찾기
-            reports_path = self.path_utils.get_reports_path()
-            source_js_dir = self.path_utils.join_path(reports_path, "js")
-            
-            if self.path_utils.exists(source_js_dir):
-                for js_file in os.listdir(source_js_dir):
-                    if js_file.endswith('.js'):
-                        source_js = self.path_utils.join_path(source_js_dir, js_file)
-                        dest_js = self.path_utils.join_path(js_dir, js_file)
-                        self._safe_copy_file(source_js, dest_js, f"JS ({js_file})")
-            
-        except Exception as e:
-            from util.logger import handle_error
-            handle_error(e, "CSS/JS 파일 복사 실패")
-    
-    def _safe_copy_file(self, source: str, dest: str, file_type: str, max_retries: int = 3):
-        """파일 복사 (권한 오류 방지를 위한 재시도 로직)"""
-        import shutil
-        import time
-        
-        for attempt in range(max_retries):
-            try:
-                # 대상 파일이 이미 존재하고 사용 중인 경우 삭제 시도
-                if self.path_utils.exists(dest):
-                    try:
-                        os.remove(dest)
-                    except PermissionError:
-                        # 삭제 실패 시 잠시 대기 후 재시도
-                        time.sleep(0.1)
-                        continue
-                
-                # 파일 복사
-                shutil.copy2(source, dest)
-                app_logger.debug(f"{file_type} 파일 복사 완료: {dest}")
-                return True
-                
-            except PermissionError as e:
-                if attempt < max_retries - 1:
-                    time.sleep(0.2)  # 200ms 대기
-                else:
-                    handle_error(e, f"{file_type} 파일 복사 실패 (최대 재시도 횟수 초과): {source} -> {dest}")
-            except Exception as e:
-                from util.logger import handle_error
-                handle_error(e, f"{file_type} 파일 복사 실패")
-        
-        return False
 
 
 if __name__ == '__main__':

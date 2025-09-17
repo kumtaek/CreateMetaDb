@@ -253,6 +253,32 @@ mybatis_annotations:
   - "DeleteProvider"
   - "SelectProvider"
 
+# HTTP 메서드 상수 필터링 (메타데이터 생성 오류 방지)
+http_method_constants:
+  - "GET"
+  - "POST" 
+  - "PUT"
+  - "DELETE"
+  - "PATCH"
+  - "HEAD"
+  - "OPTIONS"
+  - "TRACE"
+  - "CONNECT"
+
+# 잘못된 메서드명 필터링 패턴 (파싱 오류 방지)
+invalid_method_names:
+  # 숫자만 있는 경우
+  numeric_only_pattern: "^\\d+$"
+  
+  # 빈 문자열이나 공백만 있는 경우
+  empty_or_whitespace_pattern: "^\\s*$"
+  
+  # 단일 문자 (의미 없는 경우)
+  single_char_pattern: "^[a-zA-Z]$"
+  
+  # 특수문자만 있는 경우
+  special_chars_only_pattern: "^[^a-zA-Z0-9_]+$"
+
 # 메서드 필터링 패턴 (정규식)
 method_filter_patterns:
   # 제외할 메서드 패턴

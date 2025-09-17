@@ -23,7 +23,7 @@ class ERDDagreTemplates:
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Source Analyzer - 고도화 ERD</title>
+    <title>ERD Dagre Report - {project_name}</title>
     <link rel="stylesheet" href="css/woori.css">
     <style>
         {self._get_erd_dagre_css()}
@@ -37,25 +37,28 @@ class ERDDagreTemplates:
         const DATA = {cytoscape_json};
     </script>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Source Analyzer - 고도화 ERD</h1>
+<body class="erd-dagre-body">
+    <div class="erd-dagre-container">
+        <div class="erd-dagre-header">
+            <h1>ERD Dagre Report</h1>
+            <div class="subtitle">고도화 인터랙티브 ERD</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
         {stats_html}
-        <div id="toolbar">
-            <button onclick="resetView()">초기화</button>
-            <button onclick="toggleLayout()">레이아웃 전환</button>
-            <button onclick="exportPng()">PNG 내보내기</button>
-            <button onclick="exportSvg()">SVG 내보내기</button>
-            <input type="text" id="search" placeholder="테이블명으로 검색..." />
-            <span id="current-layout">fcose</span>
-            <div class="zoom-hint">
-                <span class="hint-icon">🔍</span>
+        <div class="erd-dagre-content">
+            <div id="toolbar">
+                <button onclick="resetView()">초기화</button>
+                <button onclick="toggleLayout()">레이아웃 전환</button>
+                <button onclick="exportPng()">PNG 내보내기</button>
+                <button onclick="exportSvg()">SVG 내보내기</button>
+                <input type="text" id="search" placeholder="테이블명으로 검색..." />
+                <span id="current-layout">fcose</span>
+                <div class="zoom-hint">
+                    <span class="hint-icon">🔍</span>
+                </div>
             </div>
+            <div id="cy"></div>
         </div>
-        <div id="cy"></div>
         
         <!-- 툴팁 -->
         <div id="tooltip" class="tooltip">
@@ -83,6 +86,9 @@ class ERDDagreTemplates:
                 </div>
             </div>
         </div>
+        <div class="erd-dagre-footer">
+            고도화 ERD 분석 완료 - 드래그로 이동, 마우스 휠로 확대/축소 가능
+        </div>
     </div>
     
     <script>
@@ -92,28 +98,28 @@ class ERDDagreTemplates:
 </html>"""
     
     def _generate_erd_dagre_stats_html(self, stats: Dict[str, int]) -> str:
-        """ERD(Dagre) 통계 카드 HTML 생성"""
+        """ERD(Dagre) 통계 카드 HTML 생성 - 콜체인리포트와 동일한 구조"""
         return f"""
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('total_tables', 0)}</div>
-                <div class="stat-label">전체 테이블</div>
+        <div class="erd-dagre-stats">
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">{stats.get('total_tables', 0)}</div>
+                <div class="erd-dagre-stat-label">전체 테이블</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('total_columns', 0)}</div>
-                <div class="stat-label">전체 컬럼</div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">{stats.get('total_columns', 0)}</div>
+                <div class="erd-dagre-stat-label">전체 컬럼</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('primary_keys', 0)}</div>
-                <div class="stat-label">Primary Key</div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">{stats.get('primary_keys', 0)}</div>
+                <div class="erd-dagre-stat-label">Primary Key</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('foreign_keys', 0)}</div>
-                <div class="stat-label">Foreign Key</div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">{stats.get('foreign_keys', 0)}</div>
+                <div class="erd-dagre-stat-label">Foreign Key</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('relationships', 0)}</div>
-                <div class="stat-label">관계</div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">{stats.get('relationships', 0)}</div>
+                <div class="erd-dagre-stat-label">관계</div>
             </div>
         </div>"""
     
@@ -131,7 +137,7 @@ class ERDDagreTemplates:
     def _get_erd_dagre_css(self) -> str:
         """ERD(Dagre) Report CSS 스타일"""
         return """
-        body, html { 
+        body.erd-dagre-body { 
             margin: 0; 
             height: 100%; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -139,7 +145,7 @@ class ERDDagreTemplates:
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        .container {
+        .erd-dagre-container {
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -148,6 +154,63 @@ class ERDDagreTemplates:
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
             min-height: 100vh;
+        }
+        .erd-dagre-header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .erd-dagre-header h1 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 300;
+        }
+        .erd-dagre-header .subtitle {
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
+        }
+        .erd-dagre-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: #f8f9fa;
+            margin-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .erd-dagre-stat-card {
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .erd-dagre-stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .erd-dagre-stat-number {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 1px;
+        }
+        .erd-dagre-stat-label {
+            color: #7f8c8d;
+            font-size: 0.6em;
+        }
+        .erd-dagre-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         #toolbar { 
             padding: 4px; 
@@ -160,7 +223,6 @@ class ERDDagreTemplates:
         }
         #cy { 
             width: 100%; 
-            height: calc(100vh - 60px); 
             flex: 1;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
             background-size: 400% 400%;
@@ -431,6 +493,16 @@ class ERDDagreTemplates:
             color: #495057;
         }
         
+        .erd-dagre-footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2px;
+            text-align: center;
+            font-size: 9px;
+            opacity: 0.8;
+            flex-shrink: 0;
+            height: 15px;
+        }
         @media (max-width: 768px) {
             #toolbar {
                 padding: 8px;

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD Report - sampleSrc</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 300;
+        }
+        
+        .header .subtitle {
+            margin: 3px 0 0 0;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 4px;
+            text-align: center;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .stats {
+            padding: 8px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 2px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 10px;
+        }
+        
+        .content {
+            padding: 10px;
+            height: calc(100vh - 180px);
+            overflow: auto;
+        }
+        
+        .diagram-controls {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .diagram-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .diagram-controls button:hover {
+            background: #2980b9;
+        }
+        
+        .diagram-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: auto;
+            height: calc(100vh - 280px);
+        }
+        
+        #erd-diagram {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ERD 전용 반응형 */
+        @media (max-width: 768px) {
+            .diagram-controls {
+                padding: 6px;
+            }
+            .diagram-controls button {
+                padding: 4px 8px;
+                font-size: 11px;
+                margin: 1px;
+            }
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .header h1 {
+                font-size: 1.3em;
+            }
+            .header .subtitle {
+                font-size: 0.8em;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 6px;
+            }
+            .header h1 {
+                font-size: 1.2em;
+            }
+            .header .subtitle {
+                font-size: 0.7em;
+            }
+            .stats {
+                padding: 6px;
+            }
+            .stat-card {
+                padding: 6px;
+            }
+            .stat-number {
+                font-size: 14px;
+            }
+            .stat-label {
+                font-size: 9px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ERD Report</h1>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일: 2025-09-17 18:17:07<br>
+            Entity Relationship Diagram</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">26</div>
+                <div class="stat-label">전체 테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">128</div>
+                <div class="stat-label">전체 컬럼</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">58</div>
+                <div class="stat-label">Primary Key</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Foreign Key</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4188</div>
+                <div class="stat-label">관계</div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>데이터베이스 ERD</h2>
+                <div class="diagram-controls">
+                    <button onclick="zoomIn()">확대</button>
+                    <button onclick="zoomOut()">축소</button>
+                    <button onclick="resetZoom()">원래 크기</button>
+                    <button onclick="exportPng()">PNG 내보내기</button>
+                    <button onclick="exportSvg()">SVG 내보내기</button>
+                    <div class="zoom-hint">
+                        <span class="hint-icon">🔍</span>
+                        <span class="hint-text">CTRL+휠: 확대/축소 | 드래그: 이동</span>
+                    </div>
+                </div>
+                <div class="diagram-container">
+                    
+        <div id="mermaid-container" class="mermaid-container">
+            <div id="zoom-indicator" class="zoom-indicator">100%</div>
+            <div id="erd-diagram" class="mermaid">
+                erDiagram
+    BRANDS {
+        VARCHAR2 BRAND_ID PK "NOT NULL"
+        VARCHAR2 BRAND_CODE "NOT NULL"
+        VARCHAR2 BRAND_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN BRAND_ID
+    }
+    CATEGORIES {
+        VARCHAR2 CATEGORY_ID PK "NOT NULL"
+        VARCHAR2 CATEGORY_CODE "NOT NULL"
+        VARCHAR2 CATEGORY_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN ID
+        UNKNOWN ID
+        UNKNOWN CATEGORY_ID
+    }
+    CUSTOMERS {
+        VARCHAR2 CUSTOMER_ID PK "NOT NULL"
+        VARCHAR2 CUSTOMER_NAME "NOT NULL"
+        VARCHAR2 EMAIL
+        VARCHAR2 PHONE
+        VARCHAR2 ADDRESS
+        date CREATED_DATE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN CUSTOMER_ID
+    }
+    DEPARTMENTS {
+        UNKNOWN DEPT_ID
+        UNKNOWN DEPT_ID
+    }
+    DISCOUNTS {
+        VARCHAR2 DISCOUNT_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER DISCOUNT_RATE "NOT NULL"
+        date START_DATE "NOT NULL"
+        date END_DATE "NOT NULL"
+        CHAR ACTIVE_YN "NOT NULL"
+    }
+    DYNAMIC_DATA {
+        NUMBER ID PK "NOT NULL"
+        VARCHAR2 NAME "NOT NULL"
+        VARCHAR2 STATUS
+    }
+    INVENTORIES {
+        VARCHAR2 INVENTORY_ID "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER CURRENT_STOCK "NOT NULL"
+        date UPDATED_DATE "NOT NULL"
+    }
+    NONEXISTENT_TABLE {
+        UNKNOWN USER_ID
+        UNKNOWN USER_ID
+    }
+    ORDERS {
+        VARCHAR2 ORDER_ID PK "NOT NULL"
+        VARCHAR2 CUSTOMER_ID PK "NOT NULL"
+        date ORDER_DATE "NOT NULL"
+        VARCHAR2 STATUS "NOT NULL"
+        NUMBER TOTAL_AMOUNT "NOT NULL"
+        NUMBER DISCOUNT_AMOUNT
+        NUMBER TAX_AMOUNT
+        date CREATED_DATE "NOT NULL"
+        date UPDATED_DATE
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN USER_ID
+        UNKNOWN CUSTOMER_ID
+        UNKNOWN USER_ID
+    }
+    ORDER_ITEMS {
+        VARCHAR2 ORDER_ITEM_ID PK "NOT NULL"
+        VARCHAR2 ORDER_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        NUMBER QUANTITY "NOT NULL"
+        NUMBER UNIT_PRICE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    PRODUCTS {
+        VARCHAR2 PRODUCT_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_NAME "NOT NULL"
+        CLOB DESCRIPTION
+        NUMBER PRICE "NOT NULL"
+        NUMBER STOCK_QUANTITY "NOT NULL"
+        VARCHAR2 STATUS "NOT NULL"
+        VARCHAR2 CATEGORY_ID
+        VARCHAR2 BRAND_ID
+        VARCHAR2 SUPPLIER_ID
+        VARCHAR2 WAREHOUSE_ID
+        date CREATED_DATE "NOT NULL"
+        date UPDATED_DATE
+        CHAR DEL_YN "NOT NULL"
+        UNKNOWN CREATED_BY
+        UNKNOWN CATEGORY_ID
+        UNKNOWN CREATED_BY
+        UNKNOWN BRAND_ID
+    }
+    PRODUCT_REVIEWS {
+        VARCHAR2 REVIEW_ID PK "NOT NULL"
+        VARCHAR2 PRODUCT_ID "NOT NULL"
+        VARCHAR2 CUSTOMER_ID "NOT NULL"
+        NUMBER RATING "NOT NULL"
+        CLOB REVIEW_TEXT
+        date CREATED_DATE "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    RELATED_DATA {
+        NUMBER ID PK "NOT NULL"
+        NUMBER RELATED_ID PK "NOT NULL"
+        VARCHAR2 VALUE
+    }
+    ROLES {
+        UNKNOWN ID
+        UNKNOWN ID
+    }
+    SUPPLIERS {
+        VARCHAR2 SUPPLIER_ID PK "NOT NULL"
+        VARCHAR2 SUPPLIER_NAME "NOT NULL"
+        CHAR DEL_YN "NOT NULL"
+    }
+    USERS {
+        NUMBER ID PK "NOT NULL"
+        VARCHAR2 USERNAME "NOT NULL"
+        VARCHAR2 EMAIL "NOT NULL"
+        VARCHAR2 PASSWORD "NOT NULL"
+        VARCHAR2 NAME
+        NUMBER AGE
+        VARCHAR2 STATUS
+        VARCHAR2 USER_TYPE
+        VARCHAR2 PHONE
+        VARCHAR2 ADDRESS
+        date CREATED_DATE
+        date UPDATED_DATE
+        UNKNOWN DEPT_ID
+        UNKNOWN USER_ID
+        UNKNOWN TYPE_ID
+        UNKNOWN DEPT_ID
+        UNKNOWN USER_ID
+        UNKNOWN TYPE_ID
+        UNKNOWN ID
+    }
+    USER_INFO {
+        UNKNOWN USER_ID
+        UNKNOWN USER_ID
+    }
+    USER_PREFERENCES {
+        UNKNOWN USER_ID
+        UNKNOWN USER_ID
+    }
+    USER_PROFILES {
+        UNKNOWN USER_ID
+        UNKNOWN USER_ID
+    }
+    USER_ROLE {
+        NUMBER USER_ID "NOT NULL"
+        NUMBER ROLE_ID "NOT NULL"
+    }
+    USER_ROLES {
+        UNKNOWN ROLE_ID
+        UNKNOWN USER_ID
+        UNKNOWN ROLE_ID
+        UNKNOWN USER_ID
+    }
+    USER_TYPES {
+        VARCHAR2 TYPE_CODE PK "NOT NULL"
+        VARCHAR2 TYPE_NAME "NOT NULL"
+        VARCHAR2 DESCRIPTION
+        UNKNOWN ID
+        UNKNOWN ID
+    }
+    WAREHOUSES {
+        VARCHAR2 WAREHOUSE_ID PK "NOT NULL"
+        VARCHAR2 WAREHOUSE_NAME "NOT NULL"
+        VARCHAR2 LOCATION
+        CHAR DEL_YN "NOT NULL"
+    }
+    ORDERS ||--o{ CUSTOMERS : "CUSTOMER_ID"
+    ORDERS ||--o{ USERS : "USER_ID"
+    PRODUCTS ||--o{ BRANDS : "BRAND_ID"
+    PRODUCTS ||--o{ CATEGORIES : "CATEGORY_ID"
+    USERS ||--o{ DEPARTMENTS : "DEPT_ID"
+    USERS ||--o{ NONEXISTENT_TABLE : "USER_ID"
+    USERS ||--o{ USER_INFO : "USER_ID"
+    USERS ||--o{ USER_PREFERENCES : "USER_ID"
+    USERS ||--o{ USER_PROFILES : "USER_ID"
+    USERS ||--o{ USER_ROLES : "USER_ID"
+            </div>
+        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            er: {
+                useMaxWidth: false,
+                htmlLabels: true
+            }
+        });
+        
+        // 줌 및 팬 컨트롤
+        let currentZoom = 1;
+        let isPanning = false;
+        let startX, startY, scrollLeft, scrollTop;
+        
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.2, 3);
+            applyZoom();
+        }
+        
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.2, 0.3);
+            applyZoom();
+        }
+        
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+            // 스크롤도 초기화
+            const container = document.getElementById('mermaid-container');
+            if (container) {
+                container.scrollTop = 0;
+                container.scrollLeft = 0;
+            }
+        }
+        
+        function exportPng() {
+            try {
+                // Mermaid 다이어그램을 PNG로 내보내기
+                const diagram = document.getElementById('erd-diagram');
+                if (!diagram) {
+                    alert('다이어그램을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // html2canvas 라이브러리 사용
+                if (typeof html2canvas === 'undefined') {
+                    // html2canvas 라이브러리 동적 로드
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    script.onload = () => performPngExport();
+                    document.head.appendChild(script);
+                } else {
+                    performPngExport();
+                }
+                
+                function performPngExport() {
+                    // 전체 다이어그램을 캡처하기 위해 컨테이너 사용
+                    const container = document.getElementById('mermaid-container');
+                    if (!container) {
+                        alert('다이어그램 컨테이너를 찾을 수 없습니다.');
+                        return;
+                    }
+                    
+                    html2canvas(container, {
+                        backgroundColor: '#ffffff',
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        scrollX: 0,
+                        scrollY: 0,
+                        width: container.scrollWidth,
+                        height: container.scrollHeight
+                    }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = 'erd_diagram_full.png';
+                        link.href = canvas.toDataURL();
+                        link.click();
+                    }).catch(err => {
+                        console.error('PNG 내보내기 실패:', err);
+                        alert('PNG 내보내기에 실패했습니다.');
+                    });
+                }
+            } catch (error) {
+                console.error('PNG 내보내기 오류:', error);
+                alert('PNG 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        function exportSvg() {
+            try {
+                // Mermaid 다이어그램을 SVG로 내보내기
+                const diagram = document.getElementById('erd-diagram');
+                if (!diagram) {
+                    alert('다이어그램을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // SVG 요소 찾기
+                const svgElement = diagram.querySelector('svg');
+                if (!svgElement) {
+                    alert('SVG 요소를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // SVG의 전체 크기 정보 추가
+                const svgClone = svgElement.cloneNode(true);
+                const bbox = svgElement.getBBox();
+                svgClone.setAttribute('width', bbox.width + 100);
+                svgClone.setAttribute('height', bbox.height + 100);
+                svgClone.setAttribute('viewBox', `${bbox.x - 50} ${bbox.y - 50} ${bbox.width + 100} ${bbox.height + 100}`);
+                
+                // SVG 내용을 문자열로 변환
+                const svgData = new XMLSerializer().serializeToString(svgClone);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                // 다운로드 링크 생성
+                const link = document.createElement('a');
+                link.href = svgUrl;
+                link.download = 'erd_diagram_full.svg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(svgUrl);
+                
+            } catch (error) {
+                console.error('SVG 내보내기 오류:', error);
+                alert('SVG 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        function applyZoom() {
+            const diagram = document.getElementById('erd-diagram');
+            const indicator = document.getElementById('zoom-indicator');
+            if (diagram) {
+                diagram.style.transform = `scale(${currentZoom})`;
+                diagram.style.transformOrigin = 'center top';
+                diagram.style.transition = 'transform 0.2s ease';
+            }
+            if (indicator) {
+                indicator.textContent = Math.round(currentZoom * 100) + '%';
+            }
+        }
+        
+        function downloadSVG() {
+            const svg = document.querySelector('#erd-diagram svg');
+            if (svg) {
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = svgUrl;
+                downloadLink.download = 'sampleSrc_ERD.svg';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(svgUrl);
+            }
+        }
+        
+        // 드래그로 팬 기능 초기화
+        function initPanAndZoom() {
+            const container = document.getElementById('mermaid-container');
+            if (!container) return;
+            
+            // 마우스 드래그로 팬
+            container.addEventListener('mousedown', function(e) {
+                if (e.button === 0) { // 왼쪽 마우스 버튼
+                    isPanning = true;
+                    startX = e.pageX - container.offsetLeft;
+                    startY = e.pageY - container.offsetTop;
+                    scrollLeft = container.scrollLeft;
+                    scrollTop = container.scrollTop;
+                    container.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+            
+            container.addEventListener('mouseleave', function() {
+                isPanning = false;
+                container.style.cursor = 'grab';
+            });
+            
+            container.addEventListener('mouseup', function() {
+                isPanning = false;
+                container.style.cursor = 'grab';
+            });
+            
+            container.addEventListener('mousemove', function(e) {
+                if (!isPanning) return;
+                e.preventDefault();
+                const x = e.pageX - container.offsetLeft;
+                const y = e.pageY - container.offsetTop;
+                const walkX = (x - startX) * 2;
+                const walkY = (y - startY) * 2;
+                container.scrollLeft = scrollLeft - walkX;
+                container.scrollTop = scrollTop - walkY;
+            });
+            
+            // 마우스 휠로 줌 (Ctrl + 휠)
+            container.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        zoomIn();
+                    } else {
+                        zoomOut();
+                    }
+                }
+            });
+            
+            // 기본 커서 설정
+            container.style.cursor = 'grab';
+        }
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '=':
+                    case '+':
+                        e.preventDefault();
+                        zoomIn();
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        zoomOut();
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        resetZoom();
+                        break;
+                }
+            }
+        });
+        
+        // 페이지 로드 시 다이어그램 렌더링 및 기능 초기화
+        window.addEventListener('load', function() {
+            mermaid.init(undefined, '.mermaid').then(function() {
+                // 렌더링 완료 후 팬/줌 기능 초기화
+                setTimeout(initPanAndZoom, 500);
+                // 초기 줌 표시 업데이트
+                applyZoom();
+            });
+        });
+        
+    </script>
+</body>
+</html>

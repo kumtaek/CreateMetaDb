@@ -343,6 +343,7 @@ class ArchitectureLayerReportGenerator:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>아키텍처 레이어 다이어그램 - {project_name}</title>
+    <link rel="stylesheet" href="css/woori.css">
     <style>
         {css_styles}
     </style>
@@ -355,21 +356,23 @@ class ArchitectureLayerReportGenerator:
             가로 방향 레이어 배치 및 컴포넌트 시각화</div>
         </div>
         
-        <div class="architecture-container" id="architectureContainer">
-            <svg class="relationship-arrows" id="relationshipArrows">
-                <defs>
-                    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
-                            refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
-                    </marker>
-                </defs>
-            </svg>
-            {layer_columns}
-        </div>
-        
-        <div class="statistics">
+        <div class="stats">
             <div class="stats-grid">
                 {statistics}
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="architecture-container" id="architectureContainer">
+                <svg class="relationship-arrows" id="relationshipArrows">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                                refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                        </marker>
+                    </defs>
+                </svg>
+                {layer_columns}
             </div>
         </div>
         
@@ -408,7 +411,7 @@ class ArchitectureLayerReportGenerator:
             raise
     
     def _generate_css_styles(self) -> str:
-        """CSS 스타일 생성 - 다른 리포트와 동일한 헤더 스타일 적용"""
+        """CSS 스타일 생성 - CallChain Report와 동일한 컴팩트 스타일 적용"""
         return """
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -417,7 +420,6 @@ class ArchitectureLayerReportGenerator:
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        
         .container {
             width: 100%;
             max-width: 100%;
@@ -427,71 +429,105 @@ class ArchitectureLayerReportGenerator:
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
             color: white;
             padding: 8px;
             text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            flex-shrink: 0;
         }
-        
         .header h1 {
             margin: 0;
-            font-size: 1.5em;
+            font-size: 1.4em;
             font-weight: 300;
         }
-        
         .header .subtitle {
-            margin: 3px 0 0 0;
-            opacity: 0.8;
-            font-size: 0.9em;
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
         }
-        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: #f8f9fa;
+            margin-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .stat-number {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 1px;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.6em;
+        }
+        .content {
+            flex: 1;
+            overflow: hidden;
+            padding: 4px;
+        }
         .architecture-container {
             display: flex;
             flex-direction: row;
-            gap: 10px;
+            gap: 5px;
             overflow-x: auto;
-            padding: 10px;
+            padding: 0;
             background: white;
-            height: calc(100vh - 120px);
+            height: 100%;
             position: relative;
-            justify-content: flex-start;
-            align-items: flex-start;
         }
         
         .layer-column {
-            flex: 1;
-            min-width: 150px;
-            max-width: none;
+            min-width: 120px;
+            max-width: 180px;
             background: #fafafa;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 6px;
             position: relative;
-            height: calc(100vh - 160px);
+            height: 100%;
             overflow-y: auto;
-            margin-bottom: 10px;
         }
         
         .layer-header {
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            font-size: 0.7em;
+            padding: 3px;
+            border-radius: 2px;
+            margin-bottom: 4px;
             color: #333;
         }
         
         .component-item {
             background: white;
             border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 6px 8px;
-            margin-bottom: 3px;
-            font-size: 11px;
+            border-radius: 2px;
+            padding: 2px 4px;
+            margin-bottom: 1px;
+            font-size: 0.6em;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
@@ -523,10 +559,10 @@ class ArchitectureLayerReportGenerator:
         .component-count {
             background: #666;
             color: white;
-            border-radius: 10px;
-            padding: 1px 6px;
-            font-size: 9px;
-            margin-left: 4px;
+            border-radius: 8px;
+            padding: 1px 4px;
+            font-size: 0.5em;
+            margin-left: 2px;
             float: right;
         }
         
@@ -552,43 +588,6 @@ class ArchitectureLayerReportGenerator:
             stroke-width: 3;
         }
         
-        .statistics {
-            padding: 6px;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 8px;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .stat-number {
-            font-size: 16px;
-            font-weight: bold;
-            color: #007bff;
-        }
-        
-        .stat-label {
-            font-size: 10px;
-            color: #666;
-            margin-top: 2px;
-        }
-        
         .footer {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
@@ -596,11 +595,8 @@ class ArchitectureLayerReportGenerator:
             text-align: center;
             font-size: 9px;
             opacity: 0.8;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1001;
+            flex-shrink: 0;
+            height: 15px;
         }
         
         /* 반응형 디자인 */
@@ -748,11 +744,12 @@ class ArchitectureLayerReportGenerator:
         document.addEventListener('DOMContentLoaded', function() {{
             document.querySelectorAll('.component-item').forEach(function(item) {{
                 item.addEventListener('click', function() {{
-                    // 기존 선택 해제
+                    // 기존 선택 해제 (모든 상태 초기화)
                     document.querySelectorAll('.component-item').forEach(function(el) {{
                         el.style.opacity = '';
                         el.style.borderColor = '';
-                        el.classList.remove('selected');
+                        el.style.borderWidth = '';
+                        el.classList.remove('selected', 'related', 'dimmed');
                     }});
                     
                     // 현재 컴포넌트 선택
@@ -762,22 +759,43 @@ class ArchitectureLayerReportGenerator:
                     const name = this.dataset.name;
                     console.log('선택된 컴포넌트:', name);
                     
-                    // 관련 컴포넌트 하이라이트
+                    // 관련 컴포넌트 하이라이트 (모든 레이어 포함)
+                    const relatedComponents = new Set();
+                    
                     if (relationshipData[name]) {{
                         relationshipData[name].relationships.forEach(function(rel) {{
-                            const targets = document.querySelectorAll('[data-name="' + rel.target + '"]');
-                            targets.forEach(function(target) {{
-                                target.style.borderColor = '#28a745';
-                                target.style.borderWidth = '2px';
-                            }});
+                            relatedComponents.add(rel.target);
+                            console.log('관계 발견:', name, '->', rel.target, '(', rel.target_layer, ')');
                         }});
                     }}
                     
-                    // 나머지 흐리게
-                    document.querySelectorAll('.component-item:not(.selected)').forEach(function(el) {{
-                        if (el.style.borderColor !== 'rgb(40, 167, 69)') {{
-                            el.style.opacity = '0.4';
-                        }}
+                    // 역방향 관계도 찾기 (다른 컴포넌트가 현재 컴포넌트를 참조하는 경우)
+                    Object.keys(relationshipData).forEach(function(compName) {{
+                        relationshipData[compName].relationships.forEach(function(rel) {{
+                            if (rel.target === name) {{
+                                relatedComponents.add(compName);
+                                console.log('역방향 관계 발견:', compName, '->', name);
+                            }}
+                        }});
+                    }});
+                    
+                    // 관련 컴포넌트들 하이라이트 (모든 레이어에서)
+                    relatedComponents.forEach(function(targetName) {{
+                        const targets = document.querySelectorAll('[data-name="' + targetName + '"]');
+                        targets.forEach(function(target) {{
+                            target.style.borderColor = '#28a745';
+                            target.style.borderWidth = '2px';
+                            target.style.opacity = '1';
+                            target.classList.add('related');
+                        }});
+                    }});
+                    
+                    console.log('총 관련 컴포넌트:', relatedComponents.size, '개');
+                    
+                    // 관련 없는 컴포넌트만 흐리게
+                    document.querySelectorAll('.component-item:not(.selected):not(.related)').forEach(function(el) {{
+                        el.style.opacity = '0.3';
+                        el.classList.add('dimmed');
                     }});
                 }});
             }});

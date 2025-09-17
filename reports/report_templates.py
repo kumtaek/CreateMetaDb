@@ -417,7 +417,7 @@ class ReportTemplates:
 
     def get_erd_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 
                         erd_data: Dict[str, Any]) -> str:
-        """ERD Report HTML 템플릿 생성"""
+        """ERD Report HTML 템플릿 생성 - 콜체인리포트와 동일한 구조 적용"""
         
         # 통계 카드 HTML 생성
         stats_html = self._generate_erd_stats_html(stats)
@@ -437,17 +437,16 @@ class ReportTemplates:
         {self._get_erd_css()}
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="erd-body">
+    <div class="erd-container">
+        <div class="erd-header">
             <h1>ERD Report</h1>
             <div class="subtitle">Entity Relationship Diagram</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
         {stats_html}
-        <div class="content">
-            <div class="section">
-                <h2>데이터베이스 ERD</h2>
+        <div class="erd-content">
+            <div class="erd-section">
                 <div class="diagram-controls">
                     <button onclick="zoomIn()">확대</button>
                     <button onclick="zoomOut()">축소</button>
@@ -464,6 +463,9 @@ class ReportTemplates:
                 </div>
             </div>
         </div>
+        <div class="erd-footer">
+            ERD 분석 완료 - 마우스 휠로 확대/축소, 드래그로 이동 가능
+        </div>
     </div>
     
     <script>
@@ -473,28 +475,28 @@ class ReportTemplates:
 </html>"""
     
     def _generate_erd_stats_html(self, stats: Dict[str, int]) -> str:
-        """ERD 통계 카드 HTML 생성"""
+        """ERD 통계 카드 HTML 생성 - 콜체인리포트와 동일한 구조"""
         return f"""
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('total_tables', 0)}</div>
-                <div class="stat-label">전체 테이블</div>
+        <div class="erd-stats">
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">{stats.get('total_tables', 0)}</div>
+                <div class="erd-stat-label">전체 테이블</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('total_columns', 0)}</div>
-                <div class="stat-label">전체 컬럼</div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">{stats.get('total_columns', 0)}</div>
+                <div class="erd-stat-label">전체 컬럼</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('primary_keys', 0)}</div>
-                <div class="stat-label">Primary Key</div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">{stats.get('primary_keys', 0)}</div>
+                <div class="erd-stat-label">Primary Key</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('foreign_keys', 0)}</div>
-                <div class="stat-label">Foreign Key</div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">{stats.get('foreign_keys', 0)}</div>
+                <div class="erd-stat-label">Foreign Key</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{stats.get('relationships', 0)}</div>
-                <div class="stat-label">관계</div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">{stats.get('relationships', 0)}</div>
+                <div class="erd-stat-label">관계</div>
             </div>
         </div>"""
     
@@ -510,16 +512,16 @@ class ReportTemplates:
         </div>"""
     
     def _get_erd_css(self) -> str:
-        """ERD Report CSS 스타일"""
+        """ERD Report CSS 스타일 - 콜체인리포트와 동일한 구조 적용"""
         return """
-        body {
+        body.erd-body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 2px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        .container {
+        .erd-container {
             width: 100%;
             max-width: 100%;
             margin: 0;
@@ -528,19 +530,69 @@ class ReportTemplates:
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .content {
+        .erd-header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .erd-header h1 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 300;
+        }
+        .erd-header .subtitle {
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
+        }
+        .erd-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: #f8f9fa;
+            margin-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .erd-stat-card {
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .erd-stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .erd-stat-number {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 1px;
+        }
+        .erd-stat-label {
+            color: #7f8c8d;
+            font-size: 0.6em;
+        }
+        .erd-content {
+            flex: 1;
+            overflow: hidden;
             padding: 4px;
         }
-        .section {
-            margin-bottom: 5px;
-        }
-        .section h2 {
-            color: #2c3e50;
-            border-bottom: 1px solid #3498db;
-            padding-bottom: 2px;
-            margin-bottom: 5px;
-            font-size: 0.9em;
+        .erd-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .diagram-controls {
             margin-bottom: 5px;
@@ -595,15 +647,19 @@ class ReportTemplates:
             40% { transform: translateY(-3px); }
             60% { transform: translateY(-2px); }
         }
+        .diagram-container {
+            flex: 1;
+            overflow: hidden;
+        }
         .mermaid-container {
             background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 0;
             border: 1px solid #e9ecef;
             position: relative;
             overflow: auto;
-            max-height: 80vh;
+            height: 100%;
             width: 100%;
             box-sizing: border-box;
         }
@@ -676,12 +732,22 @@ class ReportTemplates:
         .btn.secondary:hover {
             background: #7f8c8d;
         }
+        .erd-footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2px;
+            text-align: center;
+            font-size: 9px;
+            opacity: 0.8;
+            flex-shrink: 0;
+            height: 15px;
+        }
         @media (max-width: 768px) {
-            .container {
+            .erd-container {
                 margin: 10px;
                 border-radius: 10px;
             }
-            .content {
+            .erd-content {
                 padding: 20px;
             }
         }
@@ -1208,22 +1274,25 @@ class ReportTemplates:
             box-shadow: var(--shadow-medium);
         }
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
             color: white;
             padding: 8px;
             text-align: center;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
         }
         .header h1 {
             margin: 0;
-            font-size: 1.5em;
+            font-size: 1.4em;
             font-weight: 300;
             color: white;
         }
         .header .subtitle {
-            margin: 3px 0 0 0;
-            opacity: 0.8;
-            font-size: 0.9em;
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
             color: white;
         }
         .section {
