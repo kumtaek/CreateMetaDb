@@ -732,6 +732,123 @@ Java 분석을 위한 키워드 및 패턴 설정
 
 이 4단계 로직은 Java 파일에서 클래스와 메서드를 추출하고 모든 관계를 분석하여 메타데이터베이스에 저장하는 핵심 역할을 수행하며, 메모리 최적화를 통해 효율적인 분석을 제공합니다. 특히 복잡도 분류, 메서드-클래스 연결, 메서드 컴포넌트 ID 조회 등 숨어있는 로직들이 정상적으로 작동하여 완전한 메타데이터 분석이 가능합니다.
 
+## INFERRED 쿼리 처리 개선 방안
+
+### 문제점 분석
+
+현재 시스템에서 발견된 중요한 문제점은 다음과 같습니다:
+
+1. **Java 파서의 쿼리 검색 한계**: `_get_query_component_id()` 함수가 `component_type = 'QUERY'`로만 검색하여 XML에서 생성된 `SQL_SELECT`, `SQL_INSERT` 등의 타입을 찾지 못함
+2. **중복 생성 문제**: 기존에 XML에서 정상적으로 생성된 `SQL_*` 타입 쿼리를 찾지 못해 모든 쿼리를 inferred query로 `QUERY` 타입 중복 생성
+3. **정보 손실**: inferred query에는 자바 호출 위치 정보와 실제 SQL 내용이 저장되지 않아 추적이 어려움
+
+### 개선 방안
+
+#### 1. 쿼리 검색 로직 개선
+
+**현재 문제**: Java 파서가 `component_type = 'QUERY'`로만 검색
+```sql
+-- 현재 (문제)
+SELECT component_id FROM components
+WHERE component_type = 'QUERY'
+```
+
+**개선 방안**: `SQL_*` 타입과 `QUERY` 타입 모두 검색
+```sql
+-- 개선 후
+SELECT component_id FROM components
+WHERE (component_type LIKE 'SQL_%' OR component_type = 'QUERY')
+```
+
+이렇게 하면:
+- XML에서 생성된 `SQL_SELECT`, `SQL_INSERT` 등을 정상적으로 찾음
+- 중복 생성 방지
+- 기존 XML 쿼리 정보 활용
+
+#### 2. INFERRED 쿼리 생성 로직 유지
+
+**핵심 원칙**: INFERRED 쿼리 생성 로직은 그대로 유지하되, 개선된 검색 로직으로 중복 생성을 방지
+
+**INFERRED 쿼리 생성 조건**:
+- Java에서 쿼리 호출을 발견했지만
+- XML에서 해당 쿼리를 찾을 수 없는 경우
+- 정말로 "끊어진" 쿼리인 경우에만 생성
+
+**INFERRED 쿼리 특징**:
+- `component_type = 'QUERY'` (정확한 SQL 타입을 모르기 때문)
+- 자바 호출 위치 정보 포함 (`line_start`, `line_end`)
+- 실제 SQL 내용 저장 (압축 형태)
+
+#### 3. 테이블 관계 연결 개선
+
+**현재**: `_create_indirect_use_table_relationships()` 함수가 `SQL_*` 타입만 처리
+
+**개선**: `SQL_*` 타입과 `QUERY` 타입 모두 처리
+```sql
+-- 개선 후
+WHERE (c.component_type LIKE 'SQL_%' OR c.component_type = 'QUERY')
+```
+
+#### 4. INFERRED 쿼리 정보 보강
+
+**자바 호출 정보 저장**:
+- `line_start`: 자바에서 쿼리를 호출하는 시작 라인
+- `line_end`: 자바에서 쿼리를 호출하는 종료 라인
+- `java_file_name`: 호출하는 자바 파일명
+- `java_method_name`: 호출하는 메서드명
+
+**SQL 내용 저장**:
+- `sql_contents` 테이블에 `SQL_CONTENT_COMPRESSED`로 자바 소스 코드 압축 저장
+- 실제 SQL 쿼리 내용이 포함된 자바 코드 라인들
+
+#### 5. CallChain Report 개선
+
+**쿼리 타입 표시**:
+- 기존: `SELECT`, `INSERT` 등 (XML에서 파싱된 경우)
+- INFERRED: `QUERY` (자바에서 추론된 경우)
+
+**툴팁 정보**:
+- INFERRED 쿼리의 경우 압축 해제된 자바 소스 코드 표시
+- 개발자가 누락된 XML 쿼리 정의를 쉽게 찾을 수 있도록 지원
+
+### 처리 플로우 개선
+
+```mermaid
+flowchart TD
+    A[Java 파서 시작] --> B[메서드에서 쿼리 호출 발견]
+    B --> C[개선된 쿼리 검색]
+    C --> D{쿼리 컴포넌트 존재?}
+    D -->|SQL_* 타입 발견| E[기존 쿼리 사용]
+    D -->|QUERY 타입 발견| F[기존 INFERRED 쿼리 사용]
+    D -->|없음| G[정말 끊어진 쿼리인지 확인]
+    G -->|XML에 없음| H[INFERRED 쿼리 생성]
+    G -->|XML에 있음| I[SQL_* 타입으로 재생성]
+    H --> J[자바 호출 정보 저장]
+    J --> K[SQL 내용 압축 저장]
+    K --> L[CALL_QUERY 관계 생성]
+    E --> L
+    F --> L
+    I --> L
+    L --> M[테이블 관계 연결]
+    M --> N[CallChain Report 생성]
+```
+
+### 예상 효과
+
+1. **중복 생성 방지**: XML에서 생성된 `SQL_*` 타입을 정상적으로 활용
+2. **정확한 추적**: 끊어진 쿼리의 정확한 자바 호출 위치 파악
+3. **개발 효율성**: 누락된 XML 쿼리 정의를 쉽게 찾아 수정 가능
+4. **문서화**: 자동으로 쿼리 호출 관계 문서화
+5. **디버깅 지원**: INFERRED 쿼리의 실제 SQL 내용을 툴팁으로 확인 가능
+
+### 구현 우선순위
+
+1. **즉시 구현**: Java 파서의 `_get_query_component_id()` 함수 수정
+2. **중기 구현**: INFERRED 쿼리 정보 보강 (자바 호출 정보, SQL 내용 저장)
+3. **장기 구현**: CallChain Report UI 개선 (툴팁, 상세 정보 표시)
+
+이 개선을 통해 시스템의 정확성과 개발자 경험이 크게 향상될 것으로 예상됩니다.
+
 ## 📚 관련 문서
 
 - **[메타데이터베이스스키마정의서.md](./메타데이터베이스스키마정의서.md)**: 데이터베이스 스키마 구조 상세

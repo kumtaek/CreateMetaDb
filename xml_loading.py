@@ -309,6 +309,8 @@ class XmlLoadingEngine:
                         'file_id': file_id,
                         'component_type': component_type,
                         'component_name': sql_id,
+                        'parent_id': None,
+                        'layer': 'QUERY',  # SQL 컴포넌트는 QUERY layer
                         'line_start': 1,  # XML에서는 정확한 라인 번호 추출이 어려움
                         'line_end': 1,
                         'has_error': 'N',
@@ -779,7 +781,7 @@ class XmlLoadingEngine:
                 'component_name': table_name,
                 'parent_id': None,
                 'file_id': inferred_file_id,
-                'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
+                'layer': 'TABLE',  # TABLE 컴포넌트는 TABLE 레이어
                 'line_start': None,
                 'line_end': None,
                 'hash_value': 'INFERRED',

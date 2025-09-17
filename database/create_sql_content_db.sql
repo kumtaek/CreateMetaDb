@@ -12,19 +12,19 @@ CREATE TABLE IF NOT EXISTS projects (
     del_yn CHAR(1) DEFAULT 'N'
 );
 
--- 정제된 SQL 내용 테이블
+-- 정제된 SQL 내용 테이블 (XML파싱 쿼리 + INFERRED쿼리 지원)
 CREATE TABLE IF NOT EXISTS sql_contents (
     content_id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
-    file_id INTEGER,
-    component_id INTEGER,
-    component_name VARCHAR(200),             -- 컴포넌트명
-    sql_content_compressed BLOB NOT NULL,    -- gzip 압축된 정제된 SQL 내용
-    query_type VARCHAR(20) NOT NULL,         -- 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE'
-    file_path VARCHAR(500),                  -- 파일 경로
-    file_name VARCHAR(200),                  -- 파일명
-    line_start INTEGER,                      -- 시작 라인
-    line_end INTEGER,                        -- 종료 라인
+    file_id INTEGER,                         -- 파일 ID (XML파일 또는 Java파일)
+    component_id INTEGER,                    -- 컴포넌트 ID (SQL_* 타입 또는 QUERY 타입)
+    component_name VARCHAR(200),             -- 컴포넌트명 (쿼리 ID)
+    sql_content_compressed BLOB NOT NULL,    -- gzip 압축된 정제된 SQL 내용 (XML파싱결과 또는 Java소스에서 추출한 SQL)
+    query_type VARCHAR(20) NOT NULL,         -- 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE', 'QUERY'(INFERRED쿼리)
+    file_path VARCHAR(500),                  -- 파일 경로 (XML파일 또는 Java파일)
+    file_name VARCHAR(200),                  -- 파일명 (XML파일 또는 Java파일)
+    line_start INTEGER,                      -- 시작 라인 (XML에서는 1, Java에서는 실제 호출라인)
+    line_end INTEGER,                        -- 종료 라인 (XML에서는 1, Java에서는 실제 호출라인)
     hash_value VARCHAR(64),                  -- SQL 내용 해시값
     error_message TEXT,                      -- 오류 메시지 (있는 경우)
     created_at DATETIME DEFAULT (datetime('now', '+9 hours')),

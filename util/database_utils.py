@@ -451,8 +451,6 @@ class DatabaseUtils:
             # 테이블별 unique_columns 설정
             if table_name == 'components':
                 unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
-            elif table_name == 'api_components':
-                unique_columns = ['component_id']  # api_components는 component_id가 UNIQUE
             elif table_name == 'tables':
                 unique_columns = ['project_id', 'table_name', 'table_owner']
             elif table_name == 'columns':

@@ -121,9 +121,9 @@ class ReportUtils:
         try:
             from datetime import datetime
             
-            # 파일명 생성
+            # 파일명 생성 - 새로운 포맷: [{project_name}]_{리포트종류}_{timestamp}.html
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{self.project_name}_{report_type}_{timestamp}.html"
+            filename = f"[{self.project_name}]_{report_type}_{timestamp}.html"
             
             # 출력 디렉토리 생성
             if not os.path.exists(self.output_dir):

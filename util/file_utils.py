@@ -12,7 +12,7 @@ import mimetypes
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from .logger import app_logger, handle_error, info
+from .logger import app_logger, handle_error, info, debug
 
 
 class FileUtils:
@@ -367,10 +367,7 @@ class FileUtils:
                     # USER RULE: 모든 exception 발생시 handle_error()로 exit()
                     handle_error(e, f"로그 파일 삭제 실패: {filename}")
             
-            if deleted_count > 0:
-                info(f"총 {deleted_count}개의 오래된 로그 파일을 삭제했습니다")
-            else:
-                info("삭제할 오래된 로그 파일이 없습니다")
+            # 로그는 main.py에서 통합 출력
                 
             return deleted_count
             

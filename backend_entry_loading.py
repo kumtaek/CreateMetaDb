@@ -369,7 +369,7 @@ class BackendEntryLoadingEngine:
     
     def _save_results_to_db(self, entries: List[BackendEntryInfo]) -> None:
         """
-        분석 결과를 components, api_components와 relationships 테이블에 저장
+        분석 결과를 components와 relationships 테이블에 저장
 
         Args:
             entries: 백엔드 진입점 정보 리스트
@@ -480,7 +480,7 @@ class BackendEntryLoadingEngine:
                 'component_name': component_name,
                 'component_type': 'API_URL',
                 'parent_id': None,
-                'layer': 'FRONTEND',
+                'layer': 'API_ENTRY',
                 'line_start': entry.line_start,
                 'line_end': entry.line_end,
                 'has_error': entry.has_error,
@@ -759,29 +759,6 @@ class BackendEntryLoadingEngine:
             # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
             handle_error(e, f"컴포넌트 ID 조회 실패: {component_name} ({component_type})")
 
-    def _get_existing_api_component_hash(self, component_id: int) -> Optional[str]:
-        """
-        기존 API 컴포넌트의 hash_value 조회
-
-        Args:
-            component_id: 컴포넌트 ID
-
-        Returns:
-            기존 hash_value 또는 None (존재하지 않는 경우)
-        """
-        try:
-            query = """
-                SELECT hash_value
-                FROM api_components
-                WHERE component_id = ? AND del_yn = 'N'
-            """
-
-            results = self.db.execute_query(query, (component_id,))
-            return results[0]['hash_value'] if results else None
-
-        except Exception as e:
-            # USER RULE: 데이터베이스 조회 실패는 handle_error()로 즉시 종료
-            handle_error(e, f"API 컴포넌트 hash_value 조회 실패: {component_id}")
     
     # 기존 API_ENTRY 관련 메서드들은 제거됨 (새로운 API_URL 설계로 대체)
 

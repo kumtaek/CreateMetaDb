@@ -37,48 +37,78 @@ class SourceAnalyzerLogger:
     def _setup_logger(self):
         """로거 설정 - 중앙 집중식 설정 파일 사용"""
         try:
-            # 로깅 설정 파일 로드 (크로스플랫폼 대응)
-            from util import PathUtils
-            path_utils = PathUtils()
-            config_path = path_utils.get_config_path("logging.yaml")
+            # 로깅 설정 파일 로드 (circular import 완전 방지)
+            config_path = os.path.join("config", "logging.yaml")
+            print(f"[DEBUG] 로깅 설정 파일 경로: {config_path}")
+            print(f"[DEBUG] 로깅 설정 파일 존재: {os.path.exists(config_path)}")
+            
             if os.path.exists(config_path):
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    config = yaml.safe_load(f)
-                
-                # 로그 디렉토리 생성
-                os.makedirs("logs", exist_ok=True)
-                
-                # 로깅 설정 적용
-                logging.config.dictConfig(config)
-                
-                # SourceAnalyzer 전용 로거 가져오기
-                self.logger = logging.getLogger('SourceAnalyzer')
-                
-                # 파일 핸들러에 타임스탬프가 포함된 파일명 설정
-                for handler in self.logger.handlers:
-                    if isinstance(handler, logging.FileHandler):
-                        # 기존 핸들러 제거하고 새로운 파일 핸들러 추가
-                        self.logger.removeHandler(handler)
-                        new_file_handler = logging.FileHandler(
-                            self.log_file_path,
-                            encoding='utf-8'
-                        )
-                        new_file_handler.setLevel(logging.INFO)
-                        formatter = logging.Formatter(
-                            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
-                        )
-                        new_file_handler.setFormatter(formatter)
-                        self.logger.addHandler(new_file_handler)
-                        break
-                
-                self.logger.setLevel(logging.INFO)
+                try:
+                    print(f"[DEBUG] 로깅 설정 파일 읽기 시도")
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        config = yaml.safe_load(f)
+                    print(f"[DEBUG] YAML 파싱 성공")
+                    
+                    # 로그 디렉토리 생성
+                    os.makedirs("logs", exist_ok=True)
+                    print(f"[DEBUG] logs 디렉토리 생성 완료")
+                    
+                    # 로깅 설정 적용
+                    logging.config.dictConfig(config)
+                    print(f"[DEBUG] 로깅 설정 적용 완료")
+                    
+                    # SourceAnalyzer 전용 로거 가져오기
+                    self.logger = logging.getLogger('SourceAnalyzer')
+                    print(f"[DEBUG] SourceAnalyzer 로거 생성 완료")
+                    
+                    # 파일 핸들러에 타임스탬프가 포함된 파일명 설정
+                    print(f"[DEBUG] 기존 핸들러 수: {len(self.logger.handlers)}")
+                    
+                    for handler in self.logger.handlers:
+                        print(f"[DEBUG] 핸들러 타입: {type(handler)}")
+                        if isinstance(handler, logging.FileHandler):
+                            # 기존 핸들러 제거하고 새로운 파일 핸들러 추가
+                            print(f"[DEBUG] 기존 파일 핸들러 제거")
+                            self.logger.removeHandler(handler)
+                            
+                    # 새로운 파일 핸들러 추가
+                    new_file_handler = logging.FileHandler(
+                        self.log_file_path,
+                        encoding='utf-8'
+                    )
+                    new_file_handler.setLevel(logging.INFO)
+                    formatter = logging.Formatter(
+                        '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+                    )
+                    new_file_handler.setFormatter(formatter)
+                    self.logger.addHandler(new_file_handler)
+                    print(f"[DEBUG] 새로운 파일 핸들러 추가 완료")
+                    
+                    self.logger.setLevel(logging.INFO)
+                    print(f"[DEBUG] 로거 레벨 설정: INFO")
+                    print(f"[DEBUG] 최종 핸들러 수: {len(self.logger.handlers)}")
+                    print(f"[DEBUG] 로깅 시스템 초기화 완료")
+                    
+                    # 테스트 로그 출력
+                    self.logger.info("로깅 시스템 테스트 - 이 메시지가 보이면 정상 작동")
+                    print(f"[DEBUG] 테스트 로그 출력 완료")
+                    
+                except Exception as config_error:
+                    # USER RULES: 설정 파일 처리 오류는 치명적, print 후 exit
+                    print(f"로깅 설정 처리 실패: {config_error}")
+                    print("FATAL: 로깅 설정 파일 처리 실패로 프로그램을 종료합니다.")
+                    sys.exit(1)
             else:
-                # 설정 파일이 없으면 기본 설정 사용
-                self._setup_default_logger()
+                # USER RULES: 설정 파일이 없으면 치명적 오류, print 후 exit
+                print(f"로깅 설정 파일이 없습니다: {config_path}")
+                print("FATAL: 로깅 설정 파일 부재로 프로그램을 종료합니다.")
+                sys.exit(1)
                 
         except Exception as e:
-            self.logger.error(f"로깅 설정 파일 로드 실패: {e}")
-            self._setup_default_logger()
+            # USER RULES: exception 발생시 로그 남기고 Exit! (handle_error import 순환 끊음)
+            print(f"로깅 시스템 초기화 실패: {e}")
+            print("FATAL: 로깅 시스템 초기화 실패로 프로그램을 종료합니다.")
+            sys.exit(1)  # handle_error() import 순환을 끊고 바로 Exit
     
     def _setup_default_logger(self):
         """기본 로거 설정 (fallback)"""

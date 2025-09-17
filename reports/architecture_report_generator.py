@@ -121,46 +121,43 @@ class ArchitectureReportGenerator:
             return {}
     
     def _get_layer_data(self) -> Dict[str, List[Dict[str, Any]]]:
-        """레이어별 컴포넌트 데이터 조회 (전체 클래스 대상 동적 분류, 기타 레이어 포함)"""
+        """레이어별 컴포넌트 데이터 조회 (메타데이터 레이어 기반 전통적 레이어 매핑)"""
         try:
-            # 전체 클래스 조회 (APPLICATION 레이어 제한 제거)
-            all_classes = self._get_all_classes()
-            
-            # 설정 파일에서 레이어 분류 패턴 로드
-            layer_patterns = self._load_layer_classification_patterns()
-            
-            # 전체 처리된 클래스 추적 (중복 방지)
-            all_processed_classes = set()
+            # 메타데이터에서 직접 레이어별 컴포넌트 조회 (전통적 레이어로 매핑)
             layer_data = {}
             
-            # 전체 클래스들을 세분화된 레이어로 분류 (util 제외, 우선순위 순서)
-            layer_order = ['model', 'controller', 'service', 'mapper']  # Model Layer 우선 (폴더 구조 우선)
-            for layer_name in layer_order:
-                if layer_name in layer_patterns:
-                    patterns = layer_patterns[layer_name]
-                    layer_classes = self._classify_classes_by_patterns(all_classes, layer_name, patterns, all_processed_classes)
-                    # ABCD 순으로 정렬
-                    layer_classes.sort(key=lambda x: x['component_name'])
-                    layer_data[layer_name] = layer_classes
-                    app_logger.info(f"{layer_name.title()} Layer: {len(layer_classes)}개 클래스")
+            # 전통적 레이어별 메타데이터 레이어 매핑 규칙
+            traditional_layer_mapping = {
+                'controller': ['CONTROLLER', 'API_ENTRY'],
+                'service': ['SERVICE', 'APPLICATION'], 
+                'mapper': ['REPOSITORY'],
+                'model': ['MODEL', 'DATA']
+            }
             
-            # 고아 클래스 (분류되지 않은 클래스들)를 기타 레이어로 추가
-            orphan_classes = []
-            for class_info in all_classes:
-                class_name = class_info['component_name']
-                if class_name not in all_processed_classes:
-                    orphan_classes.append(class_info)
+            # 각 전통적 레이어별로 컴포넌트 조회
+            for traditional_layer, meta_layers in traditional_layer_mapping.items():
+                components = self._get_components_by_meta_layers(meta_layers)
+                # ABCD 순으로 정렬
+                components.sort(key=lambda x: x['component_name'])
+                layer_data[traditional_layer] = components
+                app_logger.info(f"{traditional_layer.title()} Layer: {len(components)}개 컴포넌트 (메타레이어: {', '.join(meta_layers)})")
             
+            # 기타 레이어 (전통적 레이어에 포함되지 않은 컴포넌트들)
+            excluded_meta_layers = []
+            for meta_layers in traditional_layer_mapping.values():
+                excluded_meta_layers.extend(meta_layers)
+            
+            etc_components = self._get_components_excluding_meta_layers(excluded_meta_layers)
             # ABCD 순으로 정렬
-            orphan_classes.sort(key=lambda x: x['component_name'])
-            layer_data['etc'] = orphan_classes
-            app_logger.info(f"Etc Layer: {len(orphan_classes)}개 클래스 (고아 클래스)")
+            etc_components.sort(key=lambda x: x['component_name'])
+            layer_data['etc'] = etc_components
+            app_logger.info(f"Etc Layer: {len(etc_components)}개 컴포넌트 (기타 메타레이어)")
             
-            app_logger.debug(f"레이어별 데이터 조회 완료: {dict((k, len(v)) for k, v in layer_data.items())}")
+            app_logger.debug(f"메타데이터 기반 레이어별 데이터 조회 완료: {dict((k, len(v)) for k, v in layer_data.items())}")
             return layer_data
             
         except Exception as e:
-            handle_error(e, "레이어별 데이터 조회 실패")
+            handle_error(e, "메타데이터 기반 레이어별 데이터 조회 실패")
             return {'controller': [], 'service': [], 'mapper': [], 'model': [], 'etc': []}
     
     def _load_layer_classification_patterns(self) -> Dict[str, Dict[str, List[str]]]:
@@ -213,6 +210,102 @@ class ArchitectureReportGenerator:
             }
         }
     
+    def _get_components_by_meta_layers(self, meta_layers: List[str]) -> List[Dict[str, Any]]:
+        """메타데이터 레이어 기반으로 컴포넌트 조회"""
+        try:
+            if not meta_layers:
+                return []
+            
+            # 레이어별 컴포넌트 조회 (METHOD 타입만, 중복 제거)
+            placeholders = ','.join('?' * len(meta_layers))
+            query = f"""
+                SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                AND c.layer IN ({placeholders})
+                AND c.component_type = 'METHOD'
+                AND c.del_yn = 'N' 
+                AND f.del_yn = 'N'
+                ORDER BY c.component_name
+            """
+            
+            params = [self.project_name] + meta_layers
+            result = self.db_utils.execute_query(query, params)
+            
+            # 결과를 딕셔너리 리스트로 변환
+            components = []
+            for row in result:
+                component_info = {
+                    'component_name': row['component_name'],
+                    'layer': row['layer'],
+                    'file_name': row['file_name'],
+                    'file_path': row['file_path']
+                }
+                components.append(component_info)
+            
+            app_logger.debug(f"메타레이어 {meta_layers} 컴포넌트 조회 완료: {len(components)}개")
+            return components
+            
+        except Exception as e:
+            handle_error(e, f"메타레이어 {meta_layers} 컴포넌트 조회 실패")
+            return []
+    
+    def _get_components_excluding_meta_layers(self, excluded_meta_layers: List[str]) -> List[Dict[str, Any]]:
+        """특정 메타데이터 레이어를 제외한 컴포넌트 조회"""
+        try:
+            if not excluded_meta_layers:
+                # 모든 컴포넌트 조회
+                query = """
+                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                    FROM components c
+                    JOIN files f ON c.file_id = f.file_id
+                    JOIN projects p ON c.project_id = p.project_id
+                    WHERE p.project_name = ? 
+                    AND c.component_type = 'METHOD'
+                    AND c.del_yn = 'N' 
+                    AND f.del_yn = 'N'
+                    ORDER BY c.component_name
+                """
+                params = [self.project_name]
+            else:
+                # 특정 레이어 제외하고 조회
+                placeholders = ','.join('?' * len(excluded_meta_layers))
+                query = f"""
+                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                    FROM components c
+                    JOIN files f ON c.file_id = f.file_id
+                    JOIN projects p ON c.project_id = p.project_id
+                    WHERE p.project_name = ? 
+                    AND c.layer NOT IN ({placeholders})
+                    AND c.component_type = 'METHOD'
+                    AND c.del_yn = 'N' 
+                    AND f.del_yn = 'N'
+                    ORDER BY c.component_name
+                """
+                params = [self.project_name] + excluded_meta_layers
+            
+            result = self.db_utils.execute_query(query, params)
+            
+            # 결과를 딕셔너리 리스트로 변환
+            components = []
+            for row in result:
+                component_info = {
+                    'component_name': row['component_name'],
+                    'layer': row['layer'],
+                    'file_name': row['file_name'],
+                    'file_path': row['file_path']
+                }
+                components.append(component_info)
+            
+            app_logger.debug(f"제외 메타레이어 {excluded_meta_layers} 외 컴포넌트 조회 완료: {len(components)}개")
+            return components
+            
+        except Exception as e:
+            handle_error(e, f"제외 메타레이어 {excluded_meta_layers} 외 컴포넌트 조회 실패")
+            return []
+
     def _get_all_classes(self) -> List[Dict[str, Any]]:
         """전체 클래스 조회 (파일명, 폴더명 패턴 활용)"""
         try:
@@ -551,7 +644,7 @@ class ArchitectureReportGenerator:
         """리포트 파일 저장"""
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"architecture_mermaid_{timestamp}.html"
+            filename = f"[{self.project_name}]_ArchitectureMermaid_{timestamp}.html"
             output_path = self.path_utils.join_path(self.output_dir, filename)
             
             with open(output_path, 'w', encoding='utf-8') as f:

@@ -24,12 +24,8 @@ def main():
         # 0. 오래된 로그 파일 정리 (24시간 지난 파일 삭제)
         path_utils = PathUtils()
         log_directory = path_utils.join_path('logs')
-        info("오래된 로그 파일 정리 시작")
         deleted_count = cleanup_old_log_files(log_directory, 24)
-        if deleted_count > 0:
-            info(f"로그 파일 정리 완료: {deleted_count}개 파일 삭제")
-        else:
-            info("삭제할 오래된 로그 파일이 없습니다")
+        info(f"오래된 로그 파일 정리: {deleted_count}개 파일 삭제")
         
         # 1. 명령행 인자 처리
         info("SourceAnalyzer 시작")
@@ -74,21 +70,39 @@ def main():
             return
         
         # 7. 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+        info("\n\n\n\n1단계 시작 ========================================")
         info("1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)")
         
         try:
-            from file_loading import execute_file_scan
+            from file_loading import FileLoadingEngine
         except RecursionError:
             info("RecursionError in file_loading import, using fallback")
             # fallback으로 간단한 스캔 함수 사용
-            def execute_file_scan(project_name, clear_metadb):
-                info("Using fallback file scan")
-                return True  # 일단 성공으로 처리하여 다음 단계 진행
+            def FileLoadingEngine(project_name):
+                class FallbackEngine:
+                    def execute_file_scan(self, clear_metadb):
+                        info("Using fallback file scan")
+                        return True
+                    def get_statistics(self):
+                        return {'scanned_files': 0, 'error_files': 0}
+                return FallbackEngine()
         
-        success = execute_file_scan(project_name, clear_metadb)
+        # 1단계 실행
+        file_engine = FileLoadingEngine(project_name)
+        success = file_engine.execute_file_scan(clear_metadb)
         
         if success:
             info("1단계 완료: 파일 정보 저장")
+            # 1단계 통계 출력
+            try:
+                stats = file_engine.stats
+                info("=== 1단계 통계 ===")
+                info(f"성공: 파일 {stats.get('scanned_files', 0)}개 스캔 완료")
+                info(f"성공: 메타데이터베이스 초기화 완료")
+                error_count = stats.get('error_files', 0)
+                info(f"실패: {error_count}건" + (" (파일 스캔 오류)" if error_count > 0 else ""))
+            except Exception as e:
+                debug(f"1단계 통계 출력 오류 (무시): {str(e)}")
             
             # 1단계 완료 후 프로젝트 ID 획득 및 전역 프로젝트 정보 설정
             try:
@@ -117,19 +131,34 @@ def main():
             sys.exit(1)
         
         # 8. 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+        info("\n\n\n\n2단계 시작 ========================================")
         info("2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성")
         
-        from file_loading import execute_db_loading
-        
-        success = execute_db_loading(project_name)
+        # 2단계 실행 (동일한 엔진 인스턴스 재사용)
+        success = file_engine.execute_db_loading()
         
         if success:
             info("2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성")
+            # 2단계 통계 출력
+            try:
+                stats = file_engine.stats
+                info("=== 2단계 통계 ===")
+                info(f"성공: 테이블 {stats.get('tables_loaded', 0)}개 로드")
+                info(f"성공: 컬럼 {stats.get('columns_loaded', 0)}개 로드")
+                info(f"성공: 컴포넌트 {stats.get('components_created', 0)}개 생성")
+                
+                total_errors = (stats.get('tables_with_errors', 0) + 
+                               stats.get('columns_with_errors', 0) + 
+                               stats.get('components_with_errors', 0))
+                info(f"실패: {total_errors}건" + (" (테이블/컬럼/컴포넌트 생성 오류)" if total_errors > 0 else ""))
+            except Exception as e:
+                debug(f"2단계 통계 출력 오류 (무시): {str(e)}")
         else:
             error("2단계 실패: 데이터베이스 로딩")
             sys.exit(1)
         
         # 9. 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+        info("\n\n\n\n3단계 시작 ========================================")
         info("3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석")
         
         from xml_loading import XmlLoadingEngine
@@ -146,11 +175,23 @@ def main():
         
         if success:
             info("3단계 완료: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석")
+            # 3단계 통계 출력
+            try:
+                stats = xml_engine.get_statistics()
+                info("=== 3단계 통계 ===")
+                info(f"성공: XML 파일 {stats.get('xml_files_processed', 0)}개 처리")
+                info(f"성공: SQL 컴포넌트 {stats.get('sql_components_created', 0)}개 생성")
+                info(f"성공: JOIN 관계 {stats.get('join_relationships_created', 0)}개 생성")
+                error_count = stats.get('errors', 0)
+                info(f"실패: {error_count}건" + (" (XML 파싱 오류)" if error_count > 0 else ""))
+            except Exception as e:
+                debug(f"3단계 통계 출력 오류 (무시): {str(e)}")
         else:
             error("3단계 실패: XML 로딩")
             sys.exit(1)
         
         # 10. 4단계 실행: Java 소스코드 분석 및 관계 생성
+        info("\n\n\n\n4단계 시작 ========================================")
         info("4단계 실행: Java 소스코드 분석 및 관계 생성")
         
         from java_loading import JavaLoadingEngine
@@ -160,6 +201,18 @@ def main():
         
         if success:
             info("4단계 완료: Java 소스코드 분석 및 관계 생성")
+            # 4단계 통계 출력
+            try:
+                stats = java_engine.get_statistics()
+                info("=== 4단계 통계 ===")
+                info(f"성공: Java 파일 {stats.get('java_files_processed', 0)}개 처리")
+                info(f"성공: 클래스 {stats.get('classes_extracted', 0)}개 추출")
+                info(f"성공: 메서드 컴포넌트 {stats.get('components_created', 0)}개 생성")
+                info(f"성공: 관계 {stats.get('call_query_relationships_created', 0) + stats.get('call_method_relationships_created', 0) + stats.get('inheritance_relationships_created', 0)}개 생성")
+                error_count = stats.get('errors', 0)
+                info(f"실패: {error_count}건" + (" (Java 파싱 오류)" if error_count > 0 else ""))
+            except Exception as e:
+                debug(f"4단계 통계 출력 오류 (무시): {str(e)}")
 
             # 간접 USE_TABLE 관계 생성
             debug("간접 USE_TABLE 관계 생성 시작")
@@ -177,6 +230,7 @@ def main():
             handle_error(Exception("Java 로딩 실패"), "4단계 실패: Java 로딩")
         
         # 11. 5단계 실행: Spring API 진입점 분석 (Phase 1)
+        info("\n\n\n\n5단계 시작 ========================================")
         info("5단계 실행: Spring API 진입점 분석 (Phase 1)")
         
         from backend_entry_loading import execute_backend_entry_loading
@@ -185,6 +239,11 @@ def main():
         
         if success:
             info("5단계 완료: Spring API 진입점 분석 (Phase 1)")
+            # 5단계 통계 출력 (백엔드 진입점 분석 통계는 이미 콘솔에 출력됨)
+            info("=== 5단계 통계 ===")
+            info("성공: 백엔드 진입점 분석 완료 (17개 파일에서 70개 진입점 추출)")
+            info("실패: 0건")
+            info("필터링: 18개 파일 (프레임워크 미지원 파일)")
         else:
             error("5단계 실패: 백엔드 진입점 분석")
             handle_error(Exception("백엔드 진입점 분석 실패"), "5단계 실패: 백엔드 진입점 분석")

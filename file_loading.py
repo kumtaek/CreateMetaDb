@@ -811,7 +811,7 @@ class FileLoadingEngine:
                     'component_name': table['table_name'],
                     'component_type': 'TABLE',
                     'parent_id': None,
-                    'layer': 'DB',
+                    'layer': 'TABLE',
                     'line_start': None,
                     'line_end': None,
                     'has_error': 'N',
@@ -891,7 +891,7 @@ class FileLoadingEngine:
                     'component_name': column['column_name'],  # 컬럼명만 사용
                     'component_type': 'COLUMN',
                     'parent_id': table_component_id,  # 테이블의 component_id 설정
-                    'layer': 'DB',
+                    'layer': 'TABLE',
                     'line_start': None,
                     'line_end': None,
                     'has_error': 'N',

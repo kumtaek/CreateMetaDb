@@ -18,6 +18,7 @@ from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
+from util.layer_classification_utils import get_layer_classifier
 from reports.report_templates import ReportTemplates
 
 
@@ -37,6 +38,7 @@ class CallChainReportGenerator:
         self.path_utils = PathUtils()
         self.templates = ReportTemplates()
         self.report_utils = ReportUtils(project_name, output_dir)
+        self.layer_classifier = get_layer_classifier()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -276,7 +278,7 @@ class CallChainReportGenerator:
                   AND r1.src_id IS NULL
             """
             
-            # API_URL -> Method -> Query -> Table 체인 (API_URL file_id는 JSP 또는 Java, relationships로 연결)
+            # API_URL -> Method -> Query -> Table 체인
             api_chain_query = """
                 SELECT 
                     ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
@@ -380,6 +382,26 @@ class CallChainReportGenerator:
                 if method_name.startswith('API_ENTRY.'):
                     method_name = method_name[10:]  # 'API_ENTRY.' 제거
                 
+                # Layer 정보 추가
+                method_layer = row.get('method_layer', 'APPLICATION')
+                query_layer = row.get('query_layer', 'DATA')
+                
+                # Layer별 색상 매핑
+                layer_colors = {
+                    'FRONTEND': '#e3f2fd',      # 파란색
+                    'API_ENTRY': '#f3e5f5',     # 보라색
+                    'CONTROLLER': '#e8f5e8',    # 초록색
+                    'SERVICE': '#fff3e0',       # 노란색
+                    'MAPPER': '#fce4ec',        # 주황색
+                    'QUERY': '#ffebee',         # 빨간색
+                    'TABLE': '#f5f5f5',         # 회색
+                    'APPLICATION': '#e1f5fe',   # 하늘색
+                    'DATA': '#f1f8e9'           # 연두색
+                }
+                
+                method_color = layer_colors.get(method_layer, '#e1f5fe')
+                query_color = layer_colors.get(query_layer, '#f1f8e9')
+                
                 chain_data.append({
                     'chain_id': row['chain_id'],
                     'jsp_file': row['jsp_file'],
@@ -387,9 +409,13 @@ class CallChainReportGenerator:
                     'virtual_endpoint': virtual_endpoint,
                     'class_name': row['class_name'],
                     'method_name': method_name,
+                    'method_layer': method_layer,
+                    'method_color': method_color,
                     'xml_file': row['xml_file'],
                     'query_id': query_id,
                     'query_type': query_type,
+                    'query_layer': query_layer,
+                    'query_color': query_color,
                     'related_tables': related_tables,
                     'sql_content': sql_content  # 정제된 SQL 내용 추가
                 })

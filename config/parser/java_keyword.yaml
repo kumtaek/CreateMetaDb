@@ -469,19 +469,19 @@ domain_classification:
 layer_classification:
   controller:
     suffixes: ["controller", "ctrl", "servlet"]
-    keywords: ["controller", "servlet", "Servlet"]
+    keywords: ["controller", "servlet", "Servlet", "@Controller"]
     folder_patterns: ["*controller*", "*ctrl*", "*web*", "*api*", "*servlet*"]
   service:
-    suffixes: ["service", "svc"]
-    keywords: ["service"]
-    folder_patterns: ["*service*", "*business*", "*logic*"]
-  mapper:
+    suffixes: ["service", "svc", "manager", "facade"]
+    keywords: ["service", "business", "logic", "manager", "facade"]
+    folder_patterns: ["*service*", "*business*", "*logic*", "*manager*", "*facade*"]
+  repository:
     suffixes: ["dao", "repository", "repo", "mapper"]
-    keywords: ["dao", "repository", "mapper"]
+    keywords: ["dao", "repository", "mapper", "data"]
     folder_patterns: ["*dao*", "*repository*", "*mapper*", "*data*"]
   model:
     suffixes: ["entity", "model", "vo", "dto", "domain"]
-    keywords: ["entity", "model", "vo", "dto", "domain"]
+    keywords: ["entity", "model", "vo", "dto", "domain", "bean"]
     folder_patterns: ["*model*", "*entity*", "*vo*", "*dto*", "*domain*", "*bean*", "*enums*"]
   util:
     suffixes: ["util", "utils", "helper", "common"]

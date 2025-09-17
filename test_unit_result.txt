@@ -1,0 +1,15 @@
+﻿python : �α� ���� ���� �ε� ����: cannot import name 'PathUtils' from 'util' (consider renaming 'D:\\Analyzer\\CreateMetaDb\\util\\__init__.p
+y' if it has the same name as a library you intended to import)
+위치 줄:1 문자:1
++ python -c "import sys; sys.path.insert(0, '.'); from util.layer_class ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (�α� ���� ���� �...nded to import):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+LayerClassificationUtils �ε� ����
+UserController: CONTROLLER
+UserService: SERVICE
+UserMapper: REPOSITORY
+API_URL: API_ENTRY
+SQL_SELECT: QUERY
+���� �׽�Ʈ �Ϸ�

@@ -46,9 +46,9 @@ class ReportTemplates:
                                 <th>Frontend</th>
                                 <th>API_URL</th>
                                 <th>클래스</th>
-                                <th>메서드</th>
+                                <th>메서드 (Layer)</th>
                                 <th>XML파일</th>
-                                <th>쿼리ID</th>
+                                <th>쿼리ID (Layer)</th>
                                 <th>쿼리종류</th>
                                 <th>관련테이블들</th>
                             </tr>
@@ -122,15 +122,31 @@ class ReportTemplates:
                 related_tables_display = data['related_tables'] if data['related_tables'] else ''
                 related_tables_class = ''
             
-            # 안전한 HTML 생성 (크로스플랫폼 호환) - 각 셀별로 개별 판단하여 NO-QUERY만 흐리게 표시
+            # Layer 정보를 포함한 메서드와 쿼리 표시
+            method_layer = data.get('method_layer', 'APPLICATION')
+            query_layer = data.get('query_layer', 'DATA')
+            method_color = data.get('method_color', '#e1f5fe')
+            query_color = data.get('query_color', '#f1f8e9')
+            
+            # 안전한 HTML 생성 (크로스플랫폼 호환) - Layer 정보 포함
             rows.append(f"""
                 <tr>
                     <td><span class="callchain-badge">{data.get('jsp_file', '')}</span></td>
                     <td><span class="callchain-badge">{data.get('api_entry', '')}</span></td>
                     <td><span class="callchain-badge">{data['class_name']}</span></td>
-                    <td><span class="callchain-badge">{data['method_name']}</span></td>
+                    <td>
+                        <span class="callchain-badge" style="background-color: {method_color}; border: 1px solid #ccc;">
+                            {data['method_name']}
+                            <br><small style="color: #666;">({method_layer})</small>
+                        </span>
+                    </td>
                     <td><span class="callchain-badge{xml_file_class}">{data['xml_file']}</span></td>
-                    <td><span class="callchain-badge{query_id_class}">{data['query_id']}</span></td>
+                    <td>
+                        <span class="callchain-badge{query_id_class}" style="background-color: {query_color}; border: 1px solid #ccc;">
+                            {data['query_id']}
+                            <br><small style="color: #666;">({query_layer})</small>
+                        </span>
+                    </td>
                     <td>{query_type_html}</td>
                     <td><span class="callchain-badge{related_tables_class}">{related_tables_display}</span></td>
                 </tr>""")
@@ -1192,24 +1208,23 @@ class ReportTemplates:
             box-shadow: var(--shadow-medium);
         }
         .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 8px;
             text-align: center;
-            margin-bottom: 3px;
-            padding-bottom: 3px;
-            background: var(--gradient-header);
-            color: var(--text-on-primary);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
+            margin-bottom: 5px;
         }
         .header h1 {
-            color: var(--text-on-primary);
             margin: 0;
-            font-size: 1.4em;
+            font-size: 1.5em;
+            font-weight: 300;
+            color: white;
         }
         .header .subtitle {
-            color: var(--text-on-primary);
-            font-size: 0.8em;
-            margin-top: 2px;
-            opacity: 0.9;
+            margin: 3px 0 0 0;
+            opacity: 0.8;
+            font-size: 0.9em;
+            color: white;
         }
         .section {
             margin: 2px 0;

@@ -19,6 +19,7 @@ from reports.callchain_report_generator import CallChainReportGenerator
 from reports.erd_report_generator import ERDReportGenerator
 from reports.architecture_report_generator import ArchitectureReportGenerator
 from reports.erd_dagre_report_generator import ERDDagreReportGenerator
+from reports.architecture_layer_report_generator import ArchitectureLayerReportGenerator
 
 
 def parse_arguments():
@@ -43,7 +44,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'all'],
         default='all',
         help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
@@ -77,7 +78,7 @@ def validate_project(project_name: str, path_utils: PathUtils) -> bool:
             app_logger.error(f"메타데이터베이스가 존재하지 않습니다: {metadata_db_path}")
             return False
         
-        app_logger.info(f"프로젝트 유효성 검증 완료: {project_name}")
+        app_logger.debug(f"프로젝트 유효성 검증 완료: {project_name}")
         return True
         
     except Exception as e:
@@ -98,7 +99,7 @@ def create_output_directory(project_name: str, path_utils: PathUtils, output_dir
         if not FileUtils.ensure_directory_exists(output_path):
             handle_error(Exception(f"디렉토리 생성 실패: {output_path}"), f"출력 디렉토리 생성 실패: {output_path}")
         
-        app_logger.info(f"출력 디렉토리 준비 완료: {output_path}")
+        app_logger.debug(f"출력 디렉토리 준비 완료: {output_path}")
         return output_path
         
     except Exception as e:
@@ -109,17 +110,9 @@ def create_output_directory(project_name: str, path_utils: PathUtils, output_dir
 def generate_callchain_report(project_name: str, output_dir: str) -> bool:
     """CallChain Report 생성"""
     try:
-        app_logger.info("CallChain Report 생성 시작")
-        
         generator = CallChainReportGenerator(project_name, output_dir)
         success = generator.generate_report()
-        
-        if success:
-            app_logger.info("CallChain Report 생성 완료")
-            return True
-        else:
-            app_logger.error("CallChain Report 생성 실패")
-            return False
+        return success
             
     except Exception as e:
         handle_error(e, "CallChain Report 생성 중 오류 발생")
@@ -129,17 +122,9 @@ def generate_callchain_report(project_name: str, output_dir: str) -> bool:
 def generate_erd_report(project_name: str, output_dir: str) -> bool:
     """ERD Report 생성"""
     try:
-        app_logger.info("ERD Report 생성 시작")
-        
         generator = ERDReportGenerator(project_name, output_dir)
         success = generator.generate_report()
-        
-        if success:
-            app_logger.info("ERD Report 생성 완료")
-            return True
-        else:
-            app_logger.error("ERD Report 생성 실패")
-            return False
+        return success
             
     except Exception as e:
         handle_error(e, "ERD Report 생성 중 오류 발생")
@@ -151,17 +136,9 @@ def generate_erd_report(project_name: str, output_dir: str) -> bool:
 def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
     """ERD(Dagre) Report 생성"""
     try:
-        app_logger.info("ERD(Dagre) Report 생성 시작")
-        
         generator = ERDDagreReportGenerator(project_name, output_dir)
         success = generator.generate_report()
-        
-        if success:
-            app_logger.info("ERD(Dagre) Report 생성 완료")
-            return True
-        else:
-            app_logger.error("ERD(Dagre) Report 생성 실패")
-            return False
+        return success
             
     except Exception as e:
         handle_error(e, "ERD(Dagre) Report 생성 중 오류 발생")
@@ -171,27 +148,33 @@ def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
 def generate_architecture_report(project_name: str, output_dir: str) -> bool:
     """Architecture Report 생성"""
     try:
-        app_logger.info("Architecture Report 생성 시작")
-        
         generator = ArchitectureReportGenerator(project_name, output_dir)
         success = generator.generate_report()
-        
-        if success:
-            app_logger.info("Architecture Report 생성 완료")
-            return True
-        else:
-            app_logger.error("Architecture Report 생성 실패")
-            return False
+        return success
             
     except Exception as e:
         handle_error(e, "Architecture Report 생성 중 오류 발생")
         return False
 
 
+def generate_architecture_layer_report(project_name: str, output_dir: str) -> bool:
+    """새로운 아키텍처 레이어 다이어그램 리포트 생성 (USER RULES 준수)"""
+    try:
+        # USER RULES: 공통함수 사용, 하드코딩 금지
+        generator = ArchitectureLayerReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        return success
+            
+    except Exception as e:
+        # USER RULES: handle_error()로 예외 처리 및 Exit
+        handle_error(e, "Architecture Layer Report 생성 중 오류 발생")
+        return False
+
+
 def main():
     """메인 함수"""
     try:
-        app_logger.info("=== SourceAnalyzer 리포트 생성 도구 시작 ===")
+        app_logger.info("SourceAnalyzer 리포트 생성 도구 시작")
         
         # 명령행 인자 파싱
         args = parse_arguments()
@@ -211,34 +194,73 @@ def main():
         # 리포트 생성
         success_count = 0
         total_count = 0
+        failed_reports = []
         
         if args.report_type in ['callchain', 'all']:
+            app_logger.info("\n\n\n\n1단계 시작 ========================================")
+            app_logger.info("CallChain Report 생성")
             total_count += 1
             if generate_callchain_report(args.project_name, output_dir):
                 success_count += 1
+                app_logger.info("성공: CallChain Report 생성 완료")
+            else:
+                failed_reports.append("CallChain Report")
+                app_logger.info("실패: CallChain Report 생성 실패")
         
         if args.report_type in ['erd', 'all']:
+            app_logger.info("\n\n\n\n2단계 시작 ========================================")
+            app_logger.info("ERD Report 생성")
             total_count += 1
             if generate_erd_report(args.project_name, output_dir):
                 success_count += 1
+                app_logger.info("성공: ERD Report 생성 완료")
+            else:
+                failed_reports.append("ERD Report")
+                app_logger.info("실패: ERD Report 생성 실패")
         
         if args.report_type in ['erd-dagre', 'all']:
+            app_logger.info("\n\n\n\n3단계 시작 ========================================")
+            app_logger.info("ERD(Dagre) Report 생성")
             total_count += 1
             if generate_erd_dagre_report(args.project_name, output_dir):
                 success_count += 1
+                app_logger.info("성공: ERD(Dagre) Report 생성 완료")
+            else:
+                failed_reports.append("ERD(Dagre) Report")
+                app_logger.info("실패: ERD(Dagre) Report 생성 실패")
         
         if args.report_type in ['architecture', 'all']:
+            app_logger.info("\n\n\n\n4단계 시작 ========================================")
+            app_logger.info("Architecture Report 생성")
             total_count += 1
             if generate_architecture_report(args.project_name, output_dir):
                 success_count += 1
+                app_logger.info("성공: Architecture Report 생성 완료")
+            else:
+                failed_reports.append("Architecture Report")
+                app_logger.info("실패: Architecture Report 생성 실패")
+        
+        if args.report_type in ['architecture-layer', 'all']:
+            app_logger.info("\n\n\n\n5단계 시작 ========================================")
+            app_logger.info("Architecture Layer Report 생성")
+            total_count += 1
+            if generate_architecture_layer_report(args.project_name, output_dir):
+                success_count += 1
+                app_logger.info("성공: Architecture Layer Report 생성 완료")
+            else:
+                failed_reports.append("Architecture Layer Report")
+                app_logger.info("실패: Architecture Layer Report 생성 실패")
         
         # 결과 출력
-        app_logger.info(f"=== 리포트 생성 완료 ===")
+        app_logger.info(f"\n\n\n\n=== 리포트 생성 완료 ===")
         app_logger.info(f"성공: {success_count}/{total_count}")
+        if failed_reports:
+            app_logger.info(f"실패: {len(failed_reports)}건 ({', '.join(failed_reports)})")
+        else:
+            app_logger.info("실패: 0건")
         app_logger.info(f"출력 디렉토리: {output_dir}")
         
         if success_count == total_count:
-            app_logger.info("모든 리포트가 성공적으로 생성되었습니다.")
             return
         else:
             handle_error(Exception("일부 리포트 생성 실패"), "일부 리포트 생성에 실패했습니다.")

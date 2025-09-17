@@ -1268,7 +1268,7 @@ class XmlParser:
                         'component_type': 'TABLE',
                         'component_name': table_name,
                         'parent_id': None,
-                        'layer': 'DATA',  # TABLE 컴포넌트는 DATA 레이어
+                        'layer': 'TABLE',  # TABLE 컴포넌트는 TABLE 레이어
                         'hash_value': 'INFERRED',
                         'del_yn': 'N'
                         # created_at은 DEFAULT 값 사용

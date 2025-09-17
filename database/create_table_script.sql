@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS components (
     project_id INTEGER NOT NULL,                   -- 프로젝트 ID (projects 테이블 참조)
     file_id INTEGER NOT NULL,                      -- 파일 ID (files 테이블 참조)
     component_name VARCHAR(200) NOT NULL,          -- 컴포넌트명 (예: 'getUserList', 'UserService', 'USER_INFO')
-    component_type VARCHAR(20) NOT NULL,           -- 컴포넌트 타입: 'METHOD', 'CLASS', 'JSP', 'SQL_SELECT', 'SQL_INSERT', 'TABLE', 'COLUMN', 'API_ENTRY', 'FRONTEND_API' 등
+    component_type VARCHAR(20) NOT NULL,           -- 컴포넌트 타입: 'METHOD', 'CLASS', 'SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'QUERY'(INFERRED쿼리), 'TABLE', 'COLUMN', 'API_URL' 등. JSP/JSX/Vue 등 프론트엔드 파일은 files 테이블에만 저장
     parent_id INTEGER,                             -- 부모 컴포넌트 ID: COLUMN일때는 TABLE의 component_id, METHOD일때는 classes의 class_id
     layer VARCHAR(30),                             -- 계층 정보 (예: 'CONTROLLER', 'SERVICE', 'DAO', 'ENTITY')
     line_start INTEGER,                            -- 컴포넌트 시작 라인 번호
@@ -124,9 +124,9 @@ CREATE TABLE IF NOT EXISTS relationships (
     relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- 관계 고유 식별자
     src_id INTEGER NOT NULL,                       -- 소스 컴포넌트 ID (components 테이블 참조)
     dst_id INTEGER NOT NULL,                       -- 대상 컴포넌트 ID (components 테이블 참조)
-    rel_type VARCHAR(50) NOT NULL,                -- 관계 타입: 'CALL_METHOD_C2S'(Controller->Service), 'CALL_METHOD_S2D'(Service->DAO), 'CALL_QUERY_M2S'(Method->SQL), 'CALL_QUERY_D2S'(DAO->SQL), 'USE_TABLE_Q2D'(Query->Table), 'USE_TABLE_S2D'(SQL->Table), 'CALL_API_F2B'(Frontend->Backend), 'CALL_API_BE'(API->Method), 'CALL_API_J2F'(JSP->Frontend), 'JOIN_EXPLICIT'(명시적 조인), 'JOIN_IMPLICIT'(암시적 조인), 'CALL_CLASS'(클래스 호출), 'IMPLEMENTS'(구현), 'EXTENDS'(상속), 'DEPENDS'(의존), 'USES'(사용), 'IMPORTS'(임포트) 등
-    is_conditional CHAR(1) Default 'N',           -- 조건부 관계 여부: 'Y'=조건부, 'N'=무조건
-    condition_expression VARCHAR(1024),           -- 조건부 관계일 때의 조건 표현식
+    rel_type VARCHAR(50) NOT NULL,                -- 관계 타입: 'CALL_METHOD'(API_URL->METHOD, METHOD->METHOD), 'CALL_QUERY'(METHOD->SQL/QUERY), 'USE_TABLE'(SQL/QUERY->TABLE), 'INHERITANCE'(클래스상속), 'JOIN_EXPLICIT'(명시적조인), 'JOIN_IMPLICIT'(암시적조인), 'FK'(외래키) 등
+    --is_conditional CHAR(1) Default 'N',           -- 조건부 관계 여부: 'Y'=조건부, 'N'=무조건
+    --condition_expression VARCHAR(1024),           -- 조건부 관계일 때의 조건 표현식
     confidence FLOAT DEFAULT 1.0,                 -- 관계 신뢰도 (0.0~1.0, 1.0=100% 확신)
     has_error CHAR(1) DEFAULT 'N',                 -- 오류 여부: 'Y'=오류발생, 'N'=정상
     error_message TEXT,                            -- 오류 발생 시 상세 오류 메시지
@@ -136,27 +136,7 @@ CREATE TABLE IF NOT EXISTS relationships (
     CHECK (src_id != dst_id)
 );
 CREATE UNIQUE INDEX ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
-
--- API 컴포넌트 상세 정보 테이블
-CREATE TABLE IF NOT EXISTS api_components (
-    api_component_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- API 컴포넌트 고유 식별자
-    component_id INTEGER NOT NULL,                       -- components 테이블의 component_id 참조
-    api_type VARCHAR(20) NOT NULL,                       -- API 타입 구분자: 'API_ENTRY'(백엔드 진입점), 'FRONTEND_API'(프론트엔드 API 호출)
-    tech_stack VARCHAR(50),                              -- 기술 스택 정보: 'SPRING_BOOT', 'SPRING_MVC', 'JAX_RS', 'REACT', 'VUE', 'ANGULAR', 'JQUERY' 등
-    interface_type VARCHAR(200),                         -- 인터페이스 타입: 'List<User>', 'User', 'ResponseEntity', 'AXIOS', 'FETCH', 'XMLHttpRequest' 등
-    metadata TEXT,                                       -- JSON 형태의 추가 메타데이터: parameters, annotations, call_config, ui_props, http_method, url_pattern 등
-    has_error CHAR(1) DEFAULT 'N',                       -- 오류 여부: 'Y'=오류발생, 'N'=정상
-    error_message TEXT,                                  -- 오류 발생 시 상세 오류 메시지
-    hash_value VARCHAR(64) NOT NULL,                     -- 변경 감지용 해시값 (파일 내용 기반)
-    created_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 생성일시 (한국시간)
-    updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 수정일시 (한국시간)
-    del_yn CHAR(1) DEFAULT 'N',                          -- 삭제 여부: 'Y'=삭제됨, 'N'=활성상태
-    FOREIGN KEY (component_id) REFERENCES components(component_id),
-    CHECK (api_type IN ('API_ENTRY', 'FRONTEND_API'))
-);
-CREATE UNIQUE INDEX ix_api_components_01 ON api_components (component_id);
-CREATE INDEX ix_api_components_02 ON api_components (api_type);
-
+ 
 -- 데이터베이스 최적화 설정
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;

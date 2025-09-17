@@ -21,6 +21,7 @@ from util import (
 )
 # USER RULES: 공통함수 사용, 하드코딩 금지
 from parser.java_parser import JavaParser
+from util.layer_classification_utils import get_layer_classifier
 
 
 class JavaLoadingEngine:
@@ -40,6 +41,9 @@ class JavaLoadingEngine:
 
         # Java 파서 초기화 (USER RULES: 공통함수 사용)
         self.java_parser = JavaParser()
+        
+        # Layer 분류 유틸리티 초기화 (USER RULES: 공통함수 사용)
+        self.layer_classifier = get_layer_classifier()
 
         # 통계 정보 (4~5단계 통합)
         self.stats = {
@@ -377,7 +381,7 @@ class JavaLoadingEngine:
 
     def _create_method_component(self, project_id: int, file_id: int, parent_id: int, method_info: Dict[str, Any]) -> Optional[int]:
         """
-        components 테이블에 메서드 컴포넌트 생성
+        components 테이블에 메서드 컴포넌트 생성 (Layer 분류 적용)
 
         Args:
             project_id: 프로젝트 ID
@@ -392,6 +396,19 @@ class JavaLoadingEngine:
             method_name = method_info.get('method_name', 'UNKNOWN')
             debug(f"_create_method_component 시작: {method_name}")
             
+            # Layer 분류를 위한 파일 정보 조회
+            file_path, file_name = self._get_file_info_for_layer_classification(project_id, file_id)
+            
+            # Layer 분류 수행 (USER RULES: 공통함수 사용)
+            layer = self.layer_classifier.get_component_layer(
+                component_type='METHOD',
+                component_name=method_name,
+                file_path=file_path,
+                file_name=file_name
+            )
+            
+            debug(f"메서드 Layer 분류: {method_name} -> {layer}")
+            
             # 해시값 생성 (USER RULES: 공통함수 사용)
             method_signature = method_info.get('method_signature', method_info.get('method_name', ''))
             component_hash = HashUtils.generate_content_hash(
@@ -404,7 +421,7 @@ class JavaLoadingEngine:
                 'component_name': method_info.get('method_name', ''),
                 'component_type': 'METHOD',
                 'parent_id': parent_id,  # 클래스의 component_id
-                'layer': 'APPLICATION',
+                'layer': layer,  # 분류된 레이어 사용
                 'line_start': method_info.get('line_start'),
                 'line_end': method_info.get('line_end'),
                 'has_error': method_info.get('has_error', 'N'),
@@ -1030,29 +1047,48 @@ class JavaLoadingEngine:
 
     def _get_query_component_id(self, project_id: int, query_id: str) -> Optional[int]:
         """
-        쿼리 컴포넌트 ID 조회
-
+        쿼리 컴포넌트 ID 조회 (개선된 버전)
+        
+        INFERRED 쿼리 처리 개선 방안:
+        - 기존: component_type = 'QUERY'로만 검색 (문제: XML에서 생성된 SQL_* 타입을 찾지 못함)
+        - 개선: SQL_* 타입과 QUERY 타입 모두 검색하여 중복 생성을 방지하고 기존 XML 쿼리를 활용
+        
+        검색 우선순위:
+        1. SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE 등 (XML에서 파싱된 쿼리)
+        2. QUERY 타입 (이전에 생성된 INFERRED 쿼리)
+        
         Args:
             project_id: 프로젝트 ID
-            query_id: 쿼리 ID
+            query_id: 쿼리 ID (예: findUsersWithAnsiJoin)
 
         Returns:
-            컴포넌트 ID
+            컴포넌트 ID (SQL_* 타입 우선, 없으면 QUERY 타입)
         """
         try:
-            # 쿼리 ID로 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
+            # 개선된 쿼리 검색: SQL_* 타입과 QUERY 타입 모두 검색
+            # 이렇게 하면 XML에서 생성된 SQL_SELECT 등을 정상적으로 찾을 수 있음
             query = """
                 SELECT component_id FROM components
                 WHERE project_id = ?
                 AND component_name = ?
-                AND component_type = 'QUERY'
+                AND (component_type LIKE 'SQL_%' OR component_type = 'QUERY')
                 AND del_yn = 'N'
+                ORDER BY 
+                    CASE 
+                        WHEN component_type LIKE 'SQL_%' THEN 1  -- SQL_* 타입 우선
+                        WHEN component_type = 'QUERY' THEN 2     -- QUERY 타입 차순위
+                    END
             """
 
             results = self.db_utils.execute_query(query, (project_id, query_id))
 
             if results and len(results) > 0:
-                return results[0]['component_id']
+                component_id = results[0]['component_id']
+                component_type = results[0]['component_type'] if 'component_type' in results[0] else 'UNKNOWN'
+                debug(f"쿼리 컴포넌트 ID 조회 성공: {query_id} -> {component_id} ({component_type})")
+                return component_id
+            
+            debug(f"쿼리 컴포넌트 ID 조회 실패: {query_id} (XML과 DB 모두에서 찾을 수 없음)")
             return None
 
         except Exception as e:
@@ -1221,7 +1257,7 @@ class JavaLoadingEngine:
                 'component_name': table_name,
                 'component_type': 'TABLE',
                 'parent_id': None,
-                'layer': 'DATA',
+                'layer': 'TABLE',
                 'line_start': None,
                 'line_end': None,
                 'has_error': 'N',
@@ -1355,6 +1391,34 @@ class JavaLoadingEngine:
             # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
             handle_error(e, "프로젝트 ID 조회 실패")
             return None
+
+    def _get_file_info_for_layer_classification(self, project_id: int, file_id: int) -> tuple[str, str]:
+        """
+        Layer 분류를 위한 파일 정보 조회
+        
+        Args:
+            project_id: 프로젝트 ID
+            file_id: 파일 ID
+            
+        Returns:
+            (file_path, file_name) 튜플
+        """
+        try:
+            query = """
+                SELECT file_path, file_name 
+                FROM files 
+                WHERE project_id = ? AND file_id = ? AND del_yn = 'N'
+            """
+            result = self.db_utils.execute_query(query, (project_id, file_id))
+            
+            if result and len(result) > 0:
+                return result[0]['file_path'], result[0]['file_name']
+            else:
+                return "", ""
+                
+        except Exception as e:
+            debug(f"파일 정보 조회 실패: {e}")
+            return "", ""
 
     def _get_file_id(self, file_path: str) -> Optional[int]:
         """
