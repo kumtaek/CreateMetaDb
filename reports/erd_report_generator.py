@@ -211,7 +211,6 @@ class ERDReportGenerator:
             query = """
                 SELECT 
                     r.rel_type,
-                    r.condition_expression,
                     src_table.table_name as src_table,
                     dst_table.table_name as dst_table
                 FROM relationships r
@@ -234,9 +233,9 @@ class ERDReportGenerator:
             
             relationships = []
             for row in results:
-                # 조인 조건에서 컬럼 정보 추출
+                # 조인 조건에서 컬럼 정보 추출 (condition_expression 컬럼이 없으므로 기본값 사용)
                 src_column, dst_column = self._extract_join_columns(
-                    row['condition_expression'], 
+                    None, 
                     row['src_table'], 
                     row['dst_table']
                 )

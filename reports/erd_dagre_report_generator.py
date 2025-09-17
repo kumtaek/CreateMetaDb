@@ -238,7 +238,6 @@ class ERDDagreReportGenerator:
                 SELECT 
                     r.rel_type,
                     r.confidence,
-                    r.condition_expression,
                     src_table.table_name as src_table,
                     src_table.table_owner as src_owner,
                     dst_table.table_name as dst_table,
@@ -263,9 +262,9 @@ class ERDDagreReportGenerator:
             
             relationships = []
             for row in results:
-                # 조인 조건에서 컬럼 정보 추출
+                # 조인 조건에서 컬럼 정보 추출 (condition_expression 컬럼이 없으므로 기본값 사용)
                 src_column, dst_column = self._extract_join_columns(
-                    row['condition_expression'], 
+                    None, 
                     row['src_table'], 
                     row['dst_table']
                 )
@@ -300,7 +299,7 @@ class ERDDagreReportGenerator:
                         'dst_column': dst_column,
                         'src_data_type': src_data_type,
                         'dst_data_type': dst_data_type,
-                        'join_condition': row['condition_expression'],
+                        'join_condition': None,  # condition_expression 컬럼이 존재하지 않음
                         'rel_comment': '',
                         'is_pk_fk': is_pk_fk_relation
                     })

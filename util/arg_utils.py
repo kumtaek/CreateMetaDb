@@ -39,7 +39,6 @@ class ArgUtils:
   python main.py --project-name sampleSrc
   python main.py --project-name myProject --clear-metadb
   python main.py --project-name testProject --verbose
-  python main.py --project-name sampleSrc --sql-content
                 """
             )
             
@@ -98,11 +97,6 @@ class ArgUtils:
                 help='기존 결과를 덮어쓰기'
             )
             
-            self.parser.add_argument(
-                '--sql-content',
-                action='store_true',
-                help='SQL Content 데이터베이스 생성 기능 활성화 (부속 기능)'
-            )
         
         except RecursionError as e:
             # Recursion limit 초과시 fallback
@@ -295,16 +289,6 @@ class ArgUtils:
             return getattr(self.args, 'force', False)
         return False
     
-    def get_sql_content(self) -> bool:
-        """
-        SQL Content 기능 활성화 여부 반환
-        
-        Returns:
-            SQL Content 기능 활성화 여부 (True/False)
-        """
-        if self.args:
-            return getattr(self.args, 'sql_content', True)
-        return False
     
     def get_all_args(self) -> Dict[str, Any]:
         """
