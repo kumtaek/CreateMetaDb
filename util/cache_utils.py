@@ -279,3 +279,79 @@ if __name__ == "__main__":
     # 캐시 정보 조회
     info = cache.get_cache_info()
     print(f"Cache info: {info}")
+
+
+# --- Gemini 추가 시작: MyBatis <sql> 조각 캐시 ---
+import xml.etree.ElementTree as ET
+from typing import Dict, Optional
+from .path_utils import PathUtils
+from .logger import info, warning, handle_error
+
+class SqlFragmentCache:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(SqlFragmentCache, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, 'initialized'):
+            self.fragments: Dict[str, ET.Element] = {}
+            self.initialized: bool = False
+            self.path_utils = PathUtils()
+
+    def load_all_fragments(self, project_name: str, target_config: dict):
+        if self.initialized:
+            return
+        
+        project_path = self.path_utils.get_project_source_path(project_name)
+        
+        # target_source_config.yaml 기반으로 파일 검색
+        xml_config = target_config.get('file_type_settings', {}).get('xml', {})
+        include_patterns = xml_config.get('include_patterns', ["**/*.xml"])
+        exclude_patterns = xml_config.get('exclude_patterns', [])
+        
+        try:
+            # PathUtils를 사용하여 파일 목록 가져오기
+            xml_files = self.path_utils.find_files_by_patterns(project_path, include_patterns, exclude_patterns)
+            info(f"SQL 조각 캐싱을 위해 {len(xml_files)}개의 XML 파일을 스캔합니다.")
+
+            for file_path in xml_files:
+                try:
+                    tree = ET.parse(file_path)
+                    root = tree.getroot()
+                    namespace = root.attrib.get('namespace', '')
+                    for sql_node in root.findall('sql'):
+                        node_id = sql_node.attrib.get('id')
+                        if node_id:
+                            # 네임스페이스 포함 키와 미포함 키 모두 저장
+                            if namespace:
+                                self.fragments[f"{namespace}.{node_id}"] = sql_node
+                            self.fragments[node_id] = sql_node
+                except ET.ParseError as e:
+                    warning(f"XML 파싱 오류로 SQL 조각 캐시를 건너뜁니다: {file_path}, 사유: {e}")
+                    continue # 파싱 오류는 전체를 중단시키지 않음
+        except Exception as e:
+            handle_error(e, "SqlFragmentCache 로딩 중 심각한 오류 발생")
+
+        self.initialized = True
+        info(f"SqlFragmentCache 초기화 완료. 총 {len(self.fragments)}개의 SQL 조각 로드됨.")
+
+    def get_fragment_node(self, refid: str, current_namespace: str = '') -> Optional[ET.Element]:
+        # 1. 네임스페이스.refid 형태로 먼저 조회
+        if current_namespace and f"{current_namespace}.{refid}" in self.fragments:
+            return self.fragments[f"{current_namespace}.{refid}"]
+        # 2. refid 자체로 조회
+        if refid in self.fragments:
+            return self.fragments[refid]
+        return None
+
+# 전역 인스턴스 관리 함수
+_sql_fragment_cache_instance = None
+def get_sql_fragment_cache() -> SqlFragmentCache:
+    global _sql_fragment_cache_instance
+    if _sql_fragment_cache_instance is None:
+        _sql_fragment_cache_instance = SqlFragmentCache()
+    return _sql_fragment_cache_instance
+# --- Gemini 추가 끝 ---
