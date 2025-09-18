@@ -35,6 +35,7 @@ class ReportTemplates:
             <h1>CallChain Report</h1>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
+        {stats_html}
         <div class="callchain-content">
             <div class="callchain-section">
                 <div class="callchain-table-container">
@@ -58,7 +59,6 @@ class ReportTemplates:
                 </div>
             </div>
         </div>
-        {stats_html}
     </div>
     
     <script>
@@ -118,15 +118,24 @@ class ReportTemplates:
             query_id_class = ' no-query' if data.get('query_id') == 'NO-QUERY' else ''
             query_type_class = ' no-query' if data.get('query_type') == 'NO-QUERY' else ''
             
-            # SQL_% 타입 또는 QUERY 타입이고 SQL 내용이 있는 경우에만 툴팁 표시
+            # 쿼리 타입에 따른 CSS 클래스 결정
             component_type = data.get('query_type', '')
             original_component_type = f"SQL_{component_type}" if component_type not in ['NO-QUERY', 'CALCULATION_ONLY', 'QUERY'] else component_type
             
+            # 쿼리 타입별 CSS 클래스 매핑
+            query_type_css_class = ''
+            if component_type in ['SELECT', 'UPDATE', 'INSERT', 'DELETE']:
+                # SQL_% 타입들 - 파란색
+                query_type_css_class = f' sql-{component_type.lower()}'
+            elif component_type == 'QUERY':
+                # QUERY 타입 - 검은색
+                query_type_css_class = ' query'
+            
             # SQL_% 타입 또는 QUERY 타입이면서 SQL 내용이 있는 경우 툴팁 표시
             if ((original_component_type.startswith('SQL_') or component_type == 'QUERY') and sql_content):
-                query_type_html = f'<span class="callchain-badge query-type{query_type_class} tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
+                query_type_html = f'<span class="callchain-badge query-type{query_type_class}{query_type_css_class} tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
             else:
-                query_type_html = f'<span class="callchain-badge query-type{query_type_class}">{data["query_type"]}</span>'
+                query_type_html = f'<span class="callchain-badge query-type{query_type_class}{query_type_css_class}">{data["query_type"]}</span>'
             
             # 관련테이블 표시 로직: NO-QUERY인 경우는 NO-QUERY, QUERY인 경우는 빈 값일 때 공란
             if data.get('query_type') == 'CALCULATION_ONLY' or data.get('query_id') == 'NO-QUERY':
@@ -898,7 +907,7 @@ class ReportTemplates:
                         height: container.scrollHeight
                     }).then(canvas => {
                         const link = document.createElement('a');
-                        link.download = 'erd_diagram_full.png';
+                        link.download = '{project_name}_ERD_full.png';
                         link.href = canvas.toDataURL();
                         link.click();
                     }).catch(err => {
@@ -943,7 +952,7 @@ class ReportTemplates:
                 // 다운로드 링크 생성
                 const link = document.createElement('a');
                 link.href = svgUrl;
-                link.download = 'erd_diagram_full.svg';
+                link.download = '{project_name}_ERD_full.svg';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -976,7 +985,7 @@ class ReportTemplates:
                 const svgUrl = URL.createObjectURL(svgBlob);
                 const downloadLink = document.createElement('a');
                 downloadLink.href = svgUrl;
-                downloadLink.download = 'sampleSrc_ERD.svg';
+                downloadLink.download = '{project_name}_ERD.svg';
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
@@ -1650,7 +1659,7 @@ class ReportTemplates:
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', 'architecture_components_by_layer.csv');
+                link.setAttribute('download', '{project_name}_architecture_components_by_layer.csv');
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
@@ -1679,7 +1688,7 @@ class ReportTemplates:
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', 'architecture_diagram.svg');
+                link.setAttribute('download', '{project_name}_architecture_diagram.svg');
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
@@ -1734,7 +1743,7 @@ class ReportTemplates:
                 height: container.scrollHeight
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'architecture_diagram.png';
+                link.download = '{project_name}_architecture_diagram.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 alert('다이어그램 PNG 파일이 다운로드되었습니다.');

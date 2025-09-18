@@ -479,7 +479,7 @@ class XmlParser:
             has_dynamic_join = self._detect_dynamic_join(sql_content, dynamic_patterns)
             if has_dynamic_join:
                 # 동적 JOIN 감지는 파싱 에러가 아닌 정상적인 분석 정보
-                info(f"동적 JOIN 구문 감지: {file_path}")
+                debug(f"동적 JOIN 구문 감지: {file_path}")
                 # 동적 JOIN이 감지되어도 분석은 계속 진행
 
             # 0.1. XML 파싱 에러 검사 (사용자 소스 수정 필요 케이스)
@@ -1297,9 +1297,18 @@ class XmlParser:
         """테이블의 컴포넌트 ID 반환"""
         try:
             from util import DatabaseUtils
-            # USER RULES: DatabaseUtils는 db_path가 필요하므로 임시로 None 처리
+            from util.path_utils import PathUtils
+            # USER RULES: DatabaseUtils는 db_path가 필요하므로 공통 함수 사용
             try:
-                db_utils = DatabaseUtils("projects/sampleSrc/metadata.db")
+                path_utils = PathUtils()
+                # 현재 처리 중인 프로젝트의 메타데이터베이스 경로 동적 생성
+                if hasattr(self, 'project_name') and self.project_name:
+                    db_path = path_utils.get_project_metadata_db_path(self.project_name)
+                else:
+                    # 프로젝트명을 알 수 없는 경우 에러 처리 (하드코딩 금지)
+                    from util.logger import handle_error
+                    handle_error(Exception("프로젝트명을 알 수 없어 테이블 컴포넌트 ID를 조회할 수 없습니다"), "XML 파서에서 프로젝트명 누락")
+                db_utils = DatabaseUtils(db_path)
             except:
                 # 테스트 환경에서는 임시 ID 반환
                 return 9998

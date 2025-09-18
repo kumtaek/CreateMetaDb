@@ -659,6 +659,21 @@ class ArchitectureReportGenerator:
 
 
 if __name__ == '__main__':
-    # 테스트용 실행
-    generator = ArchitectureReportGenerator('sampleSrc', './temp')
-    generator.generate_report()
+    import sys
+    from util.arg_utils import ArgUtils
+    
+    # 명령행 인자 파싱
+    arg_utils = ArgUtils()
+    parser = arg_utils.create_parser("Architecture Report 생성기")
+    args = parser.parse_args()
+    
+    project_name = args.project_name
+    print(f"Architecture Report 생성 시작: {project_name}")
+    
+    generator = ArchitectureReportGenerator(project_name, './temp')
+    result = generator.generate_report()
+    
+    if result:
+        print(f"Architecture Report 생성 완료: {project_name}")
+    else:
+        print(f"Architecture Report 생성 실패: {project_name}")

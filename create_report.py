@@ -29,10 +29,10 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 사용 예시:
-  python create_report.py --project-name sampleSrc
-  python create_report.py --project-name sampleSrc --report-type callchain
-  python create_report.py --project-name sampleSrc --report-type erd
-  python create_report.py --project-name sampleSrc --report-type architecture
+  python create_report.py --project-name <프로젝트명>
+  python create_report.py --project-name <프로젝트명> --report-type callchain
+  python create_report.py --project-name <프로젝트명> --report-type erd
+  python create_report.py --project-name <프로젝트명> --report-type architecture
         """
     )
     

@@ -88,7 +88,7 @@ class ERDDagreTemplates:
     </div>
     
     <script>
-        {self._get_erd_dagre_javascript()}
+        {self._get_erd_dagre_javascript(project_name)}
     </script>
 </body>
 </html>"""
@@ -1026,7 +1026,7 @@ class ERDDagreTemplates:
             });
             
             const link = document.createElement('a');
-            link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
+            link.download = '{project_name}_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
             link.href = png;
             link.click();
         }
@@ -1059,7 +1059,7 @@ class ERDDagreTemplates:
                             
                             const link = document.createElement('a');
                             link.href = svgUrl;
-                            link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                            link.download = '{project_name}_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
@@ -1080,7 +1080,7 @@ class ERDDagreTemplates:
                 // 다운로드 링크 생성
                 const link = document.createElement('a');
                 link.href = svgUrl;
-                link.download = 'ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                link.download = '{project_name}_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -1096,4 +1096,145 @@ class ERDDagreTemplates:
         document.addEventListener('DOMContentLoaded', function() {
             initCytoscape();
         });
+        """
+    
+    def _get_erd_dagre_javascript(self, project_name: str) -> str:
+        """ERD(Dagre) Report JavaScript - 프로젝트명 동적 처리"""
+        return f"""
+        // ERD Dagre 초기화 및 이벤트 처리
+        let cy;
+        let currentLayout = 'fcose';
+        let tooltipTimeout;
+        let edgeTooltipTimeout;
+        let isTooltipVisible = false;
+        let isEdgeTooltipVisible = false;
+        
+        document.addEventListener('DOMContentLoaded', function() {{
+            initCytoscape();
+            setupEventListeners();
+        }});
+        
+        function initCytoscape() {{
+            cy = cytoscape({{
+                container: document.getElementById('cy'),
+                elements: DATA,
+                style: [
+                    {{
+                        selector: 'node',
+                        style: {{
+                            'background-color': '#4a90e2',
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': 'white',
+                            'font-size': '12px',
+                            'font-weight': 'bold',
+                            'width': '120px',
+                            'height': '60px',
+                            'border-width': 3,
+                            'border-color': '#1e40af',
+                            'shape': 'round-rectangle'
+                        }}
+                    }},
+                    {{
+                        selector: 'edge',
+                        style: {{
+                            'width': 3,
+                            'line-color': '#7f8c8d',
+                            'target-arrow-color': '#7f8c8d',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '10px',
+                            'text-rotation': 'autorotate',
+                            'text-margin-y': -10
+                        }}
+                    }}
+                ],
+                layout: {{
+                    name: 'fcose',
+                    quality: 'default',
+                    randomize: false,
+                    animate: true,
+                    animationDuration: 1000
+                }}
+            }});
+        }}
+        
+        function resetView() {{
+            cy.fit();
+            cy.center();
+        }}
+        
+        function toggleLayout() {{
+            const layouts = ['fcose', 'dagre', 'circle', 'grid'];
+            const currentIndex = layouts.indexOf(currentLayout);
+            const nextIndex = (currentIndex + 1) % layouts.length;
+            currentLayout = layouts[nextIndex];
+            
+            document.getElementById('current-layout').textContent = currentLayout;
+            
+            cy.layout({{
+                name: currentLayout,
+                animate: true,
+                animationDuration: 1000
+            }}).run();
+        }}
+        
+        function exportPng() {{
+            const png = cy.png({{
+                scale: 2,
+                full: true,
+                bg: 'white'
+            }});
+            
+            const link = document.createElement('a');
+            link.download = '{project_name}_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
+            link.href = png;
+            link.click();
+        }}
+        
+        function exportSvg() {{
+            try {{
+                const svgData = cy.svg({{
+                    full: true,
+                    scale: 1,
+                    quality: 1
+                }});
+                
+                if (svgData) {{
+                    const svgBlob = new Blob([svgData], {{type: 'image/svg+xml;charset=utf-8'}});
+                    const svgUrl = URL.createObjectURL(svgBlob);
+                    
+                    const link = document.createElement('a');
+                    link.href = svgUrl;
+                    link.download = '{project_name}_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(svgUrl);
+                }} else {{
+                    alert('SVG 내보내기에 실패했습니다.');
+                }}
+            }} catch (error) {{
+                console.error('SVG 내보내기 오류:', error);
+                alert('SVG 내보내기 중 오류가 발생했습니다.');
+            }}
+        }}
+        
+        function setupEventListeners() {{
+            // 검색 기능
+            const searchInput = document.getElementById('search');
+            searchInput.addEventListener('input', function() {{
+                const query = this.value.toLowerCase();
+                if (query === '') {{
+                    cy.elements().style('opacity', 1);
+                }} else {{
+                    cy.elements().style('opacity', 0.3);
+                    cy.elements().filter(function(ele) {{
+                        return ele.data('label').toLowerCase().includes(query);
+                    }}).style('opacity', 1);
+                }}
+            }});
+        }}
         """

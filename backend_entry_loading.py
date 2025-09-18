@@ -809,11 +809,19 @@ def execute_backend_entry_loading(project_name: str) -> bool:
 
 # 사용 예시
 if __name__ == "__main__":
-    # 백엔드 진입점 분석 테스트
-    project_name = "sampleSrc"
+    import sys
+    from util.arg_utils import ArgUtils
+    
+    # 명령행 인자 파싱
+    arg_utils = ArgUtils()
+    parser = arg_utils.create_parser("백엔드 진입점 분석 도구")
+    args = parser.parse_args()
+    
+    project_name = args.project_name
+    print(f"백엔드 진입점 분석 시작: {project_name}")
     
     success = execute_backend_entry_loading(project_name)
     if success:
-        print("백엔드 진입점 분석 완료")
+        print(f"백엔드 진입점 분석 완료: {project_name}")
     else:
-        print("백엔드 진입점 분석 실패")
+        print(f"백엔드 진입점 분석 실패: {project_name}")

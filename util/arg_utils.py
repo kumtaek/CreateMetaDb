@@ -36,9 +36,9 @@ class ArgUtils:
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 epilog="""
 사용 예시:
-  python main.py --project-name sampleSrc
-  python main.py --project-name myProject --clear-metadb
-  python main.py --project-name testProject --verbose
+  python main.py --project-name <프로젝트명>
+  python main.py --project-name <프로젝트명> --clear-metadb
+  python main.py --project-name <프로젝트명> --verbose
                 """
             )
             

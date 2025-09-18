@@ -345,7 +345,7 @@ class XmlLoadingEngine:
                                     error_message=None
                                 )
                                 if sql_content_success:
-                                    info(f"SQL Content 저장 성공: {sql_id}")
+                                    debug(f"SQL Content 저장 성공: {sql_id}")
                                 else:
                                     error(f"SQL Content 저장 실패: {sql_id} (무시하고 계속 진행)")
                         except Exception as e:

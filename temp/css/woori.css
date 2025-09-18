@@ -58,26 +58,29 @@
 
 /* === 공통 헤더 스타일 (모든 리포트 통일) === */
 .header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 8px;
     text-align: center;
-    margin-bottom: 3px;
-    padding-bottom: 3px;
-    background: var(--gradient-header);
-    color: var(--text-on-primary);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-light);
+    margin-bottom: 5px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
 }
 
 .header h1 {
-    color: var(--text-on-primary);
     margin: 0;
-    font-size: 1.4em;
+    font-size: 1.5em;
+    font-weight: 300;
+    color: white;
 }
 
 .header .subtitle {
-    color: var(--text-on-primary);
-    font-size: 0.8em;
-    margin-top: 2px;
-    opacity: 0.9;
+    margin: 3px 0 0 0;
+    opacity: 0.8;
+    font-size: 0.9em;
+    color: white;
 }
 
 /* === 공통 통계 스타일 === */
@@ -88,6 +91,10 @@
     padding: 6px;
     background: #f8f9fa;
     margin-bottom: 3px;
+    position: sticky;
+    top: 60px;
+    z-index: 99;
+    flex-shrink: 0;
 }
 
 .stat-card {
@@ -116,6 +123,63 @@
     font-weight: 500;
 }
 
+/* === 공통 컨테이너 스타일 (모든 리포트 통일) === */
+.container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    background: white;
+    border-radius: 4px;
+    box-shadow: var(--shadow-medium);
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === 공통 콘텐츠 스타일 === */
+.content {
+    padding: 2px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.section {
+    margin-bottom: 2px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === 공통 다이어그램 컨테이너 스타일 === */
+.diagram-container, .mermaid-container {
+    overflow: auto;
+    margin: 5px 0;
+    border-radius: 4px;
+    box-shadow: var(--shadow-light);
+    max-width: 100%;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 160px);
+    min-height: 300px;
+}
+
+/* === 공통 툴바 스타일 === */
+#toolbar, .diagram-controls {
+    background: var(--gray-100);
+    padding: 2px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    position: sticky;
+    top: 120px;
+    z-index: 98;
+    flex-shrink: 0;
+}
+
 /* === CallChain Report 전용 스타일 === */
 .callchain-body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -132,8 +196,7 @@
     background: white;
     border-radius: 4px;
     box-shadow: var(--shadow-medium);
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: hidden;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -147,6 +210,10 @@
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
     margin-bottom: 2px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
 }
 
 .callchain-header h1 {
@@ -171,6 +238,10 @@
     padding: 4px;
     background: #f8f9fa;
     margin-bottom: 2px;
+    position: sticky;
+    top: 60px;
+    z-index: 99;
+    flex-shrink: 0;
 }
 
 .callchain-stat-card {
@@ -204,6 +275,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .callchain-section {
@@ -222,8 +295,7 @@
 }
 
 .callchain-table-container {
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow: auto;
     margin: 5px 0;
     border-radius: 4px;
     box-shadow: var(--shadow-light);
@@ -232,8 +304,8 @@
     flex: 1;
     min-height: 0;
     /* 반응형 높이 - 윈도우 사이즈에 맞춰 조정 */
-    height: calc(100vh - 200px);
-    min-height: 400px;
+    height: calc(100vh - 160px);
+    min-height: 300px;
 }
 
 .callchain-table {
@@ -384,7 +456,11 @@
     display: inline-block;
     cursor: help;
     color: var(--primary-blue);
-    font-weight: 500;
+    font-weight: 500 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .query-type.tooltip .tooltiptext {
@@ -402,13 +478,17 @@
     margin-left: -250px;
     opacity: 0;
     transition: opacity 0.3s;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 0.9em;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    font-size: 0.85em;
+    font-weight: 400 !important;
     white-space: pre-wrap;
-    word-break: break-all;
+    word-break: break-word;
     max-height: 300px;
     overflow-y: auto;
     box-shadow: var(--shadow-heavy);
+    line-height: 1.4;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
 .query-type.tooltip .tooltiptext::after {
@@ -471,27 +551,61 @@
 /* === 반응형 디자인 === */
 @media (max-width: 768px) {
     .callchain-container {
-        margin: 10px;
-        border-radius: 10px;
+        margin: 5px;
+        border-radius: 8px;
     }
     .callchain-header {
-        padding: 20px;
+        padding: 8px;
+        top: 0;
     }
     .callchain-header h1 {
-        font-size: 2em;
+        font-size: 1.1em;
+    }
+    .callchain-stats {
+        top: 50px;
+        padding: 6px;
+        gap: 6px;
     }
     .callchain-content {
-        padding: 20px;
+        padding: 8px;
+    }
+    .callchain-table-container {
+        height: calc(100vh - 140px);
+        min-height: 250px;
     }
     .callchain-table {
-        font-size: 0.8em;
+        font-size: 0.7em;
     }
     .callchain-table th, 
     .callchain-table td {
-        padding: 8px 5px;
+        padding: 6px 4px;
     }
     .callchain-tooltip .callchain-tooltiptext {
-        width: 300px;
-        margin-left: -150px;
+        width: 280px;
+        margin-left: -140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .callchain-header {
+        padding: 6px;
+    }
+    .callchain-header h1 {
+        font-size: 1.0em;
+    }
+    .callchain-stats {
+        top: 45px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .callchain-table-container {
+        height: calc(100vh - 120px);
+        min-height: 200px;
+    }
+    .callchain-table {
+        font-size: 0.6em;
+    }
+    .callchain-table th, 
+    .callchain-table td {
+        padding: 4px 2px;
     }
 }
