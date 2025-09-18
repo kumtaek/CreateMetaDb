@@ -1,0 +1,2567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sampleSrc - Mermaid ERD</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .mermaid-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+            position: relative;
+            overflow: auto;
+            max-height: 80vh;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .mermaid {
+            text-align: center;
+            min-width: 100%;
+            min-height: 400px;
+            overflow: visible;
+        }
+        
+        /* 스크롤바 스타일링 */
+        .mermaid-container::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* 줌 상태 표시 */
+        .zoom-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            z-index: 1000;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn.secondary {
+            background: #95a5a6;
+        }
+        
+        .btn.secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .table-info {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .table-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        
+        .columns-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .columns-table th,
+        .columns-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .columns-table th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .columns-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .pk-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        
+        .fk-badge {
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        
+        .nullable-badge {
+            background: #f39c12;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        
+        .footer {
+            background: #34495e;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ sampleSrc ERD</h1>
+            <p class="subtitle">Mermaid 기반 데이터베이스 스키마 다이어그램</p>
+            <p class="subtitle">생성 시간: 2025-09-03T22:10:48.904319</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">20</div>
+                <div class="stat-label">테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">173</div>
+                <div class="stat-label">컬럼</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">45</div>
+                <div class="stat-label">관계</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15</div>
+                <div class="stat-label">PK 테이블</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>📊 ERD 다이어그램</h2>
+                <div class="controls">
+                    <button class="btn" onclick="zoomIn()">🔍 확대</button>
+                    <button class="btn" onclick="zoomOut()">🔍 축소</button>
+                    <button class="btn secondary" onclick="resetZoom()">🔄 초기화</button>
+                    <button class="btn secondary" onclick="downloadSVG()">💾 SVG 다운로드</button>
+                </div>
+                <div class="mermaid-container" id="mermaid-container">
+                    <div class="zoom-indicator" id="zoom-indicator">100%</div>
+                    <div class="mermaid" id="erd-diagram">
+erDiagram
+    BRANDS {
+        VARCHAR BRAND_ID "PK, FK, NOT NULL"
+        VARCHAR BRAND_CODE "NOT NULL"
+        VARCHAR BRAND_NAME "NOT NULL"
+        STRING DEL_YN "NOT NULL"
+    }
+
+    CATEGORIES {
+        VARCHAR CATEGORY_ID "PK, NOT NULL"
+        VARCHAR CATEGORY_CODE "NOT NULL"
+        VARCHAR CATEGORY_NAME "NOT NULL"
+        STRING DEL_YN "NOT NULL"
+    }
+
+    CUSTOMERS {
+        VARCHAR CUSTOMER_ID "PK, FK, NOT NULL"
+        VARCHAR ADDRESS
+        DATE CREATED_DATE "NOT NULL"
+        VARCHAR CUSTOMER_NAME "NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR EMAIL
+        VARCHAR PHONE
+    }
+
+    DISCOUNTS {
+        VARCHAR DISCOUNT_ID "PK, FK, NOT NULL"
+        STRING ACTIVE_YN "NOT NULL"
+        DECIMAL DISCOUNT_RATE "NOT NULL"
+        DATE END_DATE "NOT NULL"
+        VARCHAR PRODUCT_ID "FK, NOT NULL"
+        DATE START_DATE "NOT NULL"
+    }
+
+    DYNAMIC_DATA {
+        DECIMAL ID "PK, NOT NULL"
+        VARCHAR NAME "NOT NULL"
+        VARCHAR STATUS
+    }
+
+    INVENTORIES {
+        VARCHAR INVENTORY_ID "PK, NOT NULL"
+        DECIMAL CURRENT_STOCK "NOT NULL"
+        VARCHAR PRODUCT_ID "FK, NOT NULL"
+        DATE UPDATED_DATE "NOT NULL"
+    }
+
+    ORDERS {
+        VARCHAR ORDER_ID "PK, FK, NOT NULL"
+        DATE CREATED_DATE "NOT NULL"
+        VARCHAR CUSTOMER_ID "FK, NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        DECIMAL DISCOUNT_AMOUNT
+        DATE ORDER_DATE "NOT NULL"
+        VARCHAR STATUS "NOT NULL"
+        DECIMAL TAX_AMOUNT
+        DECIMAL TOTAL_AMOUNT "NOT NULL"
+        DATE UPDATED_DATE
+    }
+
+    ORDER_ITEMS {
+        VARCHAR ORDER_ITEM_ID "PK, FK, NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR ORDER_ID "FK, NOT NULL"
+        VARCHAR PRODUCT_ID "FK, NOT NULL"
+        DECIMAL QUANTITY "NOT NULL"
+        DECIMAL UNIT_PRICE "NOT NULL"
+    }
+
+    PRODUCTS {
+        VARCHAR PRODUCT_ID "PK, FK, NOT NULL"
+        VARCHAR BRAND_ID "FK"
+        VARCHAR CATEGORY_ID
+        DATE CREATED_DATE "NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        TEXT DESCRIPTION
+        DECIMAL PRICE "NOT NULL"
+        VARCHAR PRODUCT_NAME "NOT NULL"
+        VARCHAR STATUS "NOT NULL"
+        DECIMAL STOCK_QUANTITY "NOT NULL"
+        VARCHAR SUPPLIER_ID "FK"
+        DATE UPDATED_DATE
+        VARCHAR WAREHOUSE_ID "FK"
+    }
+
+    PRODUCT_REVIEWS {
+        VARCHAR REVIEW_ID "PK, NOT NULL"
+        DATE CREATED_DATE "NOT NULL"
+        VARCHAR CUSTOMER_ID "FK, NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR PRODUCT_ID "FK, NOT NULL"
+        DECIMAL RATING "NOT NULL"
+        TEXT REVIEW_TEXT
+    }
+
+    RELATED_DATA {
+        DECIMAL ID "PK, NOT NULL"
+        DECIMAL RELATED_ID "NOT NULL"
+        VARCHAR VALUE
+    }
+
+    SAMPLE_C {
+        STRING CUSTOMER_ID "FK, NOT NULL"
+    }
+
+    SAMPLE_O {
+        STRING ORDER_ID "FK, NOT NULL"
+    }
+
+    SAMPLE_OI {
+        STRING ORDER_ID "FK, NOT NULL"
+    }
+
+    SAMPLE_P {
+        STRING PRODUCT_ID "FK, NOT NULL"
+    }
+
+    SAMPLE_U {
+        STRING USER_ID "FK, NOT NULL"
+    }
+
+    SUPPLIERS {
+        VARCHAR SUPPLIER_ID "PK, FK, NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR SUPPLIER_NAME "NOT NULL"
+    }
+
+    USERS {
+        VARCHAR USER_ID "PK, FK, NOT NULL"
+        DATE CREATED_DATE "NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR EMAIL
+        VARCHAR PHONE
+        VARCHAR STATUS "NOT NULL"
+        DATE UPDATED_DATE
+        VARCHAR USER_NAME "NOT NULL"
+    }
+
+    USER_ROLE {
+        DECIMAL ROLE_ID "PK, NOT NULL"
+        DECIMAL USER_ID "PK, FK, NOT NULL"
+    }
+
+    WAREHOUSES {
+        VARCHAR WAREHOUSE_ID "PK, FK, NOT NULL"
+        STRING DEL_YN "NOT NULL"
+        VARCHAR LOCATION
+        VARCHAR WAREHOUSE_NAME "NOT NULL"
+    }
+
+    BRANDS ||--o{ PRODUCTS : "BRAND_ID"
+    CUSTOMERS ||--o{ ORDERS : "CUSTOMER_ID"
+    CUSTOMERS ||--o{ PRODUCT_REVIEWS : "CUSTOMER_ID"
+    CUSTOMERS ||--o{ SAMPLE_C : "CUSTOMER_ID"
+    ORDERS ||--o{ ORDER_ITEMS : "ORDER_ID"
+    ORDERS ||--o{ SAMPLE_O : "ORDER_ID"
+    ORDERS ||--o{ SAMPLE_OI : "ORDER_ID"
+    PRODUCTS ||--o{ DISCOUNTS : "PRODUCT_ID"
+    PRODUCTS ||--o{ INVENTORIES : "PRODUCT_ID"
+    PRODUCTS ||--o{ ORDER_ITEMS : "PRODUCT_ID"
+    PRODUCTS ||--o{ PRODUCT_REVIEWS : "PRODUCT_ID"
+    PRODUCTS ||--o{ SAMPLE_P : "PRODUCT_ID"
+    SUPPLIERS ||--o{ PRODUCTS : "SUPPLIER_ID"
+    USERS ||--o{ SAMPLE_U : "USER_ID"
+    USERS ||--o{ USER_ROLE : "USER_ID"
+    WAREHOUSES ||--o{ PRODUCTS : "WAREHOUSE_ID"
+
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>📋 테이블 상세 정보</h2>
+                
+            <div class="table-info">
+                <div class="table-name">📋 BRANDS</div>
+                <p><strong>컬럼 수:</strong> 8개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>BRAND_CODE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_CODE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 CATEGORIES</div>
+                <p><strong>컬럼 수:</strong> 8개</p>
+                <p><strong>설명:</strong> 분류코드</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CATEGORY_CODE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_CODE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 CUSTOMERS</div>
+                <p><strong>컬럼 수:</strong> 14개</p>
+                <p><strong>설명:</strong> 고객정보</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ADDRESS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ADDRESS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EMAIL</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EMAIL</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PHONE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PHONE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 DISCOUNTS</div>
+                <p><strong>컬럼 수:</strong> 12개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ACTIVE_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ACTIVE_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_RATE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_RATE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>END_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>END_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>START_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>START_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 DYNAMIC_DATA</div>
+                <p><strong>컬럼 수:</strong> 6개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 INVENTORIES</div>
+                <p><strong>컬럼 수:</strong> 8개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CURRENT_STOCK</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CURRENT_STOCK</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>INVENTORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>INVENTORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 ORDERS</div>
+                <p><strong>컬럼 수:</strong> 20개</p>
+                <p><strong>설명:</strong> 주문</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DISCOUNT_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TAX_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TAX_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TOTAL_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TOTAL_AMOUNT</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 ORDER_ITEMS</div>
+                <p><strong>컬럼 수:</strong> 12개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ITEM_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ORDER_ITEM_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>QUANTITY</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>QUANTITY</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UNIT_PRICE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UNIT_PRICE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 PRODUCTS</div>
+                <p><strong>컬럼 수:</strong> 26개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>BRAND_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BRAND_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CATEGORY_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DESCRIPTION</strong></td>
+                            <td><code>CLOB</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DESCRIPTION</strong></td>
+                            <td><code>CLOB</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRICE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRICE</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STOCK_QUANTITY</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STOCK_QUANTITY</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 PRODUCT_REVIEWS</div>
+                <p><strong>컬럼 수:</strong> 14개</p>
+                <p><strong>설명:</strong> 상품리뷰</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RATING</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RATING</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>REVIEW_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>REVIEW_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>REVIEW_TEXT</strong></td>
+                            <td><code>CLOB</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>REVIEW_TEXT</strong></td>
+                            <td><code>CLOB</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 RELATED_DATA</div>
+                <p><strong>컬럼 수:</strong> 6개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RELATED_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RELATED_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>VALUE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>VALUE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SAMPLE.C</div>
+                <p><strong>컬럼 수:</strong> 1개</p>
+                <p><strong>설명:</strong> [INFERRED] 조인 관계에서 발견된 테이블 (조인 파트너: sample.o, 조인 필드: CUSTOMER_ID)</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CUSTOMER_ID</strong></td>
+                            <td><code>UNKNOWN</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>조인 필드로 발견됨 (파트너 테이블: sample.o.CUSTOMER_ID)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SAMPLE.O</div>
+                <p><strong>컬럼 수:</strong> 1개</p>
+                <p><strong>설명:</strong> [INFERRED] 조인 관계에서 발견된 테이블 (조인 파트너: sample.oi, 조인 필드: ORDER_ID)</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>UNKNOWN</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>조인 필드로 발견됨 (파트너 테이블: sample.oi.ORDER_ID)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SAMPLE.OI</div>
+                <p><strong>컬럼 수:</strong> 1개</p>
+                <p><strong>설명:</strong> [INFERRED] 조인 관계에서 발견된 테이블 (조인 파트너: sample.o, 조인 필드: ORDER_ID)</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ORDER_ID</strong></td>
+                            <td><code>UNKNOWN</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>조인 필드로 발견됨 (파트너 테이블: sample.o.ORDER_ID)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SAMPLE.P</div>
+                <p><strong>컬럼 수:</strong> 1개</p>
+                <p><strong>설명:</strong> [INFERRED] 조인 관계에서 발견된 테이블 (조인 파트너: sample.oi, 조인 필드: PRODUCT_ID)</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>PRODUCT_ID</strong></td>
+                            <td><code>UNKNOWN</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>조인 필드로 발견됨 (파트너 테이블: sample.oi.PRODUCT_ID)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SAMPLE.U</div>
+                <p><strong>컬럼 수:</strong> 1개</p>
+                <p><strong>설명:</strong> [INFERRED] 조인 관계에서 발견된 테이블 (조인 파트너: sample.o, 조인 필드: USER_ID)</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>USER_ID</strong></td>
+                            <td><code>UNKNOWN</code></td>
+                            <td><span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>조인 필드로 발견됨 (파트너 테이블: sample.o.USER_ID)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 SUPPLIERS</div>
+                <p><strong>컬럼 수:</strong> 6개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPPLIER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 USERS</div>
+                <p><strong>컬럼 수:</strong> 16개</p>
+                <p><strong>설명:</strong> 사용자</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CREATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EMAIL</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EMAIL</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PHONE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PHONE</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STATUS</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UPDATED_DATE</strong></td>
+                            <td><code>DATE</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 USER_ROLE</div>
+                <p><strong>컬럼 수:</strong> 4개</p>
+                <p><strong>설명:</strong> 사용자역할</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ROLE_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ROLE_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>USER_ID</strong></td>
+                            <td><code>NUMBER</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-info">
+                <div class="table-name">📋 WAREHOUSES</div>
+                <p><strong>컬럼 수:</strong> 8개</p>
+                <p><strong>설명:</strong> 설명 없음</p>
+                
+                <table class="columns-table">
+                    <thead>
+                        <tr>
+                            <th>컬럼명</th>
+                            <th>데이터 타입</th>
+                            <th>제약조건</th>
+                            <th>기본값</th>
+                            <th>설명</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DEL_YN</strong></td>
+                            <td><code>CHAR</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LOCATION</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LOCATION</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td>-</td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="pk-badge">PK</span> <span class="fk-badge">FK</span> <span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_ID</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WAREHOUSE_NAME</strong></td>
+                            <td><code>VARCHAR2</code></td>
+                            <td><span class="nullable-badge">NOT NULL</span></td>
+                            <td><code>-</code></td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+            
+            <div class="section">
+                <h2>🔗 관계 정보</h2>
+                <table class="columns-table">
+            <thead>
+                <tr>
+                    <th>소스 테이블</th>
+                    <th>소스 컬럼</th>
+                    <th>타겟 테이블</th>
+                    <th>타겟 컬럼</th>
+                    <th>제약조건명</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>USER_ROLE</strong></td>
+                    <td><code>USER_ID</code></td>
+                    <td><strong>USERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_USER_ROLE_USER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>USER_ROLE</strong></td>
+                    <td><code>USER_ID</code></td>
+                    <td><strong>USERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_USER_ROLE_USER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>BRAND_ID</code></td>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_BRANDS_BRAND_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>BRAND_ID</code></td>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_BRANDS_BRAND_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_CUSTOMERS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_CUSTOMERS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>DISCOUNT_ID</code></td>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_DISCOUNTS_DISCOUNT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>DISCOUNT_ID</code></td>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_DISCOUNTS_DISCOUNT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_DISCOUNTS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>DISCOUNTS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_DISCOUNTS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>INVENTORIES</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_INVENTORIES_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>INVENTORIES</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_INVENTORIES_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDERS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDERS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDERS_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDERS_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ORDER_ITEM_ID</code></td>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_ORDER_ITEM_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ORDER_ITEM_ID</code></td>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_ORDER_ITEM_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>ORDER_ITEMS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_ORDER_ITEMS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>BRAND_ID</code></td>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_BRAND_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>BRAND_ID</code></td>
+                    <td><strong>BRANDS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_BRAND_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>SUPPLIER_ID</code></td>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_SUPPLIER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>SUPPLIER_ID</code></td>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_SUPPLIER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>WAREHOUSE_ID</code></td>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_WAREHOUSE_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>WAREHOUSE_ID</code></td>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCTS_WAREHOUSE_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCT_REVIEWS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCT_REVIEWS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCT_REVIEWS</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCT_REVIEWS_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCT_REVIEWS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCT_REVIEWS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>PRODUCT_REVIEWS</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_PRODUCT_REVIEWS_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>SUPPLIER_ID</code></td>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SUPPLIERS_SUPPLIER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>SUPPLIER_ID</code></td>
+                    <td><strong>SUPPLIERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SUPPLIERS_SUPPLIER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>USERS</strong></td>
+                    <td><code>USER_ID</code></td>
+                    <td><strong>USERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_USERS_USER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>USERS</strong></td>
+                    <td><code>USER_ID</code></td>
+                    <td><strong>USERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_USERS_USER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>WAREHOUSE_ID</code></td>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_WAREHOUSES_WAREHOUSE_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>WAREHOUSE_ID</code></td>
+                    <td><strong>WAREHOUSES</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_WAREHOUSES_WAREHOUSE_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SAMPLE.O</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SAMPLE.O_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SAMPLE.OI</strong></td>
+                    <td><code>ORDER_ID</code></td>
+                    <td><strong>ORDERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SAMPLE.OI_ORDER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SAMPLE.P</strong></td>
+                    <td><code>PRODUCT_ID</code></td>
+                    <td><strong>PRODUCTS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SAMPLE.P_PRODUCT_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SAMPLE.C</strong></td>
+                    <td><code>CUSTOMER_ID</code></td>
+                    <td><strong>CUSTOMERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SAMPLE.C_CUSTOMER_ID</td>
+                </tr>
+                <tr>
+                    <td><strong>SAMPLE.U</strong></td>
+                    <td><code>USER_ID</code></td>
+                    <td><strong>USERS</strong></td>
+                    <td><code>ID</code></td>
+                    <td>FK_SAMPLE.U_USER_ID</td>
+                </tr>
+            </tbody>
+        </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>이 ERD는 SourceAnalyzer Phase1 시스템에 의해 자동 생성되었습니다.</p>
+            <p>생성 시간: 2025-09-03T22:10:48.904319</p>
+        </div>
+    </div>
+    
+    <script>
+        // Mermaid 초기화
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            er: {
+                useMaxWidth: false,
+                htmlLabels: true
+            }
+        });
+        
+        // 줌 및 팬 컨트롤
+        let currentZoom = 1;
+        let isPanning = false;
+        let startX, startY, scrollLeft, scrollTop;
+        
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.2, 3);
+            applyZoom();
+        }
+        
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.2, 0.3);
+            applyZoom();
+        }
+        
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+            // 스크롤도 초기화
+            const container = document.getElementById('mermaid-container');
+            if (container) {
+                container.scrollTop = 0;
+                container.scrollLeft = 0;
+            }
+        }
+        
+        function applyZoom() {
+            const diagram = document.getElementById('erd-diagram');
+            const indicator = document.getElementById('zoom-indicator');
+            if (diagram) {
+                diagram.style.transform = `scale(${currentZoom})`;
+                diagram.style.transformOrigin = 'center top';
+                diagram.style.transition = 'transform 0.2s ease';
+            }
+            if (indicator) {
+                indicator.textContent = Math.round(currentZoom * 100) + '%';
+            }
+        }
+        
+        function downloadSVG() {
+            const svg = document.querySelector('#erd-diagram svg');
+            if (svg) {
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = svgUrl;
+                downloadLink.download = 'sampleSrc_ERD.svg';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(svgUrl);
+            }
+        }
+        
+        // 드래그로 팬 기능 초기화
+        function initPanAndZoom() {
+            const container = document.getElementById('mermaid-container');
+            if (!container) return;
+            
+            // 마우스 드래그로 팬
+            container.addEventListener('mousedown', function(e) {
+                if (e.button === 0) { // 왼쪽 마우스 버튼
+                    isPanning = true;
+                    startX = e.pageX - container.offsetLeft;
+                    startY = e.pageY - container.offsetTop;
+                    scrollLeft = container.scrollLeft;
+                    scrollTop = container.scrollTop;
+                    container.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+            
+            container.addEventListener('mouseleave', function() {
+                isPanning = false;
+                container.style.cursor = 'grab';
+            });
+            
+            container.addEventListener('mouseup', function() {
+                isPanning = false;
+                container.style.cursor = 'grab';
+            });
+            
+            container.addEventListener('mousemove', function(e) {
+                if (!isPanning) return;
+                e.preventDefault();
+                const x = e.pageX - container.offsetLeft;
+                const y = e.pageY - container.offsetTop;
+                const walkX = (x - startX) * 2;
+                const walkY = (y - startY) * 2;
+                container.scrollLeft = scrollLeft - walkX;
+                container.scrollTop = scrollTop - walkY;
+            });
+            
+            // 마우스 휠로 줌 (Ctrl + 휠)
+            container.addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        zoomIn();
+                    } else {
+                        zoomOut();
+                    }
+                }
+            });
+            
+            // 기본 커서 설정
+            container.style.cursor = 'grab';
+        }
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '=':
+                    case '+':
+                        e.preventDefault();
+                        zoomIn();
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        zoomOut();
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        resetZoom();
+                        break;
+                }
+            }
+        });
+        
+        // 페이지 로드 시 다이어그램 렌더링 및 기능 초기화
+        window.addEventListener('load', function() {
+            mermaid.init(undefined, '.mermaid').then(function() {
+                // 렌더링 완료 후 팬/줌 기능 초기화
+                setTimeout(initPanAndZoom, 500);
+                // 초기 줌 표시 업데이트
+                applyZoom();
+            });
+        });
+    </script>
+</body>
+</html>

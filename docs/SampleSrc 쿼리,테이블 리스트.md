@@ -7,7 +7,7 @@
 - **분석 일시**: 2025년 9월 18일
 - **총 쿼리 수**: 74개
 - **다이나믹 쿼리 포함**: 예
-- **파싱 에러 쿼리**: 3개
+- **파싱 에러 쿼리**: 6개
 
 ## 2. 파일별 쿼리 분석
 
@@ -87,7 +87,7 @@
 | selectProductsV1 | SELECT | products | N | N | 제품 조회 v1 |
 | selectProductsV2 | SELECT | products, categories, order_items | N | N | 제품 조회 v2 |
 | selectOrdersV1 | SELECT | orders | N | N | 주문 조회 v1 |
-| selectOrdersV2 | SELECT | orders, users, order_items | Y | N | 주문 조회 v2 |
+| selectOrdersV2 | SELECT | orders, users, order_items | Y | Y | 주문 조회 v2 - XML 특수문자 처리 오류 |
 
 #### ImplicitJoinMapper.xml
 | 쿼리 ID | 쿼리 유형 | 사용 테이블 | 다이나믹 | has_error | 설명 |
@@ -233,7 +233,7 @@
 
 ### 5.1 파싱 에러 쿼리 현황
 - **총 파싱 에러 쿼리**: 6개
-- **에러 유형**: 별칭 생략, 존재하지 않는 테이블/컬럼 참조
+- **에러 유형**: 별칭 생략, 존재하지 않는 테이블/컬럼 참조, XML 특수문자 처리 오류
 
 ### 5.2 파싱 에러 상세
 

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallChain Report - sampleSrc</title>
+    <script src="js/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 1.0em;
+        }
+        th {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: top;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .chain-id {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 40px;
+            font-size: 1.0em;
+        }
+        .class-name {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .method-name {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .xml-file {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .query-id {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .query-type {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: normal;
+            font-size: 1.0em;
+            cursor: help;
+            position: relative;
+        }
+        .query-type:hover {
+            background: #e9ecef;
+        }
+        .tables {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 1.0em;
+        }
+        .filter-controls {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .filter-controls input, .filter-controls select {
+            margin: 5px;
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .filter-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .filter-controls button:hover {
+            background: #2980b9;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+         .tooltip .tooltiptext {
+             visibility: hidden;
+             width: 500px;
+             background-color: #2c3e50;
+             color: #fff;
+             text-align: left;
+             border-radius: 6px;
+             padding: 10px;
+             position: absolute;
+             z-index: 1000;
+             bottom: 125%;
+             left: 50%;
+             margin-left: -250px;
+             opacity: 0;
+             transition: opacity 0.3s;
+             font-family: monospace;
+             font-size: 1.0em;
+             white-space: pre-wrap;
+             word-break: break-all;
+             max-height: 300px;
+             overflow-y: auto;
+             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+         }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #2c3e50 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .content {
+                padding: 20px;
+            }
+            table {
+                font-size: 0.8em;
+            }
+            th, td {
+                padding: 8px 5px;
+            }
+            .tooltip .tooltiptext {
+                width: 300px;
+                margin-left: -150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CallChain Report</h1>
+            <div class="subtitle">Class-Method-XML-Query-Table 연계 정보</div>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-09-08 02:24:29</div>
+        </div>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">48</div>
+                <div class="stat-label">Java 클래스</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">27</div>
+                <div class="stat-label">데이터베이스 테이블</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">4</div>
+                <div class="stat-label">XML 파일</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">48</div>
+                <div class="stat-label">JOIN 관계</div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>필터 및 검색</h2>
+                <div class="filter-controls">
+                    <input type="text" id="searchInput" placeholder="클래스, 메서드, 테이블명으로 검색..." style="width: 300px;">
+                    <select id="tableFilter">
+                        <option value="">모든 테이블</option>
+                        <option value="BRANDS">BRANDS</option><option value="CATEGORIES">CATEGORIES</option><option value="CUSTOMERS">CUSTOMERS</option><option value="DISCOUNTS">DISCOUNTS</option><option value="DYNAMIC_DATA">DYNAMIC_DATA</option><option value="INVENTORIES">INVENTORIES</option><option value="NEW_TEST_TABLE">NEW_TEST_TABLE</option><option value="ORDERS">ORDERS</option><option value="ORDER_ITEMS">ORDER_ITEMS</option><option value="PRODUCTS">PRODUCTS</option><option value="PRODUCT_REVIEWS">PRODUCT_REVIEWS</option><option value="RELATED_DATA">RELATED_DATA</option><option value="ROLES">ROLES</option><option value="SUPPLIERS">SUPPLIERS</option><option value="USERS">USERS</option><option value="USER_ACTIVITY_LOG">USER_ACTIVITY_LOG</option><option value="USER_PREFERENCES">USER_PREFERENCES</option><option value="USER_ROLE">USER_ROLE</option><option value="USER_ROLES">USER_ROLES</option><option value="USER_SETTINGS">USER_SETTINGS</option><option value="USER_TYPES">USER_TYPES</option><option value="WAREHOUSES">WAREHOUSES</option><option value="brands">brands</option><option value="categories">categories</option><option value="products">products</option><option value="user_types">user_types</option><option value="users">users</option>
+                    </select>
+                    <select id="queryTypeFilter">
+                        <option value="">모든 쿼리 타입</option>
+                        <option value="SELECT">SELECT</option>
+                        <option value="INSERT">INSERT</option>
+                        <option value="UPDATE">UPDATE</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="MERGE">MERGE</option>
+                        <option value="TRUNCATE">TRUNCATE</option>
+                    </select>
+                    <button onclick="filterTable()">필터 적용</button>
+                    <button onclick="clearFilters()">필터 초기화</button>
+                    <button onclick="exportToCSV()">CSV 내보내기</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2>완전한 연계 경로</h2>
+                <div class="table-container">
+                    <table id="chainTable">
+                        <thead>
+                            <tr>
+                                <th>연계ID</th>
+                                <th>클래스</th>
+                                <th>메서드</th>
+                                <th>XML파일</th>
+                                <th>쿼리ID</th>
+                                <th>쿼리종류</th>
+                                <th>관련테이블들</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td><span class="chain-id">1</span></td>
+                                <td><span class="class-name">UserMapper.java</span></td>
+                                <td><span class="method-name">selectUserById()</span></td>
+                                <td><span class="xml-file">UserMapper.xml</span></td>
+                                <td><span class="query-id">selectUserById</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM users WHERE id = #{id}">SELECT<span class="tooltiptext">SELECT * FROM users WHERE id = #{id}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">2</span></td>
+                                <td><span class="class-name">UserMapper.java</span></td>
+                                <td><span class="method-name">selectUsersByCondition()</span></td>
+                                <td><span class="xml-file">UserMapper.xml</span></td>
+                                <td><span class="query-id">selectUsersByCondition</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM users WHERE name LIKE #{name} AND email LIKE #{email} AND status = #{status}">SELECT<span class="tooltiptext">SELECT * FROM users WHERE name LIKE #{name} AND email LIKE #{email} AND status = #{status}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">3</span></td>
+                                <td><span class="class-name">UserMapper.java</span></td>
+                                <td><span class="method-name">selectUsersByAdvancedCondition()</span></td>
+                                <td><span class="xml-file">UserMapper.xml</span></td>
+                                <td><span class="query-id">selectUsersByAdvancedCondition</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM users WHERE &lt;if test=&quot;name != null&quot;&gt;name LIKE #{name}&lt;/if&gt; &lt;if test=&quot;email != null&quot;&gt;AND email LIKE #{email}&lt;/if&gt; &lt;if test=&quot;status != null&quot;&gt;AND status = #{status}&lt;/if&gt;">SELECT<span class="tooltiptext">SELECT * FROM users WHERE &lt;if test=&quot;name != null&quot;&gt;name LIKE #{name}&lt;/if&gt; &lt;if test=&quot;email != null&quot;&gt;AND email LIKE #{email}&lt;/if&gt; &lt;if test=&quot;status != null&quot;&gt;AND status = #{status}&lt;/if&gt;</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">4</span></td>
+                                <td><span class="class-name">ProductMapper.java</span></td>
+                                <td><span class="method-name">selectProductById()</span></td>
+                                <td><span class="xml-file">ProductMapper.xml</span></td>
+                                <td><span class="query-id">selectProductById</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM products WHERE product_id = #{productId}">SELECT<span class="tooltiptext">SELECT * FROM products WHERE product_id = #{productId}</span></span></td>
+                                <td><span class="tables">PRODUCTS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">5</span></td>
+                                <td><span class="class-name">ProductMapper.java</span></td>
+                                <td><span class="method-name">selectProductsByCondition()</span></td>
+                                <td><span class="xml-file">ProductMapper.xml</span></td>
+                                <td><span class="query-id">selectProductsByCondition</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM products WHERE product_name LIKE #{name} AND category_id = #{category} AND status = #{status}">SELECT<span class="tooltiptext">SELECT * FROM products WHERE product_name LIKE #{name} AND category_id = #{category} AND status = #{status}</span></span></td>
+                                <td><span class="tables">PRODUCTS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">6</span></td>
+                                <td><span class="class-name">ProductMapper.java</span></td>
+                                <td><span class="method-name">selectProductsByAdvancedCondition()</span></td>
+                                <td><span class="xml-file">ProductMapper.xml</span></td>
+                                <td><span class="query-id">selectProductsByAdvancedCondition</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM products WHERE &lt;if test=&quot;name != null&quot;&gt;product_name LIKE #{name}&lt;/if&gt; &lt;if test=&quot;category != null&quot;&gt;AND category_id = #{category}&lt;/if&gt; &lt;if test=&quot;status != null&quot;&gt;AND status = #{status}&lt;/if&gt;">SELECT<span class="tooltiptext">SELECT * FROM products WHERE &lt;if test=&quot;name != null&quot;&gt;product_name LIKE #{name}&lt;/if&gt; &lt;if test=&quot;category != null&quot;&gt;AND category_id = #{category}&lt;/if&gt; &lt;if test=&quot;status != null&quot;&gt;AND status = #{status}&lt;/if&gt;</span></span></td>
+                                <td><span class="tables">PRODUCTS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">7</span></td>
+                                <td><span class="class-name">ImplicitJoinMapper.java</span></td>
+                                <td><span class="method-name">getUsersWithTypes()</span></td>
+                                <td><span class="xml-file">ImplicitJoinMapper.xml</span></td>
+                                <td><span class="query-id">getUsersWithTypes</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT U.*, UT.TYPE_NAME FROM USERS U INNER JOIN USER_TYPES UT ON U.USER_TYPE = UT.TYPE_CODE">SELECT<span class="tooltiptext">SELECT U.*, UT.TYPE_NAME FROM USERS U INNER JOIN USER_TYPES UT ON U.USER_TYPE = UT.TYPE_CODE</span></span></td>
+                                <td><span class="tables">USERS, USER_TYPES</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">8</span></td>
+                                <td><span class="class-name">ImplicitJoinMapper.java</span></td>
+                                <td><span class="method-name">getProductsWithCategoryAndBrand()</span></td>
+                                <td><span class="xml-file">ImplicitJoinMapper.xml</span></td>
+                                <td><span class="query-id">getProductsWithCategoryAndBrand</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT P.*, C.CATEGORY_NAME, B.BRAND_NAME FROM PRODUCTS P LEFT JOIN CATEGORIES C ON P.CATEGORY_ID = C.CATEGORY_ID LEFT JOIN BRANDS B ON P.BRAND_ID = B.BRAND_ID">SELECT<span class="tooltiptext">SELECT P.*, C.CATEGORY_NAME, B.BRAND_NAME FROM PRODUCTS P LEFT JOIN CATEGORIES C ON P.CATEGORY_ID = C.CATEGORY_ID LEFT JOIN BRANDS B ON P.BRAND_ID = B.BRAND_ID</span></span></td>
+                                <td><span class="tables">PRODUCTS, CATEGORIES, BRANDS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">9</span></td>
+                                <td><span class="class-name">ImplicitJoinMapper.java</span></td>
+                                <td><span class="method-name">getOrdersWithUsers()</span></td>
+                                <td><span class="xml-file">ImplicitJoinMapper.xml</span></td>
+                                <td><span class="query-id">getOrdersWithUsers</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT O.*, U.NAME FROM ORDERS O INNER JOIN USERS U ON O.USER_ID = U.ID">SELECT<span class="tooltiptext">SELECT O.*, U.NAME FROM ORDERS O INNER JOIN USERS U ON O.USER_ID = U.ID</span></span></td>
+                                <td><span class="tables">ORDERS, USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">10</span></td>
+                                <td><span class="class-name">ImplicitJoinMapper.java</span></td>
+                                <td><span class="method-name">getComplexJoin()</span></td>
+                                <td><span class="xml-file">ImplicitJoinMapper.xml</span></td>
+                                <td><span class="query-id">getComplexJoin</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT U.*, UR.ROLE_ID, R.ROLE_NAME, P.PRODUCT_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID INNER JOIN PRODUCTS P ON P.CREATED_BY = U.ID">SELECT<span class="tooltiptext">SELECT U.*, UR.ROLE_ID, R.ROLE_NAME, P.PRODUCT_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID INNER JOIN PRODUCTS P ON P.CREATED_BY = U.ID</span></span></td>
+                                <td><span class="tables">USERS, USER_ROLES, ROLES, PRODUCTS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">11</span></td>
+                                <td><span class="class-name">ImplicitJoinMapper.java</span></td>
+                                <td><span class="method-name">getMixedJoin()</span></td>
+                                <td><span class="xml-file">ImplicitJoinMapper.xml</span></td>
+                                <td><span class="query-id">getMixedJoin</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT U.*, UR.ROLE_ID, R.ROLE_NAME, P.PRODUCT_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID INNER JOIN PRODUCTS P ON P.CREATED_BY = U.ID">SELECT<span class="tooltiptext">SELECT U.*, UR.ROLE_ID, R.ROLE_NAME, P.PRODUCT_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID INNER JOIN PRODUCTS P ON P.CREATED_BY = U.ID</span></span></td>
+                                <td><span class="tables">USERS, USER_ROLES, ROLES, PRODUCTS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">12</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">selectAll()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">selectAll</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM USERS">SELECT<span class="tooltiptext">SELECT * FROM USERS</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">13</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">selectById()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">selectById</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM USERS WHERE ID = #{id}">SELECT<span class="tooltiptext">SELECT * FROM USERS WHERE ID = #{id}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">14</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">selectByName()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">selectByName</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM USERS WHERE NAME = #{name}">SELECT<span class="tooltiptext">SELECT * FROM USERS WHERE NAME = #{name}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">15</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">searchUsers()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">searchUsers</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT * FROM USERS WHERE NAME LIKE #{name}">SELECT<span class="tooltiptext">SELECT * FROM USERS WHERE NAME LIKE #{name}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">16</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">countUsers()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">countUsers</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT COUNT(*) FROM USERS">SELECT<span class="tooltiptext">SELECT COUNT(*) FROM USERS</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">17</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">getUserWithDetails()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">getUserWithDetails</span></td>
+                                <td><span class="query-type tooltip" data-query="SELECT U.*, UR.ROLE_ID, R.ROLE_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID LEFT JOIN USER_PREFERENCES UP ON U.ID = UP.USER_ID">SELECT<span class="tooltiptext">SELECT U.*, UR.ROLE_ID, R.ROLE_NAME FROM USERS U LEFT JOIN USER_ROLES UR ON U.ID = UR.USER_ID LEFT JOIN ROLES R ON UR.ROLE_ID = R.ID LEFT JOIN USER_PREFERENCES UP ON U.ID = UP.USER_ID</span></span></td>
+                                <td><span class="tables">USERS, USER_ROLES, ROLES, USER_PREFERENCES</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">18</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">insert()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">insert</span></td>
+                                <td><span class="query-type tooltip" data-query="INSERT INTO USERS (NAME, EMAIL) VALUES (#{name}, #{email})">INSERT<span class="tooltiptext">INSERT INTO USERS (NAME, EMAIL) VALUES (#{name}, #{email})</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">19</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">update()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">update</span></td>
+                                <td><span class="query-type tooltip" data-query="UPDATE USERS SET NAME = #{name} WHERE ID = #{id}">UPDATE<span class="tooltiptext">UPDATE USERS SET NAME = #{name} WHERE ID = #{id}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="chain-id">20</span></td>
+                                <td><span class="class-name">MixedErrorMapper.java</span></td>
+                                <td><span class="method-name">delete()</span></td>
+                                <td><span class="xml-file">MixedErrorMapper.xml</span></td>
+                                <td><span class="query-id">delete</span></td>
+                                <td><span class="query-type tooltip" data-query="DELETE FROM USERS WHERE ID = #{id}">DELETE<span class="tooltiptext">DELETE FROM USERS WHERE ID = #{id}</span></span></td>
+                                <td><span class="tables">USERS</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 검색 기능
+        function filterTable() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const tableFilter = document.getElementById('tableFilter').value;
+            const queryTypeFilter = document.getElementById('queryTypeFilter').value;
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let shouldShow = true;
+                
+                // 텍스트 검색
+                if (searchInput) {
+                    let found = false;
+                    for (let j = 0; j < cells.length; j++) {
+                        if (cells[j].textContent.toLowerCase().includes(searchInput)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) shouldShow = false;
+                }
+                
+                // 테이블 필터
+                if (tableFilter && shouldShow) {
+                    const tablesCell = cells[6]; // 관련테이블들 컬럼
+                    if (!tablesCell.textContent.includes(tableFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // 쿼리 타입 필터
+                if (queryTypeFilter && shouldShow) {
+                    const queryTypeCell = cells[5]; // 쿼리종류 컬럼
+                    if (!queryTypeCell.textContent.includes(queryTypeFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                row.style.display = shouldShow ? '' : 'none';
+            }
+        }
+        
+        // 필터 초기화
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('tableFilter').value = '';
+            document.getElementById('queryTypeFilter').value = '';
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
+        }
+        
+        // CSV 내보내기 (전체 쿼리 포함)
+        function exportToCSV() {
+            const table = document.getElementById('chainTable');
+            const rows = table.getElementsByTagName('tr');
+            let csv = [];
+            
+            // 헤더 추가
+            csv.push('연계ID,클래스,메서드,XML파일,쿼리ID,쿼리종류,전체쿼리,관련테이블들');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0 && rows[i].style.display !== 'none') {
+                    let row = [];
+                    for (let j = 0; j < cells.length; j++) {
+                        let cellText = cells[j].textContent.replace(/"/g, '""');
+                        if (j === 5) { // 쿼리종류 컬럼
+                            const queryTypeSpan = cells[j].querySelector('.query-type');
+                            if (queryTypeSpan) {
+                                const fullQuery = queryTypeSpan.getAttribute('data-query') || cellText;
+                                row.push('"' + cellText + '"'); // 쿼리종류
+                                row.push('"' + fullQuery.replace(/"/g, '""') + '"'); // 전체쿼리
+                            } else {
+                                row.push('"' + cellText + '"');
+                                row.push('""');
+                            }
+                        } else {
+                            row.push('"' + cellText + '"');
+                        }
+                    }
+                    csv.push(row.join(','));
+                }
+            }
+            
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'CallChainReport_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 엔터키로 검색
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterTable();
+            }
+        });
+        
+        // 실시간 검색
+        document.getElementById('searchInput').addEventListener('input', function() {
+            filterTable();
+        });
+        
+        // 필터 변경시 자동 적용
+        document.getElementById('tableFilter').addEventListener('change', function() {
+            filterTable();
+        });
+        
+        document.getElementById('queryTypeFilter').addEventListener('change', function() {
+            filterTable();
+        });
+    </script>
+</body>
+</html>
