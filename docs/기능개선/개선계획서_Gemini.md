@@ -1,0 +1,358 @@
+# 개선 계획서: 파싱 능력 강화를 통한 데이터 누락 방지
+
+## 1. 개요
+
+본 문서는 `중복,파싱능력부족보고서.md`와 `gemini의견.md`를 기반으로, 소스 분석 시스템의 파싱 능력을 강화하여 데이터 누락을 방지하기 위한 구체적인 개발 계획을 기술한다. 최우선 목표인 **'프론트-자바-XML-쿼리-테이블-컬럼' 간의 관계를 누락 없이 도출**하는 것을 기준으로, 시급하고 효과가 큰 3가지 핵심 과제에 대한 상세 개선 방안을 제시한다.
+
+---
+
+## 2. 핵심 개선 과제 (P0)
+
+1.  **MyBatis 동적 SQL (`<if>`) 분석 강화**: 조건문 내에 숨겨진 테이블/컬럼 정보 누락 방지
+2.  **MyBatis `<include>` 태그 지원**: 외부 SQL 조각 참조 누락 방지
+3.  **Java 동적 SQL (`+` 연산자) 기본 지원**: Java 코드 내 동적 쿼리 누락 방지
+
+---
+
+## 3. 과제별 상세 개발 계획
+
+### 3.1. 과제 1: MyBatis 동적 SQL (`<if>`) 분석 강화
+
+#### 가. 처리 흐름 설명
+
+-   **AS-IS**: 현재 XML 파서는 `<if>`, `<choose>`, `<foreach>`와 같은 동적 SQL 태그를 만나면, 분석의 복잡성을 피하기 위해 태그를 제거하거나 내부 텍스트만 단순 추출한다. 이 과정에서 조건부로만 존재하는 `JOIN`문이나 컬럼 목록이 유실되어 심각한 데이터 누락이 발생한다.
+-   **TO-BE**: 개선된 파서는 동적 태그를 무시하지 않고, 모든 가능한 논리적 경로(Path)를 조합하여 여러 개의 완전한 SQL 구문을 생성한다. 예를 들어, `<if>` 태그 하나가 있다면 '참(true)일 경우의 SQL'과 '거짓(false)일 경우의 SQL' 두 가지 버전을 모두 생성한다. 이렇게 생성된 모든 SQL 버전을 각각 분석하여 사용된 모든 테이블과 컬럼 정보를 빠짐없이 수집하고 통합한다.
+
+#### 나. 플로우차트
+
+```mermaid
+graph TD
+    A[XML 파서가 <select>, <update> 등 SQL 노드 발견] --> B{내부에 <if>, <choose> 등 동적 태그 존재?};
+    B -- No --> C[기존 SQL 분석 로직 수행];
+    B -- Yes --> D[동적 노드 분석기 호출];
+    D --> E[모든 논리적 경로 조합 생성<br/>(e.g., if-true, if-false)];
+    E --> F[각 경로별 완전한 SQL 구문 목록 생성];
+    F --> G[생성된 모든 SQL 구문을 대상으로<br/>테이블/컬럼/조인 분석 수행];
+    C --> H[분석 결과 통합 및 저장];
+    G --> H;
+```
+
+#### 다. 상세 소스 코드 제안 (`xml_parser.py` 수정)
+
+기존 `MybatisParser` 클래스에 동적 노드를 재귀적으로 탐색하여 모든 SQL 경로를 생성하는 로직을 추가한다.
+
+```python
+# D:\Analyzer\CreateMetaDb\parser\xml_parser.py 내 MybatisParser 클래스 수정 제안
+
+import xml.etree.ElementTree as ET
+from typing import List, Set
+
+class MybatisParser:
+    # ... 기존 __init__ 및 다른 메서드들 ...
+
+    def parse_sql_node(self, node: ET.Element) -> None:
+        """
+        주어진 SQL 노드에서 가능한 모든 SQL 구문 경로를 생성하고 분석한다.
+        """
+        # 1. 동적 노드를 분석하여 모든 가능한 SQL 텍스트 목록을 생성
+        possible_sql_texts = self._generate_sql_from_dynamic_nodes(node)
+
+        # 2. 생성된 각 SQL 버전을 개별적으로 분석
+        all_tables = set()
+        for sql_text in possible_sql_texts:
+            # 정규화 및 정리
+            normalized_sql = self._normalize_sql(sql_text)
+            
+            # SQL 파서를 호출하여 테이블, 컬럼, 조인 등 분석
+            analysis_result = self.sql_parser.analyze(normalized_sql)
+            all_tables.update(analysis_result.get('tables', []))
+            # ... 기타 분석 결과 통합 ...
+
+        # 3. 최종 통합된 정보를 DB에 저장
+        self._save_analysis_result(node, {'tables': list(all_tables)})
+        print(f"  [동적 분석 완료] {len(possible_sql_texts)}개 경로 분석, 테이블 {len(all_tables)}개 발견")
+
+
+    def _generate_sql_from_dynamic_nodes(self, node: ET.Element) -> List[str]:
+        """
+        동적 XML 노드를 재귀적으로 탐색하여 모든 가능한 SQL 구문 조합을 리스트로 반환한다.
+        <if> 태그를 만나면, 해당 태그가 포함된 경우와 포함되지 않은 경우 두 가지 경로를 생성한다.
+        """
+        # 초기 경로: 빈 문자열 하나로 시작
+        paths = [""]
+
+        # ElementTree의 모든 자식 노드와 텍스트를 순서대로 순회
+        for item in node.iter():
+            if item.tag == 'if':
+                # <if> 태그를 만나면 경로가 분기됨
+                # 1. <if> 태그 안의 내용을 포함하는 새로운 경로들
+                if_paths = []
+                # 2. <if> 태그 안의 내용을 포함하지 않는 기존 경로들은 그대로 유지
+                
+                # <if> 태그 내부에서 생성되는 하위 경로들을 재귀적으로 탐색
+                inner_sql_fragments = self._generate_sql_from_dynamic_nodes(item)
+                
+                new_paths = []
+                for path in paths:
+                    # 기존 경로에 <if> 내부 SQL 조각을 추가한 경로 생성
+                    for fragment in inner_sql_fragments:
+                        new_paths.append(path + " " + fragment)
+                    # 기존 경로 (<if>가 없는 경우)도 유지
+                    new_paths.append(path)
+                paths = new_paths
+                
+            elif item.text and item.text.strip():
+                # 일반 텍스트 노드이면 모든 경로에 텍스트 추가
+                paths = [p + " " + item.text.strip() for p in paths]
+
+        # 중복 제거 및 정리 후 반환
+        return list(set([p.strip() for p in paths]))
+
+    # ... 기타 헬퍼 메서드 ...
+```
+
+### 3.2. 과제 2: MyBatis `<include>` 태그 지원
+
+#### 가. 처리 흐름 설명
+
+-   **AS-IS**: 파서가 `<include refid="...">` 태그를 만나면, `refid`가 무엇을 가리키는지 알 수 없어 해당 태그를 무시한다. 이로 인해 공통 SQL 조각에 정의된 모든 테이블, 컬럼, 조인 정보가 누락된다.
+-   **TO-BE**: 분석 시작 전, **사전 처리(Pre-processing)** 단계를 추가한다. 이 단계에서 프로젝트 내의 모든 MyBatis XML 파일을 스캔하여 모든 `<sql id="...">` 조각을 `id`를 키로, SQL 내용을 값으로 하는 캐시(딕셔너리)에 저장한다. 그 후, 실제 쿼리를 분석할 때 `<include>` 태그를 만나면 캐시에서 `refid`에 해당하는 SQL 조각을 찾아와 현재 위치에 삽입(치환)한 후 분석을 계속 진행한다.
+
+#### 나. 플로우차트
+
+```mermaid
+graph TD
+    subgraph 사전 처리 단계
+        A[분석 시작] --> B[프로젝트 내 모든 XML 파일 스캔];
+        B --> C[모든 `<sql id=...>` 조각 추출];
+        C --> D{SQL 조각 캐시<br/>(Key: id, Value: SQL 내용)};
+    end
+
+    subgraph 쿼리 분석 단계
+        E[개별 쿼리 분석 시작] --> F{`<include refid=...>` 발견?};
+        F -- No --> G[분석 계속];
+        F -- Yes --> H[캐시에서 refid로 SQL 조각 조회];
+        H --> I{조회 성공?};
+        I -- Yes --> J[해당 위치에 SQL 조각 삽입/치환];
+        J --> G;
+        I -- No --> K[경고 로그 기록 후 태그 무시];
+        K --> G;
+    end
+    
+    D --> H;
+```
+
+#### 다. 상세 소스 코드 제안 (`file_loading.py` 및 `xml_parser.py` 수정)
+
+먼저 SQL 조각을 관리하는 캐시 클래스를 `util` 등에 추가하고, 파일 로딩 시점에 캐시를 생성하도록 한다.
+
+```python
+# D:\Analyzer\CreateMetaDb\util\cache_utils.py 에 추가 제안
+
+import xml.etree.ElementTree as ET
+from glob import glob
+import os
+
+class SqlFragmentCache:
+    """
+    프로젝트 내 모든 MyBatis XML의 <sql> 조각을 미리 로드하여 캐싱하는 클래스.
+    """
+    _instance = None
+    
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SqlFragmentCache, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, 'initialized'):
+            self.fragments = {}
+            self.initialized = True
+
+    def load_all_fragments(self, project_path: str):
+        """ 지정된 경로 하위의 모든 XML에서 <sql> 태그를 찾아 캐시에 저장 """
+        xml_files = glob(os.path.join(project_path, '**', '*.xml'), recursive=True)
+        for file_path in xml_files:
+            try:
+                tree = ET.parse(file_path)
+                root = tree.getroot()
+                # namespace가 있다면 처리 (실제 환경에 맞게 수정 필요)
+                namespace = root.attrib.get('namespace', '')
+                for sql_node in root.findall('sql'):
+                    node_id = sql_node.attrib.get('id')
+                    if node_id:
+                        # namespace를 포함한 고유 ID 생성
+                        full_id = f"{namespace}.{node_id}"
+                        self.fragments[full_id] = ET.tostring(sql_node, encoding='unicode')
+                        self.fragments[node_id] = ET.tostring(sql_node, encoding='unicode') # 짧은 ID도 지원
+            except ET.ParseError:
+                continue # 파싱 오류는 무시
+        print(f"[SQL 조각 캐시] 총 {len(self.fragments)}개 로드 완료")
+
+    def get_fragment(self, refid: str) -> str:
+        return self.fragments.get(refid)
+
+# main.py 또는 file_loading.py 시작 부분
+# cache = SqlFragmentCache()
+# cache.load_all_fragments('D:/Analyzer/CreateMetaDb/projects/SampleSrc/src')
+
+# D:\Analyzer\CreateMetaDb\parser\xml_parser.py 수정 제안
+class MybatisParser:
+    def __init__(self, sql_parser, fragment_cache: SqlFragmentCache):
+        self.sql_parser = sql_parser
+        self.fragment_cache = fragment_cache
+
+    def _resolve_includes(self, node: ET.Element, depth=0) -> str:
+        """
+        <include> 태그를 재귀적으로 해석하여 완전한 SQL 텍스트를 반환한다.
+        무한 재귀를 방지하기 위해 depth를 사용한다.
+        """
+        if depth > 10: # 최대 재귀 깊이 제한
+            return ""
+
+        sql_text = ""
+        # itertext()는 태그와 텍스트를 섞어서 순서대로 반환하지 않으므로 수동으로 순회
+        if node.text:
+            sql_text += node.text
+
+        for child in node:
+            if child.tag == 'include':
+                refid = child.attrib.get('refid')
+                fragment_xml_str = self.fragment_cache.get_fragment(refid)
+                if fragment_xml_str:
+                    # XML 문자열을 다시 Element로 변환하여 재귀 호출
+                    fragment_node = ET.fromstring(fragment_xml_str)
+                    sql_text += self._resolve_includes(fragment_node, depth + 1)
+            else:
+                # 다른 동적 태그(<if> 등)는 여기서 처리하거나 재귀 호출
+                sql_text += self._resolve_includes(child, depth + 1)
+            
+            if child.tail:
+                sql_text += child.tail
+        
+        return sql_text
+
+    def parse_sql_node(self, node: ET.Element) -> None:
+        # <include>가 먼저 해석된 완전한 SQL을 얻음
+        full_sql_text = self._resolve_includes(node)
+        
+        # 이후 동적 SQL 분석 및 최종 SQL 파서 호출 로직 수행...
+```
+
+### 3.3. 과제 3: Java 동적 SQL (`+` 연산자) 기본 지원
+
+#### 가. 처리 흐름 설명
+
+-   **AS-IS**: Java 파서는 코드의 구조(클래스, 메서드)는 분석하지만, 메서드 내부의 로직, 특히 문자열 변수가 어떻게 조합되는지는 추적하지 않는다. `String query = "SELECT..." + "FROM..."`과 같은 코드는 단순 문자열로 취급되어 SQL로 인식되지 않는다.
+-   **TO-BE**: Java 파일을 **AST(Abstract Syntax Tree)**로 파싱하는 라이브러리(예: `javalang`)를 도입한다. AST를 순회하며 문자열 변수의 선언과 할당, `+` 연산자를 사용한 결합 과정을 추적한다. 특정 변수에 문자열 리터럴이 순차적으로 더해지는 단순한 패턴을 감지하여, 최종적으로 조합된 문자열을 SQL 쿼리로 식별하고 추출한다.
+
+#### 나. 플로우차트
+
+```mermaid
+graph TD
+    A[Java 파일 분석 시작] --> B[Java 파일을 AST로 파싱<br/>(e.g., javalang 라이브러리)];
+    B --> C[AST 순회하며 메서드 노드 탐색];
+    C --> D[메서드 내에서 문자열 변수 선언/할당 노드 탐색];
+    D --> E{변수 추적 시작<br/>(e.g., `String query = "SELECT ...";`)};
+    E --> F{해당 변수가 `+` 연산자로 재할당 되는가?<br/>(e.g., `query = query + " ...";`)};
+    F -- Yes --> G[연결되는 문자열 리터럴을<br/>기존 변수 값에 추가];
+    G --> H[추적 중인 변수 값 업데이트];
+    H --> F;
+    F -- No --> I[메서드 내 다른 라인 탐색];
+    I --> J{추적이 끝난 변수가 SQL 패턴과 일치?};
+    J -- Yes --> K[최종 문자열을 SQL로 추출];
+    K --> L[추출된 SQL을 SQL 파서로 전달];
+    J -- No --> C;
+```
+
+#### 다. 상세 소스 코드 제안 (`java_parser.py` 수정)
+
+`javalang` 라이브러리 설치가 필요하다. (`pip install javalang`)
+
+```python
+# D:\Analyzer\CreateMetaDb\parser\java_parser.py 수정 제안
+
+import javalang
+from typing import Dict, List
+
+class JavaParser:
+    # ... 기존 로직 ...
+
+    def analyze_method_body_for_sql(self, method_node) -> List[str]:
+        """
+        메서드의 AST를 분석하여 '+' 연산자로 조합되는 SQL 구문을 추적하고 추출한다.
+        """
+        tracked_vars: Dict[str, str] = {}
+        extracted_sqls: List[str] = []
+
+        # 메서드 바디의 모든 statement를 순회
+        for path, node in method_node.filter(javalang.tree.Statement):
+            # 1. 변수 선언 (e.g., String sql = "SELECT ...")
+            if isinstance(node, javalang.tree.LocalVariableDeclaration):
+                # 문자열 타입이고, 초기값이 문자열 리터럴일 때
+                if node.type.name == 'String' and isinstance(node.declarators[0].initializer, javalang.tree.Literal):
+                    var_name = node.declarators[0].name
+                    var_value = node.declarators[0].initializer.value.strip('"')
+                    tracked_vars[var_name] = var_value
+
+            # 2. 변수 할당 (e.g., sql = sql + " WHERE ...")
+            elif isinstance(node.expression, javalang.tree.Assignment):
+                assignment = node.expression
+                var_name = assignment.expressionl.member # 단순화된 표현, 실제로는 더 복잡
+                
+                # `+=` 또는 `var = var + ...` 형태
+                if assignment.type == '+=' or (isinstance(assignment.value, javalang.tree.BinaryOperation) and assignment.value.operator == '+'):
+                    if var_name in tracked_vars:
+                        # 더해지는 값이 문자열 리터럴인지 확인
+                        bin_op = assignment.value
+                        if isinstance(bin_op.operandr, javalang.tree.Literal):
+                            to_append = bin_op.operandr.value.strip('"')
+                            tracked_vars[var_name] += " " + to_append
+
+        # 추적이 끝난 변수들 중 SQL로 보이는 것을 최종 결과에 추가
+        for var_name, final_value in tracked_vars.items():
+            if self._is_likely_sql(final_value):
+                extracted_sqls.append(final_value)
+        
+        return extracted_sqls
+
+    def _is_likely_sql(self, text: str) -> bool:
+        """ 문자열이 SQL 구문일 가능성이 높은지 간단히 확인 """
+        text_upper = text.upper()
+        return any(keyword in text_upper for keyword in ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'FROM', 'WHERE'])
+
+    def parse(self, content: str, file_path: str):
+        # ... 기존 parse 로직 ...
+        try:
+            tree = javalang.parse.parse(content)
+            for path, node in tree.filter(javalang.tree.MethodDeclaration):
+                sqls = self.analyze_method_body_for_sql(node)
+                if sqls:
+                    # 추출된 SQL을 분석하고 저장하는 로직 호출
+                    print(f"  [Java 동적 SQL 발견] {file_path} - {node.name}: {len(sqls)}개")
+                    # self.save_sqls(sqls, file_path, node.name)
+        except javalang.tokenizer.LexerError:
+            pass # 파싱 실패는 무시
+```
+**참고**: 위 Java 파서 코드는 `+` 연산자 추적의 기본 개념을 보여주기 위한 단순화된 예시입니다. 실제 구현 시에는 변수의 스코프, 다양한 할당 패턴, 메서드 호출 결과 등 복잡한 케이스를 처리하기 위한 고도화가 필요합니다.
+
+---
+
+## 4. 단계별 추진 계획
+
+1.  **Phase 1 (1~2주): 긴급 개선**
+    *   **과제 1 (MyBatis 동적 SQL)** 과 **과제 2 (MyBatis `<include>`)** 를 동시에 진행한다. 두 기능은 XML 파서 내에서 유기적으로 연동되어야 하며, MyBatis 분석의 정확도를 극적으로 향상시킨다.
+
+2.  **Phase 2 (3~4주): Java 분석 확대**
+    *   **과제 3 (Java `+` 연산자)** 개발에 착수한다. `javalang` 라이브러리를 도입하고, 단순한 선형적 문자열 결합 패턴부터 안정적으로 지원하는 것을 목표로 한다.
+
+3.  **Phase 3 (5주차 이후): 안정화 및 고도화**
+    *   개발된 기능에 대한 단위 테스트 및 통합 테스트를 수행한다.
+    *   `sampleSrc` 프로젝트 외 실제 다른 프로젝트 소스에도 적용하여 예외 케이스를 보완한다.
+    *   `String.format`, `StringBuilder`의 복잡한 패턴 등 Java 분석 범위를 점진적으로 확대한다.
+
+## 5. 기대 효과
+
+-   **정확성 향상**: 조건문, 외부 참조, Java 코드에 숨겨진 테이블/컬럼/조인 정보 추출이 가능해져, 데이터 누락률을 현재의 15% 이상에서 5% 미만으로 감소시킬 수 있다.
+-   **커버리지 확대**: 분석이 불가능했던 다수의 동적 쿼리를 분석 범위에 포함시켜, 전체 소스 코드에 대한 분석 커버리지를 80% 이상으로 끌어올린다.
+-   **신뢰도 확보**: 분석 결과의 신뢰도가 향상되어, 생성되는 리포트(ERD, 호출관계도 등)의 품질이 높아지고 개발자가 실제 업무에 활용할 수 있는 수준이 된다.
