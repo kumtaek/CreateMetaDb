@@ -358,6 +358,7 @@ class CallChainReportGenerator:
                     {orphan_xml_query}
                 ) ORDER BY 
                     CASE WHEN api_entry = '' THEN 1 ELSE 0 END,
+                    CASE WHEN class_name = '' AND method_name = '' AND xml_file != '' AND xml_file != 'NO-QUERY' THEN 1 ELSE 0 END,
                     jsp_file,
                     api_entry,
                     class_name,
