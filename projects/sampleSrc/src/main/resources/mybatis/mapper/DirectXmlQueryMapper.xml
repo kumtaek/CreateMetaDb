@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  XML-쿼리-테이블 직접 연결 샘플
+  콜체인리포트 테스트용: FRONT~JAVA 계층 없이 XML에서 직접 테이블 접근
+-->
+<mapper namespace="com.example.mapper.DirectXmlQueryMapper">
+
+    <!-- 
+    패턴 1: XML에서 직접 테이블 조회 (Java 호출 없음) 
+    콜체인: XML -> 테이블
+    -->
+    <select id="getDirectUserList" resultType="map">
+        SELECT u.user_id, u.username, u.email, u.status,
+               p.full_name, p.phone, p.address
+        FROM users u
+        LEFT JOIN user_profiles p ON u.user_id = p.user_id
+        WHERE u.status = 'ACTIVE'
+        ORDER BY u.created_date DESC
+    </select>
+
+    <!-- 
+    패턴 2: XML에서 직접 복잡한 JOIN 쿼리 
+    콜체인: XML -> 다중테이블
+    -->
+    <select id="getDirectOrderSummary" resultType="map">
+        SELECT u.username, u.email,
+               COUNT(DISTINCT o.order_id) as order_count,
+               SUM(o.total_amount) as total_spent,
+               COUNT(DISTINCT p.product_id) as unique_products,
+               c.category_name
+        FROM users u
+        INNER JOIN orders o ON u.user_id = o.user_id
+        INNER JOIN order_items oi ON o.order_id = oi.order_id
+        INNER JOIN products p ON oi.product_id = p.product_id
+        INNER JOIN categories c ON p.category_id = c.category_id
+        WHERE o.order_date >= '2024-01-01'
+        AND o.status = 'COMPLETED'
+        GROUP BY u.user_id, u.username, u.email, c.category_name
+        HAVING COUNT(o.order_id) > 5
+        ORDER BY total_spent DESC
+    </select>
+
+    <!-- 
+    패턴 3: XML에서 직접 통계 쿼리 
+    콜체인: XML -> 테이블 (집계함수 포함)
+    -->
+    <select id="getDirectUserStatistics" resultType="map">
+        SELECT 
+            u.user_type,
+            COUNT(*) as user_count,
+            AVG(CASE WHEN o.total_amount IS NOT NULL THEN o.total_amount ELSE 0 END) as avg_order_amount,
+            MAX(o.order_date) as last_order_date,
+            SUM(pm.payment_amount) as total_payments
+        FROM users u
+        LEFT JOIN orders o ON u.user_id = o.user_id
+        LEFT JOIN payments pm ON o.order_id = pm.order_id AND pm.status = 'COMPLETED'
+        WHERE u.created_date >= '2023-01-01'
+        GROUP BY u.user_type
+        ORDER BY user_count DESC
+    </select>
+
+    <!-- 
+    패턴 4: XML에서 직접 INSERT (Java 없이 데이터 삽입)
+    콜체인: XML -> 테이블
+    -->
+    <insert id="insertDirectUserActivity">
+        INSERT INTO user_activities (
+            activity_id, user_id, activity_type, activity_date, 
+            ip_address, user_agent, created_date
+        ) VALUES (
+            USER_ACTIVITY_SEQ.NEXTVAL,
+            #{userId},
+            #{activityType},
+            SYSDATE,
+            #{ipAddress},
+            #{userAgent},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 
+    패턴 5: XML에서 직접 UPDATE (다중 테이블 업데이트)
+    콜체인: XML -> 다중테이블
+    -->
+    <update id="updateDirectUserLastActivity">
+        UPDATE users u 
+        SET u.last_login_date = SYSDATE,
+            u.login_count = NVL(u.login_count, 0) + 1,
+            u.updated_date = SYSDATE
+        WHERE u.user_id = #{userId}
+        AND EXISTS (
+            SELECT 1 FROM user_profiles p 
+            WHERE p.user_id = u.user_id 
+            AND p.status = 'VERIFIED'
+        )
+    </update>
+
+    <!-- 
+    패턴 6: XML에서 직접 DELETE (연관 데이터 삭제)
+    콜체인: XML -> 다중테이블
+    -->
+    <delete id="deleteDirectInactiveUsers">
+        DELETE FROM user_activities 
+        WHERE user_id IN (
+            SELECT u.user_id 
+            FROM users u 
+            WHERE u.last_login_date &lt; ADD_MONTHS(SYSDATE, -12)
+            AND u.status = 'INACTIVE'
+        )
+    </delete>
+
+    <!-- 
+    패턴 7: XML에서 직접 복잡한 서브쿼리
+    콜체인: XML -> 다중테이블 (서브쿼리 포함)
+    -->
+    <select id="getDirectTopCustomers" resultType="map">
+        SELECT 
+            u.user_id,
+            u.username,
+            u.email,
+            customer_stats.total_orders,
+            customer_stats.total_spent,
+            customer_stats.avg_order_value,
+            customer_stats.favorite_category
+        FROM users u
+        INNER JOIN (
+            SELECT 
+                o.user_id,
+                COUNT(o.order_id) as total_orders,
+                SUM(o.total_amount) as total_spent,
+                AVG(o.total_amount) as avg_order_value,
+                (SELECT c.category_name 
+                 FROM categories c 
+                 INNER JOIN products p ON c.category_id = p.category_id
+                 INNER JOIN order_items oi ON p.product_id = oi.product_id
+                 INNER JOIN orders o2 ON oi.order_id = o2.order_id
+                 WHERE o2.user_id = o.user_id
+                 GROUP BY c.category_name
+                 ORDER BY COUNT(*) DESC
+                 FETCH FIRST 1 ROWS ONLY
+                ) as favorite_category
+            FROM orders o
+            WHERE o.order_date >= ADD_MONTHS(SYSDATE, -6)
+            AND o.status = 'COMPLETED'
+            GROUP BY o.user_id
+            HAVING COUNT(o.order_id) >= 10
+        ) customer_stats ON u.user_id = customer_stats.user_id
+        ORDER BY customer_stats.total_spent DESC
+        FETCH FIRST 50 ROWS ONLY
+    </select>
+
+    <!-- 
+    패턴 8: XML에서 직접 MERGE 작업
+    콜체인: XML -> 다중테이블 (MERGE)
+    -->
+    <update id="mergeDirectUserPreferences">
+        MERGE INTO user_preferences up
+        USING (
+            SELECT 
+                o.user_id,
+                c.category_id,
+                COUNT(*) as purchase_count,
+                SUM(oi.quantity * oi.unit_price) as total_spent_in_category
+            FROM orders o
+            INNER JOIN order_items oi ON o.order_id = oi.order_id
+            INNER JOIN products p ON oi.product_id = p.product_id
+            INNER JOIN categories c ON p.category_id = c.category_id
+            WHERE o.order_date >= ADD_MONTHS(SYSDATE, -3)
+            GROUP BY o.user_id, c.category_id
+        ) recent_purchases ON (up.user_id = recent_purchases.user_id AND up.category_id = recent_purchases.category_id)
+        WHEN MATCHED THEN
+            UPDATE SET 
+                up.purchase_count = up.purchase_count + recent_purchases.purchase_count,
+                up.total_spent = up.total_spent + recent_purchases.total_spent_in_category,
+                up.updated_date = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (user_id, category_id, purchase_count, total_spent, created_date, updated_date)
+            VALUES (recent_purchases.user_id, recent_purchases.category_id, 
+                   recent_purchases.purchase_count, recent_purchases.total_spent_in_category, 
+                   SYSDATE, SYSDATE)
+    </update>
+
+    <!-- 
+    패턴 9: XML에서 직접 동적 쿼리 (MyBatis 동적 SQL)
+    콜체인: XML -> 조건부 다중테이블
+    -->
+    <select id="getDirectDynamicUserData" resultType="map">
+        SELECT u.user_id, u.username, u.email
+        <if test="includeProfile == 'Y'">
+            , p.full_name, p.phone, p.address
+        </if>
+        <if test="includeOrders == 'Y'">
+            , COUNT(DISTINCT o.order_id) as order_count
+            , SUM(o.total_amount) as total_spent
+        </if>
+        <if test="includePayments == 'Y'">
+            , COUNT(DISTINCT pm.payment_id) as payment_count
+            , AVG(pm.payment_amount) as avg_payment
+        </if>
+        FROM users u
+        <if test="includeProfile == 'Y'">
+            LEFT JOIN user_profiles p ON u.user_id = p.user_id
+        </if>
+        <if test="includeOrders == 'Y'">
+            LEFT JOIN orders o ON u.user_id = o.user_id AND o.status = 'COMPLETED'
+        </if>
+        <if test="includePayments == 'Y'">
+            LEFT JOIN payments pm ON o.order_id = pm.order_id AND pm.status = 'COMPLETED'
+        </if>
+        WHERE u.status = 'ACTIVE'
+        <if test="userType != null and userType != ''">
+            AND u.user_type = #{userType}
+        </if>
+        <if test="dateFrom != null and dateFrom != ''">
+            AND u.created_date >= #{dateFrom}
+        </if>
+        <if test="includeOrders == 'Y' or includePayments == 'Y'">
+            GROUP BY u.user_id, u.username, u.email
+            <if test="includeProfile == 'Y'">
+                , p.full_name, p.phone, p.address
+            </if>
+        </if>
+        ORDER BY u.created_date DESC
+    </select>
+
+    <!-- 
+    패턴 10: XML에서 직접 배치 작업 쿼리
+    콜체인: XML -> 다중테이블 (배치처리)
+    -->
+    <update id="batchDirectUpdateUserStatus">
+        UPDATE users 
+        SET status = 'INACTIVE',
+            updated_date = SYSDATE,
+            inactive_reason = 'AUTO_BATCH_PROCESS'
+        WHERE user_id IN (
+            SELECT DISTINCT u.user_id
+            FROM users u
+            LEFT JOIN user_activities ua ON u.user_id = ua.user_id 
+                AND ua.activity_date >= ADD_MONTHS(SYSDATE, -6)
+            LEFT JOIN orders o ON u.user_id = o.user_id 
+                AND o.order_date >= ADD_MONTHS(SYSDATE, -12)
+            WHERE ua.user_id IS NULL 
+            AND o.user_id IS NULL
+            AND u.status = 'ACTIVE'
+            AND u.created_date &lt; ADD_MONTHS(SYSDATE, -24)
+        )
+    </update>
+
+</mapper>

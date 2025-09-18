@@ -1453,17 +1453,10 @@ class JavaLoadingEngine:
             파일 ID
         """
         try:
-            # USER RULES: 공통함수 사용 - PathUtils로 상대경로 변환
+            # USER RULES: 공통함수 사용 - PathUtils로 상대경로 변환 (1단계와 완전히 동일한 방식)
             path_utils = PathUtils()
-            # 프로젝트 소스 경로 기준으로 상대경로 생성
+            # 1단계 파일 스캔과 동일한 방식: get_relative_path()만 사용 (OS 자동 감지)
             relative_path = path_utils.get_relative_path(file_path, self.project_source_path)
-            
-            # USER RULES: 경로 구분자 정규화 - Unix 스타일로 통일 (1단계에서 저장된 형태와 일치)
-            relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
-
-            # 파일 ID 조회 - file_path에 전체 경로(파일명 포함)가 저장됨
-            # 경로 구분자 정규화 (Windows 스타일로 변환 - 1단계에서 저장된 형태와 일치)
-            relative_path = path_utils.normalize_path_separator(relative_path, 'windows')
             
             file_query = """
                 SELECT file_id FROM files
