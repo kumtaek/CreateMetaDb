@@ -352,14 +352,7 @@ class ArchitectureLayerReportGenerator:
     <div class="container">
         <div class="header">
             <h1>아키텍처 레이어 다이어그램</h1>
-            <div class="subtitle">프로젝트: {project_name} | 생성일: {generation_time}<br>
-            가로 방향 레이어 배치 및 컴포넌트 시각화</div>
-        </div>
-        
-        <div class="stats">
-            <div class="stats-grid">
-                {statistics}
-            </div>
+            <div class="subtitle">프로젝트: {project_name} | 생성일: {generation_time}</div>
         </div>
         
         <div class="content">
@@ -373,6 +366,12 @@ class ArchitectureLayerReportGenerator:
                     </defs>
                 </svg>
                 {layer_columns}
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stats-grid">
+                {statistics}
             </div>
         </div>
         
@@ -428,9 +427,6 @@ class ArchitectureLayerReportGenerator:
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
         .header {
             background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
@@ -441,7 +437,6 @@ class ArchitectureLayerReportGenerator:
             box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
             margin-bottom: 3px;
             padding-bottom: 3px;
-            flex-shrink: 0;
         }
         .header h1 {
             margin: 0;
@@ -459,8 +454,7 @@ class ArchitectureLayerReportGenerator:
             gap: 6px;
             padding: 6px;
             background: #f8f9fa;
-            margin-bottom: 3px;
-            flex-shrink: 0;
+            margin: 10px 0;
         }
         .stat-card {
             background: white;
@@ -484,8 +478,6 @@ class ArchitectureLayerReportGenerator:
             font-size: 0.6em;
         }
         .content {
-            flex: 1;
-            overflow: hidden;
             padding: 4px;
         }
         .architecture-container {
@@ -495,7 +487,7 @@ class ArchitectureLayerReportGenerator:
             overflow-x: auto;
             padding: 0;
             background: white;
-            height: 100%;
+            min-height: 400px;
             position: relative;
         }
         
@@ -591,12 +583,11 @@ class ArchitectureLayerReportGenerator:
         .footer {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 2px;
+            padding: 8px;
             text-align: center;
-            font-size: 9px;
+            font-size: 12px;
             opacity: 0.8;
-            flex-shrink: 0;
-            height: 15px;
+            margin-top: 10px;
         }
         
         /* 반응형 디자인 */

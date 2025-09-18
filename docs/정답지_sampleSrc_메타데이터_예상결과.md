@@ -1,14 +1,14 @@
-# sampleSrc 프로젝트 메타데이터 예상 결과 (정답지)
+# SampleSrc 프로젝트 메타데이터 예상 결과 (정답지)
 
 ## 문서 목적
 
-이 문서는 sampleSrc 프로젝트를 소스분석기로 분석했을 때 metadata.db에 생성될 것으로 예상되는 데이터를 정답지 형태로 작성한 것입니다.  
+이 문서는 SampleSrc 프로젝트를 소스분석기로 분석했을 때 metadata.db에 생성될 것으로 예상되는 데이터를 정답지 형태로 작성한 것입니다.  
 실제 분석 결과와 비교하여 검증 목적으로 사용됩니다.
 
 ## 분석 대상 프로젝트 개요
 
-- **프로젝트명**: sampleSrc
-- **분석 대상**: ./CreateMetaDb/projects/sampleSrc 하위 모든 파일
+- **프로젝트명**: SampleSrc
+- **분석 대상**: ./CreateMetaDb/projects/SampleSrc 하위 모든 파일
 - **주요 기술 스택**: Java, JSP, MyBatis, Spring MVC
 - **데이터베이스**: Oracle (SAMPLE, PUBLIC, SCOTT 스키마)
 
@@ -18,7 +18,7 @@
 
 | project_id | project_name | project_path | hash_value | total_files |
 |------------|--------------|--------------|------------|-------------|
-| 1 | sampleSrc | ./projects/sampleSrc | - | 87 |
+| 1 | SampleSrc | ./projects/SampleSrc | - | 87 |
 
 ### 2. files 테이블 (주요 파일들)
 
@@ -357,7 +357,7 @@
 ### ✅ 확인해야 할 항목들
 
 1. **프로젝트 정보**
-   - [ ] projects 테이블에 sampleSrc 프로젝트 등록
+   - [ ] projects 테이블에 SampleSrc 프로젝트 등록
    - [ ] total_files가 87개 정도로 설정
 
 2. **파일 정보**
@@ -408,5 +408,5 @@
 - **총 JSP 파일 수**: 1개 이상
 - **총 관계 수**: 54개 이상
 
-이 정답지는 sampleSrc 프로젝트의 소스코드를 분석하여 예상되는 메타데이터 생성 결과를 정리한 것입니다. 실제 분석 결과와 비교하여 소스분석기의 정확도를 검증하는 데 사용할 수 있습니다.
+이 정답지는 SampleSrc 프로젝트의 소스코드를 분석하여 예상되는 메타데이터 생성 결과를 정리한 것입니다. 실제 분석 결과와 비교하여 소스분석기의 정확도를 검증하는 데 사용할 수 있습니다.
 

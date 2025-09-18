@@ -41,11 +41,7 @@ class ERDDagreTemplates:
     <div class="erd-dagre-container">
         <div class="erd-dagre-header">
             <h1>ERD Dagre Report</h1>
-            <div class="subtitle">고도화 인터랙티브 ERD</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
-        </div>
-        {stats_html}
-        <div class="erd-dagre-content">
             <div id="toolbar">
                 <button onclick="resetView()">초기화</button>
                 <button onclick="toggleLayout()">레이아웃 전환</button>
@@ -53,10 +49,9 @@ class ERDDagreTemplates:
                 <button onclick="exportSvg()">SVG 내보내기</button>
                 <input type="text" id="search" placeholder="테이블명으로 검색..." />
                 <span id="current-layout">fcose</span>
-                <div class="zoom-hint">
-                    <span class="hint-icon">🔍</span>
-                </div>
             </div>
+        </div>
+        <div class="erd-dagre-content">
             <div id="cy"></div>
         </div>
         
@@ -86,6 +81,7 @@ class ERDDagreTemplates:
                 </div>
             </div>
         </div>
+        {stats_html}
         <div class="erd-dagre-footer">
             고도화 ERD 분석 완료 - 드래그로 이동, 마우스 휠로 확대/축소 가능
         </div>
@@ -142,7 +138,7 @@ class ERDDagreTemplates:
             height: 100%; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
         }
         .erd-dagre-container {
@@ -224,9 +220,7 @@ class ERDDagreTemplates:
         #cy { 
             width: 100%; 
             flex: 1;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            background: white;
         }
         
         @keyframes gradientShift {
@@ -534,14 +528,15 @@ class ERDDagreTemplates:
                 animate: true,
                 animationDuration: 1000,
                 fit: true,
-                padding: 100,  // 패딩 대폭 증가로 고아 엔티티 간격 확대
+                padding: 200,  // 패딩 더욱 증가
                 nodeDimensionsIncludeLabels: true,
                 uniformNodeDimensions: false,
                 packComponents: false,  // 컴포넌트 패킹 비활성화로 고아 엔티티 분산
                 step: 'all',
                 samplingType: false,
                 sampleSize: 25,
-                nodeSeparation: 300,  // 노드 간격 대폭 증가 (더 넓게)
+                nodeSeparation: 500,  // 노드 간격 더욱 증가
+                idealEdgeLength: 200,  // 엣지 길이 증가
                 piTol: 0.0000001,
                 nodeRepulsion: function( node ){ 
                     // 고아 노드(연결이 적은 노드)에 더 강한 반발력 적용
@@ -608,12 +603,12 @@ class ERDDagreTemplates:
                             'text-valign': 'center',
                             'text-halign': 'center',
                             'color': 'white',
-                            'font-size': '12px',
-                            'font-weight': 'bold',
-                            'text-outline-width': 2,
-                            'text-outline-color': '#1e40af',
-                            'width': '120px',
-                            'height': '60px',
+                            'font-size': '14px',
+                            'font-weight': '900',
+                            'text-outline-width': 3,
+                            'text-outline-color': '#0d47a1',
+                            'width': '140px',
+                            'height': '70px',
                             'border-width': 3,
                             'border-color': '#1e40af',
                             'border-style': 'solid',
@@ -754,8 +749,8 @@ class ERDDagreTemplates:
                 } else {
                     // 연결이 많은 노드: 기본 크기
                     node.style({
-                        'width': '120px',
-                        'height': '60px',
+                        'width': '140px',
+                        'height': '70px',
                         'font-size': '12px'
                     });
                 }

@@ -33,10 +33,8 @@ class ReportTemplates:
     <div class="callchain-container">
         <div class="callchain-header">
             <h1>CallChain Report</h1>
-            <div class="subtitle">Method-Class-Method-XML-Query-Table 연계 정보</div>
             <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
-        {stats_html}
         <div class="callchain-content">
             <div class="callchain-section">
                 <div class="callchain-table-container">
@@ -46,9 +44,9 @@ class ReportTemplates:
                                 <th>Frontend</th>
                                 <th>API_URL</th>
                                 <th>클래스</th>
-                                <th>메서드 (Layer)</th>
+                                <th>메서드</th>
                                 <th>XML파일</th>
-                                <th>쿼리ID (Layer)</th>
+                                <th>쿼리ID</th>
                                 <th>쿼리종류</th>
                                 <th>관련테이블들</th>
                             </tr>
@@ -60,6 +58,7 @@ class ReportTemplates:
                 </div>
             </div>
         </div>
+        {stats_html}
     </div>
     
     <script>
@@ -152,14 +151,12 @@ class ReportTemplates:
                     <td>
                         <span class="callchain-badge" style="background-color: {method_color}; border: 1px solid #ccc;">
                             {data['method_name']}
-                            <br><small style="color: #666;">({method_layer})</small>
                         </span>
                     </td>
                     <td><span class="callchain-badge{xml_file_class}">{data['xml_file']}</span></td>
                     <td>
                         <span class="callchain-badge{query_id_class}" style="background-color: {query_color}; border: 1px solid #ccc;">
                             {data['query_id']}
-                            <br><small style="color: #666;">({query_layer})</small>
                         </span>
                     </td>
                     <td>{query_type_html}</td>
@@ -475,29 +472,27 @@ class ReportTemplates:
 <body class="erd-body">
     <div class="erd-container">
         <div class="erd-header">
-            <h1>ERD Report</h1>
-            <div class="subtitle">Entity Relationship Diagram</div>
-            <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
+            <div class="header-left">
+                <h1>ERD Report</h1>
+                <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
+            </div>
+            <div class="diagram-controls">
+                <button onclick="exportPng()">PNG 내보내기</button>
+                <button onclick="exportSvg()">SVG 내보내기</button>
+                <div class="zoom-hint">
+                    <span class="hint-icon">🔍</span>
+                    <span class="hint-text">CTRL+휠: 확대/축소 | 드래그: 이동</span>
+                </div>
+            </div>
         </div>
-        {stats_html}
         <div class="erd-content">
             <div class="erd-section">
-                <div class="diagram-controls">
-                    <button onclick="zoomIn()">확대</button>
-                    <button onclick="zoomOut()">축소</button>
-                    <button onclick="resetZoom()">원래 크기</button>
-                    <button onclick="exportPng()">PNG 내보내기</button>
-                    <button onclick="exportSvg()">SVG 내보내기</button>
-                    <div class="zoom-hint">
-                        <span class="hint-icon">🔍</span>
-                        <span class="hint-text">CTRL+휠: 확대/축소 | 드래그: 이동</span>
-                    </div>
-                </div>
                 <div class="diagram-container">
                     {erd_diagram_html}
                 </div>
             </div>
         </div>
+        {stats_html}
         <div class="erd-footer">
             ERD 분석 완료 - 마우스 휠로 확대/축소, 드래그로 이동 가능
         </div>
@@ -572,12 +567,17 @@ class ReportTemplates:
             background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
             color: white;
             padding: 8px;
-            text-align: center;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
             margin-bottom: 3px;
             padding-bottom: 3px;
             flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .erd-header .header-left {
+            text-align: left;
         }
         .erd-header h1 {
             margin: 0;
@@ -588,6 +588,33 @@ class ReportTemplates:
             margin: 2px 0 0 0;
             opacity: 0.9;
             font-size: 0.8em;
+        }
+        .diagram-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .diagram-controls button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        .diagram-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7em;
+            opacity: 0.8;
         }
         .erd-stats {
             display: grid;
@@ -1068,8 +1095,7 @@ class ReportTemplates:
     <div class="container">
         <div class="header">
             <h1>시스템 아키텍처 분석</h1>
-            <div class="subtitle">System Architecture Analysis Report</div>
-            <div class="subtitle">생성일시: {timestamp}</div>
+            <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
         </div>
         
         <div class="section">

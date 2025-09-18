@@ -244,7 +244,7 @@ INSERT INTO relationships (
 - [ ] api_mapping_keyword.yaml 설정
 
 ### Phase 2: 테스트 및 검증 (1일)
-- [ ] sampleSrc 프로젝트 테스트
+- [ ] SampleSrc 프로젝트 테스트
 - [ ] API_CALL 컴포넌트 생성 검증
 - [ ] 관계 생성 검증
 

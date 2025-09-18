@@ -544,17 +544,29 @@ class ERDDagreReportGenerator:
             return []
     
     def _generate_cytoscape_edges(self, relationships_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Cytoscape.js 엣지 데이터 생성"""
+        """Cytoscape.js 엣지 데이터 생성 - 양방향 조인 조건 중복 제거"""
         try:
             edges = []
+            processed_pairs = set()  # 처리된 테이블 쌍을 추적
             
             for rel in relationships_data:
                 # 소스와 타겟 노드 ID 생성 (owner 제거)
                 src_id = f"table:{rel['src_table']}"
                 dst_id = f"table:{rel['dst_table']}"
                 
+                # 양방향 관계 중복 제거를 위한 키 생성 (정렬된 테이블명 + 컬럼명)
+                table_pair = tuple(sorted([rel['src_table'], rel['dst_table']]))
+                column_pair = tuple(sorted([rel['src_column'], rel['dst_column']]))
+                relation_key = (table_pair, column_pair)
+                
+                # 이미 처리된 관계라면 스킵
+                if relation_key in processed_pairs:
+                    continue
+                
+                processed_pairs.add(relation_key)
+                
                 # 엣지 데이터 생성 - 동일한 키로 조인되는 경우 중복 표시 제거
-                relationship_label = self._format_relationship_label(rel['src_column'], rel['dst_column'])
+                relationship_label = self._format_relationship_label_deduplicated(rel['src_column'], rel['dst_column'])
                 
                 # PK-FK 관계 여부는 이미 관계 정보에서 가져옴
                 is_pk_fk_relation = rel.get('is_pk_fk', False)
@@ -586,7 +598,7 @@ class ERDDagreReportGenerator:
                 
                 edges.append(edge_data)
             
-            app_logger.debug(f"Cytoscape 엣지 생성 완료: {len(edges)}개")
+            app_logger.debug(f"Cytoscape 엣지 생성 완료 (중복 제거 후): {len(edges)}개")
             return edges
             
         except Exception as e:
@@ -656,6 +668,34 @@ class ERDDagreReportGenerator:
                 
         except Exception as e:
             handle_error(e, f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
+    
+    def _format_relationship_label_deduplicated(self, src_column: str, dst_column: str) -> str:
+        """관계 라벨 포맷팅 - 중복 제거된 버전"""
+        try:
+            # 복합키(결합키) 처리 - 콤마로 구분된 경우
+            if ',' in src_column and ',' in dst_column:
+                src_keys = [key.strip() for key in src_column.split(',')]
+                dst_keys = [key.strip() for key in dst_column.split(',')]
+                
+                # 모든 키가 동일한 경우 하나만 표시
+                if set(src_keys) == set(dst_keys):
+                    return f"[{', '.join(sorted(src_keys))}]"
+                else:
+                    # 다른 경우 정렬해서 일관성 있게 표시
+                    all_keys = sorted(list(set(src_keys + dst_keys)))
+                    return f"[{', '.join(all_keys)}]"
+            
+            # 단일 키 처리
+            elif src_column == dst_column:
+                return src_column
+            else:
+                # 다른 컬럼명이면 정렬해서 일관성 있게 표시
+                columns = sorted([src_column, dst_column])
+                return f"{columns[0]}↔{columns[1]}"
+                
+        except Exception as e:
+            handle_error(e, f"중복 제거 관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
+            return f"{src_column}↔{dst_column}"
     
     def _generate_html(self, stats: Dict[str, int], erd_data: Dict[str, Any]) -> str:
         """HTML 생성"""
