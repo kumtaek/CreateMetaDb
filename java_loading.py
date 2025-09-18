@@ -1551,8 +1551,8 @@ class JavaLoadingEngine:
                         'del_yn': 'N'
                     }
                     
-                    # components 테이블에 저장
-                    component_id = self.db_utils.insert('components', component_data)
+                    # components 테이블에 저장 (USER RULES: 공통함수 사용)
+                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
                     if component_id:
                         debug(f"Java SQL 컴포넌트 저장 성공: {sql_info['query_id']} (ID: {component_id})")
                         
@@ -1562,11 +1562,14 @@ class JavaLoadingEngine:
                         # 테이블 사용 관계도 저장 (오라클 조인 분석 포함)
                         self._save_java_sql_table_relationships_enhanced(sql_info, component_data, project_id)
                     else:
-                        warning(f"Java SQL 컴포넌트 저장 실패: {sql_info['query_id']}")
+                        # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+                        handle_error(Exception(f"Java SQL 컴포넌트 저장 실패: {sql_info['query_id']}"), "Java SQL 컴포넌트 저장 실패")
+                        return False
                         
                 except Exception as e:
-                    warning(f"개별 Java SQL 쿼리 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')} - {str(e)}")
-                    continue
+                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+                    handle_error(e, f"개별 Java SQL 쿼리 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')}")
+                    return False
             
             return True
             
@@ -1601,12 +1604,14 @@ class JavaLoadingEngine:
                                 'del_yn': 'N'
                             }
                             
-                            self.db_utils.insert('relationships', relationship_data)
+                            # USER RULES: UNIQUE 제약조건 대응 - 중복 삽입 방지
+                            self.db_utils.insert_or_replace('relationships', relationship_data)
                             debug(f"Java SQL 테이블 관계 저장: {sql_info['query_id']} → {table_name}")
                 
                 except Exception as e:
-                    warning(f"Java SQL 테이블 관계 저장 중 오류: {table_name} - {str(e)}")
-                    continue
+                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+                    handle_error(e, f"Java SQL 테이블 관계 저장 중 오류: {table_name}")
+                    return
                     
         except Exception as e:
             handle_error(e, "Java SQL 테이블 관계 저장 실패")
@@ -1614,14 +1619,14 @@ class JavaLoadingEngine:
     def _get_or_create_table_component(self, table_name: str, project_id: int) -> Optional[int]:
         """테이블 컴포넌트 조회 또는 생성"""
         try:
-            # 기존 테이블 컴포넌트 조회
-            existing_component = self.db_utils.fetch_one(
+            # 기존 테이블 컴포넌트 조회 (USER RULES: 공통함수 사용)
+            existing_components = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
                 (table_name, project_id)
             )
             
-            if existing_component:
-                return existing_component[0]
+            if existing_components and len(existing_components) > 0:
+                return existing_components[0]['component_id']
             
             # 새 테이블 컴포넌트 생성
             table_data = {
@@ -1641,14 +1646,14 @@ class JavaLoadingEngine:
                 'del_yn': 'N'
             }
             
-            success = self.db_utils.insert('components', table_data)
+            success = self.db_utils.insert_record('components', table_data)
             if success:
-                # 생성된 컴포넌트 ID 조회
-                new_component = self.db_utils.fetch_one(
+                # 생성된 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
+                new_components = self.db_utils.execute_query(
                     "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
                     (table_name, project_id)
                 )
-                return new_component[0] if new_component else None
+                return new_components[0]['component_id'] if new_components and len(new_components) > 0 else None
             
             return None
             
@@ -1659,12 +1664,13 @@ class JavaLoadingEngine:
     def _get_component_id_by_name(self, component_name: str, project_id: int) -> Optional[int]:
         """컴포넌트명으로 컴포넌트 ID 조회"""
         try:
-            component = self.db_utils.fetch_one(
+            # USER RULES: 공통함수 사용
+            components = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? ORDER BY component_id DESC LIMIT 1",
                 (component_name, project_id)
             )
             
-            return component[0] if component else None
+            return components[0]['component_id'] if components and len(components) > 0 else None
             
         except Exception as e:
             handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
@@ -1711,17 +1717,20 @@ class JavaLoadingEngine:
                 'hash_value': '-'  # USER RULES: 하드코딩 '-'
             }
             
-            success = self.sql_content_processor.save_sql_content(
+            # USER RULES: 공통함수 사용 - SqlContentManager를 통해 저장
+            success = self.sql_content_processor.sql_content_manager.save_sql_content(
                 sql_content, project_id, **sql_content_data
             )
             
             if success:
                 debug(f"Java SQL 내용 압축 저장 완료: {sql_info['query_id']}")
             else:
-                warning(f"Java SQL 내용 압축 저장 실패: {sql_info['query_id']}")
+                # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+                handle_error(Exception(f"Java SQL 내용 압축 저장 실패: {sql_info['query_id']}"), "Java SQL 내용 압축 저장 실패")
                 
         except Exception as e:
-            warning(f"Java SQL 내용 압축 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')} - {str(e)}")
+            # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+            handle_error(e, f"Java SQL 내용 압축 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')}")
 
     def _save_java_sql_table_relationships_enhanced(self, sql_info: Dict[str, Any], component_data: Dict[str, Any], project_id: int):
         """Java SQL 쿼리의 테이블 관계 저장 (오라클 조인 분석 포함)"""
@@ -1765,12 +1774,15 @@ class JavaLoadingEngine:
                     }
                     
                     if relationship_data['src_id'] and relationship_data['dst_id']:
-                        self.db_utils.insert('relationships', relationship_data)
+                        # USER RULES: UNIQUE 제약조건 대응 - 중복 삽입 방지
+                        self.db_utils.insert_or_replace('relationships', relationship_data)
                         debug(f"Java SQL 조인 관계 저장: {join_rel.get('source_table')} → {join_rel.get('target_table')}")
                         
                 except Exception as e:
-                    warning(f"Java SQL 조인 관계 저장 중 오류: {str(e)}")
-                    continue
+                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+                    handle_error(e, f"Java SQL 조인 관계 저장 중 오류")
+                    return
                     
         except Exception as e:
-            warning(f"Java SQL 조인 관계 분석 실패: {str(e)}")
+            # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
+            handle_error(e, "Java SQL 조인 관계 분석 실패")

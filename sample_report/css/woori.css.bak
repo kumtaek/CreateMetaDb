@@ -298,7 +298,7 @@
 }
 
 .callchain-tooltip .callchain-tooltiptext {
-    visibility: visible;
+    visibility: hidden;
     width: 500px;
     background-color: var(--primary-dark);
     color: var(--text-on-primary);
