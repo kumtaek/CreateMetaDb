@@ -162,7 +162,6 @@ class CallChainReportGenerator:
             
         except Exception as e:
             handle_error(e, "통계 정보 조회 실패")
-            return {}
     
     def _get_call_chain_data(self) -> List[Dict[str, Any]]:
         """연계 체인 데이터 조회 (API_ENTRY 포함, JSP 제외, SqlContent.db 연동)"""
@@ -179,7 +178,7 @@ class CallChainReportGenerator:
                     xml_file.file_name as xml_file,
                     q.component_name as query_id,
                     q.component_type as query_type,
-                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                    COALESCE(t.table_name, '') as related_tables
                 FROM components src_m
                 JOIN classes cls ON src_m.parent_id = cls.class_id
                 JOIN relationships r1 ON src_m.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
@@ -196,7 +195,6 @@ class CallChainReportGenerator:
                   AND cls.del_yn = 'N'
                   AND dst_m.del_yn = 'N'
                   AND q.del_yn = 'N'
-                GROUP BY src_m.component_name, cls.class_name, dst_m.component_name, xml_file.file_name, q.component_name, q.component_type
             """
             
             # SQL_% 타입 쿼리 체인 (USE_TABLE 관계를 통해)
@@ -211,7 +209,7 @@ class CallChainReportGenerator:
                     f.file_name as xml_file,
                     q.component_name as query_id,
                     q.component_type as query_type,
-                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                    COALESCE(t.table_name, '') as related_tables
                 FROM components q
                 JOIN files f ON q.file_id = f.file_id
                 JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
@@ -221,7 +219,6 @@ class CallChainReportGenerator:
                   AND q.component_type LIKE 'SQL_%'
                   AND q.del_yn = 'N'
                   AND f.del_yn = 'N'
-                GROUP BY q.component_name, f.file_name, q.component_type
             """
             
             # 부분 체인 쿼리 (API_URL → METHOD에서 끝나는 경우, SQL 호출이 없는 메서드)
@@ -290,7 +287,7 @@ class CallChainReportGenerator:
                     xml_file.file_name as xml_file,
                     sql.component_name as query_id,
                     sql.component_type as query_type,
-                    GROUP_CONCAT(DISTINCT t.table_name) as related_tables
+                    COALESCE(t.table_name, '') as related_tables
                 FROM components api_url
                 JOIN files frontend_file ON api_url.file_id = frontend_file.file_id
                 JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
@@ -314,11 +311,38 @@ class CallChainReportGenerator:
                   AND r1.del_yn = 'N'
                   AND r2.del_yn = 'N'
                   AND (r3.rel_type = 'USE_TABLE' OR r3.rel_type IS NULL)
-                GROUP BY frontend_file.file_name, api_url.component_name, cls.class_name, 
-                         method.component_name, xml_file.file_name, sql.component_name, sql.component_type
             """
             
-            # 다섯 쿼리를 UNION으로 결합하고 서브쿼리로 감싸서 ORDER BY 적용
+            # 고아 XML 쿼리 (관계가 없는 XML SQL 쿼리들)
+            orphan_xml_query = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY xml_file.file_name, q.component_name) as chain_id,
+                    '' as jsp_file,
+                    '' as api_entry,
+                    '' as virtual_endpoint,
+                    '' as class_name,
+                    '' as method_name,
+                    xml_file.file_name as xml_file,
+                    q.component_name as query_id,
+                    q.component_type as query_type,
+                    COALESCE(t.table_name, '') as related_tables
+                FROM components q
+                JOIN files xml_file ON q.file_id = xml_file.file_id
+                LEFT JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r3.dst_id = t.component_id
+                JOIN projects p ON q.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND xml_file.file_type = 'XML'
+                  AND q.component_type LIKE 'SQL_%'
+                  AND q.del_yn = 'N'
+                  AND xml_file.del_yn = 'N'
+                  AND q.component_id NOT IN (
+                      SELECT DISTINCT dst_id FROM relationships 
+                      WHERE rel_type = 'CALL_QUERY' AND del_yn = 'N'
+                  )
+            """
+            
+            # 여섯 쿼리를 UNION으로 결합하고 서브쿼리로 감싸서 ORDER BY 적용
             query = f"""
                 SELECT * FROM (
                     {api_chain_query}
@@ -330,6 +354,8 @@ class CallChainReportGenerator:
                     {partial_chain_query}
                     UNION ALL
                     {broken_frontend_query}
+                    UNION ALL
+                    {orphan_xml_query}
                 ) ORDER BY 
                     CASE WHEN api_entry = '' THEN 1 ELSE 0 END,
                     jsp_file,
@@ -340,7 +366,7 @@ class CallChainReportGenerator:
                     query_id
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name, self.project_name, self.project_name))
+            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name, self.project_name, self.project_name, self.project_name))
             
             # SqlContent.db에서 정제된 SQL 내용 조회
             sql_content_map = self._get_sql_contents()
@@ -433,7 +459,6 @@ class CallChainReportGenerator:
             
         except Exception as e:
             handle_error(e, "연계 체인 데이터 조회 실패")
-            return []
     
     def _get_related_tables_for_query(self, query_id: str) -> str:
         """특정 쿼리의 관련 테이블 조회"""
