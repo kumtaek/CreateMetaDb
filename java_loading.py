@@ -19,6 +19,7 @@ from util import (
     app_logger, info, error, debug, warning, handle_error,
     get_project_source_path, get_project_metadata_db_path
 )
+from util.sql_content_processor import SqlContentProcessor
 # USER RULES: 공통함수 사용, 하드코딩 금지
 from parser.java_parser import JavaParser
 from util.layer_classification_utils import get_layer_classifier
@@ -84,6 +85,9 @@ class JavaLoadingEngine:
             if not self.db_utils.connect():
                 error("메타데이터베이스 연결 실패")
                 return False
+
+            # SQL Content Processor 초기화 (압축 저장용)
+            self.sql_content_processor = SqlContentProcessor(self.project_name, self.db_utils)
 
             # 1. Java 파일 수집
             java_files = self.java_parser.get_filtered_java_files(self.project_source_path)
@@ -158,6 +162,17 @@ class JavaLoadingEngine:
                         except Exception as e:
                             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"USE_TABLE 관계 저장 실패: {java_file}")
+                            return False
+
+                    # SQL 쿼리 저장 (새로운 기능 추가)
+                    if analysis_result.get('sql_queries'):
+                        try:
+                            if self._save_java_sql_queries_to_database(analysis_result['sql_queries'], java_file):
+                                self.stats['java_sql_queries_created'] = self.stats.get('java_sql_queries_created', 0) + len(analysis_result['sql_queries'])
+                                debug(f"Java SQL 쿼리 저장 완료: {len(analysis_result['sql_queries'])}개")
+                        except Exception as e:
+                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+                            handle_error(e, f"Java SQL 쿼리 저장 실패: {java_file}")
                             return False
 
                     self.stats['java_files_processed'] += 1
@@ -1491,6 +1506,170 @@ class JavaLoadingEngine:
         except Exception as e:
             handle_error(e, "통계 출력 실패")
 
+    def _save_java_sql_queries_to_database(self, sql_queries: List[Dict[str, Any]], java_file: str) -> bool:
+        """
+        Java에서 추출한 SQL 쿼리를 components 테이블에 저장
+        
+        Args:
+            sql_queries: SQL 쿼리 정보 리스트
+            java_file: Java 파일 경로
+            
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            debug(f"Java SQL 쿼리 저장 시작: {java_file}, {len(sql_queries)}개")
+            
+            if not sql_queries:
+                return True
+            
+            # 프로젝트 ID 및 파일 ID 조회
+            project_id = self._get_project_id()
+            file_id = self._get_file_id(java_file)
+            
+            if not project_id or not file_id:
+                handle_error(Exception(f"프로젝트 ID 또는 파일 ID를 찾을 수 없음: {java_file}"), "Java SQL 쿼리 저장 실패")
+                return False
+            
+            # 각 SQL 쿼리를 components 테이블에 저장
+            for sql_info in sql_queries:
+                try:
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': file_id,
+                        'component_name': sql_info['query_id'],
+                        'component_type': sql_info['query_type'],
+                        'parent_id': None,
+                        'layer': 'JAVA',
+                        'line_start': sql_info.get('line_start', 0),
+                        'line_end': sql_info.get('line_end', 0),
+                        'has_error': sql_info.get('has_error', 'N'),
+                        'error_message': sql_info.get('error_message'),
+                        'hash_value': '-',  # USER RULES: 프로젝트 hash_value는 하드코딩 '-'
+                        'created_at': 'datetime("now")',
+                        'updated_at': 'datetime("now")',
+                        'del_yn': 'N'
+                    }
+                    
+                    # components 테이블에 저장
+                    component_id = self.db_utils.insert('components', component_data)
+                    if component_id:
+                        debug(f"Java SQL 컴포넌트 저장 성공: {sql_info['query_id']} (ID: {component_id})")
+                        
+                        # SQL 내용 압축 저장 (SqlContent.db)
+                        self._save_java_sql_content_compressed(sql_info, component_id, project_id, file_id, java_file)
+                        
+                        # 테이블 사용 관계도 저장 (오라클 조인 분석 포함)
+                        self._save_java_sql_table_relationships_enhanced(sql_info, component_data, project_id)
+                    else:
+                        warning(f"Java SQL 컴포넌트 저장 실패: {sql_info['query_id']}")
+                        
+                except Exception as e:
+                    warning(f"개별 Java SQL 쿼리 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')} - {str(e)}")
+                    continue
+            
+            return True
+            
+        except Exception as e:
+            handle_error(e, f"Java SQL 쿼리 저장 실패: {java_file}")
+            return False
+
+    def _save_java_sql_table_relationships(self, sql_info: Dict[str, Any], component_data: Dict[str, Any], project_id: int):
+        """Java SQL 쿼리의 테이블 사용 관계 저장"""
+        try:
+            # 사용된 테이블들에 대한 USE_TABLE 관계 생성
+            for table_name in sql_info.get('used_tables', []):
+                try:
+                    # 테이블 컴포넌트 ID 조회 또는 생성
+                    table_component_id = self._get_or_create_table_component(table_name, project_id)
+                    
+                    if table_component_id:
+                        # 쿼리 컴포넌트 ID 조회
+                        query_component_id = self._get_component_id_by_name(sql_info['query_id'], project_id)
+                        
+                        if query_component_id:
+                            # USE_TABLE 관계 저장
+                            relationship_data = {
+                                'src_id': query_component_id,
+                                'dst_id': table_component_id,
+                                'rel_type': 'USE_TABLE',
+                                'confidence': 1.0,
+                                'has_error': 'N',
+                                'error_message': None,
+                                'created_at': 'datetime("now")',
+                                'updated_at': 'datetime("now")',
+                                'del_yn': 'N'
+                            }
+                            
+                            self.db_utils.insert('relationships', relationship_data)
+                            debug(f"Java SQL 테이블 관계 저장: {sql_info['query_id']} → {table_name}")
+                
+                except Exception as e:
+                    warning(f"Java SQL 테이블 관계 저장 중 오류: {table_name} - {str(e)}")
+                    continue
+                    
+        except Exception as e:
+            handle_error(e, "Java SQL 테이블 관계 저장 실패")
+
+    def _get_or_create_table_component(self, table_name: str, project_id: int) -> Optional[int]:
+        """테이블 컴포넌트 조회 또는 생성"""
+        try:
+            # 기존 테이블 컴포넌트 조회
+            existing_component = self.db_utils.fetch_one(
+                "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
+                (table_name, project_id)
+            )
+            
+            if existing_component:
+                return existing_component[0]
+            
+            # 새 테이블 컴포넌트 생성
+            table_data = {
+                'project_id': project_id,
+                'file_id': None,  # 테이블은 파일에 속하지 않음
+                'component_name': table_name,
+                'component_type': 'TABLE',
+                'parent_id': None,
+                'layer': 'DB',
+                'line_start': 0,
+                'line_end': 0,
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': '-',
+                'created_at': 'datetime("now")',
+                'updated_at': 'datetime("now")',
+                'del_yn': 'N'
+            }
+            
+            success = self.db_utils.insert('components', table_data)
+            if success:
+                # 생성된 컴포넌트 ID 조회
+                new_component = self.db_utils.fetch_one(
+                    "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
+                    (table_name, project_id)
+                )
+                return new_component[0] if new_component else None
+            
+            return None
+            
+        except Exception as e:
+            handle_error(e, f"테이블 컴포넌트 조회/생성 실패: {table_name}")
+            return None
+
+    def _get_component_id_by_name(self, component_name: str, project_id: int) -> Optional[int]:
+        """컴포넌트명으로 컴포넌트 ID 조회"""
+        try:
+            component = self.db_utils.fetch_one(
+                "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? ORDER BY component_id DESC LIMIT 1",
+                (component_name, project_id)
+            )
+            
+            return component[0] if component else None
+            
+        except Exception as e:
+            handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
+            return None
+
     def get_statistics(self) -> Dict[str, Any]:
         """통계 정보 반환"""
         return self.stats.copy()
@@ -1511,3 +1690,87 @@ class JavaLoadingEngine:
             'errors': 0,
             'processing_time': 0.0
         }
+
+    def _save_java_sql_content_compressed(self, sql_info: Dict[str, Any], component_id: int, project_id: int, file_id: int, java_file: str):
+        """Java SQL 내용을 압축하여 SqlContent.db에 저장"""
+        try:
+            sql_content = sql_info.get('sql_content', '')
+            if not sql_content:
+                return
+            
+            # SQL Content Processor를 통해 압축 저장
+            sql_content_data = {
+                'file_id': file_id,
+                'component_id': component_id,
+                'component_name': sql_info['query_id'],
+                'query_type': sql_info['query_type'],
+                'file_path': java_file,
+                'file_name': os.path.basename(java_file),
+                'line_start': sql_info.get('line_start', 0),
+                'line_end': sql_info.get('line_end', 0),
+                'hash_value': '-'  # USER RULES: 하드코딩 '-'
+            }
+            
+            success = self.sql_content_processor.save_sql_content(
+                sql_content, project_id, **sql_content_data
+            )
+            
+            if success:
+                debug(f"Java SQL 내용 압축 저장 완료: {sql_info['query_id']}")
+            else:
+                warning(f"Java SQL 내용 압축 저장 실패: {sql_info['query_id']}")
+                
+        except Exception as e:
+            warning(f"Java SQL 내용 압축 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')} - {str(e)}")
+
+    def _save_java_sql_table_relationships_enhanced(self, sql_info: Dict[str, Any], component_data: Dict[str, Any], project_id: int):
+        """Java SQL 쿼리의 테이블 관계 저장 (오라클 조인 분석 포함)"""
+        try:
+            # 기존 테이블 사용 관계 저장
+            self._save_java_sql_table_relationships(sql_info, component_data, project_id)
+            
+            # 오라클 조인 관계 분석 및 저장 (XML 파서 로직 참조)
+            self._save_java_sql_join_relationships(sql_info, project_id)
+            
+        except Exception as e:
+            handle_error(e, "Java SQL 테이블 관계 저장 실패 (Enhanced)")
+
+    def _save_java_sql_join_relationships(self, sql_info: Dict[str, Any], project_id: int):
+        """Java SQL의 조인 관계 분석 및 저장 (XML 파서 로직 참조)"""
+        try:
+            sql_content = sql_info.get('sql_content', '')
+            if not sql_content:
+                return
+            
+            # XML 파서의 조인 분석 로직 사용 (향후 구현)
+            # TODO: XML 파서의 _analyze_join_relationships() 메서드 참조하여 구현
+            # - EXPLICIT JOIN (ANSI 표준)
+            # - IMPLICIT JOIN (Oracle 전통 방식)
+            # - INFERRED 테이블/컬럼 생성
+            
+            join_relationships = sql_info.get('join_relationships', [])
+            for join_rel in join_relationships:
+                try:
+                    # 조인 관계를 relationships 테이블에 저장
+                    relationship_data = {
+                        'src_id': self._get_or_create_table_component(join_rel.get('source_table'), project_id),
+                        'dst_id': self._get_or_create_table_component(join_rel.get('target_table'), project_id),
+                        'rel_type': join_rel.get('rel_type', 'JOIN_EXPLICIT'),
+                        'confidence': join_rel.get('confidence', 0.8),
+                        'has_error': 'N',
+                        'error_message': None,
+                        'created_at': 'datetime("now")',
+                        'updated_at': 'datetime("now")',
+                        'del_yn': 'N'
+                    }
+                    
+                    if relationship_data['src_id'] and relationship_data['dst_id']:
+                        self.db_utils.insert('relationships', relationship_data)
+                        debug(f"Java SQL 조인 관계 저장: {join_rel.get('source_table')} → {join_rel.get('target_table')}")
+                        
+                except Exception as e:
+                    warning(f"Java SQL 조인 관계 저장 중 오류: {str(e)}")
+                    continue
+                    
+        except Exception as e:
+            warning(f"Java SQL 조인 관계 분석 실패: {str(e)}")

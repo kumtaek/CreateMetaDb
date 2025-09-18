@@ -18,6 +18,7 @@ from util import (
     ConfigUtils, FileUtils, HashUtils, PathUtils,
     app_logger, info, error, debug, warning, handle_error
 )
+from util.sql_join_analyzer import SqlJoinAnalyzer
 
 
 class JavaParser:
@@ -78,6 +79,9 @@ class JavaParser:
             'use_table_relationships_created': 0,
             'errors': 0
         }
+        
+        # 공통 SQL 조인 분석기 초기화
+        self.sql_join_analyzer = SqlJoinAnalyzer(self.config)
 
     def _compile_patterns_for_performance(self):
         """성능 최적화를 위한 정규식 패턴 미리 컴파일"""
@@ -316,7 +320,12 @@ class JavaParser:
             # 6. 메서드 정보를 해당 클래스에 포함
             classes = self._associate_methods_with_classes(classes, methods)
 
-            # 6. 파싱 결과 검증
+            # 7. SQL 쿼리 추출 (새로운 기능 추가)
+            debug(f"SQL 쿼리 추출 시작: {java_file}")
+            sql_queries = self._extract_sql_queries_from_java(java_content, java_file)
+            debug(f"SQL 쿼리 추출 완료: {len(sql_queries)}개")
+
+            # 8. 파싱 결과 검증
             validated_classes = self._validate_parsing_results(classes, java_content)
             validated_methods = self._validate_parsing_results(methods, java_content)
 
@@ -340,6 +349,7 @@ class JavaParser:
             return {
                 'classes': validated_classes,
                 'methods': validated_methods,
+                'sql_queries': sql_queries,  # SQL 쿼리 정보 추가
                 'inheritance_relationships': inheritance_relationships,
                 'call_query_relationships': call_query_relationships,
                 'call_method_relationships': call_method_relationships,
@@ -1748,3 +1758,189 @@ class JavaParser:
         except Exception as e:
             handle_error(f"라인 번호 찾기 실패: {str(e)}")
             return 1
+
+    def _extract_sql_queries_from_java(self, java_content: str, java_file: str) -> List[Dict[str, Any]]:
+        """
+        Java 파일에서 SQL 쿼리 추출
+        StringBuilder로 동적 생성되는 쿼리를 분석하여 SQL 컴포넌트로 추출
+        
+        Args:
+            java_content: Java 파일 내용
+            java_file: Java 파일 경로
+            
+        Returns:
+            추출된 SQL 쿼리 정보 리스트
+        """
+        try:
+            sql_queries = []
+            
+            # 설정에서 SQL 패턴 로드
+            sql_patterns = self.config.get('relationship_analysis', {}).get('use_table_patterns', [])
+            if not sql_patterns:
+                debug(f"SQL 패턴이 설정되지 않음: {java_file}")
+                return []
+            
+            # StringBuilder 패턴으로 동적 쿼리 추출 (개선된 패턴)
+            stringbuilder_pattern = r'StringBuilder\s+(\w+)\s*=\s*new\s+StringBuilder\(\);(.*?)(?=System\.out\.println|return)'
+            
+            matches = re.finditer(stringbuilder_pattern, java_content, re.DOTALL | re.MULTILINE)
+            
+            for match_idx, match in enumerate(matches):
+                var_name = match.group(1)
+                query_construction = match.group(2)
+                
+                # append 호출들에서 SQL 문장 조합
+                append_pattern = rf'{re.escape(var_name)}\.append\s*\(\s*"([^"]+)"\s*\)'
+                append_matches = re.findall(append_pattern, query_construction)
+                
+                if append_matches:
+                    # SQL 문장 조합
+                    full_query = ' '.join(append_matches)
+                    
+                    # SQL 쿼리인지 확인 (SELECT, INSERT, UPDATE, DELETE 포함)
+                    sql_keywords = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'FROM', 'WHERE', 'JOIN']
+                    if any(keyword in full_query.upper() for keyword in sql_keywords):
+                        
+                        # 쿼리 타입 결정
+                        query_type = self._determine_java_sql_type(full_query)
+                        
+                        # 사용된 테이블 추출
+                        used_tables = self._extract_tables_from_java_sql(full_query)
+                        
+                        # 조인 관계 분석
+                        join_relationships = self._analyze_java_sql_joins(full_query)
+                        
+                        # 메서드명 추출 (StringBuilder가 포함된 메서드)
+                        method_name = self._find_containing_method_name(java_content, match.start())
+                        
+                        sql_info = {
+                            'query_id': method_name or f'dynamicQuery_{match_idx + 1}',
+                            'query_type': query_type,
+                            'sql_content': full_query,
+                            'used_tables': used_tables,
+                            'join_relationships': join_relationships,
+                            'is_dynamic': True,
+                            'method_name': method_name,
+                            'line_start': java_content[:match.start()].count('\n') + 1,
+                            'line_end': java_content[:match.end()].count('\n') + 1,
+                            'has_error': 'N',
+                            'error_message': None
+                        }
+                        
+                        sql_queries.append(sql_info)
+                        debug(f"Java SQL 쿼리 추출: {method_name} - {query_type}")
+            
+            return sql_queries
+            
+        except Exception as e:
+            handle_error(e, f"Java SQL 쿼리 추출 실패: {java_file}")
+            return []
+
+    def _determine_java_sql_type(self, sql_content: str) -> str:
+        """Java에서 추출한 SQL의 타입 결정"""
+        try:
+            sql_upper = sql_content.upper().strip()
+            
+            if sql_upper.startswith('SELECT'):
+                return 'SQL_SELECT'
+            elif sql_upper.startswith('INSERT'):
+                return 'SQL_INSERT'
+            elif sql_upper.startswith('UPDATE'):
+                return 'SQL_UPDATE'
+            elif sql_upper.startswith('DELETE'):
+                return 'SQL_DELETE'
+            else:
+                return 'SQL_UNKNOWN'
+                
+        except Exception as e:
+            handle_error(e, "Java SQL 타입 결정 실패")
+            return 'SQL_UNKNOWN'
+
+    def _extract_tables_from_java_sql(self, sql_content: str) -> List[str]:
+        """Java SQL에서 사용된 테이블 추출"""
+        try:
+            tables = []
+            sql_upper = sql_content.upper()
+            
+            # FROM 절 테이블 추출
+            from_pattern = r'\bFROM\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            from_matches = re.findall(from_pattern, sql_upper)
+            tables.extend(from_matches)
+            
+            # JOIN 절 테이블 추출
+            join_pattern = r'\b(?:LEFT\s+|RIGHT\s+|INNER\s+|OUTER\s+)?JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            join_matches = re.findall(join_pattern, sql_upper)
+            tables.extend(join_matches)
+            
+            # INSERT INTO 테이블 추출
+            insert_pattern = r'\bINSERT\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            insert_matches = re.findall(insert_pattern, sql_upper)
+            tables.extend(insert_matches)
+            
+            # UPDATE 테이블 추출
+            update_pattern = r'\bUPDATE\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            update_matches = re.findall(update_pattern, sql_upper)
+            tables.extend(update_matches)
+            
+            # DELETE FROM 테이블 추출
+            delete_pattern = r'\bDELETE\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+            delete_matches = re.findall(delete_pattern, sql_upper)
+            tables.extend(delete_matches)
+            
+            # 중복 제거 및 정리
+            return list(set([table.strip() for table in tables if table.strip()]))
+            
+        except Exception as e:
+            handle_error(e, "Java SQL 테이블 추출 실패")
+            return []
+
+    def _analyze_java_sql_joins(self, sql_content: str) -> List[Dict[str, Any]]:
+        """Java SQL에서 조인 관계 분석 (공통 모듈 사용)"""
+        try:
+            # 공통 SQL 조인 분석 모듈 사용
+            join_relationships = self.sql_join_analyzer.analyze_join_relationships(
+                sql_content, "java_source", 0
+            )
+            
+            # Java 파서용 형식으로 변환
+            java_join_relationships = []
+            for rel in join_relationships:
+                java_join_info = {
+                    'source_table': rel.get('source_table', ''),
+                    'target_table': rel.get('target_table', ''),
+                    'rel_type': rel.get('rel_type', 'JOIN_EXPLICIT'),
+                    'join_type': rel.get('join_type', 'UNKNOWN_JOIN'),
+                    'join_condition': rel.get('description', ''),
+                    'confidence': rel.get('confidence', 0.8)
+                }
+                java_join_relationships.append(java_join_info)
+            
+            debug(f"Java SQL 조인 분석 완료: {len(java_join_relationships)}개 관계 발견")
+            return java_join_relationships
+            
+        except Exception as e:
+            handle_error(e, "Java SQL 조인 분석 실패")
+            return []
+
+    def _find_containing_method_name(self, java_content: str, position: int) -> Optional[str]:
+        """주어진 위치를 포함하는 메서드명 찾기"""
+        try:
+            # 위치 이전의 내용에서 가장 가까운 메서드 선언 찾기
+            content_before = java_content[:position]
+            
+            # 메서드 패턴 (설정에서 로드)
+            method_patterns = self.config.get('method_extraction_patterns', [])
+            
+            # 역순으로 메서드 패턴 매칭
+            for pattern in method_patterns:
+                matches = list(re.finditer(pattern, content_before, re.MULTILINE))
+                if matches:
+                    # 가장 마지막 매치 (가장 가까운 메서드)
+                    last_match = matches[-1]
+                    return last_match.group(1)
+            
+            return None
+            
+        except Exception as e:
+            handle_error(e, "메서드명 찾기 실패")
+            return None

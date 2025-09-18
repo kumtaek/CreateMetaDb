@@ -5,9 +5,10 @@
 **목적**: Java 파일에서 CLASS, METHOD 추출하여 각각의 테이블에 등록하고 관계 분석을 한 번에 처리  
 **핵심 기능**: Java 파일 파싱, 클래스 정보 추출, 메서드 정보 추출, 관계 분석, 컴포넌트 등록  
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
-**구현 상태**: ✅ **구현 완료** (현재 main.py에서 1-4단계 실행)  
+**구현 상태**: ✅ **구현 완료** (2025-01-18 SQL 처리 기능 대폭 개선)  
 **파일**: `java_loading.py`, `parser/java_parser.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
+**SQL 처리 개선**: ✅ **StringBuilder SQL 추출 + 압축 저장 + 조인 분석** - [SQL공통파서_구현서.md](./SQL공통파서_구현서.md) 참조  
 
 ## 처리 플로우 차트 (현행화)
 
@@ -21,7 +22,8 @@ flowchart TD
     F --> G["Java 파싱\n정규식 기반"]
     G --> H["클래스 정보 추출\nCLASS, INTERFACE, ENUM"]
     H --> I["메서드 정보 추출\n복잡도 분류 적용"]
-    I --> J["메서드-클래스 연결\n_associate_methods_with_classes"]
+    I --> I2["SQL 쿼리 추출 (신규)\nStringBuilder 패턴 분석"]
+    I2 --> J["메서드-클래스 연결\n_associate_methods_with_classes"]
     J --> K["상속 관계 분석\nextends 키워드"]
     K --> L["CALL_QUERY 관계 분석\nSQL 호출 패턴"]
     L --> M["CALL_METHOD 관계 분석\n메서드 호출 패턴"]
@@ -29,7 +31,9 @@ flowchart TD
     N --> O["클래스 저장\nclasses 테이블"]
     O --> P["클래스 컴포넌트 생성\ncomponents 테이블"]
     P --> Q["메서드 컴포넌트 생성\ncomponents 테이블"]
-    Q --> R[관계 저장 시작]
+    Q --> Q2["SQL 쿼리 컴포넌트 생성 (신규)\ncomponents 테이블 + SQL 압축 저장"]
+    Q2 --> Q3["SQL 조인 관계 분석 (신규)\n공통 SqlJoinAnalyzer 사용"]
+    Q3 --> R[관계 저장 시작]
     R --> S{관계 타입별 처리}
     S -->|INHERITANCE| T["상속 관계 저장\nrelationships 테이블"]
     S -->|CALL_QUERY| U1{대상 쿼리 컴포넌트 존재?}
@@ -841,13 +845,86 @@ flowchart TD
 4. **문서화**: 자동으로 쿼리 호출 관계 문서화
 5. **디버깅 지원**: INFERRED 쿼리의 실제 SQL 내용을 툴팁으로 확인 가능
 
-### 구현 우선순위
+## 🚀 Java SQL 처리 기능 대폭 개선 (2025-01-18)
 
-1. **즉시 구현**: Java 파서의 `_get_query_component_id()` 함수 수정
-2. **중기 구현**: INFERRED 쿼리 정보 보강 (자바 호출 정보, SQL 내용 저장)
-3. **장기 구현**: CallChain Report UI 개선 (툴팁, 상세 정보 표시)
+### StringBuilder SQL 추출 및 처리
 
-이 개선을 통해 시스템의 정확성과 개발자 경험이 크게 향상될 것으로 예상됩니다.
+Java 파서에 SQL 쿼리 추출 및 처리 기능이 대폭 강화되었습니다:
+
+```mermaid
+sequenceDiagram
+    participant JE as JavaLoadingEngine
+    participant JP as JavaParser
+    participant SJA as SqlJoinAnalyzer
+    participant SCP as SqlContentProcessor
+    participant DB as metadata.db
+    participant SCDB as SqlContent.db
+    
+    JE->>JP: parse_java_file()
+    JP->>JP: _extract_sql_queries_from_java()
+    Note over JP: StringBuilder 패턴 분석
+    
+    loop 각 추출된 SQL 쿼리마다
+        JP->>SJA: analyze_join_relationships()
+        Note over SJA: 공통 SQL 조인 분석 모듈
+        SJA-->>JP: JOIN 관계 리스트
+        
+        JE->>SCP: _save_java_sql_content_compressed()
+        SCP->>SCDB: gzip 압축 저장
+        
+        JE->>DB: SQL 컴포넌트 저장 (SQL_SELECT 등)
+        JE->>DB: USE_TABLE 관계 저장
+        JE->>DB: JOIN 관계 저장 (EXPLICIT/IMPLICIT)
+    end
+```
+
+### 주요 개선 사항
+
+1. **StringBuilder SQL 추출**
+   ```java
+   // 이런 패턴을 자동 감지하고 SQL 추출
+   StringBuilder query = new StringBuilder();
+   query.append("SELECT u.user_id, u.username ");
+   query.append("FROM users u ");
+   query.append("LEFT JOIN orders o ON u.user_id = o.user_id ");
+   ```
+
+2. **SQL 압축 저장**
+   - `SqlContentProcessor`를 통한 gzip 압축 저장
+   - `SqlContent.db`에 별도 관리
+
+3. **오라클 조인 분석**
+   - 공통 `SqlJoinAnalyzer` 모듈 사용
+   - EXPLICIT/IMPLICIT JOIN 모두 지원
+   - XML과 동일한 수준의 고품질 분석
+
+4. **테이블 관계 생성**
+   - USE_TABLE: 쿼리 → 테이블 사용 관계
+   - JOIN_EXPLICIT: 명시적 조인 관계
+   - JOIN_IMPLICIT: 암시적 조인 관계
+
+### 상세 구현 내용
+
+**공통 SQL 파서의 상세 구현 내용은 [SQL공통파서_구현서.md](./SQL공통파서_구현서.md)를 참조하세요.**
+
+### 성능 및 품질 개선
+
+| 기능 | 이전 상태 | 개선 후 |
+|------|-----------|---------|
+| **Java SQL 처리** | ❌ 미지원 | ✅ StringBuilder 패턴 지원 |
+| **SQL 압축 저장** | ❌ 미지원 | ✅ gzip 압축 지원 |
+| **조인 분석** | ❌ 기본만 | ✅ Oracle EXPLICIT/IMPLICIT |
+| **테이블 관계** | ❌ 제한적 | ✅ 완전한 관계 분석 |
+| **XML과 품질 차이** | ❌ 큰 차이 | ✅ 동일한 수준 |
+
+### 구현 완료 현황
+
+1. **Phase 1**: ✅ **완료** - StringBuilder SQL 추출 기능
+2. **Phase 2**: ✅ **완료** - 공통 SQL 조인 분석 모듈 적용
+3. **Phase 3**: ✅ **완료** - SQL 압축 저장 기능
+4. **Phase 4**: ✅ **완료** - 테이블 관계 분석 및 연결
+
+이 개선을 통해 Java와 XML 파서의 SQL 처리 품질이 동일한 수준으로 향상되었습니다.
 
 ## 📚 관련 문서
 

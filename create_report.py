@@ -20,6 +20,7 @@ from reports.erd_report_generator import ERDReportGenerator
 from reports.architecture_report_generator import ArchitectureReportGenerator
 from reports.erd_dagre_report_generator import ERDDagreReportGenerator
 from reports.architecture_layer_report_generator import ArchitectureLayerReportGenerator
+from reports.sequence_diagram_report_generator import SequenceDiagramReportGenerator
 
 
 def parse_arguments():
@@ -33,6 +34,7 @@ def parse_arguments():
   python create_report.py --project-name <프로젝트명> --report-type callchain
   python create_report.py --project-name <프로젝트명> --report-type erd
   python create_report.py --project-name <프로젝트명> --report-type architecture
+  python create_report.py --project-name <프로젝트명> --report-type sequence
         """
     )
     
@@ -44,7 +46,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'all'],
         default='all',
         help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
@@ -171,6 +173,20 @@ def generate_architecture_layer_report(project_name: str, output_dir: str) -> bo
         return False
 
 
+def generate_sequence_diagram_report(project_name: str, output_dir: str) -> bool:
+    """Sequence Diagram Report 생성 (USER RULES 준수)"""
+    try:
+        # USER RULES: 공통함수 사용, 하드코딩 금지, 예외처리 handle_error() 적용
+        generator = SequenceDiagramReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        return success
+            
+    except Exception as e:
+        # USER RULES: handle_error()로 예외 처리 및 Exit
+        handle_error(e, "Sequence Diagram Report 생성 중 오류 발생")
+        return False
+
+
 def main():
     """메인 함수"""
     try:
@@ -250,6 +266,17 @@ def main():
             else:
                 failed_reports.append("Architecture Layer Report")
                 app_logger.info("실패: Architecture Layer Report 생성 실패")
+        
+        if args.report_type in ['sequence', 'all']:
+            app_logger.info("\n\n\n\n6단계 시작 ========================================")
+            app_logger.info("Sequence Diagram Report 생성")
+            total_count += 1
+            if generate_sequence_diagram_report(args.project_name, output_dir):
+                success_count += 1
+                app_logger.info("성공: Sequence Diagram Report 생성 완료")
+            else:
+                failed_reports.append("Sequence Diagram Report")
+                app_logger.info("실패: Sequence Diagram Report 생성 실패")
         
         # 결과 출력
         app_logger.info(f"\n\n\n\n=== 리포트 생성 완료 ===")

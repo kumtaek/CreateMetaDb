@@ -20,6 +20,7 @@ from util import (
     ConfigUtils, FileUtils, HashUtils, ValidationUtils, PathUtils,
     app_logger, info, error, debug, warning, handle_error
 )
+from util.sql_join_analyzer import SqlJoinAnalyzer
 
 
 class XmlParser:
@@ -72,6 +73,9 @@ class XmlParser:
             'join_relationships_created': 0,
             'errors': 0
         }
+        
+        # 공통 SQL 조인 분석기 초기화
+        self.sql_join_analyzer = SqlJoinAnalyzer(self.config)
 
     def _get_project_id(self) -> int:
         """
@@ -434,7 +438,10 @@ class XmlParser:
 
     def _analyze_join_relationships(self, sql_content: str, file_path: str, component_id: int) -> List[Dict[str, Any]]:
         """
-        JOIN 관계 분석 컨트롤 타워 (통합 개선 버전) - 0단계 DOM + 7단계 파이프라인
+        JOIN 관계 분석 (공통 모듈 사용 래퍼)
+        
+        기존 XML 파서 호출자들을 위해 메서드 시그니처를 유지하면서
+        내부적으로는 공통 SQL 조인 분석 모듈을 사용합니다.
 
         Args:
             sql_content: SQL 내용
@@ -445,86 +452,52 @@ class XmlParser:
             모든 JOIN 관계 리스트
         """
         try:
-            # 0단계: DOM 파싱 시도 (신규 추가) - SQL 내용이 아닌 파일 경로로 파싱
+            # XML 파서 특화 처리 (DOM 파싱, XML 파싱 에러 체크 등)
+            # 0단계: DOM 파싱 시도 (XML 파서만의 기능)
             try:
-                # sql_content는 SQL 문자열이므로 DOM 파싱 대상이 아님
-                # 파일 경로가 있는 경우에만 DOM 파싱 시도
-                # USER RULES: 하드코딩 지양 - 설정에서 XML 확장자 확인
                 xml_extensions = self.config.get('xml_extensions', ['.xml'])
                 if file_path and os.path.exists(file_path) and any(file_path.endswith(ext) for ext in xml_extensions):
                     dom_result = self._parse_with_dom(file_path)
                     if dom_result:
                         info(f"DOM 파싱 성공: {file_path}")
-                        # DOM 파싱 결과에서 JOIN 관계 추출
                         join_relationships = dom_result.get('join_relationships', [])
                         if join_relationships:
                             info(f"DOM 기반 JOIN 관계 {len(join_relationships)}개 추출: {file_path}")
                             return join_relationships
                         else:
-                            # DOM 파싱 성공했으나 JOIN 관계 없음 - 정상 처리
                             return []
             except Exception as dom_error:
-                # DOM 파싱 실패는 정상적인 Fallback 과정
-                info(f"DOM 파싱 실패, SAX Fallback 실행: {file_path} - {str(dom_error)}")
-                # SAX Fallback 시도 후 실패하면 그때 has_error='Y' 처리
-                # Fallback으로 기존 7단계 로직 실행
+                info(f"DOM 파싱 실패, 공통 분석 모듈 사용: {file_path} - {str(dom_error)}")
 
-            # 기존 7단계 로직 실행 (Fallback)
-            # USER RULES: path_utils.get_parser_config_path("sql")에서 패턴 가져오기 (크로스플랫폼 대응)
-            analysis_patterns = self.config.get('sql_analysis_patterns', {})
-            join_type_mapping = self.config.get('join_type_mapping', {})
+            # 동적 쿼리 사전 분석 (XML 파서 특화)
             dynamic_patterns = self.config.get('dynamic_sql_patterns', {})
-
-            # 0. 동적 쿼리 사전 분석 (JOIN이 포함된 동적 태그 감지)
             has_dynamic_join = self._detect_dynamic_join(sql_content, dynamic_patterns)
             if has_dynamic_join:
-                # 동적 JOIN 감지는 파싱 에러가 아닌 정상적인 분석 정보
                 debug(f"동적 JOIN 구문 감지: {file_path}")
-                # 동적 JOIN이 감지되어도 분석은 계속 진행
 
-            # 0.1. XML 파싱 에러 검사 (사용자 소스 수정 필요 케이스)
+            # XML 파싱 에러 검사 (XML 파서 특화)
             parsing_error = self._check_xml_parsing_handle_error(sql_content, file_path)
             if parsing_error:
-                # USER RULES: 파싱 에러는 has_error='Y', error_message 남기고 계속 진행
                 self._mark_parsing_handle_error(component_id, parsing_error)
-                # 파싱 에러가 있어도 분석은 계속 진행
 
-            # 1. SQL 정규화: 주석 제거, 대문자 변환, 동적 태그 처리
-            normalized_sql = self._normalize_sql_for_analysis(sql_content, dynamic_patterns)
-
-            # 2. FROM 절 분석: 관계의 시작점과 별칭 맵 확보
-            base_table, alias_map = self._find_base_and_aliases(normalized_sql, analysis_patterns)
-            if not base_table:
-                return []  # FROM 절이 없으면 분석 불가
-
-            # 3. EXPLICIT JOIN 체인 분석
-            explicit_relationships = self._analyze_explicit_join_chain(
-                normalized_sql, base_table, alias_map, analysis_patterns, join_type_mapping
+            # 공통 SQL 조인 분석 모듈 사용
+            join_relationships = self.sql_join_analyzer.analyze_join_relationships(
+                sql_content, file_path, component_id
             )
-
-            # 4. IMPLICIT JOIN 분석 (WHERE 절)
-            implicit_relationships = self._analyze_implicit_joins_in_where(
-                normalized_sql, alias_map, analysis_patterns
-            )
-
-            # 5. Inferred Column 분석 및 생성
-            all_join_conditions = self._extract_all_join_conditions(explicit_relationships, implicit_relationships)
-            inferred_relationships = self._find_and_create_inferred_columns(
-                all_join_conditions, alias_map, component_id
-            )
-
-            # 6. 모든 관계 통합 및 중복 제거
-            all_relationships = explicit_relationships + implicit_relationships + inferred_relationships
-            unique_relationships = self._remove_duplicate_relationships(all_relationships)
-
-            # 7. 관계 후처리 (테이블명 정규화, 유효성 검증)
-            final_relationships = self._post_process_relationships(unique_relationships, alias_map)
-
-            return final_relationships
+            
+            # XML 파서 특화 후처리 (INFERRED 컬럼 생성 등)
+            if join_relationships:
+                # INFERRED 컬럼 생성 (XML 파서만의 기능)
+                all_join_conditions = self._extract_all_join_conditions(join_relationships, [])
+                alias_map = {}  # 공통 모듈에서 이미 처리했으므로 빈 맵 사용
+                inferred_relationships = self._find_and_create_inferred_columns(
+                    all_join_conditions, alias_map, component_id
+                )
+                join_relationships.extend(inferred_relationships)
+            
+            return join_relationships
 
         except Exception as e:
-            # USER RULES: Exception 처리 - handle_error() 공통함수 사용
-            # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, f"JOIN 관계 분석 실패: {file_path}")
             return []
 
