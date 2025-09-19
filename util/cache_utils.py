@@ -282,6 +282,7 @@ if __name__ == "__main__":
 
 
 # --- Gemini 추가 시작: MyBatis <sql> 조각 캐시 ---
+import os
 import xml.etree.ElementTree as ET
 from typing import Dict, Optional
 from .path_utils import PathUtils
@@ -313,8 +314,14 @@ class SqlFragmentCache:
         exclude_patterns = xml_config.get('exclude_patterns', [])
         
         try:
-            # PathUtils를 사용하여 파일 목록 가져오기
-            xml_files = self.path_utils.find_files_by_patterns(project_path, include_patterns, exclude_patterns)
+            # XML 파일 목록 수집 (간단한 방식 사용)
+            xml_files = []
+            for root, dirs, files in os.walk(project_path):
+                for file in files:
+                    if file.endswith('.xml'):
+                        file_path = self.path_utils.join_path(root, file)
+                        xml_files.append(file_path)
+
             info(f"SQL 조각 캐싱을 위해 {len(xml_files)}개의 XML 파일을 스캔합니다.")
 
             for file_path in xml_files:

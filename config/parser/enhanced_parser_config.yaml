@@ -1,0 +1,35 @@
+# Enhanced MyBatis Parser 설정
+# USER RULES: 하드코딩 금지, 설정 파일 기반 처리
+
+enhanced_parser:
+  # 기능 활성화 여부
+  enabled: true
+
+  # 파일 크기 제한 (바이트 단위)
+  max_file_size: 20480  # 20KB
+
+  # 제외할 파일 패턴들 (파일명 기준)
+  exclude_patterns:
+    - "UserMapper.xml"
+    - "DirectXmlQueryMapper.xml"
+    - "ComplexEnterpriseMapper.xml"
+    - "TestCircularIncludeMapper.xml"  # 순환 참조 테스트 파일
+    - "TestCrossFileIncludeMapper.xml"  # 크로스 파일 참조 테스트 파일
+
+  # include 태그 필수 여부
+  require_include_tags: false
+
+  # 동적 SQL 분석 기본값
+  enable_dynamic_by_default: false
+
+  # 재귀 제한 설정
+  limits:
+    max_include_depth: 10
+    max_dynamic_depth: 3
+    max_paths: 8
+
+  # 안전 모드 설정
+  safety:
+    timeout_seconds: 5
+    enable_fallback: true
+    log_level: "warning"

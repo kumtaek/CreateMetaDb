@@ -8,7 +8,7 @@ SQL 파서 모듈
 import re
 import yaml
 from typing import List, Dict, Set, Any, Optional, Tuple
-from util import debug, error, handle_error, PathUtils
+from util import debug, error, handle_error, PathUtils, ValidationUtils
 
 
 class SqlParser:
@@ -468,7 +468,7 @@ class SqlParser:
             validated_tables = set()
 
             for table_name in table_names:
-                if self._is_valid_table_name(table_name):
+                if ValidationUtils.is_valid_table_name(table_name):
                     validated_tables.add(table_name)
                 else:
                     debug(f"테이블명 필터링됨: {table_name}")
@@ -478,124 +478,6 @@ class SqlParser:
         except Exception as e:
             debug(f"테이블명 검증 및 필터링 중 오류: {str(e)}")
             return table_names
-
-    def _is_valid_table_name(self, table_name: str) -> bool:
-        """테이블명 완전 유효성 검사"""
-        try:
-            # 1. 기본 후보 검증
-            if not self._is_valid_table_name_candidate(table_name):
-                return False
-
-            # 2. 길이 제한 (너무 짧은 이름 제외)
-            if len(table_name) < 3:
-                debug(f"테이블명 길이 부족: {table_name}")
-                return False
-
-            # 3. SQL 예약어 제외
-            if self._is_sql_keyword(table_name):
-                debug(f"SQL 예약어 제외: {table_name}")
-                return False
-
-            # 4. 시스템 함수 제외
-            if self._is_system_function(table_name):
-                debug(f"시스템 함수 제외: {table_name}")
-                return False
-
-            # 5. 시스템 테이블 패턴 제외
-            if self._matches_exclude_pattern(table_name):
-                debug(f"시스템 테이블 패턴 제외: {table_name}")
-                return False
-
-            # 6. 단일 문자 별칭 제외
-            if len(table_name) == 1:
-                debug(f"단일 문자 별칭 제외: {table_name}")
-                return False
-
-            # 7. 컬럼명 패턴 제외
-            if self._is_column_like_name(table_name):
-                debug(f"컬럼명 패턴 제외: {table_name}")
-                return False
-
-            # 8. 숫자로만 구성된 경우 제외
-            if table_name.isdigit():
-                debug(f"숫자로만 구성된 이름 제외: {table_name}")
-                return False
-
-            return True
-
-        except Exception as e:
-            debug(f"테이블명 유효성 검사 중 오류: {str(e)}")
-            return False
-
-    def _is_sql_keyword(self, table_name: str) -> bool:
-        """SQL 예약어 여부 확인"""
-        try:
-            if not self.sql_keywords:
-                return False
-
-            reserved_keywords = self.sql_keywords.get('sql_reserved_keywords', [])
-            return table_name in reserved_keywords
-
-        except Exception as e:
-            debug(f"SQL 예약어 확인 중 오류: {str(e)}")
-            return False
-
-    def _is_system_function(self, table_name: str) -> bool:
-        """시스템 함수 여부 확인"""
-        try:
-            if not self.system_functions:
-                return False
-
-            return table_name in self.system_functions
-
-        except Exception as e:
-            debug(f"시스템 함수 확인 중 오류: {str(e)}")
-            return False
-
-    def _matches_exclude_pattern(self, table_name: str) -> bool:
-        """제외 패턴 매칭 확인"""
-        try:
-            if not self.exclude_patterns:
-                return False
-
-            for pattern in self.exclude_patterns:
-                if re.match(pattern, table_name):
-                    return True
-
-            return False
-
-        except Exception as e:
-            debug(f"제외 패턴 확인 중 오류: {str(e)}")
-            return False
-
-    def _is_column_like_name(self, table_name: str) -> bool:
-        """컬럼명 유사 패턴 확인"""
-        try:
-            # _ID로 끝나는 경우 (외래키 컬럼명)
-            if table_name.endswith('_ID'):
-                return True
-
-            # ID만 있는 경우
-            if table_name == 'ID':
-                return True
-
-            # _CODE로 끝나는 경우
-            if table_name.endswith('_CODE'):
-                return True
-
-            # _NAME으로 끝나는 경우
-            if table_name.endswith('_NAME'):
-                return True
-
-            # _DATE로 끝나는 경우
-            if table_name.endswith('_DATE'):
-                return True
-
-            return False
-
-        except Exception as e:
-            debug(f"컬럼명 패턴 확인 중 오류: {str(e)}")
-            return False
 
     def analyze_join_relationships(self, sql_content: str) -> List[Dict[str, Any]]:
         """

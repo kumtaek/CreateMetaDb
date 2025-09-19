@@ -11,7 +11,9 @@
       "Bash(timeout 20 tail -n 20 logs/SourceAnalyzer_20250915_192512.log)",
       "Bash(find:*)",
       "Bash(timeout 10 tail -n 30 logs/SourceAnalyzer_20250915_222415.log)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(timeout 120 python:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

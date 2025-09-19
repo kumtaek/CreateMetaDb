@@ -1602,17 +1602,15 @@ class JavaParser:
                         matches = compiled_pattern.finditer(method_body)
                         for match in matches:
                             table_name = self._extract_table_name_from_match(match)
-                            if table_name:
-                                cleaned_table_name = self._clean_table_name(table_name)
-                                if cleaned_table_name:
-                                    relationship = {
-                                        'src_name': f"{class_name}.{method_name}",
-                                        'dst_name': cleaned_table_name,
-                                        'rel_type': 'USE_TABLE',
-                                        'line_number': line_start + self._find_line_in_method_body(method_body, match.start()),
-                                        'relationship_detail': match.group(0)
-                                    }
-                                    use_table_relationships.append(relationship)
+                            if table_name and ValidationUtils.is_valid_table_name(table_name):
+                                relationship = {
+                                    'src_name': f"{class_name}.{method_name}",
+                                    'dst_name': table_name,
+                                    'rel_type': 'USE_TABLE',
+                                    'line_number': line_start + self._find_line_in_method_body(method_body, match.start()),
+                                    'relationship_detail': match.group(0)
+                                }
+                                use_table_relationships.append(relationship)
 
                 except Exception as e:
                     handle_error(f"USE_TABLE 관계 분석 실패: {method.get('method_name', 'UNKNOWN')} - {str(e)}")
@@ -1716,39 +1714,7 @@ class JavaParser:
             handle_error(f"메서드 제외 확인 실패: {str(e)}")
             return False
 
-    def _clean_table_name(self, table_name: str) -> Optional[str]:
-        """테이블명 정제"""
-        try:
-            if not table_name:
-                return None
 
-            # USER RULES: 하드코딩 지양 - 설정 파일에서 정제 패턴 로드
-            table_cleaning = self.relationship_config.get('table_name_cleaning', {})
-            remove_patterns = table_cleaning.get('remove_patterns', [])
-            transform_patterns = table_cleaning.get('transform_patterns', {})
-            valid_patterns = table_cleaning.get('valid_table_patterns', [])
-
-            cleaned_name = table_name.strip()
-
-            # 제거 패턴 적용
-            for remove_pattern in remove_patterns:
-                cleaned_name = re.sub(remove_pattern, '', cleaned_name)
-
-            # 변환 패턴 적용
-            for old_pattern, new_pattern in transform_patterns.items():
-                cleaned_name = re.sub(old_pattern, new_pattern, cleaned_name)
-
-            # 유효성 검증
-            if cleaned_name:
-                for valid_pattern in valid_patterns:
-                    if re.match(valid_pattern, cleaned_name):
-                        return cleaned_name
-
-            return None
-
-        except Exception as e:
-            handle_error(f"테이블명 정제 실패: {str(e)}")
-            return None
 
     def _find_line_in_method_body(self, method_body: str, position: int) -> int:
         """메서드 본문 내에서 위치의 라인 번호 찾기"""

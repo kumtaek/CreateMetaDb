@@ -644,7 +644,7 @@ class ArchitectureReportGenerator:
         """리포트 파일 저장"""
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"[{self.project_name}]_ArchitectureMermaid_{timestamp}.html"
+            filename = f"[{self.project_name}]_ArchitectureDiagram_{timestamp}.html"
             output_path = self.path_utils.join_path(self.output_dir, filename)
             
             with open(output_path, 'w', encoding='utf-8') as f:

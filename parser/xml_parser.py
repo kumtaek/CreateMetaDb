@@ -16,6 +16,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
+from util.exceptions import CircularReferenceError
 from util import (
     ConfigUtils, FileUtils, HashUtils, ValidationUtils, PathUtils,
     app_logger, info, error, debug, warning, handle_error
@@ -180,7 +181,7 @@ class XmlParser:
     def extract_sql_queries_and_analyze_relationships(self, xml_file: str) -> Dict[str, Any]:
         """
         XML 파일에서 SQL 쿼리를 추출하고 관계를 분석합니다.
-        DOM → SAX → 정규식 순서로 파싱을 시도하고, 모두 실패하면 has_error='Y' 처리합니다.
+        DOM -> SAX -> 정규식 순서로 파싱을 시도하고, 모두 실패하면 has_error='Y' 처리합니다.
         """
         # current_file_id는 외부(xml_loading.py)에서 설정되므로 여기서 재설정하지 않음
         if self.current_file_id is None:
@@ -188,7 +189,7 @@ class XmlParser:
         
         debug(f"현재 처리 중인 XML 파일: {xml_file}, file_id: {self.current_file_id}")
         
-        # 1단계: DOM 기반 파싱 시도
+        # 1단계: DOM 기반 파싱 시도 (Enhanced 파서 포함)
         debug(f"DOM 기반 파싱 시도: {xml_file}")
         dom_result = self._parse_with_dom(xml_file)
         
@@ -246,7 +247,8 @@ class XmlParser:
 
     def _parse_with_dom(self, xml_file: str) -> Optional[Dict[str, Any]]:
         """
-        (신규) DOM 기반으로 MyBatis XML을 파싱하고 SQL을 재구성합니다.
+        (개선) DOM 기반으로 MyBatis XML을 파싱하고 SQL을 재구성합니다.
+        Enhanced 파서를 먼저 시도하고, 순환 참조 발생 시 기존 파서로 fallback합니다.
         """
         try:
             # XML 파일을 DOM으로 파싱
@@ -257,11 +259,32 @@ class XmlParser:
             if not self._is_mybatis_xml(root):
                 return None
 
-            # MyBatis DOM 파서 생성
-            mybatis_parser = MybatisParser(self.dom_rules)
+            reconstructed_sqls = None
+            try:
+                # 1. [시도] EnhancedMybatisParser를 우선적으로 시도
+                debug(f"'{xml_file}' 파일에 대해 Enhanced Parser를 시도합니다.")
+                enhanced_parser = EnhancedMybatisParser()
+                # enable_dynamic은 기본적으로 True로 설정하여 동적 SQL 분석 활성화
+                reconstructed_sqls = enhanced_parser.parse_sql_mapper(root, enable_dynamic=True)
+                if reconstructed_sqls:
+                    info(f"Enhanced 파서 성공 (include 해석): {xml_file}")
 
-            # SQL 매퍼 파싱하여 재구성된 SQL들 추출
-            reconstructed_sqls = mybatis_parser.parse_sql_mapper(root)
+            except CircularReferenceError as e:
+                # 2. [감지] 순환 참조 예외 발생 시
+                warning(f"'{xml_file}' 파일에서 순환 참조가 감지되어 기본 파서로 대체합니다. (경로: {e.path})")
+                # 3. [대체] old_parser로 폴백하여 처리
+                reconstructed_sqls = None # Fallback을 위해 None으로 설정
+
+            except Exception as e:
+                # 순환 참조 외 다른 예외에 대한 추가적인 안전장치
+                warning(f"'{xml_file}' 파일 처리 중 Enhanced Parser에서 예상치 못한 오류 발생. 기본 파서로 대체합니다. 오류: {e}")
+                reconstructed_sqls = None # Fallback을 위해 None으로 설정
+
+            # Enhanced 파서가 실패했거나 결과가 없는 경우, 기본 파서로 처리
+            if not reconstructed_sqls:
+                debug(f"Enhanced 파서 실패 또는 결과 없음, 기본 파서로 fallback: {xml_file}")
+                mybatis_parser = MybatisParser(self.dom_rules)
+                reconstructed_sqls = mybatis_parser.parse_sql_mapper(root)
 
             if not reconstructed_sqls:
                 return None
@@ -320,7 +343,7 @@ class XmlParser:
         # SQL 태그가 포함된 XML 파일도 MyBatis로 간주
         sql_tags = ['select', 'insert', 'update', 'delete']
         for tag in sql_tags:
-            if root.find(f'.//{tag}') is not None:
+            if root.find(f'.//{{tag}}') is not None:
                 return True
 
         return False
@@ -452,22 +475,9 @@ class XmlParser:
             모든 JOIN 관계 리스트
         """
         try:
-            # XML 파서 특화 처리 (DOM 파싱, XML 파싱 에러 체크 등)
-            # 0단계: DOM 파싱 시도 (XML 파서만의 기능)
-            try:
-                xml_extensions = self.config.get('xml_extensions', ['.xml'])
-                if file_path and os.path.exists(file_path) and any(file_path.endswith(ext) for ext in xml_extensions):
-                    dom_result = self._parse_with_dom(file_path)
-                    if dom_result:
-                        info(f"DOM 파싱 성공: {file_path}")
-                        join_relationships = dom_result.get('join_relationships', [])
-                        if join_relationships:
-                            info(f"DOM 기반 JOIN 관계 {len(join_relationships)}개 추출: {file_path}")
-                            return join_relationships
-                        else:
-                            return []
-            except Exception as dom_error:
-                info(f"DOM 파싱 실패, 공통 분석 모듈 사용: {file_path} - {str(dom_error)}")
+            # 불필요한 DOM 재파싱 로직 제거
+            # 상위 _parse_with_dom에서 이미 전체 XML을 파싱했으며,
+            # 이 함수는 전달받은 개별 SQL 컨텐츠에 대한 분석만 책임져야 함.
 
             # 동적 쿼리 사전 분석 (XML 파서 특화)
             dynamic_patterns = self.config.get('dynamic_sql_patterns', {})
@@ -622,7 +632,7 @@ class XmlParser:
 
                             # 유효한 테이블명인지 확인 (컬럼명 필터링)
                             if (table1 != table2 and table1 and table2 and
-                                self._is_valid_table_name(table1) and self._is_valid_table_name(table2)):
+                                ValidationUtils.is_valid_table_name(table1) and ValidationUtils.is_valid_table_name(table2)):
                                 join_type = "ORACLE_OUTER_JOIN" if "(+)" in str(match) else "IMPLICIT_JOIN"
                                 relationships.append({
                                     'source_table': table1,
@@ -638,7 +648,7 @@ class XmlParser:
 
                             # 유효한 테이블명인지 확인 (컬럼명 필터링)
                             if (table1 != table2 and table1 and table2 and
-                                self._is_valid_table_name(table1) and self._is_valid_table_name(table2)):
+                                ValidationUtils.is_valid_table_name(table1) and ValidationUtils.is_valid_table_name(table2)):
                                 relationships.append({
                                     'source_table': table1,
                                     'target_table': table2,
@@ -746,7 +756,7 @@ class XmlParser:
             # MyBatis 동적 태그 내부의 JOIN 키워드 검사
             mybatis_tags = ['if', 'choose', 'when', 'otherwise', 'foreach', 'where']
             for tag in mybatis_tags:
-                pattern = f'<{tag}[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\\s+JOIN.*?</{tag}>'
+                pattern = f'<{tag}[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\s+JOIN.*?</{tag}>'
                 if re.search(pattern, sql_content, re.IGNORECASE | re.DOTALL):
                     debug(f"MyBatis {tag} 태그 내 JOIN 감지")
                     return True
@@ -777,7 +787,7 @@ class XmlParser:
                 r'unexpected end of file',
                 r'mismatched tag',
                 r'attribute.*not properly quoted',
-                r'<![^>]*>.*?[^>]$',  # 잘못된 CDATA 섹션
+                r'<![^>]*>.*?[^>]',  # 잘못된 CDATA 섹션
                 r'&(?!amp;|lt;|gt;|quot;|apos;)[^;]*;'  # 잘못된 엔티티 참조
             ]
 
@@ -896,12 +906,11 @@ class XmlParser:
                 for match in matches:
                     alias1, col1, alias2, col2 = match
                     
-                    # USER RULES: 테이블 별칭 필터링 - 단일 문자 별칭은 실제 테이블명으로 인식하지 않음
-                    table1 = self._resolve_table_alias(alias1.upper(), alias_map)
-                    table2 = self._resolve_table_alias(alias2.upper(), alias_map)
+                    table1 = alias_map.get(alias1.upper())
+                    table2 = alias_map.get(alias2.upper())
                     
                     # 유효한 테이블명인지 검증
-                    if not self._is_valid_table_name(table1) or not self._is_valid_table_name(table2):
+                    if not table1 or not table2 or not ValidationUtils.is_valid_table_name(table1) or not ValidationUtils.is_valid_table_name(table2):
                         debug(f"유효하지 않은 테이블명 건너뜀: {table1}, {table2}")
                         continue
 
@@ -928,145 +937,6 @@ class XmlParser:
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, "Inferred Column 분석 실패")
             return []
-
-    def _is_valid_table_name(self, table_name: str) -> bool:
-        """
-        테이블명 유효성 검증 (별칭 및 컬럼명 오탐 방지)
-        실제 데이터베이스 스키마를 참조하여 검증
-
-        Args:
-            table_name: 검증할 테이블명
-
-        Returns:
-            유효한 테이블명이면 True, 아니면 False
-        """
-        try:
-            if not table_name:
-                return False
-
-            # 단일 문자 또는 2글자 이하 필터링 (별칭 가능성 높음)
-            if len(table_name) <= 2:
-                return False
-
-            # 대문자로만 구성된 경우 (별칭 가능성 높음)
-            if table_name.isupper() and len(table_name) <= 3:
-                return False
-
-            # 실제 테이블명 패턴 검증 (대문자, 언더스코어 포함)
-            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
-                return False
-
-            # 예약어 체크 (자주 사용되는 단일 문자 별칭)
-            reserved_words = {'B', 'C', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z'}
-            if table_name in reserved_words:
-                return False
-
-            # 실제 데이터베이스에 존재하는 테이블인지 확인
-            if self._is_existing_table(table_name):
-                return True
-
-            # 실제 데이터베이스에 존재하는 컬럼명인지 확인
-            if self._is_existing_column(table_name):
-                return False
-
-            # 기본적인 컬럼명 패턴 확인 (_ID로 끝나는 경우)
-            if table_name.endswith('_ID'):
-                return False
-
-            # 단독 ID 패턴
-            if table_name == 'ID':
-                return False
-
-            # 그 외의 경우는 유효한 테이블명으로 간주
-            return True
-
-        except Exception as e:
-            handle_error(e, f"테이블명 유효성 검증 실패: {table_name}")
-
-    def _is_existing_table(self, table_name: str) -> bool:
-        """
-        실제 데이터베이스에 존재하는 테이블인지 확인
-
-        Args:
-            table_name: 확인할 테이블명
-
-        Returns:
-            존재하면 True, 아니면 False
-        """
-        try:
-            from util.database_utils import get_database_manager
-
-            db_manager = get_database_manager()
-            query = """
-                SELECT COUNT(*) FROM components c
-                JOIN tables t ON c.component_id = t.component_id
-                WHERE c.component_type = 'TABLE'
-                AND UPPER(c.component_name) = UPPER(?)
-                AND c.del_yn = 'N' AND t.del_yn = 'N'
-            """
-
-            result = db_manager.execute_query(query, (table_name,))
-            return result and len(result) > 0 and result[0][0] > 0
-
-        except Exception:
-            # 에러 발생시 False 반환 (보수적 접근)
-            return False
-
-    def _is_existing_column(self, column_name: str) -> bool:
-        """
-        실제 데이터베이스에 존재하는 컬럼명인지 확인
-
-        Args:
-            column_name: 확인할 컬럼명
-
-        Returns:
-            존재하면 True, 아니면 False
-        """
-        try:
-            from util.database_utils import get_database_manager
-
-            db_manager = get_database_manager()
-            query = """
-                SELECT COUNT(*) FROM components c
-                JOIN columns col ON c.component_id = col.component_id
-                WHERE c.component_type = 'COLUMN'
-                AND UPPER(c.component_name) = UPPER(?)
-                AND c.del_yn = 'N' AND col.del_yn = 'N'
-            """
-
-            result = db_manager.execute_query(query, (column_name,))
-            return result and len(result) > 0 and result[0][0] > 0
-
-        except Exception:
-            # 에러 발생시 False 반환 (보수적 접근)
-            return False
-
-    def _resolve_table_alias(self, alias: str, alias_map: dict) -> str:
-        """
-        테이블 별칭을 실제 테이블명으로 변환
-        
-        Args:
-            alias: 테이블 별칭
-            alias_map: 별칭-테이블명 매핑
-            
-        Returns:
-            실제 테이블명 또는 None (유효하지 않은 경우)
-        """
-        try:
-            # 별칭 매핑에서 실제 테이블명 찾기
-            actual_table = alias_map.get(alias)
-            if actual_table:
-                return actual_table
-            
-            # 별칭이 매핑에 없으면 유효성 검증 후 반환
-            if self._is_valid_table_name(alias):
-                return alias
-            
-            # 유효하지 않은 별칭은 None 반환
-            return None
-            
-        except Exception as e:
-            handle_error(e, f"테이블 별칭 변환 실패: {alias}")
 
     def _should_create_inferred_column(self, table_name: str, column_name: str) -> bool:
         """
@@ -1361,7 +1231,7 @@ class MybatisParser:
         sql_tags = ['select', 'insert', 'update', 'delete']
 
         for tag_name in sql_tags:
-            for statement_node in xml_root.findall(f'.//{tag_name}'):
+            for statement_node in xml_root.findall(f'.//{{tag_name}}'):
                 statement_id = statement_node.get('id')
                 if statement_id:
                     # 각 구문은 독립적인 컨텍스트를 가짐
@@ -1523,7 +1393,7 @@ class MybatisParser:
             return ""
 
         # 샘플 항목으로 재구성
-        sample_values = self.sample_data.get('string', ["'sample_val_1'", "'sample_val_2'"])
+        sample_values = self.sample_data.get('string', ["'%sample_val_1'", "'%sample_val_2'"])
 
         # #{item} 또는 #{item.property} 형태 모두 대응
         reconstructed_items = []
@@ -1607,7 +1477,7 @@ class MybatisParser:
 
     def _get_full_text_content(self, element: ET.Element) -> str:
         """
-        엘리먼트의 모든 텍스트 내용을 재귀적으로 추출 (태그 제외)
+        엘리먼트의 모든 텍스트 내용을 안전하게 이터레이터로 추출 (재귀 방지)
 
         Args:
             element: XML 엘리먼트
@@ -1615,28 +1485,411 @@ class MybatisParser:
         Returns:
             텍스트 내용
         """
-        # recursion depth 추적
-        self._log_recursion_depth("_get_full_text_content")
-        
+        # itertext()는 모든 하위 텍스트를 순서대로 반환하는 효율적인 이터레이터
+        return ' '.join(text.strip() for text in element.itertext() if text and text.strip())
+
+
+# === Gemini 추가: Phase 1-A MyBatis include 태그 지원 ===
+
+class EnhancedMybatisParser:
+    """
+    개선된 MyBatis XML 파서
+    - include 태그 지원
+    - 동적 SQL 분석 강화
+    - 기존 MybatisParser와 분리된 신규 클래스
+
+    USER RULES:
+    - 기존 로직에 영향 없음 (신규 클래스)
+    - Exception은 handle_error()로 처리
+    - 공통함수 사용 지향
+    """
+
+    MAX_INCLUDE_DEPTH = 10  # include 최대 재귀 깊이
+
+    def __init__(self):
+        """Enhanced MyBatis 파서 초기화"""
+        from util.cache_utils import get_sql_fragment_cache
+
+        self.fragment_cache = get_sql_fragment_cache()
+        # SQL 조인 분석기 재사용
+        self.sql_join_analyzer = SqlJoinAnalyzer()
+
+    def parse_sql_mapper(self, xml_root: ET.Element, enable_dynamic: bool = True) -> List[Dict[str, Any]]:
+        """
+        XML 루트에서 모든 SQL 구문 분석
+
+        Args:
+            xml_root: XML 루트 엘리먼트
+            enable_dynamic: 동적 SQL 분석 활성화 여부
+
+        Returns:
+            분석된 SQL 정보 리스트
+        """
         try:
-            text_parts = []
+            # 동적 SQL 분석이 활성화된 경우 해당 메서드 사용
+            if enable_dynamic:
+                return self.parse_sql_mapper_with_dynamic(xml_root)
 
-            # 현재 엘리먼트의 텍스트
-            if element.text:
-                text_parts.append(element.text)
+            # 기본 분석 (include만 지원)
+            reconstructed_sqls = []
+            namespace = xml_root.attrib.get('namespace', '')
+            sql_tags = ['select', 'insert', 'update', 'delete', 'merge']
 
-            # 자식 엘리먼트들의 텍스트 재귀적으로 추출 (10회 제한)
-            for child in element:
-                child_text = self._get_full_text_content(child)
+            for tag_name in sql_tags:
+                for statement_node in xml_root.findall(tag_name):
+                    sql_id = statement_node.get('id')
+                    if not sql_id:
+                        continue
+
+                    try:
+                        # include 해석하여 완전한 SQL 텍스트 추출
+                        full_sql_text = self._get_text_with_includes(
+                            statement_node, namespace, set()
+                        )
+
+                        if full_sql_text.strip():
+                            # SqlJoinAnalyzer를 사용해 테이블 및 조인 관계 분석
+                            analysis_result = self.sql_join_analyzer.analyze_join_relationships(full_sql_text)
+
+                            reconstructed_sqls.append({
+                                'sql_id': sql_id,
+                                'tag_name': tag_name,
+                                'sql_content': full_sql_text,
+                                'analysis_result': analysis_result
+                            })
+
+                    except RecursionError as e:
+                        warning(f"include 순환 참조 또는 최대 깊이 초과: {namespace}.{sql_id}, 사유: {e}")
+                        continue
+                    except Exception as e:
+                        warning(f"SQL 분석 실패: {namespace}.{sql_id}, 사유: {e}")
+                        continue
+
+            return reconstructed_sqls
+
+        except Exception as e:
+            # USER RULES: Exception 발생시 handle_error()로 exit()
+            handle_error(e, "Enhanced MyBatis 파서 분석 실패")
+
+    def _get_text_with_includes(self, node: ET.Element, namespace: str,
+                               call_stack: set, depth: int = 0) -> str:
+        """
+        include 태그를 해석하여 완전한 텍스트 추출 (반복문 기반 안전한 처리)
+
+        Args:
+            node: XML 노드
+            namespace: 현재 네임스페이스
+            call_stack: 순환 참조 방지용 호출 스택
+            depth: 재귀 깊이 (include 태그만 카운트)
+
+        Returns:
+            완전한 SQL 텍스트
+        """
+        if depth > self.MAX_INCLUDE_DEPTH:
+            warning(f"include 최대 깊이 {self.MAX_INCLUDE_DEPTH} 초과, 텍스트만 반환")
+            return self._extract_text_only(node)
+
+        # 텍스트 부분 수집
+        parts = []
+
+        # 노드의 직접 텍스트
+        if node.text:
+            parts.append(node.text.strip())
+
+        # 자식 노드들 처리
+        for child in node:
+            if child.tag == 'include':
+                refid = child.attrib.get('refid')
+                if not refid:
+                    continue
+
+                # 순환 참조 확인
+                if refid in call_stack:
+                    raise CircularReferenceError(f"순환 참조 발견! '{refid}' 처리를 중단합니다.", path=list(call_stack))
+
+
+                # SQL 조각 찾기
+                fragment_node = self.fragment_cache.get_fragment_node(refid, namespace)
+                if fragment_node is not None:
+                    call_stack.add(refid)
+                    try:
+                        # include 태그만 깊이 증가
+                        fragment_text = self._get_text_with_includes(
+                            fragment_node, namespace, call_stack, depth + 1
+                        )
+                        if fragment_text.strip():
+                            parts.append(fragment_text.strip())
+                    except Exception as e:
+                        warning(f"include 처리 실패 {refid}: {e}")
+                    finally:
+                        call_stack.discard(refid)
+                else:
+                    debug(f"SQL 조각 미발견: {refid}")
+
+            else:
+                # 동적 SQL 태그들과 일반 태그들 처리
+                child_text = self._extract_text_only(child)
                 if child_text.strip():
-                    text_parts.append(child_text)
+                    parts.append(child_text.strip())
 
-            # 자식 엘리먼트 뒤의 텍스트
-            if child.tail:
-                text_parts.append(child.tail)
+            # 자식 노드 뒤의 tail 텍스트
+            if child.tail and child.tail.strip():
+                parts.append(child.tail.strip())
 
-            return ' '.join(text_parts)
-        
-        finally:
-            # recursion depth 감소
-            self._decrease_recursion_depth()
+        return " ".join(filter(None, parts))
+
+    def _extract_text_only(self, node: ET.Element) -> str:
+        """
+        XML 노드에서 모든 텍스트를 안전하게 추출 (재귀 없음)
+        """
+        parts = []
+
+        # 스택 기반 반복문으로 모든 하위 노드 순회
+        stack = [node]
+
+        while stack:
+            current = stack.pop()
+
+            # 현재 노드의 텍스트
+            if current.text:
+                parts.append(current.text.strip())
+
+            # 자식 노드들을 스택에 추가 (역순으로 추가해서 올바른 순서 유지)
+            for child in reversed(list(current)):
+                stack.append(child)
+
+                # tail 텍스트도 수집
+                if child.tail:
+                    parts.append(child.tail.strip())
+
+        return " ".join(filter(None, parts))
+
+    def _extract_dynamic_sql_paths(self, node: ET.Element, namespace: str,
+                                   call_stack: set, depth: int = 0) -> List[str]:
+        """
+        동적 SQL 태그를 분석하여 모든 가능한 SQL 경로 생성 (안전한 보편적 로직)
+
+        Args:
+            node: XML 노드
+            namespace: 현재 네임스페이스
+            call_stack: 순환 참조 방지용 호출 스택 (include 태그용)
+            depth: 동적 SQL 분석 깊이
+
+        Returns:
+            가능한 모든 SQL 경로 리스트
+        """
+        # 동적 분석 깊이 제한 (include 깊이와 별도)
+        MAX_DYNAMIC_DEPTH = 3  # 더 보수적으로 설정
+        if depth > MAX_DYNAMIC_DEPTH:
+            warning(f"동적 SQL 분석 깊이 {depth} 초과, 텍스트 추출로 처리")
+            return [self._extract_text_only(node)]
+
+        # 동적 태그 확인
+        dynamic_tags = ['if', 'choose', 'when', 'otherwise', 'foreach']
+        has_dynamic_tags = any(child.tag in dynamic_tags for child in node)
+
+        if not has_dynamic_tags:
+            # 동적 태그가 없으면 안전한 텍스트 추출
+            return [self._extract_text_only(node)]
+
+        # 경로 수 제한을 먼저 확인하여 조합 폭발 방지
+        child_dynamic_count = sum(1 for child in node if child.tag in dynamic_tags)
+        if child_dynamic_count > 4:  # 동적 태그가 너무 많으면 단순화
+            warning(f"동적 태그 {child_dynamic_count}개 초과, 단순 텍스트 추출로 처리")
+            return [self._extract_text_only(node)]
+
+        # 안전한 경로 분기 생성
+        try:
+            paths = self._generate_safe_paths(node, namespace, call_stack, depth)
+
+            # 최종 경로 수 제한
+            MAX_PATHS = 8  # 더 보수적으로 설정
+            if len(paths) > MAX_PATHS:
+                warning(f"동적 SQL 경로 {len(paths)}개 → {MAX_PATHS}개로 제한")
+                paths = self._select_representative_paths(paths, MAX_PATHS)
+
+            return [p.strip() for p in paths if p and p.strip()]
+
+        except Exception as e:
+            warning(f"동적 SQL 분석 실패, 기본 텍스트 추출: {e}")
+            return [self._extract_text_only(node)]
+
+    def _generate_safe_paths(self, node: ET.Element, namespace: str,
+                           call_stack: set, depth: int) -> List[str]:
+        """
+        안전한 방식으로 동적 SQL 경로 생성
+        """
+        paths = [""]
+
+        # 노드 텍스트 추가
+        if node.text and node.text.strip():
+            paths = [p + " " + node.text.strip() for p in paths]
+
+        # 자식 노드들 처리
+        for child in node:
+            try:
+                if child.tag == 'if':
+                    # if 태그: 간단한 true/false 경로
+                    child_text = self._extract_text_only(child)
+                    if child_text.strip():
+                        # true 경로 (if 내용 포함)
+                        true_paths = [p + " " + child_text.strip() for p in paths]
+                        # false 경로 (if 내용 제외)
+                        paths.extend(true_paths)
+
+                elif child.tag == 'choose':
+                    # choose 태그: when/otherwise 경로들
+                    choose_paths = []
+                    for when_child in child:
+                        if when_child.tag in ['when', 'otherwise']:
+                            when_text = self._extract_text_only(when_child)
+                            if when_text.strip():
+                                choose_paths.extend([p + " " + when_text.strip() for p in paths])
+
+                    if choose_paths:
+                        paths = choose_paths
+                    # choose 결과가 없으면 원래 경로 유지
+
+                elif child.tag == 'foreach':
+                    # foreach: 샘플 데이터 기반으로 재구성
+                    open_str = child.get('open', '')
+                    close_str = child.get('close', '')
+                    separator = child.get('separator', ', ')
+                    item_variable = child.get('item')
+
+                    if not item_variable:
+                        continue
+
+                    # 내부 템플릿 추출
+                    template = self._extract_text_only(child)
+                    if not template:
+                        continue
+
+                    # 샘플 값으로 재구성 (더 보수적인 샘플 데이터 사용)
+                    sample_values = ["'sample_val_1'", "'sample_val_2'"]
+                    
+                    reconstructed_items = []
+                    for sample_val in sample_values:
+                        # #{item} 또는 #{item.property} 형태 모두 대응
+                        item_sql = template.replace(f"#{{{item_variable}}}", sample_val)
+                        item_sql = re.sub(fr'#\{{{item_variable}\.[\w]+\}}', sample_val, item_sql)
+                        if item_sql.strip():
+                            reconstructed_items.append(item_sql.strip())
+                    
+                    if reconstructed_items:
+                        content = separator.join(reconstructed_items)
+                        result = f" {open_str}{content}{close_str} "
+                        if result.strip():
+                            paths = [p + " " + result.strip() for p in paths]
+
+                else:
+                    # 일반 태그 처리 시, include를 해석할 수 있는 함수를 사용해야 함
+                    child_text = self._get_text_with_includes(child, namespace, call_stack, depth)
+                    if child_text.strip():
+                        paths = [p + " " + child_text.strip() for p in paths]
+
+                # tail 텍스트 추가
+                if child.tail and child.tail.strip():
+                    paths = [p + " " + child.tail.strip() for p in paths]
+
+                # 경로 수가 너무 많아지면 조기 종료
+                if len(paths) > 32:
+                    warning("경로 수 초과, 조기 종료")
+                    break
+
+            except Exception as e:
+                warning(f"자식 노드 처리 실패 {child.tag}: {e}")
+                continue
+
+        return paths
+
+    def _select_representative_paths(self, paths: List[str], max_paths: int) -> List[str]:
+        """
+        대표적인 경로들을 선택하여 반환
+        """
+        if len(paths) <= max_paths:
+            return paths
+
+        # 길이 기준으로 정렬
+        paths_by_length = sorted(paths, key=len)
+
+        selected = []
+        # 가장 짧은 경로 (기본 경로)
+        selected.append(paths_by_length[0])
+
+        # 가장 긴 경로 (모든 조건 포함)
+        if len(paths_by_length) > 1:
+            selected.append(paths_by_length[-1])
+
+        # 중간 길이 경로들 균등하게 선택
+        remaining_slots = max_paths - len(selected)
+        if remaining_slots > 0 and len(paths_by_length) > 2:
+            step = max(1, (len(paths_by_length) - 2) // remaining_slots)
+            for i in range(1, len(paths_by_length) - 1, step):
+                if len(selected) < max_paths:
+                    selected.append(paths_by_length[i])
+
+        return selected[:max_paths]
+
+    def parse_sql_mapper_with_dynamic(self, xml_root: ET.Element) -> List[Dict[str, Any]]:
+        """
+        XML 루트에서 동적 SQL을 포함한 모든 SQL 구문 분석
+
+        Args:
+            xml_root: XML 루트 엘리먼트
+
+        Returns:
+            분석된 SQL 정보 리스트 (동적 경로 포함)
+        """
+        try:
+            reconstructed_sqls = []
+            namespace = xml_root.attrib.get('namespace', '')
+            sql_tags = ['select', 'insert', 'update', 'delete', 'merge']
+
+            for tag_name in sql_tags:
+                for statement_node in xml_root.findall(tag_name):
+                    sql_id = statement_node.get('id')
+                    if not sql_id:
+                        continue
+
+                    try:
+                        # 동적 SQL 경로 추출
+                        sql_paths = self._extract_dynamic_sql_paths(
+                            statement_node, namespace, set()
+                        )
+
+                        # 각 경로별로 분석
+                        for i, sql_path in enumerate(sql_paths):
+                            if sql_path.strip():
+                                # SqlJoinAnalyzer를 사용해 테이블 및 조인 관계 분석
+                                analysis_result = self.sql_join_analyzer.analyze_join_relationships(sql_path)
+
+                                # 경로별 고유 ID 생성
+                                path_id = f"{sql_id}_path_{i+1}" if len(sql_paths) > 1 else sql_id
+
+                                reconstructed_sqls.append({
+                                    'sql_id': path_id,
+                                    'original_sql_id': sql_id,
+                                    'tag_name': tag_name,
+                                    'sql_content': sql_path,
+                                    'analysis_result': analysis_result,
+                                    'is_dynamic_path': len(sql_paths) > 1,
+                                    'path_index': i + 1,
+                                    'total_paths': len(sql_paths)
+                                })
+
+                    except RecursionError as e:
+                        warning(f"동적 SQL 분석 재귀 오류: {namespace}.{sql_id}, 사유: {e}")
+                        continue
+                    except Exception as e:
+                        warning(f"동적 SQL 분석 실패: {namespace}.{sql_id}, 사유: {e}")
+                        continue
+
+            return reconstructed_sqls
+
+        except Exception as e:
+            # USER RULES: Exception 발생시 handle_error()로 exit()
+            handle_error(e, "Enhanced MyBatis 동적 파서 분석 실패")
+
+
+# === Gemini 추가 끝 ===

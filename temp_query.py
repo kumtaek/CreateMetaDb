@@ -1,0 +1,1 @@
+"import sqlite3; conn = sqlite3.connect('projects/sampleSrc/metadata.db'); cursor = conn.cursor(); cursor.execute('SELECT file_name FROM files WHERE file_name LIKE \"Test%%\"'); test_files = cursor.fetchall(); print('Test Files Found:'); [print(f'  - {f[0]}') for f in test_files]; conn.close()"  

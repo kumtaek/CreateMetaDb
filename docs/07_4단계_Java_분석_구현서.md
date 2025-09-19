@@ -3,12 +3,16 @@
 ## 개요
 
 **목적**: Java 파일에서 CLASS, METHOD 추출하여 각각의 테이블에 등록하고 관계 분석을 한 번에 처리  
-**핵심 기능**: Java 파일 파싱, 클래스 정보 추출, 메서드 정보 추출, 관계 분석, 컴포넌트 등록  
+**핵심 기능**: 
+- Java 파일 파싱, 클래스 정보 추출, 메서드 정보 추출
+- Enhanced SQL 추출 (StringBuilder + 정규식 패턴)
+- 관계 분석, 컴포넌트 등록
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
-**구현 상태**: ✅ **구현 완료** (2025-01-18 SQL 처리 기능 대폭 개선)  
+**구현 상태**: ✅ **구현 완료** (Enhanced SQL 추출 기능 포함)  
 **파일**: `java_loading.py`, `parser/java_parser.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
-**SQL 처리 개선**: ✅ **StringBuilder SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./SQL공통파서_구현서.md) 참조  
+**SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
+**Enhanced 파싱**: ✅ **문자열 리터럴 SQL 패턴 추출로 누락 방지**  
 
 ## 처리 플로우 차트 (현행화)
 
@@ -23,11 +27,12 @@ flowchart TD
     G --> H["클래스 정보 추출\nCLASS, INTERFACE, ENUM"]
     H --> I["메서드 정보 추출\n복잡도 분류 적용"]
     I --> I2["SQL 쿼리 추출 (신규)\nStringBuilder 패턴 분석"]
-    I2 --> J["메서드-클래스 연결\n_associate_methods_with_classes"]
+    I2 --> I3["Enhanced SQL 분석 (신규)\n정규식 패턴으로 문자열 리터럴 SQL 추출"]
+    I3 --> J["메서드-클래스 연결\n_associate_methods_with_classes"]
     J --> K["상속 관계 분석\nextends 키워드"]
-    K --> L["CALL_QUERY 관계 분석\nSQL 호출 패턴"]
+    K --> L["CALL_QUERY 관계 분석\nSQL 호출 패턴 + Enhanced SQL"]
     L --> M["CALL_METHOD 관계 분석\n메서드 호출 패턴"]
-    M --> N["USE_TABLE 관계 분석\n테이블 사용 패턴"]
+    M --> N["USE_TABLE 관계 분석\n테이블 사용 패턴 + Enhanced SQL"]
     N --> O["클래스 저장\nclasses 테이블"]
     O --> P["클래스 컴포넌트 생성\ncomponents 테이블"]
     P --> Q["메서드 컴포넌트 생성\ncomponents 테이블"]

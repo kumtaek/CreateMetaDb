@@ -160,7 +160,31 @@ def main():
         # 9. 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
         info("\n\n\n\n3단계 시작 ========================================")
         info("3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석")
-        
+
+        # === Gemini 추가: SQL 조각 캐시 초기화 ===
+        try:
+            from util.cache_utils import get_sql_fragment_cache
+            from util.config_utils import ConfigUtils
+
+            info("SQL 조각 캐시를 초기화합니다...")
+
+            # target_source_config.yaml 로드
+            path_utils = PathUtils()
+            target_config_path = path_utils.get_config_path('target_source_config.yaml')
+            config_utils = ConfigUtils()
+            target_config = config_utils.load_yaml_config(target_config_path)
+
+            if target_config:
+                # SQL 조각 캐시 초기화
+                sql_cache = get_sql_fragment_cache()
+                sql_cache.load_all_fragments(project_name, target_config)
+                info("SQL 조각 캐시 초기화 완료")
+            else:
+                warning("target_source_config.yaml 로드 실패, 기본 설정으로 진행")
+        except Exception as e:
+            warning(f"SQL 조각 캐시 초기화 실패, 기존 방식으로 진행: {e}")
+        # === Gemini 추가 끝 ===
+
         from xml_loading import XmlLoadingEngine
         
         # SQL Content 기능 활성화 (항상 활성화)
