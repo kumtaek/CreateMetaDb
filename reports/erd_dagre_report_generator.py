@@ -17,6 +17,7 @@ from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from reports.erd_dagre_templates import ERDDagreTemplates
+from reports.erd_metadata_service import ERDMetadataService
 
 
 class ERDDagreReportGenerator:
@@ -41,6 +42,9 @@ class ERDDagreReportGenerator:
         
         if not self.db_utils.connect():
             handle_error(Exception("데이터베이스 연결 실패"), f"메타데이터베이스 연결 실패: {self.metadata_db_path}")
+        
+        # ERD 메타데이터 서비스 초기화
+        self.metadata_service = ERDMetadataService(self.db_utils, project_name)
     
     def generate_report(self) -> bool:
         """
@@ -77,82 +81,17 @@ class ERDDagreReportGenerator:
             self.db_utils.disconnect()
     
     def _get_statistics(self) -> Dict[str, int]:
-        """통계 정보 조회"""
-        try:
-            stats = {}
-            
-            # 전체 테이블 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM (
-                    SELECT DISTINCT t.table_name
-                    FROM tables t
-                    JOIN projects p ON t.project_id = p.project_id
-                    WHERE p.project_name = ? AND t.del_yn = 'N'
-                )
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['total_tables'] = result[0]['count'] if result else 0
-            
-            # 전체 컬럼 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM columns c
-                JOIN tables t ON c.table_id = t.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['total_columns'] = result[0]['count'] if result else 0
-            
-            # Primary Key 수 (실제 쿼리에서 사용된 컬럼 기준)
-            query = """
-                SELECT COUNT(DISTINCT c.column_name) as count
-                FROM columns c
-                JOIN tables t ON c.table_id = t.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['primary_keys'] = result[0]['count'] if result else 0
-            
-            # Foreign Key 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? AND r.rel_type = 'FK' AND r.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['foreign_keys'] = result[0]['count'] if result else 0
-            
-            # 전체 관계 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? AND r.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['relationships'] = result[0]['count'] if result else 0
-            
-            app_logger.debug(f"ERD(Dagre) 통계 정보 조회 완료: {stats}")
-            return stats
-            
-        except Exception as e:
-            handle_error(e, "ERD(Dagre) 통계 정보 조회 실패")
-            return {}
+        """통계 정보 조회 - 공용 서비스 사용"""
+        return self.metadata_service.get_statistics()
     
     def _get_cytoscape_data(self) -> Dict[str, Any]:
-        """Cytoscape.js 형식의 ERD 데이터 조회"""
+        """Cytoscape.js 형식의 ERD 데이터 조회 - 공용 서비스 사용"""
         try:
-            # 테이블과 컬럼 정보 조회
-            tables_data = self._get_tables_with_columns()
+            # 공용 서비스에서 테이블과 컬럼 정보 조회 (Dagre용 상세 정보)
+            tables_data = self.metadata_service.get_tables_with_columns_detailed()
             
-            # 관계 정보 조회
-            relationships_data = self._get_relationships_detailed()
+            # 공용 서비스에서 관계 정보 조회
+            relationships_data = self.metadata_service.get_relationships()
             
             # Cytoscape.js 노드 데이터 생성
             nodes = self._generate_cytoscape_nodes(tables_data)
@@ -174,61 +113,6 @@ class ERDDagreReportGenerator:
             handle_error(e, "Cytoscape 데이터 생성 실패")
             return {'nodes': [], 'edges': [], 'tables_count': 0, 'relationships_count': 0}
     
-    def _get_tables_with_columns(self) -> Dict[str, List[Dict[str, Any]]]:
-        """테이블과 컬럼 정보 조회"""
-        try:
-            query = """
-                SELECT 
-                    t.table_name,
-                    t.table_owner,
-                    t.table_comments,
-                    c.column_name,
-                    c.data_type,
-                    c.position_pk,
-                    c.nullable,
-                    c.column_comments,
-                    c.column_id,
-                    c.data_length,
-                    c.data_default
-                FROM tables t
-                JOIN columns c ON t.table_id = c.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND t.del_yn = 'N' 
-                  AND c.del_yn = 'N'
-                ORDER BY t.table_name, c.column_id
-            """
-            
-            results = self.db_utils.execute_query(query, (self.project_name,))
-            
-            # 테이블별로 데이터 그룹화
-            tables_data = {}
-            for row in results:
-                table_name = row['table_name']
-                if table_name not in tables_data:
-                    tables_data[table_name] = {
-                        'table_owner': row['table_owner'],
-                        'table_comments': row['table_comments'],
-                        'columns': []
-                    }
-                
-                tables_data[table_name]['columns'].append({
-                    'column_name': row['column_name'],
-                    'data_type': row['data_type'],
-                    'is_primary_key': bool(row['position_pk']),
-                    'is_nullable': row['nullable'] == 'Y',
-                    'column_comments': row['column_comments'],
-                    'column_order': row['column_id'],
-                    'data_length': row['data_length'],
-                    'data_default': row['data_default']
-                })
-            
-            app_logger.debug(f"테이블 데이터 조회 완료: {len(tables_data)}개 테이블")
-            return tables_data
-            
-        except Exception as e:
-            handle_error(e, "테이블 데이터 조회 실패")
-            return {}
     
     def _get_relationships_detailed(self) -> List[Dict[str, Any]]:
         """상세 관계 정보 조회"""
@@ -362,7 +246,7 @@ class ERDDagreReportGenerator:
                   AND dst_col.column_name = ?
             """
             
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
+            result = self.db_utils.execute_query(query, (dst_table.upper(), src_table.upper(), self.project_name, src_column, dst_column))
             return result[0]['count'] > 0 if result else False
             
         except Exception as e:

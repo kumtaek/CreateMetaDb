@@ -18,6 +18,7 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from reports.report_templates import ReportTemplates
+from reports.erd_metadata_service import ERDMetadataService
 
 
 class ERDReportGenerator:
@@ -43,6 +44,9 @@ class ERDReportGenerator:
         
         if not self.db_utils.connect():
             handle_error(Exception("데이터베이스 연결 실패"), f"메타데이터베이스 연결 실패: {self.metadata_db_path}")
+        
+        # ERD 메타데이터 서비스 초기화
+        self.metadata_service = ERDMetadataService(self.db_utils, project_name)
     
     def generate_report(self) -> bool:
         """
@@ -79,114 +83,17 @@ class ERDReportGenerator:
             self.db_utils.disconnect()
     
     def _get_statistics(self) -> Dict[str, int]:
-        """통계 정보 조회"""
-        try:
-            stats = {}
-            
-            # 전체 테이블 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM (
-                    SELECT DISTINCT t.table_name
-                    FROM tables t
-                    JOIN projects p ON t.project_id = p.project_id
-                    WHERE p.project_name = ? AND t.del_yn = 'N'
-                )
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['total_tables'] = result[0]['count'] if result else 0
-            
-            # 전체 컬럼 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM columns c
-                JOIN tables t ON c.table_id = t.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['total_columns'] = result[0]['count'] if result else 0
-            
-            # Primary Key 수 (실제 쿼리에서 사용된 컬럼 기준)
-            query = """
-                SELECT COUNT(DISTINCT c.column_name) as count
-                FROM columns c
-                JOIN tables t ON c.table_id = t.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['primary_keys'] = result[0]['count'] if result else 0
-            
-            # Foreign Key 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? AND r.rel_type = 'FK' AND r.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['foreign_keys'] = result[0]['count'] if result else 0
-            
-            # 전체 관계 수
-            query = """
-                SELECT COUNT(*) as count
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? AND r.del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (self.project_name,))
-            stats['relationships'] = result[0]['count'] if result else 0
-            
-            app_logger.debug(f"ERD 통계 정보 조회 완료: {stats}")
-            return stats
-            
-        except Exception as e:
-            handle_error(e, "ERD 통계 정보 조회 실패")
-            return {}
+        """통계 정보 조회 - 공용 서비스 사용"""
+        return self.metadata_service.get_statistics()
     
     def _get_erd_data(self) -> Dict[str, Any]:
-        """ERD 데이터 조회 (N+1 쿼리 문제 해결)"""
+        """ERD 데이터 조회 - 공용 서비스 사용"""
         try:
-            # 단일 쿼리로 모든 테이블과 컬럼 정보 조회
-            query = """
-                SELECT 
-                    t.table_name,
-                    c.column_name,
-                    c.data_type,
-                    c.position_pk,
-                    c.nullable,
-                    c.column_id
-                FROM tables t
-                JOIN columns c ON t.table_id = c.table_id
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND t.del_yn = 'N' 
-                  AND c.del_yn = 'N'
-                ORDER BY t.table_name, c.column_id
-            """
+            # 공용 서비스에서 테이블과 컬럼 정보 조회
+            tables_data = self.metadata_service.get_tables_with_columns()
             
-            results = self.db_utils.execute_query(query, (self.project_name,))
-            
-            # 테이블별로 데이터 그룹화
-            tables_data = {}
-            for row in results:
-                table_name = row['table_name']
-                if table_name not in tables_data:
-                    tables_data[table_name] = []
-                
-                tables_data[table_name].append({
-                    'column_name': row['column_name'],
-                    'data_type': row['data_type'],
-                    'is_primary_key': bool(row['position_pk']),
-                    'is_nullable': row['nullable'] == 'Y',
-                    'column_order': row['column_id']
-                })
-            
-            # 관계 정보 조회
-            relationships = self._get_relationships()
+            # 공용 서비스에서 관계 정보 조회
+            relationships = self.metadata_service.get_relationships()
             
             # Mermaid ERD 코드 생성
             mermaid_code = self._generate_mermaid_erd(tables_data, relationships)
@@ -204,63 +111,13 @@ class ERDReportGenerator:
             handle_error(e, "ERD 데이터 조회 실패")
             return {'tables': {}, 'relationships': [], 'mermaid_code': ''}
     
-    def _get_relationships(self) -> List[Dict[str, Any]]:
-        """관계 정보 조회 - 실제 쿼리에서 분석된 JOIN 관계만 사용"""
-        try:
-            # 먼저 테이블 간 관계만 조회 (컬럼 정보는 별도 처리)
-            query = """
-                SELECT 
-                    r.rel_type,
-                    src_table.table_name as src_table,
-                    dst_table.table_name as dst_table
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN components dst_comp ON r.dst_id = dst_comp.component_id
-                JOIN tables src_table ON src_comp.component_id = src_table.component_id
-                JOIN tables dst_table ON dst_comp.component_id = dst_table.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND r.rel_type LIKE 'JOIN_%'
-                  AND r.del_yn = 'N'
-                  AND src_comp.del_yn = 'N'
-                  AND dst_comp.del_yn = 'N'
-                  AND src_table.del_yn = 'N'
-                  AND dst_table.del_yn = 'N'
-                ORDER BY src_table.table_name, dst_table.table_name
-            """
-            
-            results = self.db_utils.execute_query(query, (self.project_name,))
-            
-            relationships = []
-            for row in results:
-                # 조인 조건에서 컬럼 정보 추출 (condition_expression 컬럼이 없으므로 기본값 사용)
-                src_column, dst_column = self._extract_join_columns(
-                    None, 
-                    row['src_table'], 
-                    row['dst_table']
-                )
-                
-                if src_column and dst_column:
-                    relationships.append({
-                        'rel_type': row['rel_type'],
-                        'src_table': row['src_table'],
-                        'dst_table': row['dst_table'],
-                        'src_column': src_column,
-                        'dst_column': dst_column
-                    })
-            
-            app_logger.debug(f"관계 정보 조회 완료: {len(relationships)}개")
-            return relationships
-            
-        except Exception as e:
-            handle_error(e, "관계 정보 조회 실패")
     
     def _extract_join_columns(self, condition_expression: str, src_table: str, dst_table: str) -> tuple:
         """조인 조건에서 소스와 대상 컬럼 추출"""
         try:
             if not condition_expression:
-                # 조건이 없으면 실제 데이터베이스 스키마 기반으로 추측
-                return self._guess_foreign_key_columns(src_table, dst_table)
+                # 조건이 없으면 메타데이터 기반으로 추출
+                return self.metadata_service.get_join_columns_from_metadata(src_table, dst_table)
             
             # 조건에서 컬럼 추출 (예: "p.brand_id = b.brand_id")
             import re
@@ -307,48 +164,12 @@ class ERDReportGenerator:
                   AND dst_col.column_name = ?
             """
             
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
+            result = self.db_utils.execute_query(query, (dst_table.upper(), src_table.upper(), self.project_name, src_column.upper(), dst_column.upper()))
             return result[0]['count'] > 0 if result else False
             
         except Exception as e:
             handle_error(e, f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
     
-    def _guess_foreign_key_columns(self, src_table: str, dst_table: str) -> tuple:
-        """실제 데이터베이스 스키마를 기반으로 외래키 컬럼 추측"""
-        try:
-            # 실제 테이블의 컬럼 정보를 조회하여 정확한 외래키 매칭
-            query = """
-                SELECT 
-                    src_col.column_name as src_column,
-                    dst_col.column_name as dst_column
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = dst_col.column_name
-                  AND src_col.column_name LIKE '%_ID'
-                LIMIT 1
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
-            
-            if result:
-                column_name = result[0]['src_column']
-                return column_name, column_name
-            
-            # 매칭되는 컬럼이 없으면 None 반환 (관계 제외)
-            app_logger.debug(f"외래키 컬럼 매칭 실패: {src_table} -> {dst_table}")
-            return None, None
-                
-        except Exception as e:
-            handle_error(e, f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}")
     
     def _generate_mermaid_erd(self, tables_data: Dict[str, List[Dict[str, Any]]], relationships: List[Dict[str, Any]]) -> str:
         """Mermaid ERD 코드 생성"""
@@ -430,50 +251,16 @@ class ERDReportGenerator:
             
         except Exception as e:
             handle_error(e, "Mermaid ERD 코드 생성 실패")
+            return ""
     
     def _get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> dict:
-        """CSV에서 업로드된 정보를 기반으로 관계 정보 확인 (PK-FK 여부, nullable 여부)"""
-        try:
-            # 소스 컬럼과 대상 컬럼의 PK 여부와 nullable 여부 확인
-            query = """
-                SELECT 
-                    src_col.position_pk as src_is_pk,
-                    dst_col.position_pk as dst_is_pk,
-                    src_col.nullable as src_nullable,
-                    dst_col.nullable as dst_nullable
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = ?
-                  AND dst_col.column_name = ?
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
-            
-            if result:
-                src_is_pk = result[0]['src_is_pk'] is not None
-                dst_is_pk = result[0]['dst_is_pk'] is not None
-                src_nullable = result[0]['src_nullable'] == 'Y'  # Y면 nullable, N이면 NOT NULL
-                dst_nullable = result[0]['dst_nullable'] == 'Y'
-                
-                return {
-                    'is_pk_fk': (src_is_pk and not dst_is_pk) or (not src_is_pk and dst_is_pk),  # PK-FK 관계 (양방향)
-                    'src_nullable': src_nullable,
-                    'dst_nullable': dst_nullable
-                }
-            
-            return {'is_pk_fk': False, 'src_nullable': True, 'dst_nullable': True}
-                
-        except Exception as e:
-            handle_error(e, f"관계 정보 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
+        """관계 정보 확인 - 공용 서비스 사용"""
+        rel_info = self.metadata_service.get_relationship_info(src_table, src_column, dst_table, dst_column)
+        return {
+            'is_pk_fk': (rel_info['src_is_pk'] and not rel_info['dst_is_pk']) or (not rel_info['src_is_pk'] and rel_info['dst_is_pk']),
+            'src_nullable': rel_info['src_nullable'],
+            'dst_nullable': rel_info['dst_nullable']
+        }
 
     def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인 (하위 호환성)"""

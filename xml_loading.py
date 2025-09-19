@@ -110,18 +110,16 @@ class XmlLoadingEngine:
                 try:
                     # 현재 파일의 file_id 조회
                     try:
-                        # PathUtils로 상대경로 변환 (디렉토리 경로만 추출)
+                        # PathUtils로 상대경로 변환 및 Unix 스타일로 정규화
                         from util.path_utils import PathUtils
-                        import os
                         path_utils = PathUtils()
                         relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
-                        # Windows 경로 구분자로 통일 (files 테이블과 일치시키기 위해)
-                        relative_path = relative_path.replace('/', '\\')
+                        unix_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
                         # file_loading.py 수정으로 이제 file_path에 전체 경로(파일명 포함)가 저장됨
                         
                         # 로그: 경로 정보 출력 (debug로 변경)
                         debug(f"XML 파일: {xml_file}")
-                        debug(f"상대경로: {relative_path}")
+                        debug(f"상대경로 (Unix): {unix_relative_path}")
                         
                         # 파일 ID 조회
                         file_query = """
@@ -131,7 +129,7 @@ class XmlLoadingEngine:
                             AND del_yn = 'N'
                         """
                         
-                        file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
+                        file_results = self.db_utils.execute_query(file_query, (self.project_name, unix_relative_path))
                         debug(f"SQL 쿼리 결과: {len(file_results) if file_results else 0}개")
                         
                         if file_results:
@@ -315,7 +313,7 @@ class XmlLoadingEngine:
                         'line_end': 1,
                         'has_error': 'N',
                         'error_message': None,
-                        'hash_value': '-',
+                        'hash_value': HashUtils.generate_md5(sql_content),
                         'del_yn': 'N'
                     }
                     

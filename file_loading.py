@@ -100,7 +100,7 @@ class FileLoadingEngine:
         """
         try:
             # 프로젝트 해시값 (하드코딩)
-            project_hash = '-'
+            project_hash = HashUtils.generate_content_hash(f"{self.project_name}{self.project_source_path}")
             
             project_data = {
                 'project_name': self.project_name,
@@ -221,12 +221,13 @@ class FileLoadingEngine:
                     'del_yn': 'N'
                 }
             
-            # 프로젝트 기준 상대경로
+            # 프로젝트 기준 상대경로 및 Unix 스타일로 정규화
             relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-            
+            unix_relative_path = self.path_utils.normalize_path_separator(relative_path, 'unix')
+
             # 파일 정보 구성 (file_path는 전체 상대경로)
             return {
-                'file_path': relative_path,  # 전체 상대경로
+                'file_path': unix_relative_path,  # Unix 스타일 경로로 저장
                 'file_name': file_info['file_name'],
                 'file_type': file_info['file_type'].upper(),  # 대문자로 변경
                 'hash_value': file_info['hash_value'],
@@ -1022,7 +1023,7 @@ class FileLoadingEngine:
                     JOIN projects p ON t.project_id = p.project_id
                     WHERE p.project_name = ? AND t.table_name = ? AND t.table_owner = ? AND t.del_yn = 'N'
                 """
-                results = self.db_utils.execute_query(query, (self.project_name, table_name, table_owner))
+                results = self.db_utils.execute_query(query, (self.project_name, table_name.upper(), table_owner.upper()))
             else:
                 query = """
                     SELECT t.component_id 
@@ -1030,7 +1031,7 @@ class FileLoadingEngine:
                     JOIN projects p ON t.project_id = p.project_id
                     WHERE p.project_name = ? AND t.table_name = ? AND t.del_yn = 'N'
                 """
-                results = self.db_utils.execute_query(query, (self.project_name, table_name))
+                results = self.db_utils.execute_query(query, (self.project_name, table_name.upper()))
             
             if results:
                 return results[0]['component_id']
@@ -1087,7 +1088,7 @@ class FileLoadingEngine:
                 JOIN projects p ON t.project_id = p.project_id
                 WHERE p.project_name = ? AND t.table_owner = ? AND t.table_name = ? AND t.del_yn = 'N'
             """
-            results = self.db_utils.execute_query(query, (self.project_name, owner, table_name))
+            results = self.db_utils.execute_query(query, (self.project_name, owner.upper(), table_name.upper()))
             
             if results:
                 return results[0]['table_id']

@@ -269,17 +269,7 @@ class PathUtils:
             handle_error(e, f"디렉토리 경로 추출 실패: {path}")
             return ""
     
-    def convert_to_unix_path(self, path: str) -> str:
-        """
-        Windows 경로를 Unix 스타일로 변환
-        
-        Args:
-            path: 변환할 경로
-            
-        Returns:
-            Unix 스타일 경로
-        """
-        return path.replace('\\', '/')
+
     
     def convert_to_windows_path(self, path: str) -> str:
         """
@@ -829,7 +819,7 @@ class PathUtils:
                         JOIN projects p ON t.project_id = p.project_id
                         WHERE p.project_name = ? AND t.table_name = ? AND t.table_owner = ? AND t.del_yn = 'N'
                     """
-                    results = db_utils.execute_query(query, (project_name, table_name, table_owner))
+                    results = db_utils.execute_query(query, (project_name, table_name.upper(), table_owner.upper()))
                 else:
                     query = """
                         SELECT t.component_id 
@@ -837,7 +827,7 @@ class PathUtils:
                         JOIN projects p ON t.project_id = p.project_id
                         WHERE p.project_name = ? AND t.table_name = ? AND t.del_yn = 'N'
                     """
-                    results = db_utils.execute_query(query, (project_name, table_name))
+                    results = db_utils.execute_query(query, (project_name, table_name.upper()))
                 
                 if results:
                     component_id = results[0]['component_id']

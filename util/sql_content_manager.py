@@ -294,7 +294,7 @@ class SqlContentManager:
             return gzip.decompress(compressed_data).decode('utf-8')
         except Exception as e:
             app_logger.error(f"SQL 내용 압축 해제 실패 (무시하고 계속 진행): {str(e)}")
-            return compressed_data.decode('utf-8', errors='ignore')
+            return compressed_data.decode('utf-8', errors='replace')
     
     def get_sql_contents(self, project_id: int, limit: int = 100) -> List[Dict[str, Any]]:
         """

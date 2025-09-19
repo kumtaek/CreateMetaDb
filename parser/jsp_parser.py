@@ -696,7 +696,7 @@ class JspParser:
                 jsp_path = jsp_path[1:]
 
             # 역슬래시를 슬래시로 변환
-            jsp_path = jsp_path.replace('\\', '/')
+            jsp_path = self.path_utils.normalize_path_separator(jsp_path, 'unix')
 
             # JSP 확장자가 없으면 추가
             if not jsp_path.lower().endswith('.jsp'):

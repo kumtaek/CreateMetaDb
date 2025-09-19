@@ -152,7 +152,7 @@ class LayerClassificationUtils:
             if folder_patterns:
                 for pattern in folder_patterns:
                     # 와일드카드 패턴을 정규식으로 변환
-                    normalized_path = file_path.replace('\\', '/')
+                    normalized_path = self.path_utils.normalize_path_separator(file_path, 'unix')
                     regex_pattern = pattern.replace('*', '.*')
                     if re.search(regex_pattern, normalized_path, re.IGNORECASE):
                         return True

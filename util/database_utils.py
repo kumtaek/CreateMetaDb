@@ -814,7 +814,7 @@ class DatabaseUtils:
                 ORDER BY CASE WHEN t.table_owner = 'UNKNOWN' THEN 1 ELSE 0 END, t.table_id
                 LIMIT 1
             """
-            results = self.execute_query(query, (project_name, table_name))
+            results = self.execute_query(query, (project_name, table_name.upper()))
             
             if results and len(results) > 0:
                 return results[0]['table_id']
@@ -845,7 +845,7 @@ class DatabaseUtils:
                 ORDER BY CASE WHEN t.table_owner = 'UNKNOWN' THEN 1 ELSE 0 END, c.component_id
                 LIMIT 1
             """
-            results = self.execute_query(query, (project_name, table_name))
+            results = self.execute_query(query, (project_name, table_name.upper()))
             
             if results and len(results) > 0:
                 return results[0]['component_id']
@@ -908,7 +908,8 @@ class DatabaseUtils:
                 WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
                 LIMIT 1
             """
-            results = self.execute_query(query, (project_id, component_name, component_type))
+            param_component_name = component_name.upper() if component_type in ['TABLE', 'COLUMN'] else component_name
+            results = self.execute_query(query, (project_id, param_component_name, component_type))
             
             if results and len(results) > 0:
                 return results[0]['component_id']
@@ -1010,7 +1011,7 @@ class DatabaseUtils:
                 AND comp.component_type = 'COLUMN' 
                 AND comp.del_yn = 'N'
             """
-            results = self.execute_query(query, (project_name, column_name, parent_id))
+            results = self.execute_query(query, (project_name, column_name.upper(), parent_id))
             return results[0] if results else None
             
         except Exception as e:

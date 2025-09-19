@@ -32,8 +32,13 @@ class ReportTemplates:
 <body class="callchain-body">
     <div class="callchain-container">
         <div class="callchain-header">
-            <h1>CallChain Report</h1>
-            <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
+            <div class="header-left">
+                <h1>CallChain Report</h1>
+                <div class="subtitle">프로젝트: {project_name} | 생성일시: {timestamp}</div>
+            </div>
+            <div class="header-right">
+                <button onclick="exportToCSV()" class="csv-export-btn">📊 CSV 다운로드</button>
+            </div>
         </div>
         {stats_html}
         <div class="callchain-content">
@@ -62,7 +67,7 @@ class ReportTemplates:
     </div>
     
     <script>
-        {self._get_callchain_javascript()}
+        {self._get_callchain_javascript(project_name, timestamp)}
     </script>
 </body>
 </html>"""
@@ -131,9 +136,12 @@ class ReportTemplates:
                 # QUERY 타입 - 검은색
                 query_type_css_class = ' query'
             
-            # SQL_% 타입 또는 QUERY 타입이면서 SQL 내용이 있는 경우 툴팁 표시
+            # SQL_% 타입 또는 QUERY 타입이면서 SQL 내용이 있는 경우 title 툴팁 표시
             if ((original_component_type.startswith('SQL_') or component_type == 'QUERY') and sql_content):
-                query_type_html = f'<span class="callchain-badge query-type{query_type_class}{query_type_css_class} tooltip" data-query="{escaped_sql}">{data["query_type"]}<span class="tooltiptext">{escaped_sql}</span></span>'
+                # HTML 엔티티를 일반 텍스트로 변환
+                import html
+                tooltip_content = html.unescape(escaped_sql.replace('&#10;', '\n').replace('&#13;', '\r').replace('&#9;', '\t'))
+                query_type_html = f'<span class="callchain-badge query-type{query_type_class}{query_type_css_class}" title="{tooltip_content}">{data["query_type"]}</span>'
             else:
                 query_type_html = f'<span class="callchain-badge query-type{query_type_class}{query_type_css_class}">{data["query_type"]}</span>'
             
@@ -151,25 +159,25 @@ class ReportTemplates:
             method_color = data.get('method_color', '#e1f5fe')
             query_color = data.get('query_color', '#f1f8e9')
             
-            # 안전한 HTML 생성 (크로스플랫폼 호환) - Layer 정보 포함
+            # 안전한 HTML 생성 (크로스플랫폼 호환) - 모든 컬럼에 툴팁 추가
             rows.append(f"""
                 <tr>
-                    <td><span class="callchain-badge">{data.get('jsp_file', '')}</span></td>
-                    <td><span class="callchain-badge">{data.get('api_entry', '')}</span></td>
-                    <td><span class="callchain-badge">{data['class_name']}</span></td>
+                    <td><span class="callchain-badge" title="Frontend 파일: {data.get('jsp_file', '')}">{data.get('jsp_file', '')}</span></td>
+                    <td><span class="callchain-badge" title="API URL: {data.get('api_entry', '')}">{data.get('api_entry', '')}</span></td>
+                    <td><span class="callchain-badge" title="클래스: {data['class_name']}">{data['class_name']}</span></td>
                     <td>
-                        <span class="callchain-badge" style="background-color: {method_color}; border: 1px solid #ccc;">
+                        <span class="callchain-badge" title="메서드: {data['method_name']} (Layer: {method_layer})" style="background-color: {method_color};">
                             {data['method_name']}
                         </span>
                     </td>
-                    <td><span class="callchain-badge{xml_file_class}">{data['xml_file']}</span></td>
+                    <td><span class="callchain-badge{xml_file_class}" title="XML 파일: {data['xml_file']}">{data['xml_file']}</span></td>
                     <td>
-                        <span class="callchain-badge{query_id_class}" style="background-color: {query_color}; border: 1px solid #ccc;">
+                        <span class="callchain-badge{query_id_class}" title="쿼리 ID: {data['query_id']} (Layer: {query_layer})" style="background-color: {query_color};">
                             {data['query_id']}
                         </span>
                     </td>
                     <td>{query_type_html}</td>
-                    <td><span class="callchain-badge{related_tables_class}">{related_tables_display}</span></td>
+                    <td><span class="callchain-badge{related_tables_class}" title="관련 테이블: {related_tables_display}">{related_tables_display}</span></td>
                 </tr>""")
         
         return '\n'.join(rows)
@@ -393,67 +401,174 @@ class ReportTemplates:
         }
         """
     
-    def _get_callchain_javascript(self) -> str:
+    def _get_callchain_javascript(self, project_name: str = "", timestamp: str = "") -> str:
         """CallChain Report JavaScript (오프라인 지원)"""
         return """
         // 오프라인 환경 지원을 위한 JavaScript
         // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
 
-        // 툴팁 기능 초기화
+        // CallChain Report 기능 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Tooltip initialization started');
+            console.log('CallChain Report initialized');
+            setupSelectableTooltips();
+        });
 
-            // query-type 툴팁 요소들을 찾아서 이벤트 리스너 추가
-            const queryTypeElements = document.querySelectorAll('.query-type.tooltip');
-            console.log('Found tooltip elements:', queryTypeElements.length);
-
-            queryTypeElements.forEach(function(element, index) {
-                console.log('Processing tooltip element', index, element);
-
-                element.addEventListener('mouseenter', function() {
-                    const tooltip = this.querySelector('.tooltiptext');
-                    console.log('Mouse enter - tooltip found:', !!tooltip);
-                    if (tooltip) {
-                        // HTML 엔티티 디코딩
-                        const content = tooltip.innerHTML;
-                        if (content && content.includes('&#')) {
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = content;
-                            tooltip.textContent = tempDiv.textContent || tempDiv.innerText || content;
-                        }
-
-                        tooltip.style.visibility = 'visible';
-                        tooltip.style.opacity = '1';
-                        tooltip.style.zIndex = '1000';
-                        tooltip.style.display = 'block';
-                        console.log('Tooltip displayed');
-                    }
-                });
-
-                element.addEventListener('mouseleave', function() {
-                    const tooltip = this.querySelector('.tooltiptext');
-                    if (tooltip) {
-                        tooltip.style.visibility = 'hidden';
-                        tooltip.style.opacity = '0';
-                        console.log('Tooltip hidden');
-                    }
+        // 선택 가능한 툴팁 설정 (title 속성의 내용을 선택 가능한 팝업으로 표시)
+        function setupSelectableTooltips() {
+            // 모든 callchain-badge 요소에 클릭 이벤트 추가
+            const badges = document.querySelectorAll('.callchain-badge[title]');
+            badges.forEach(badge => {
+                badge.style.cursor = 'pointer';
+                badge.addEventListener('click', function(e) {
+                    showSelectableTooltip(this, e);
                 });
             });
+        }
 
-            // CSS 호버 방식도 함께 활성화 (백업)
-            const style = document.createElement('style');
-            style.textContent = `
-                .query-type.tooltip:hover .tooltiptext {
-                    visibility: visible !important;
-                    opacity: 1 !important;
-                    z-index: 1000 !important;
-                    display: block !important;
-                    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
-                }
+        // 선택 가능한 툴팁 팝업 표시
+        function showSelectableTooltip(element, event) {
+            const content = element.getAttribute('title');
+            if (!content) return;
+
+            // 기존 팝업 제거
+            const existingPopup = document.querySelector('.selectable-tooltip-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+
+            // 새 팝업 생성
+            const popup = document.createElement('div');
+            popup.className = 'selectable-tooltip-popup';
+            popup.innerHTML = `
+                <div class="popup-header">
+                    <span>내용 보기 (드래그하여 복사 가능)</span>
+                    <button onclick="this.parentElement.parentElement.remove()">✕</button>
+                </div>
+                <div class="popup-content" style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${content}</div>
+                <div class="popup-footer">
+                    <button onclick="copyToClipboard(this.parentElement.previousElementSibling.textContent)">📋 복사</button>
+                </div>
             `;
-            document.head.appendChild(style);
-            console.log('Tooltip initialization completed');
-        });
+
+            // 팝업 위치 설정
+            popup.style.position = 'fixed';
+            popup.style.left = event.pageX + 'px';
+            popup.style.top = event.pageY + 'px';
+            popup.style.zIndex = '10000';
+            popup.style.background = 'white';
+            popup.style.border = '2px solid #1976d2';
+            popup.style.borderRadius = '8px';
+            popup.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            popup.style.maxWidth = '600px';
+            popup.style.maxHeight = '400px';
+
+            document.body.appendChild(popup);
+
+            // 화면 밖으로 나가지 않도록 위치 조정
+            const rect = popup.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                popup.style.left = (window.innerWidth - rect.width - 10) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+                popup.style.top = (window.innerHeight - rect.height - 10) + 'px';
+            }
+        }
+
+        // 클립보드 복사 기능
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('클립보드에 복사되었습니다!');
+                }).catch(err => {
+                    console.error('클립보드 복사 실패:', err);
+                    fallbackCopyToClipboard(text);
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        }
+
+        // 클립보드 복사 대안 방법
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('클립보드에 복사되었습니다!');
+            } catch (err) {
+                alert('클립보드 복사에 실패했습니다. 수동으로 복사해주세요.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // CSV 다운로드 기능
+        function exportToCSV() {
+            const table = document.getElementById('chainTable');
+            if (!table) {
+                alert('테이블을 찾을 수 없습니다.');
+                return;
+            }
+
+            let csvContent = '';
+            
+            // 헤더 추가
+            const headers = ['Frontend', 'API_URL', '클래스', '메서드', 'XML파일', '쿼리ID', '쿼리종류', '관련테이블들'];
+            csvContent += headers.join(',') + '\\n';
+
+            // 데이터 행 추가 (title 속성에서 전체 내용 추출)
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = [];
+                
+                cells.forEach(cell => {
+                    const badge = cell.querySelector('.callchain-badge');
+                    if (badge) {
+                        // title 속성이 있으면 전체 내용 사용, 없으면 텍스트 내용 사용
+                        const fullContent = badge.getAttribute('title') || badge.textContent;
+                        // CSV용 특수문자 이스케이프
+                        const csvSafeContent = '"' + fullContent.replace(/"/g, '""') + '"';
+                        rowData.push(csvSafeContent);
+                    } else {
+                        rowData.push('""');
+                    }
+                });
+                
+                csvContent += rowData.join(',') + '\\n';
+            });
+
+            // CP949 인코딩으로 CSV 파일 다운로드
+            try {
+                // CP949 인코딩을 위한 BOM 추가
+                const BOM = '\\uFEFF';
+                const csvWithBOM = BOM + csvContent;
+                
+                const blob = new Blob([csvWithBOM], { 
+                    type: 'text/csv;charset=cp949;' 
+                });
+                
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'CallChain_Report_""" + project_name + """_""" + timestamp + """.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('CSV 파일이 다운로드되었습니다!');
+            } catch (error) {
+                console.error('CSV 다운로드 오류:', error);
+                alert('CSV 다운로드 중 오류가 발생했습니다.');
+            }
+        }
         """
 
     def get_erd_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 

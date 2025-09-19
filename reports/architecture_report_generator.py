@@ -405,7 +405,7 @@ class ArchitectureReportGenerator:
                         # 와일드카드 패턴을 정규식으로 변환 (폴더 경로만 매칭)
                         import re
                         # Windows와 Unix 경로 구분자 모두 고려
-                        normalized_path = file_path.replace('\\', '/')
+                        normalized_path = self.path_utils.normalize_path_separator(file_path, 'unix')
                         regex_pattern = pattern.replace('*', '.*')
                         if re.search(regex_pattern, normalized_path, re.IGNORECASE):
                             classified_classes.append(class_info)

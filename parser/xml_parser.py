@@ -1086,7 +1086,7 @@ class XmlParser:
 
                 # 기존 테이블 확인
                 query = "SELECT table_id FROM tables WHERE table_name = ? AND project_id = ?"
-                result = db_utils.execute_query(query, (table_name, project_id))
+                result = db_utils.execute_query(query, (table_name.upper(), project_id))
 
                 if result:
                     return result[0]['table_id']

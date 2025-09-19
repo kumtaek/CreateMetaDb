@@ -206,7 +206,6 @@
     background: var(--gradient-header);
     color: var(--text-on-primary);
     padding: 4px;
-    text-align: center;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
     margin-bottom: 2px;
@@ -214,6 +213,17 @@
     top: 0;
     z-index: 100;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.callchain-header .header-left {
+    text-align: left;
+}
+
+.callchain-header .header-right {
+    text-align: right;
 }
 
 .callchain-header h1 {
@@ -424,7 +434,7 @@
     left: 50%;
     margin-left: -250px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: none;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 0.9em;
     white-space: pre-wrap;
@@ -450,12 +460,11 @@
     opacity: 1;
 }
 
-/* 쿼리종류 툴팁 스타일 - 클래스 이름 통일 및 글꼴 통일 */
-.query-type.tooltip {
-    position: relative;
-    display: inline-block;
-    cursor: help;
-    color: var(--primary-blue);
+/* CallChain Report - 쿼리종류 툴팁 스타일 */
+.callchain-badge.query-type.tooltip {
+    position: relative !important;
+    display: inline-block !important;
+    cursor: pointer !important;
     font-weight: 500 !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     text-rendering: optimizeLegibility;
@@ -463,35 +472,35 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-.query-type.tooltip .tooltiptext {
+.callchain-badge.query-type.tooltip .tooltiptext {
     visibility: hidden;
-    width: 500px;
-    background-color: var(--primary-dark);
-    color: var(--text-on-primary);
-    text-align: left;
-    border-radius: 6px;
-    padding: 10px;
-    position: absolute;
-    z-index: 1000;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -250px;
+    width: 500px !important;
+    background-color: #0d47a1 !important;
+    color: #ffffff !important;
+    text-align: left !important;
+    border-radius: 6px !important;
+    padding: 10px !important;
+    position: absolute !important;
+    z-index: 1000 !important;
+    top: 100% !important;
+    left: 0% !important;
+    margin-left: 0px !important;
     opacity: 0;
-    transition: opacity 0.3s;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
-    font-size: 0.85em;
+    transition: none !important;
+    font-family: 'Malgun Gothic', '맑은 고딕', 'Segoe UI', sans-serif, monospace !important;
+    font-size: 0.85em !important;
     font-weight: 400 !important;
-    white-space: pre-wrap;
-    word-break: break-word;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: var(--shadow-heavy);
-    line-height: 1.4;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    box-shadow: 0 8px 16px rgba(25, 118, 210, 0.24) !important;
+    line-height: 1.4 !important;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
 
-.query-type.tooltip .tooltiptext::after {
+.callchain-badge.query-type.tooltip .tooltiptext::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -502,9 +511,174 @@
     border-color: var(--primary-dark) transparent transparent transparent;
 }
 
-.query-type.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
+.callchain-badge.query-type.tooltip:hover .tooltiptext {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* 추가 툴팁 스타일 강화 - 모든 툴팁에 적용 */
+.callchain-badge.tooltip:hover .tooltiptext,
+.query-type.tooltip:hover .tooltiptext,
+.tooltip:hover .tooltiptext {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* 기본 툴팁 스타일 - 예전 버전과 정확히 동일 */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 500px;
+    background-color: #ff0000;
+    color: #ffffff;
+    border: 3px solid #000000;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1000;
+    top: 100%;
+    left: 0%;
+    margin-left: 0px;
+    opacity: 0;
+    transition: none;
+    font-family: monospace;
+    font-size: 1.0em;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2c3e50 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+/* CallChain Report - SQL 타입별 색상 스타일 */
+.callchain-badge.query-type.sql-select {
+    background-color: #e3f2fd !important;
+    color: #1565c0 !important;
+    border-color: #2196f3 !important;
+}
+
+.callchain-badge.query-type.sql-insert {
+    background-color: #e8f5e8 !important;
+    color: #2e7d32 !important;
+    border-color: #4caf50 !important;
+}
+
+.callchain-badge.query-type.sql-update {
+    background-color: #fff3e0 !important;
+    color: #ef6c00 !important;
+    border-color: #ff9800 !important;
+}
+
+.callchain-badge.query-type.sql-delete {
+    background-color: #ffebee !important;
+    color: #c62828 !important;
+    border-color: #f44336 !important;
+}
+
+.callchain-badge.query-type.query {
+    background-color: #f3e5f5 !important;
+    color: #7b1fa2 !important;
+    border-color: #9c27b0 !important;
+}
+
+/* CSV 다운로드 버튼 스타일 */
+.csv-export-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: var(--text-on-primary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 0.8em !important;
+    transition: all 0.3s ease !important;
+}
+
+.csv-export-btn:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 선택 가능한 툴팁 팝업 스타일 */
+.selectable-tooltip-popup {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 14px !important;
+}
+
+.selectable-tooltip-popup .popup-header {
+    background: #1976d2 !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.selectable-tooltip-popup .popup-header button {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    padding: 0 !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.selectable-tooltip-popup .popup-content {
+    padding: 12px !important;
+    background: white !important;
+    color: #333 !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    white-space: pre-wrap !important;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    line-height: 1.4 !important;
+}
+
+.selectable-tooltip-popup .popup-footer {
+    background: #f5f5f5 !important;
+    padding: 8px 12px !important;
+    border-radius: 0 0 6px 6px !important;
+    text-align: right !important;
+}
+
+.selectable-tooltip-popup .popup-footer button {
+    background: #1976d2 !important;
+    color: white !important;
+    border: none !important;
+    padding: 4px 8px !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+}
+
+.selectable-tooltip-popup .popup-footer button:hover {
+    background: #0d47a1 !important;
 }
 
 /* === 연관성 시각화 전용 스타일 === */
