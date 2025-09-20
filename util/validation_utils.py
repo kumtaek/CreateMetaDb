@@ -423,6 +423,28 @@ class ValidationUtils:
         return ValidationUtils.validate_regex_pattern(identifier, pattern)
     
     @staticmethod
+    def is_valid_table_name(table_name: str) -> bool:
+        """
+        테이블명 유효성 검증
+        
+        Args:
+            table_name: 테이블명
+            
+        Returns:
+            유효성 여부 (True/False)
+        """
+        if not table_name or not isinstance(table_name, str):
+            return False
+        
+        # 테이블명 규칙: 영문자로 시작, 영문자/숫자/언더스코어 허용
+        try:
+            pattern = r'^[a-zA-Z][a-zA-Z0-9_]*$'
+            return bool(re.match(pattern, table_name))
+        except Exception:
+            # 간단한 fallback 검증
+            return table_name.replace('_', '').replace('$', '').isalnum()
+    
+    @staticmethod
     def validate_comprehensive(data: Dict[str, Any], validation_rules: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:
         """
         종합적인 데이터 검증

@@ -1457,6 +1457,8 @@ class JavaLoadingEngine:
             path_utils = PathUtils()
             # 1단계 파일 스캔과 동일한 방식: get_relative_path()만 사용 (OS 자동 감지)
             relative_path = path_utils.get_relative_path(file_path, self.project_source_path)
+            # Unix 스타일로 정규화 (DB 저장 형식과 일치)
+            relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
             
             file_query = """
                 SELECT file_id FROM files
@@ -1621,10 +1623,15 @@ class JavaLoadingEngine:
             if existing_components and len(existing_components) > 0:
                 return existing_components[0]['component_id']
             
+            # 프로젝트의 첫 번째 파일 ID 조회 (테이블 컴포넌트용)
+            first_file_query = "SELECT file_id FROM files WHERE project_id = ? AND del_yn = 'N' ORDER BY file_id LIMIT 1"
+            first_file_result = self.db_utils.execute_query(first_file_query, (project_id,))
+            first_file_id = first_file_result[0]['file_id'] if first_file_result else 1
+            
             # 새 테이블 컴포넌트 생성
             table_data = {
                 'project_id': project_id,
-                'file_id': None,  # 테이블은 파일에 속하지 않음
+                'file_id': first_file_id,  # 프로젝트의 첫 번째 파일 ID 사용
                 'component_name': table_name,
                 'component_type': 'TABLE',
                 'parent_id': None,

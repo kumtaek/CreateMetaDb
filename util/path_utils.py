@@ -984,6 +984,12 @@ def normalize_path(path: str, project_root: str = None) -> str:
     return path_utils.normalize_path(path)
 
 
+def normalize_path_separator(path: str, target_platform: str = 'unix', project_root: str = None) -> str:
+    """경로 구분자 정규화 편의 함수"""
+    path_utils = PathUtils(project_root)
+    return path_utils.normalize_path_separator(path, target_platform)
+
+
 def get_relative_path(target_path: str, base_path: str = None, project_root: str = None) -> str:
     """상대경로 생성 편의 함수"""
     path_utils = PathUtils(project_root)

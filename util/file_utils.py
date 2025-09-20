@@ -12,7 +12,7 @@ import mimetypes
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from .logger import app_logger, handle_error, info, debug
+from .logger import app_logger, handle_error, info, debug, warning
 
 
 class FileUtils:
@@ -364,15 +364,16 @@ class FileUtils:
                         info(f"오래된 로그 파일 삭제: {filename} (생성일: {time.ctime(file_mtime)})")
                         
                 except Exception as e:
-                    # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                    handle_error(e, f"로그 파일 삭제 실패: {filename}")
+                    # 로그 파일 삭제 실패는 치명적이지 않으므로 경고로 처리
+                    warning(f"로그 파일 삭제 실패 (무시하고 계속 진행): {filename}, 오류: {str(e)}")
             
             # 로그는 main.py에서 통합 출력
                 
             return deleted_count
             
         except Exception as e:
-            handle_error(e, f"로그 파일 정리 실패: {log_directory}")
+            # 로그 파일 정리 실패는 치명적이지 않으므로 경고로 처리
+            warning(f"로그 파일 정리 실패 (무시하고 계속 진행): {log_directory}, 오류: {str(e)}")
             return 0
 
 

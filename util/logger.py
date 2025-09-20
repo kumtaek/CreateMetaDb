@@ -188,23 +188,61 @@ class SourceAnalyzerLogger:
         return self.log_file_path
     
     def handle_error(self, 
-                    error: Exception, 
+                    error, 
                     custom_message: Optional[str] = None,
                     exit_code: int = 1) -> None:
         """
         에러 로그 기록 후 프로그램 종료
         
         Args:
-            error: 발생한 Exception
+            error: 발생한 Exception 또는 에러 메시지 문자열
             custom_message: 추가 메시지
             exit_code: 종료 코드 (기본값: 1)
         """
-        # 스택 트레이스에서 라인번호 추출
+        # error가 문자열인 경우 현재 호출 스택에서 실제 호출 위치 찾기
+        if isinstance(error, str):
+            error_message = error
+            custom_message = custom_message or error_message
+            
+            # 현재 호출 스택에서 handle_error를 호출한 위치 찾기
+            try:
+                current_stack = traceback.extract_stack()
+                # handle_error 호출한 프레임 찾기 (마지막에서 2번째)
+                if len(current_stack) >= 2:
+                    caller_frame = current_stack[-2]  # handle_error를 호출한 위치
+                    filename = caller_frame.filename
+                    line_number = caller_frame.lineno
+                    function_name = caller_frame.name
+                    code_line = caller_frame.line
+                    
+                    # 에러 메시지 구성
+                    error_msg = f"FATAL ERROR at {filename}:{line_number} in {function_name}()"
+                    if code_line:
+                        error_msg += f"\nCode: {code_line.strip()}"
+                    
+                    if custom_message:
+                        error_msg += f"\nMessage: {custom_message}"
+                    
+                    error_msg += f"\nException: {error_message}"
+                    
+                    self.logger.error(error_msg)
+                    sys.exit(exit_code)
+                    return
+                    
+            except Exception:
+                # 스택 추출 실패시 단순 메시지만 출력
+                self.logger.error(f"FATAL ERROR: {error_message}")
+                if custom_message:
+                    self.logger.error(f"Message: {custom_message}")
+                sys.exit(exit_code)
+                return
+        
+        # Exception 객체인 경우 기존 방식으로 처리
         try:
             tb = traceback.extract_tb(error.__traceback__)
-        except RecursionError:
-            # traceback 처리에서 RecursionError 발생시 fallback
-            self.logger.error(f"[ERROR] RecursionError in traceback processing")
+        except (AttributeError, RecursionError):
+            # traceback 처리에서 오류 발생시 fallback
+            self.logger.error(f"[ERROR] Traceback processing failed")
             tb = None
         if tb:
             # 가장 최근 프레임 (에러 발생 위치)

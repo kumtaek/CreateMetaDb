@@ -319,9 +319,12 @@ class JspLoadingEngine:
                 return None
 
             # 상대 경로 변환 (크로스 플랫폼 지원)
-            from util.path_utils import get_relative_path
+            from util.path_utils import get_relative_path, PathUtils
             import os
             relative_path = get_relative_path(file_path, self.project_source_path)
+            # Unix 스타일로 정규화 (DB 저장 형식과 일치)
+            path_utils = PathUtils()
+            relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
 
             # 데이터베이스에서 file_id 조회 (USER RULES: 공통함수 사용)
             # 먼저 정확한 경로로 조회하고, 없으면 파일명만으로 조회
@@ -364,6 +367,7 @@ class JspLoadingEngine:
         """
         try:
             from util.file_utils import get_file_hash
+            from util.path_utils import PathUtils
             import os
 
             # 파일 정보 수집
@@ -379,11 +383,15 @@ class JspLoadingEngine:
                 except:
                     line_count = 0
 
+            # 경로 정규화 (Unix 스타일)
+            path_utils = PathUtils()
+            normalized_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
+
             # files 테이블에 JSP 파일 등록
             file_data = {
                 'project_id': project_id,
-                'file_path': relative_path,
-                'file_name': os.path.basename(relative_path),
+                'file_path': normalized_relative_path,
+                'file_name': os.path.basename(normalized_relative_path),
                 'file_type': 'JSP',
                 'line_count': line_count,
                 'file_size': file_size,

@@ -22,7 +22,6 @@ exclude_directories:
   - "**/bin/**"
   - "**/out/**"
   - "**/report/**"
-  - "**/config/**"
   - "**/logs/**"
   - "**/temp/**"
   - "**/backup/**"

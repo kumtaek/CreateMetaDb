@@ -633,7 +633,7 @@ class XmlLoadingEngine:
                     handle_error(Exception("JOIN 관계 저장 실패"), "JOIN 관계 저장 실패")
                     return False
             else:
-                handle_error("저장할 유효한 JOIN 관계가 없습니다")
+                debug("저장할 유효한 JOIN 관계가 없습니다")
                 return True
                 
         except Exception as e:

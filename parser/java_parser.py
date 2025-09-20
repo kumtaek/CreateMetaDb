@@ -15,7 +15,7 @@ import os
 import re
 from typing import List, Dict, Any, Optional
 from util import (
-    ConfigUtils, FileUtils, HashUtils, PathUtils,
+    ConfigUtils, FileUtils, HashUtils, PathUtils, ValidationUtils,
     app_logger, info, error, debug, warning, handle_error
 )
 from util.sql_join_analyzer import SqlJoinAnalyzer
