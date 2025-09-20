@@ -79,6 +79,162 @@ public class TestEnhancedSqlDao {
     
     /**
      * 테스트 5: UPDATE + 연산자 패턴
+     * 예상 테이블: users, user_profiles
+     */
+    public int testUpdateConcatenation(String userId, Map<String, Object> updates) {
+        String sql = "UPDATE users SET ";
+        
+        boolean first = true;
+        for (String key : updates.keySet()) {
+            if (!first) {
+                sql = sql + ", ";
+            }
+            sql = sql + key + " = '" + updates.get(key) + "'";
+            first = false;
+        }
+        
+        sql = sql + " WHERE user_id = '" + userId + "'";
+        
+        System.out.println("Update Concat SQL: " + sql);
+        return 1;
+    }
+    
+    /**
+     * 테스트 6: 복잡한 조건부 쿼리 + 연산자 패턴
+     * 예상 테이블: users, orders, products, categories, payments
+     */
+    public List<Map<String, Object>> testComplexConditionalQuery(Map<String, Object> filters) {
+        String sql = "SELECT u.user_id, u.username, u.email ";
+        
+        // 조건부 SELECT 절 확장
+        if (filters.containsKey("includeOrderInfo")) {
+            sql = sql + ", COUNT(o.order_id) as order_count, SUM(o.total_amount) as total_spent ";
+        }
+        
+        if (filters.containsKey("includeProductInfo")) {
+            sql = sql + ", COUNT(DISTINCT p.product_id) as unique_products ";
+        }
+        
+        sql = sql + "FROM users u ";
+        
+        // 조건부 JOIN
+        if (filters.containsKey("includeOrderInfo")) {
+            sql = sql + "LEFT JOIN orders o ON u.user_id = o.user_id ";
+            
+            if (filters.containsKey("includeProductInfo")) {
+                sql = sql + "LEFT JOIN order_items oi ON o.order_id = oi.order_id ";
+                sql = sql + "LEFT JOIN products p ON oi.product_id = p.product_id ";
+            }
+            
+            if (filters.containsKey("includePaymentInfo")) {
+                sql = sql + "LEFT JOIN payments pay ON o.order_id = pay.order_id ";
+            }
+        }
+        
+        // 동적 WHERE 조건
+        sql = sql + "WHERE u.status = 'ACTIVE' ";
+        
+        if (filters.containsKey("userType")) {
+            sql = sql + "AND u.user_type = '" + filters.get("userType") + "' ";
+        }
+        
+        if (filters.containsKey("dateFrom")) {
+            sql = sql + "AND u.created_date >= '" + filters.get("dateFrom") + "' ";
+        }
+        
+        // GROUP BY (조건부)
+        if (filters.containsKey("includeOrderInfo") || filters.containsKey("includeProductInfo")) {
+            sql = sql + "GROUP BY u.user_id, u.username, u.email ";
+        }
+        
+        sql = sql + "ORDER BY u.created_date DESC";
+        
+        System.out.println("Complex Conditional SQL: " + sql);
+        return new ArrayList<>();
+    }
+    
+    // 헬퍼 메서드들 추가
+    private List<User> generateSampleUsers(Map<String, Object> params) {
+        List<User> users = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            User user = new User();
+            user.setUserId("USER_" + i);
+            user.setUsername("user" + i);
+            user.setEmail("user" + i + "@example.com");
+            user.setStatus("ACTIVE");
+            users.add(user);
+        }
+        return users;
+    }
+    
+    private List<User> generateAdvancedSampleUsers(Map<String, Object> params) {
+        List<User> users = new ArrayList<>();
+        String userType = (String) params.getOrDefault("userType", "USER");
+        
+        for (int i = 1; i <= 5; i++) {
+            User user = new User();
+            user.setUserId("ADV_USER_" + i);
+            user.setUsername("advuser" + i);
+            user.setEmail("advuser" + i + "@example.com");
+            user.setUserType(userType);
+            user.setStatus("ACTIVE");
+            users.add(user);
+        }
+        return users;
+    }
+    
+    private List<User> generateUsersByType(String userType) {
+        List<User> users = new ArrayList<>();
+        for (int i = 1; i <= 3; i++) {
+            User user = new User();
+            user.setUserId(userType + "_USER_" + i);
+            user.setUsername(userType.toLowerCase() + "user" + i);
+            user.setEmail(userType.toLowerCase() + "user" + i + "@example.com");
+            user.setUserType(userType);
+            user.setStatus("ACTIVE");
+            users.add(user);
+        }
+        return users;
+    }
+    
+    private User generateUserById(String userId) {
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername("user_" + userId);
+        user.setEmail("user_" + userId + "@example.com");
+        user.setStatus("ACTIVE");
+        user.setUserType("USER");
+        return user;
+    }(List<String> joinTables) {
+        String sql = "SELECT u.user_id, u.username ";
+        sql = sql + "FROM users u ";
+        
+        for (String table : joinTables) {
+            sql = sql + "LEFT JOIN " + table + " t ON u.user_id = t.user_id ";
+        }
+        
+        sql = sql + "WHERE u.status = 'ACTIVE'";
+        
+        System.out.println("Loop Concat SQL: " + sql);
+        return new ArrayList<>();
+    }
+    
+    /**
+     * 테스트 4: INSERT + 연산자 패턴
+     * 예상 테이블: user_audit_logs
+     */
+    public int testInsertConcatenation(String userId, String action) {
+        String sql = "INSERT INTO user_audit_logs ";
+        sql = sql + "(user_id, action_type, action_details, created_date) ";
+        sql = sql + "VALUES ";
+        sql = sql + "('" + userId + "', '" + action + "', 'Auto generated log', SYSDATE)";
+        
+        System.out.println("Insert Concat SQL: " + sql);
+        return 1;
+    }
+    
+    /**
+     * 테스트 5: UPDATE + 연산자 패턴
      * 예상 테이블: users
      */
     public int testUpdateConcatenation(String userId, Map<String, Object> updateFields) {

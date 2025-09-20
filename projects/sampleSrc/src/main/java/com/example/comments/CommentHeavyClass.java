@@ -66,6 +66,159 @@ public class CommentHeavyClass {
 
     // 새로운 처리 메서드
     public String newProcessMethod(String input, String options) {
+        if (input == null || input.trim().isEmpty()) {
+            return "빈 입력값입니다";
+        }
+        
+        if (options == null) {
+            options = "default";
+        }
+        
+        // 옵션에 따른 다양한 처리
+        switch (options.toLowerCase()) {
+            case "uppercase":
+                return input.toUpperCase();
+            case "lowercase":
+                return input.toLowerCase();
+            case "reverse":
+                return new StringBuilder(input).reverse().toString();
+            case "trim":
+                return input.trim();
+            default:
+                return input + " [processed with " + options + "]";
+        }
+    }
+    
+    /**
+     * 복잡한 데이터 처리 메서드 - complex 복잡도
+     * 여러 단계의 처리와 예외 처리를 포함
+     */
+    public Map<String, Object> complexDataProcessing(List<String> inputList, 
+                                                   Map<String, String> processingOptions) {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (inputList == null || inputList.isEmpty()) {
+            result.put("error", "입력 리스트가 비어있습니다");
+            return result;
+        }
+        
+        try {
+            // 1단계: 데이터 정제
+            List<String> cleanedData = new ArrayList<>();
+            for (String data : inputList) {
+                if (data != null && !data.trim().isEmpty()) {
+                    cleanedData.add(data.trim());
+                }
+            }
+            
+            // 2단계: 옵션에 따른 변환
+            List<String> processedData = new ArrayList<>();
+            String transformOption = processingOptions.getOrDefault("transform", "none");
+            
+            for (String data : cleanedData) {
+                switch (transformOption) {
+                    case "uppercase":
+                        processedData.add(data.toUpperCase());
+                        break;
+                    case "lowercase":
+                        processedData.add(data.toLowerCase());
+                        break;
+                    case "capitalize":
+                        processedData.add(capitalizeFirst(data));
+                        break;
+                    default:
+                        processedData.add(data);
+                }
+            }
+            
+            // 3단계: 통계 계산
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("originalCount", inputList.size());
+            statistics.put("cleanedCount", cleanedData.size());
+            statistics.put("processedCount", processedData.size());
+            statistics.put("averageLength", processedData.stream()
+                .mapToInt(String::length)
+                .average()
+                .orElse(0.0));
+            
+            // 4단계: 결과 구성
+            result.put("success", true);
+            result.put("processedData", processedData);
+            result.put("statistics", statistics);
+            result.put("processingOptions", processingOptions);
+            result.put("timestamp", new Date());
+            
+        } catch (Exception e) {
+            result.put("error", "데이터 처리 중 오류 발생: " + e.getMessage());
+            result.put("success", false);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 첫 글자 대문자 변환 헬퍼 메서드
+     */
+    private String capitalizeFirst(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        
+        return input.substring(0, 1).toUpperCase() + 
+               (input.length() > 1 ? input.substring(1).toLowerCase() : "");
+    }
+    
+    /**
+     * 데이터 검증 메서드 - business 복잡도
+     */
+    public boolean validateComplexData(Object data, Map<String, Object> validationRules) {
+        if (data == null) {
+            return false;
+        }
+        
+        // 타입별 검증
+        if (data instanceof String) {
+            String strData = (String) data;
+            
+            // 길이 검증
+            if (validationRules.containsKey("minLength")) {
+                int minLength = (Integer) validationRules.get("minLength");
+                if (strData.length() < minLength) {
+                    return false;
+                }
+            }
+            
+            if (validationRules.containsKey("maxLength")) {
+                int maxLength = (Integer) validationRules.get("maxLength");
+                if (strData.length() > maxLength) {
+                    return false;
+                }
+            }
+            
+            // 패턴 검증
+            if (validationRules.containsKey("pattern")) {
+                String pattern = (String) validationRules.get("pattern");
+                if (!strData.matches(pattern)) {
+                    return false;
+                }
+            }
+            
+            // 금지 단어 검증
+            if (validationRules.containsKey("forbiddenWords")) {
+                @SuppressWarnings("unchecked")
+                List<String> forbiddenWords = (List<String>) validationRules.get("forbiddenWords");
+                String lowerData = strData.toLowerCase();
+                
+                for (String forbidden : forbiddenWords) {
+                    if (lowerData.contains(forbidden.toLowerCase())) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true;
+    } {
         return processWithComplexJavaDoc(input, options);
     }
 

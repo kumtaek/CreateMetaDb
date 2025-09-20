@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence
+                                 http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    
+    <!-- JPA 테스트케이스를 위한 Persistence Unit 설정 -->
+    <persistence-unit name="jpaTestPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        
+        <!-- JPA Entity 클래스들 명시적 등록 -->
+        <class>com.example.jpa.entity.User</class>
+        <class>com.example.jpa.entity.UserProfile</class>
+        <class>com.example.jpa.entity.Product</class>
+        <class>com.example.jpa.entity.Category</class>
+        <class>com.example.jpa.entity.Order</class>
+        <class>com.example.jpa.entity.OrderItem</class>
+        
+        <!-- 명시되지 않은 엔티티 클래스 자동 탐색 제외 -->
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        
+        <!-- JPA 속성 설정 -->
+        <properties>
+            <!-- 데이터베이스 연결 설정 -->
+            <property name="javax.persistence.jdbc.driver" value="oracle.jdbc.OracleDriver"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+            <property name="javax.persistence.jdbc.user" value="testuser"/>
+            <property name="javax.persistence.jdbc.password" value="testpass"/>
+            
+            <!-- Hibernate 방언 설정 -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle12cDialect"/>
+            
+            <!-- DDL 생성 설정 -->
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+            
+            <!-- SQL 로깅 설정 -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.use_sql_comments" value="true"/>
+            
+            <!-- 배치 처리 설정 -->
+            <property name="hibernate.jdbc.batch_size" value="20"/>
+            <property name="hibernate.order_inserts" value="true"/>
+            <property name="hibernate.order_updates" value="true"/>
+            <property name="hibernate.jdbc.batch_versioned_data" value="true"/>
+            
+            <!-- 2차 캐시 설정 -->
+            <property name="hibernate.cache.use_second_level_cache" value="true"/>
+            <property name="hibernate.cache.use_query_cache" value="true"/>
+            <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.EhCacheRegionFactory"/>
+            
+            <!-- 연결 풀 설정 -->
+            <property name="hibernate.connection.provider_class" value="org.hibernate.hikaricp.internal.HikariCPConnectionProvider"/>
+            <property name="hibernate.hikari.maximumPoolSize" value="20"/>
+            <property name="hibernate.hikari.minimumIdle" value="5"/>
+            <property name="hibernate.hikari.connectionTimeout" value="30000"/>
+            <property name="hibernate.hikari.idleTimeout" value="600000"/>
+            <property name="hibernate.hikari.maxLifetime" value="1800000"/>
+            
+            <!-- 트랜잭션 설정 -->
+            <property name="hibernate.connection.autocommit" value="false"/>
+            <property name="hibernate.transaction.coordinator_class" value="jdbc"/>
+            
+            <!-- 성능 및 통계 설정 -->
+            <property name="hibernate.generate_statistics" value="true"/>
+            <property name="hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS" value="1000"/>
+            
+            <!-- 네이밍 전략 설정 -->
+            <property name="hibernate.physical_naming_strategy" value="org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"/>
+            <property name="hibernate.implicit_naming_strategy" value="org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyHbmImpl"/>
+            
+            <!-- JPA 2.1 기능 설정 -->
+            <property name="hibernate.enable_lazy_load_no_trans" value="false"/>
+            <property name="hibernate.bytecode.use_reflection_optimizer" value="true"/>
+            
+            <!-- 검증 설정 -->
+            <property name="javax.persistence.validation.mode" value="AUTO"/>
+            <property name="hibernate.validator.apply_to_ddl" value="false"/>
+            
+            <!-- 시간대 설정 -->
+            <property name="hibernate.jdbc.time_zone" value="Asia/Seoul"/>
+        </properties>
+    </persistence-unit>
+    
+    <!-- Spring Data JPA용 Persistence Unit -->
+    <persistence-unit name="springDataJpaPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        
+        <!-- Spring Data JPA에서 자동으로 엔티티 검색하므로 클래스 명시 불필요 -->
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        
+        <!-- Spring Boot에서 자동 설정되므로 최소한의 속성만 설정 -->
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle12cDialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+    
+</persistence>
+

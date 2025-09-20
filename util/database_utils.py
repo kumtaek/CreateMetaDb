@@ -1021,11 +1021,11 @@ class DatabaseUtils:
     def get_table_columns_by_parent_id(self, project_name: str, table_component_id: int) -> List[Dict[str, Any]]:
         """
         테이블의 component_id로 해당 테이블의 모든 컬럼 조회 (간소화된 버전)
-        
+
         Args:
             project_name: 프로젝트명
             table_component_id: 테이블의 component_id
-            
+
         Returns:
             컬럼 정보 리스트
         """
@@ -1036,16 +1036,197 @@ class DatabaseUtils:
                 WHERE comp.project_id = (
                     SELECT project_id FROM projects WHERE project_name = ?
                 )
-                AND comp.parent_id = ? 
-                AND comp.component_type = 'COLUMN' 
+                AND comp.parent_id = ?
+                AND comp.component_type = 'COLUMN'
                 AND comp.del_yn = 'N'
             """
             results = self.execute_query(query, (project_name, table_component_id))
             return results if results else []
-            
+
         except Exception as e:
             handle_error(e, f"테이블 컬럼 조회 실패: {project_name}, component_id={table_component_id}")
             return []
+
+    def insert_relationship(self, src_id: int, dst_id: int, rel_type: str, confidence: float = 1.0) -> bool:
+        """
+        relationships 테이블에 연관관계 저장 (중복 방지)
+
+        Args:
+            src_id: 소스 컴포넌트 ID
+            dst_id: 대상 컴포넌트 ID
+            rel_type: 관계 타입
+            confidence: 신뢰도 (기본값: 1.0)
+
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            if not src_id or not dst_id:
+                app_logger.warning(f"소스(src) 또는 대상(dst) ID가 없어 관계 저장을 건너뜁니다: {rel_type}")
+                return False
+
+            sql = """
+                INSERT OR IGNORE INTO relationships (src_id, dst_id, rel_type, confidence, has_error, del_yn)
+                VALUES (?, ?, ?, ?, 'N', 'N')
+            """
+            result = self.execute_update(sql, (src_id, dst_id, rel_type, confidence))
+            return result > 0
+
+        except Exception as e:
+            handle_error(e, f"관계 저장 실패: {src_id} → {dst_id} ({rel_type})")
+            return False
+
+    def find_component_id(self, project_id: int, component_name: str, component_type: str = None, file_id: int = None) -> Optional[int]:
+        """
+        이름, 타입, 파일 ID로 컴포넌트 ID 조회
+
+        Args:
+            project_id: 프로젝트 ID
+            component_name: 컴포넌트명
+            component_type: 컴포넌트 타입 (선택적)
+            file_id: 파일 ID (선택적)
+
+        Returns:
+            컴포넌트 ID 또는 None
+        """
+        try:
+            query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND del_yn = 'N'"
+            params = [project_id, component_name]
+
+            if component_type:
+                query += " AND component_type = ?"
+                params.append(component_type)
+            if file_id:
+                query += " AND file_id = ?"
+                params.append(file_id)
+            query += " LIMIT 1"
+
+            result = self.execute_query(query, tuple(params))
+            return result[0]['component_id'] if result else None
+
+        except Exception as e:
+            handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
+            return None
+
+    def find_or_create_component(self, project_id: int, component_name: str, component_type: str,
+                                 file_id: int = None, parent_id: int = None, layer: str = None) -> Optional[int]:
+        """
+        컴포넌트 조회 또는 생성
+
+        Args:
+            project_id: 프로젝트 ID
+            component_name: 컴포넌트명
+            component_type: 컴포넌트 타입
+            file_id: 파일 ID (선택적)
+            parent_id: 부모 컴포넌트 ID (선택적)
+            layer: 레이어 (선택적)
+
+        Returns:
+            컴포넌트 ID 또는 None
+        """
+        try:
+            # 기존 컴포넌트 찾기
+            component_id = self.find_component_id(project_id, component_name, component_type, file_id)
+
+            if component_id:
+                return component_id
+
+            # 새 컴포넌트 생성
+            component_data = {
+                'project_id': project_id,
+                'file_id': file_id,
+                'component_type': component_type,
+                'component_name': component_name,
+                'parent_id': parent_id,
+                'layer': layer or component_type,
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+
+            return self.insert_or_replace('components', component_data)
+
+        except Exception as e:
+            handle_error(e, f"컴포넌트 조회/생성 실패: {component_name}")
+            return None
+
+    def create_inferred_table_component(self, project_id: int, table_name: str) -> Optional[int]:
+        """
+        추론된 테이블 컴포넌트 생성
+
+        Args:
+            project_id: 프로젝트 ID
+            table_name: 테이블명
+
+        Returns:
+            생성된 컴포넌트 ID 또는 None
+        """
+        try:
+            # 기존 테이블 컴포넌트 확인
+            existing_id = self.find_component_id(project_id, table_name, 'TABLE')
+            if existing_id:
+                return existing_id
+
+            # 새 테이블 컴포넌트 생성
+            component_data = {
+                'project_id': project_id,
+                'file_id': None,  # 추론된 컴포넌트는 특정 파일에 속하지 않음
+                'component_type': 'TABLE',
+                'component_name': table_name,
+                'parent_id': None,
+                'layer': 'TABLE',
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+
+            component_id = self.insert_or_replace('components', component_data)
+
+            # tables 테이블에도 추가
+            if component_id:
+                table_data = {
+                    'project_id': project_id,
+                    'table_name': table_name,
+                    'table_owner': 'INFERRED',
+                    'table_comments': 'Inferred from SQL analysis',
+                    'component_id': component_id,
+                    'hash_value': 'INFERRED',
+                    'del_yn': 'N'
+                }
+
+                self.insert_or_replace('tables', table_data)
+
+            return component_id
+
+        except Exception as e:
+            handle_error(e, f"추론된 테이블 컴포넌트 생성 실패: {table_name}")
+            return None
+
+    def get_relationship_count(self, project_id: int = None) -> int:
+        """
+        저장된 관계 수 조회
+
+        Args:
+            project_id: 프로젝트 ID (선택적)
+
+        Returns:
+            관계 수
+        """
+        try:
+            if project_id:
+                query = """
+                    SELECT COUNT(*) as count FROM relationships r
+                    JOIN components c ON r.src_id = c.component_id
+                    WHERE c.project_id = ? AND r.del_yn = 'N'
+                """
+                result = self.execute_query(query, (project_id,))
+            else:
+                query = "SELECT COUNT(*) as count FROM relationships WHERE del_yn = 'N'"
+                result = self.execute_query(query)
+
+            return result[0]['count'] if result else 0
+
+        except Exception as e:
+            handle_error(e, "관계 수 조회 실패")
+            return 0
 
 
 # 편의 함수들

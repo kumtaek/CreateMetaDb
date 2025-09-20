@@ -85,6 +85,87 @@ class UtilityClass {
 /**
  * 네 번째 클래스 - final 클래스
  */
+final class FinalClass {
+    
+    private final String immutableData;
+    private final List<String> dataList;
+    
+    public FinalClass(String immutableData) {
+        this.immutableData = immutableData;
+        this.dataList = new ArrayList<>();
+    }
+    
+    /**
+     * 불변 데이터 조회 - simple 복잡도
+     */
+    public String getImmutableData() {
+        return immutableData;
+    }
+    
+    /**
+     * 데이터 추가 - business 복잡도
+     */
+    public boolean addData(String data) {
+        if (data == null || data.trim().isEmpty()) {
+            return false;
+        }
+        
+        // 중복 체크 후 추가
+        if (!dataList.contains(data)) {
+            dataList.add(data.trim().toUpperCase());
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 데이터 검색 - business 복잡도
+     */
+    public List<String> searchData(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new ArrayList<>(dataList);
+        }
+        
+        String searchKeyword = keyword.trim().toUpperCase();
+        return dataList.stream()
+            .filter(data -> data.contains(searchKeyword))
+            .sorted()
+            .collect(java.util.stream.Collectors.toList());
+    }
+    
+    /**
+     * 데이터 통계 - complex 복잡도
+     */
+    public Map<String, Object> getDataStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        stats.put("totalCount", dataList.size());
+        stats.put("averageLength", dataList.stream()
+            .mapToInt(String::length)
+            .average()
+            .orElse(0.0));
+        stats.put("maxLength", dataList.stream()
+            .mapToInt(String::length)
+            .max()
+            .orElse(0));
+        stats.put("minLength", dataList.stream()
+            .mapToInt(String::length)
+            .min()
+            .orElse(0));
+        
+        // 문자별 빈도 분석
+        Map<Character, Integer> charFrequency = new HashMap<>();
+        for (String data : dataList) {
+            for (char c : data.toCharArray()) {
+                charFrequency.put(c, charFrequency.getOrDefault(c, 0) + 1);
+            }
+        }
+        stats.put("characterFrequency", charFrequency);
+        
+        return stats;
+    }
+}
 final class FinalHelperClass {
 
     private final String immutableData;

@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  Modern Entity 연결용 매퍼 - 완전한 연결 체인 구성
+  목적: ModernRestController -> Service -> Repository -> 이 매퍼 -> 테이블 연결
+  연관관계 중심: JPA Entity Service에서 MyBatis 매퍼 호출 (하이브리드 패턴)
+-->
+<mapper namespace="com.example.modern.ModernEntityMapper">
+
+    <!-- 
+    사용자 조건별 조회 (UserEntityService에서 호출)
+    연관 테이블: users, departments, user_profiles (INFERRED), user_roles (INFERRED)
+    -->
+    <select id="findUsersByCriteria" parameterType="map" resultType="map">
+        SELECT u.user_id, u.username, u.email, u.full_name, u.user_type, u.status,
+               u.created_date, u.last_login_date,
+               d.dept_name as department_name,
+               p.phone, p.address,
+               COUNT(DISTINCT ur.role_id) as role_count,
+               COUNT(DISTINCT o.order_id) as order_count,
+               COALESCE(SUM(o.total_amount), 0) as total_spent
+        FROM users u
+        LEFT JOIN departments d ON u.dept_id = d.dept_id
+        LEFT JOIN user_profiles p ON u.user_id = p.user_id
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN orders o ON u.user_id = o.user_id AND o.status = 'COMPLETED'
+        <where>
+            u.del_yn = 'N'
+            <if test="search != null and search != ''">
+                AND (u.username LIKE CONCAT('%', #{search}, '%')
+                     OR u.email LIKE CONCAT('%', #{search}, '%')
+                     OR u.full_name LIKE CONCAT('%', #{search}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND u.user_type = #{userType}
+            </if>
+            <if test="departmentId != null">
+                AND u.dept_id = #{departmentId}
+            </if>
+        </where>
+        GROUP BY u.user_id, u.username, u.email, u.full_name, u.user_type, u.status,
+                 u.created_date, u.last_login_date, d.dept_name, p.phone, p.address
+        ORDER BY 
+        <choose>
+            <when test="sortBy == 'username'">u.username</when>
+            <when test="sortBy == 'email'">u.email</when>
+            <when test="sortBy == 'createdDate'">u.created_date</when>
+            <otherwise>u.created_date</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        
+        <if test="pageSize != null and pageOffset != null">
+            LIMIT #{pageSize} OFFSET #{pageOffset}
+        </if>
+    </select>
+
+    <!-- 
+    사용자 생성 (UserEntityService에서 호출)
+    연관 테이블: users
+    -->
+    <insert id="createUser" parameterType="map" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO users (
+            username, email, full_name, user_type, status, dept_id,
+            created_date, updated_date, del_yn
+        ) VALUES (
+            #{username}, #{email}, #{fullName}, #{userType}, #{status}, #{departmentId},
+            SYSDATE, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    사용자 프로필 생성 (INFERRED user_profiles 테이블)
+    -->
+    <insert id="createUserProfile" parameterType="map">
+        INSERT INTO user_profiles (
+            user_id, phone, address, birth_date, gender, 
+            profile_image_url, created_date, del_yn
+        ) VALUES (
+            #{userId}, #{phone}, #{address}, #{birthDate}, #{gender},
+            #{profileImageUrl}, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    사용자 설정 생성 (INFERRED user_settings 테이블)
+    -->
+    <insert id="createUserSettings" parameterType="map">
+        INSERT INTO user_settings (
+            user_id, theme, language, timezone, 
+            email_notifications, sms_notifications, push_notifications,
+            created_date, del_yn
+        ) VALUES (
+            #{userId}, #{theme}, #{language}, #{timezone},
+            #{emailNotifications}, #{smsNotifications}, #{pushNotifications},
+            SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    사용자 역할 할당 (INFERRED user_roles, roles 테이블)
+    -->
+    <insert id="assignUserRole" parameterType="map">
+        INSERT INTO user_roles (
+            user_id, role_id, assigned_date, assigned_by, status, del_yn
+        ) 
+        SELECT #{userId}, r.role_id, SYSDATE, #{assignedBy}, 'ACTIVE', 'N'
+        FROM roles r
+        WHERE r.role_name = #{roleName}
+          AND r.status = 'ACTIVE'
+          AND r.del_yn = 'N'
+    </insert>
+
+    <!-- 
+    주문 생성 (OrderEntityService에서 호출)
+    연관 테이블: orders
+    -->
+    <insert id="createOrder" parameterType="map" useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO orders (
+            user_id, order_date, total_amount, status, payment_method,
+            shipping_address, created_date, del_yn
+        ) VALUES (
+            #{userId}, #{orderDate}, #{totalAmount}, #{status}, #{paymentMethod},
+            #{shippingAddress}, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    주문 아이템 생성 (OrderEntityService에서 호출)
+    연관 테이블: order_items, products
+    -->
+    <insert id="createOrderItem" parameterType="map">
+        INSERT INTO order_items (
+            order_id, product_id, quantity, unit_price, line_total,
+            created_date, del_yn
+        ) VALUES (
+            #{orderId}, #{productId}, #{quantity}, #{unitPrice}, 
+            #{quantity} * #{unitPrice}, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    재고 차감 (ProductEntityService에서 호출)
+    연관 테이블: inventory (INFERRED), product_inventory_logs (INFERRED)
+    -->
+    <update id="decreaseInventory" parameterType="map">
+        UPDATE inventory 
+        SET available_stock = available_stock - #{quantity},
+            reserved_stock = reserved_stock + #{quantity},
+            last_updated = SYSDATE
+        WHERE product_id = #{productId}
+          AND available_stock >= #{quantity}
+    </update>
+
+    <!-- 
+    재고 변경 로그 생성 (INFERRED product_inventory_logs 테이블)
+    -->
+    <insert id="createInventoryLog" parameterType="map">
+        INSERT INTO product_inventory_logs (
+            product_id, action_type, quantity_change, reason,
+            previous_stock, new_stock, user_id, log_date, del_yn
+        ) VALUES (
+            #{productId}, #{action}, #{quantityChange}, #{reason},
+            #{previousStock}, #{newStock}, #{userId}, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    결제 정보 생성 (INFERRED payments 테이블)
+    -->
+    <insert id="createPayment" parameterType="map" useGeneratedKeys="true" keyProperty="paymentId">
+        INSERT INTO payments (
+            order_id, amount, currency, payment_method, status,
+            payment_date, transaction_id, created_date, del_yn
+        ) VALUES (
+            #{orderId}, #{amount}, #{currency}, #{paymentMethod}, #{status},
+            #{paymentDate}, #{transactionId}, SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    배송 정보 생성 (INFERRED shipments 테이블)
+    -->
+    <insert id="createShipment" parameterType="map" useGeneratedKeys="true" keyProperty="shipmentId">
+        INSERT INTO shipments (
+            order_id, tracking_number, carrier, shipping_method, status,
+            ship_date, estimated_delivery, shipping_cost, delivery_address,
+            created_date, del_yn
+        ) VALUES (
+            #{orderId}, #{trackingNumber}, #{carrier}, #{shippingMethod}, #{status},
+            #{shipDate}, #{estimatedDelivery}, #{shippingCost}, #{deliveryAddress},
+            SYSDATE, 'N'
+        )
+    </insert>
+
+    <!-- 
+    사용자별 주문 조회 (완전한 조인 체인)
+    연관 테이블: orders, order_items, products, categories, brands, payments, shipments
+    -->
+    <select id="findOrdersByUserId" parameterType="long" resultType="map">
+        SELECT o.order_id, o.order_date, o.total_amount, o.status as order_status,
+               o.payment_method, o.shipping_address,
+               COUNT(oi.item_id) as item_count,
+               SUM(oi.quantity) as total_quantity,
+               GROUP_CONCAT(DISTINCT p.product_name) as product_names,
+               GROUP_CONCAT(DISTINCT c.category_name) as categories,
+               pay.payment_id, pay.status as payment_status, pay.payment_date,
+               ship.shipment_id, ship.tracking_number, ship.carrier, 
+               ship.status as shipping_status, ship.delivered_date
+        FROM orders o
+        LEFT JOIN order_items oi ON o.order_id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.product_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN payments pay ON o.order_id = pay.order_id
+        LEFT JOIN shipments ship ON o.order_id = ship.order_id
+        WHERE o.user_id = #{userId}
+          AND o.del_yn = 'N'
+        GROUP BY o.order_id, o.order_date, o.total_amount, o.status,
+                 o.payment_method, o.shipping_address,
+                 pay.payment_id, pay.status, pay.payment_date,
+                 ship.shipment_id, ship.tracking_number, ship.carrier,
+                 ship.status, ship.delivered_date
+        ORDER BY o.order_date DESC
+    </select>
+
+    <!-- 
+    부서 정보 조회 (departments 테이블)
+    -->
+    <select id="findDepartmentById" parameterType="long" resultType="map">
+        SELECT d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id,
+               mgr.username as manager_name, mgr.email as manager_email,
+               COUNT(emp.user_id) as employee_count
+        FROM departments d
+        LEFT JOIN users mgr ON d.manager_id = mgr.user_id
+        LEFT JOIN users emp ON d.dept_id = emp.dept_id AND emp.del_yn = 'N'
+        WHERE d.dept_id = #{departmentId}
+          AND d.del_yn = 'N'
+        GROUP BY d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id,
+                 mgr.username, mgr.email
+    </select>
+
+    <!-- 
+    모든 부서 목록 조회 (Vue.js에서 호출)
+    연관 테이블: departments, users (관리자 정보)
+    -->
+    <select id="findAllDepartments" resultType="map">
+        SELECT d.dept_id as id, d.dept_name as deptName, 
+               d.parent_dept_id as parentDeptId,
+               mgr.username as managerName,
+               COUNT(emp.user_id) as employeeCount
+        FROM departments d
+        LEFT JOIN users mgr ON d.manager_id = mgr.user_id
+        LEFT JOIN users emp ON d.dept_id = emp.dept_id AND emp.status = 'ACTIVE'
+        WHERE d.status = 'ACTIVE' AND d.del_yn = 'N'
+        GROUP BY d.dept_id, d.dept_name, d.parent_dept_id, mgr.username
+        ORDER BY d.dept_name
+    </select>
+
+    <!-- 
+    사용자 상세 정보 조회 (프로필, 설정, 역할 포함)
+    연관 테이블: users, user_profiles, user_settings, user_roles, roles, departments
+    -->
+    <select id="findUserDetailsById" parameterType="long" resultType="map">
+        SELECT u.user_id, u.username, u.email, u.full_name, u.user_type, u.status,
+               u.created_date, u.last_login_date,
+               d.dept_name as department_name,
+               p.phone, p.address, p.birth_date, p.gender, p.profile_image_url,
+               s.theme, s.language, s.timezone, 
+               s.email_notifications, s.sms_notifications, s.push_notifications,
+               GROUP_CONCAT(DISTINCT r.role_name) as roles,
+               COUNT(DISTINCT o.order_id) as order_count,
+               COALESCE(SUM(o.total_amount), 0) as total_spent,
+               MAX(o.order_date) as last_order_date
+        FROM users u
+        LEFT JOIN departments d ON u.dept_id = d.dept_id
+        LEFT JOIN user_profiles p ON u.user_id = p.user_id
+        LEFT JOIN user_settings s ON u.user_id = s.user_id
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id AND ur.status = 'ACTIVE'
+        LEFT JOIN roles r ON ur.role_id = r.role_id AND r.status = 'ACTIVE'
+        LEFT JOIN orders o ON u.user_id = o.user_id AND o.status = 'COMPLETED'
+        WHERE u.user_id = #{userId}
+          AND u.del_yn = 'N'
+        GROUP BY u.user_id, u.username, u.email, u.full_name, u.user_type, u.status,
+                 u.created_date, u.last_login_date, d.dept_name,
+                 p.phone, p.address, p.birth_date, p.gender, p.profile_image_url,
+                 s.theme, s.language, s.timezone, 
+                 s.email_notifications, s.sms_notifications, s.push_notifications
+    </select>
+
+    <!-- 
+    상품 재고 확인 (ProductEntityService에서 호출)
+    연관 테이블: products, inventory (INFERRED), suppliers (INFERRED)
+    -->
+    <select id="checkProductInventory" parameterType="long" resultType="map">
+        SELECT p.product_id, p.product_name, p.price, p.status,
+               i.current_stock, i.reserved_stock, i.available_stock, i.reorder_point,
+               s.supplier_name, s.lead_time_days, s.contact_email
+        FROM products p
+        LEFT JOIN inventory i ON p.product_id = i.product_id
+        LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+        WHERE p.product_id = #{productId}
+          AND p.del_yn = 'N'
+    </select>
+
+    <!-- 
+    재고 부족 상품 목록 (ProductEntityService에서 호출)
+    연관 테이블: products, inventory, suppliers, categories
+    -->
+    <select id="findLowStockProducts" parameterType="int" resultType="map">
+        SELECT p.product_id, p.product_name, p.price,
+               c.category_name,
+               i.current_stock, i.available_stock, i.reorder_point,
+               s.supplier_name, s.lead_time_days,
+               CASE 
+                   WHEN i.available_stock = 0 THEN 'OUT_OF_STOCK'
+                   WHEN i.available_stock &lt;= i.reorder_point THEN 'LOW_STOCK'
+                   ELSE 'NORMAL'
+               END as stock_status
+        FROM products p
+        INNER JOIN inventory i ON p.product_id = i.product_id
+        LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE i.available_stock &lt;= COALESCE(#{threshold}, i.reorder_point)
+          AND p.status = 'ACTIVE'
+          AND p.del_yn = 'N'
+        ORDER BY i.available_stock ASC, s.lead_time_days DESC
+    </select>
+
+    <!-- 
+    환경별 데이터 동기화 상태 조회 (LargeDataProcessor에서 호출)
+    연관 테이블: 모든 환경별 테이블들 (users_{env}, orders_{env} 등)
+    -->
+    <select id="getEnvironmentSyncStatus" parameterType="map" resultType="map">
+        SELECT 
+            '${sourceEnv}' as source_environment,
+            '${targetEnv}' as target_environment,
+            src_stats.table_name,
+            src_stats.record_count as source_count,
+            dst_stats.record_count as target_count,
+            CASE 
+                WHEN src_stats.record_count = dst_stats.record_count THEN 'SYNCED'
+                WHEN ABS(src_stats.record_count - dst_stats.record_count) &lt;= 5 THEN 'MINOR_DIFF'
+                ELSE 'OUT_OF_SYNC'
+            END as sync_status,
+            ABS(src_stats.record_count - dst_stats.record_count) as diff_count
+        FROM (
+            SELECT 'users' as table_name, COUNT(*) as record_count FROM users_${sourceEnv}
+            UNION ALL
+            SELECT 'orders' as table_name, COUNT(*) as record_count FROM orders_${sourceEnv}
+            UNION ALL
+            SELECT 'products' as table_name, COUNT(*) as record_count FROM products_${sourceEnv}
+            UNION ALL
+            SELECT 'payments' as table_name, COUNT(*) as record_count FROM payments_${sourceEnv}
+        ) src_stats
+        LEFT JOIN (
+            SELECT 'users' as table_name, COUNT(*) as record_count FROM users_${targetEnv}
+            UNION ALL
+            SELECT 'orders' as table_name, COUNT(*) as record_count FROM orders_${targetEnv}
+            UNION ALL
+            SELECT 'products' as table_name, COUNT(*) as record_count FROM products_${targetEnv}
+            UNION ALL
+            SELECT 'payments' as table_name, COUNT(*) as record_count FROM payments_${targetEnv}
+        ) dst_stats ON src_stats.table_name = dst_stats.table_name
+        ORDER BY diff_count DESC, src_stats.table_name
+    </select>
+
+    <!-- 
+    실시간 이벤트 처리 (LargeDataProcessor에서 호출)
+    연관 테이블: real_time_events_{env}, user_activities_{env}, performance_metrics_{env}
+    -->
+    <select id="getUnprocessedEvents" parameterType="map" resultType="map">
+        SELECT e.event_id, e.event_type, e.user_id, e.event_data, e.timestamp,
+               u.username, u.user_type,
+               CASE 
+                   WHEN e.event_type = 'USER_LOGIN' THEN 'HIGH'
+                   WHEN e.event_type = 'ORDER_CREATED' THEN 'MEDIUM'
+                   WHEN e.event_type = 'PAGE_VIEW' THEN 'LOW'
+                   ELSE 'NORMAL'
+               END as priority_level
+        FROM real_time_events_${environment} e
+        LEFT JOIN users_${environment} u ON e.user_id = u.user_id
+        WHERE e.processed = 'N'
+          AND e.timestamp >= #{fromTimestamp}
+        ORDER BY 
+            CASE 
+                WHEN e.event_type = 'USER_LOGIN' THEN 1
+                WHEN e.event_type = 'ORDER_CREATED' THEN 2
+                WHEN e.event_type = 'PAYMENT_COMPLETED' THEN 3
+                ELSE 4
+            END,
+            e.timestamp ASC
+        LIMIT #{batchSize}
+    </select>
+
+    <!-- 
+    이벤트 처리 완료 표시
+    -->
+    <update id="markEventsAsProcessed" parameterType="map">
+        UPDATE real_time_events_${environment}
+        SET processed = 'Y',
+            processed_date = SYSDATE,
+            processing_duration_ms = #{processingDuration}
+        WHERE event_id IN
+        <foreach collection="eventIds" item="eventId" open="(" separator="," close=")">
+            #{eventId}
+        </foreach>
+    </update>
+
+</mapper>
+
+
+

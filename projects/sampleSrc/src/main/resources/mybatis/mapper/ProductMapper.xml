@@ -81,7 +81,132 @@
     
     <!-- 동적 상품 업데이트 -->
     <update id="updateProductDynamic" parameterType="com.example.model.Product">
-        UPDATE products
+        UPDATE products 
+        <set>
+            <if test="productName != null and productName != ''">
+                product_name = #{productName},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
+            <if test="brandId != null">
+                brand_id = #{brandId},
+            </if>
+            <if test="stockQuantity != null">
+                stock_quantity = #{stockQuantity},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+            updated_date = SYSDATE
+        </set>
+        WHERE product_id = #{productId}
+    </update>
+    
+    <!-- 상품 삭제 (논리 삭제) -->
+    <update id="deleteProduct" parameterType="string">
+        UPDATE products 
+        SET del_yn = 'Y', 
+            updated_date = SYSDATE 
+        WHERE product_id = #{productId}
+    </update>
+    
+    <!-- 브랜드별 상품 조회 -->
+    <select id="selectProductsByBrand" parameterType="string" resultType="com.example.model.Product">
+        SELECT p.*, b.brand_name, b.country
+        FROM products p
+        INNER JOIN brands b ON p.brand_id = b.brand_id
+        WHERE p.brand_id = #{brandId}
+          AND p.del_yn = 'N'
+          AND p.status = 'ACTIVE'
+        ORDER BY p.product_name
+    </select>
+    
+    <!-- 재고 부족 상품 조회 -->
+    <select id="selectLowStockProducts" parameterType="int" resultType="com.example.model.Product">
+        SELECT p.*, 
+               i.current_stock,
+               i.reorder_point,
+               s.supplier_name,
+               s.lead_time_days
+        FROM products p
+        LEFT JOIN inventory i ON p.product_id = i.product_id
+        LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+        WHERE i.current_stock &lt;= #{threshold}
+          AND p.status = 'ACTIVE'
+          AND p.del_yn = 'N'
+        ORDER BY i.current_stock ASC, s.lead_time_days DESC
+    </select>
+    
+    <!-- 카테고리별 상품 통계 -->
+    <select id="getProductStatsByCategory" resultType="map">
+        SELECT c.category_name,
+               COUNT(p.product_id) as product_count,
+               AVG(p.price) as avg_price,
+               MIN(p.price) as min_price,
+               MAX(p.price) as max_price,
+               SUM(p.stock_quantity) as total_stock,
+               COUNT(CASE WHEN p.status = 'ACTIVE' THEN 1 END) as active_products,
+               COUNT(CASE WHEN p.status = 'INACTIVE' THEN 1 END) as inactive_products
+        FROM categories c
+        LEFT JOIN products p ON c.category_id = p.category_id AND p.del_yn = 'N'
+        GROUP BY c.category_id, c.category_name
+        HAVING COUNT(p.product_id) > 0
+        ORDER BY product_count DESC, avg_price DESC
+    </select>
+    
+    <!-- 상품 판매 성과 분석 -->
+    <select id="analyzeProductSalesPerformance" parameterType="map" resultType="map">
+        SELECT p.product_id, p.product_name, p.price,
+               c.category_name, b.brand_name,
+               COUNT(DISTINCT oi.order_id) as order_count,
+               SUM(oi.quantity) as total_sold,
+               SUM(oi.quantity * oi.unit_price) as total_revenue,
+               AVG(oi.unit_price) as avg_selling_price,
+               ROUND(SUM(oi.quantity * oi.unit_price) / SUM(oi.quantity), 2) as weighted_avg_price,
+               COUNT(DISTINCT o.user_id) as unique_customers,
+               MAX(o.order_date) as last_sold_date,
+               DATEDIFF(CURDATE(), MAX(o.order_date)) as days_since_last_sale
+        FROM products p
+        INNER JOIN order_items oi ON p.product_id = oi.product_id
+        INNER JOIN orders o ON oi.order_id = o.order_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN brands b ON p.brand_id = b.brand_id
+        <where>
+            o.status = 'COMPLETED'
+            AND p.del_yn = 'N'
+            <if test="dateFrom != null">
+                AND o.order_date >= #{dateFrom}
+            </if>
+            <if test="dateTo != null">
+                AND o.order_date &lt;= #{dateTo}
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="brandId != null">
+                AND p.brand_id = #{brandId}
+            </if>
+            <if test="minRevenue != null">
+                AND (SELECT SUM(oi2.quantity * oi2.unit_price) 
+                     FROM order_items oi2 
+                     INNER JOIN orders o2 ON oi2.order_id = o2.order_id
+                     WHERE oi2.product_id = p.product_id 
+                     AND o2.status = 'COMPLETED') >= #{minRevenue}
+            </if>
+        </where>
+        GROUP BY p.product_id, p.product_name, p.price,
+                 c.category_name, b.brand_name
+        HAVING total_sold > 0
+        ORDER BY total_revenue DESC, total_sold DESC
+        
+        <if test="topProducts != null">
+            LIMIT #{topProducts}
+        </if>
+    </select>UPDATE products
         <set>
             <if test="productName != null and productName != ''">
                 product_name = #{productName},

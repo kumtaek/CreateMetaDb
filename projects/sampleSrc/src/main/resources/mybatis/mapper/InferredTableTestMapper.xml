@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  INFERRED 테이블 생성 테스트용 매퍼
+  목적: 실제 스키마에 없는 테이블들을 SQL에서 사용하여 INFERRED 테이블 생성 유도
+  연관관계 중심: 다양한 INFERRED 테이블과 조인 관계 생성
+-->
+<mapper namespace="com.example.testcase.InferredTableTestMapper">
+
+    <!-- 
+    패턴 1: INFERRED 테이블과의 조인 (user_roles, roles)
+    실제 스키마: SAMPLE.USER_ROLES 존재
+    INFERRED 생성: UNKNOWN.USER_ROLES, UNKNOWN.ROLES (SQL에서 다른 이름으로 사용)
+    -->
+    <select id="getUsersWithRoles" resultType="map">
+        SELECT u.user_id, u.username, u.email,
+               ur.assigned_date,
+               r.role_name, r.permission_level
+        FROM users u
+        LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.role_id
+        WHERE u.status = 'ACTIVE'
+          AND r.status = 'ACTIVE'
+        ORDER BY u.username, r.permission_level DESC
+    </select>
+
+    <!-- 
+    패턴 2: 환경별 동적 테이블명 (INFERRED 생성 유도)
+    INFERRED 생성: users_prod, orders_prod, payments_prod 등
+    -->
+    <select id="getEnvironmentSpecificData" parameterType="map" resultType="map">
+        SELECT u.user_id, u.username, u.email,
+               o.order_id, o.order_date, o.total_amount,
+               p.payment_id, p.payment_method, p.amount as payment_amount
+        FROM users_${environment} u
+        LEFT JOIN orders_${environment} o ON u.user_id = o.user_id
+        LEFT JOIN payments_${environment} p ON o.order_id = p.order_id
+        WHERE u.status = 'ACTIVE'
+        <if test="dateFrom != null">
+            AND o.order_date >= #{dateFrom}
+        </if>
+        ORDER BY o.order_date DESC
+    </select>
+
+    <!-- 
+    패턴 3: 복잡한 INFERRED 관계 체인
+    INFERRED 생성: user_profiles, user_settings, user_activities
+    -->
+    <select id="getComplexUserProfile" parameterType="string" resultType="map">
+        SELECT u.user_id, u.username, u.email, u.full_name,
+               p.phone, p.address, p.birth_date, p.gender,
+               s.theme, s.language, s.timezone,
+               COUNT(a.activity_id) as activity_count,
+               MAX(a.activity_date) as last_activity,
+               d.dept_name, d.manager_id,
+               mgr.username as manager_name
+        FROM users u
+        LEFT JOIN user_profiles p ON u.user_id = p.user_id
+        LEFT JOIN user_settings s ON u.user_id = s.user_id
+        LEFT JOIN user_activities a ON u.user_id = a.user_id
+        LEFT JOIN departments d ON u.dept_id = d.dept_id
+        LEFT JOIN users mgr ON d.manager_id = mgr.user_id
+        WHERE u.user_id = #{userId}
+        GROUP BY u.user_id, u.username, u.email, u.full_name,
+                 p.phone, p.address, p.birth_date, p.gender,
+                 s.theme, s.language, s.timezone,
+                 d.dept_name, d.manager_id, mgr.username
+    </select>
+
+    <!-- 
+    패턴 4: 서브쿼리에서 INFERRED 테이블 사용
+    INFERRED 생성: order_statistics, product_statistics
+    -->
+    <select id="getUsersWithStatistics" resultType="map">
+        SELECT u.user_id, u.username, u.email,
+               COALESCE(os.order_count, 0) as order_count,
+               COALESCE(os.total_spent, 0) as total_spent,
+               COALESCE(ps.favorite_category, 'UNKNOWN') as favorite_category,
+               COALESCE(ps.avg_order_value, 0) as avg_order_value
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id,
+                   COUNT(order_id) as order_count,
+                   SUM(total_amount) as total_spent
+            FROM order_statistics
+            WHERE calculation_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+            GROUP BY user_id
+        ) os ON u.user_id = os.user_id
+        LEFT JOIN (
+            SELECT user_id,
+                   most_purchased_category as favorite_category,
+                   average_order_value as avg_order_value
+            FROM product_statistics
+            WHERE analysis_period = 'LAST_12_MONTHS'
+        ) ps ON u.user_id = ps.user_id
+        WHERE u.status = 'ACTIVE'
+        ORDER BY os.total_spent DESC
+    </select>
+
+    <!-- 
+    패턴 5: 동적 조건부 INFERRED 테이블 조인
+    INFERRED 생성: loyalty_programs, customer_segments, performance_reviews
+    -->
+    <select id="getAdvancedCustomerAnalysis" parameterType="map" resultType="map">
+        SELECT u.user_id, u.username, u.email,
+               c.company_name, c.industry, c.credit_rating
+               
+        <if test="includeLoyalty == 'Y'">
+            , lp.program_name, lp.points_balance, lp.tier_status
+        </if>
+        
+        <if test="includeSegmentation == 'Y'">
+            , cs.segment_name, cs.tier_level, cs.segment_score
+        </if>
+        
+        <if test="includePerformance == 'Y'">
+            , pr.overall_rating, pr.goal_completion_rate, pr.review_date
+        </if>
+        
+        FROM users u
+        INNER JOIN customers c ON u.customer_id = c.customer_id
+        
+        <if test="includeLoyalty == 'Y'">
+            LEFT JOIN loyalty_programs lp ON c.customer_id = lp.customer_id
+        </if>
+        
+        <if test="includeSegmentation == 'Y'">
+            LEFT JOIN customer_segments cs ON c.customer_id = cs.customer_id
+        </if>
+        
+        <if test="includePerformance == 'Y'">
+            LEFT JOIN performance_reviews pr ON u.user_id = pr.user_id
+            AND pr.review_period = #{performancePeriod}
+        </if>
+        
+        <where>
+            u.status = 'ACTIVE'
+            AND c.status = 'ACTIVE'
+            
+            <if test="industry != null and industry != ''">
+                AND c.industry = #{industry}
+            </if>
+            
+            <if test="minCreditRating != null and minCreditRating != ''">
+                AND c.credit_rating >= #{minCreditRating}
+            </if>
+            
+            <if test="includeLoyalty == 'Y' and minTierStatus != null">
+                AND lp.tier_status >= #{minTierStatus}
+            </if>
+            
+            <if test="includeSegmentation == 'Y' and targetSegments != null and targetSegments.size() > 0">
+                AND cs.segment_name IN
+                <foreach collection="targetSegments" item="segment" open="(" separator="," close=")">
+                    #{segment}
+                </foreach>
+            </if>
+        </where>
+        
+        ORDER BY 
+        <choose>
+            <when test="sortBy == 'creditRating'">
+                c.credit_rating DESC
+            </when>
+            <when test="sortBy == 'loyaltyPoints' and includeLoyalty == 'Y'">
+                lp.points_balance DESC
+            </when>
+            <when test="sortBy == 'performance' and includePerformance == 'Y'">
+                pr.overall_rating DESC
+            </when>
+            <otherwise>
+                u.username
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 
+    패턴 6: 계층적 INFERRED 관계 (자기참조 + INFERRED)
+    INFERRED 생성: department_hierarchy, employee_hierarchy
+    -->
+    <select id="getDepartmentHierarchy" parameterType="map" resultType="map">
+        WITH RECURSIVE dept_tree AS (
+            -- 루트 부서
+            SELECT d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id,
+                   0 as depth_level,
+                   CAST(d.dept_id AS CHAR(200)) as hierarchy_path
+            FROM department_hierarchy d
+            WHERE d.parent_dept_id IS NULL
+            
+            UNION ALL
+            
+            -- 하위 부서들
+            SELECT d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id,
+                   dt.depth_level + 1,
+                   CONCAT(dt.hierarchy_path, '->', d.dept_id)
+            FROM department_hierarchy d
+            INNER JOIN dept_tree dt ON d.parent_dept_id = dt.dept_id
+            WHERE dt.depth_level < #{maxDepth}
+        )
+        SELECT dt.dept_id, dt.dept_name, dt.parent_dept_id, dt.depth_level, dt.hierarchy_path,
+               mgr.username as manager_name, mgr.email as manager_email,
+               emp_count.employee_count,
+               emp_hierarchy.senior_count, emp_hierarchy.junior_count
+        FROM dept_tree dt
+        LEFT JOIN users mgr ON dt.manager_id = mgr.user_id
+        LEFT JOIN (
+            SELECT dept_id, COUNT(*) as employee_count
+            FROM employee_hierarchy
+            WHERE status = 'ACTIVE'
+            GROUP BY dept_id
+        ) emp_count ON dt.dept_id = emp_count.dept_id
+        LEFT JOIN (
+            SELECT dept_id,
+                   COUNT(CASE WHEN seniority_level >= 5 THEN 1 END) as senior_count,
+                   COUNT(CASE WHEN seniority_level < 3 THEN 1 END) as junior_count
+            FROM employee_hierarchy
+            WHERE status = 'ACTIVE'
+            GROUP BY dept_id
+        ) emp_hierarchy ON dt.dept_id = emp_hierarchy.dept_id
+        ORDER BY dt.depth_level, dt.dept_name
+    </select>
+
+    <!-- 
+    패턴 7: 시계열 INFERRED 테이블
+    INFERRED 생성: daily_sales_summary, monthly_trends, seasonal_patterns
+    -->
+    <select id="getTimeSeriesAnalysis" parameterType="map" resultType="map">
+        SELECT 
+            dss.sales_date,
+            dss.daily_revenue,
+            dss.daily_order_count,
+            dss.unique_customers,
+            mt.monthly_growth_rate,
+            sp.seasonal_factor,
+            sp.trend_direction
+        FROM daily_sales_summary dss
+        LEFT JOIN monthly_trends mt ON DATE_FORMAT(dss.sales_date, '%Y-%m') = mt.month_period
+        LEFT JOIN seasonal_patterns sp ON MONTH(dss.sales_date) = sp.month_number
+        <where>
+            dss.sales_date >= #{analysisStartDate}
+            AND dss.sales_date &lt;= #{analysisEndDate}
+            
+            <if test="minDailyRevenue != null">
+                AND dss.daily_revenue >= #{minDailyRevenue}
+            </if>
+            
+            <if test="trendDirection != null and trendDirection != ''">
+                AND sp.trend_direction = #{trendDirection}
+            </if>
+        </where>
+        ORDER BY dss.sales_date DESC
+        
+        <if test="limitDays != null">
+            LIMIT #{limitDays}
+        </if>
+    </select>
+
+    <!-- 
+    패턴 8: 복합 INFERRED 집계 테이블
+    INFERRED 생성: user_engagement_metrics, product_performance_summary
+    -->
+    <select id="getEngagementAndPerformanceMetrics" resultType="map">
+        SELECT u.user_id, u.username,
+               uem.page_views, uem.session_duration, uem.bounce_rate,
+               uem.conversion_rate, uem.engagement_score,
+               pps.products_viewed, pps.products_purchased,
+               pps.avg_time_to_purchase, pps.repeat_purchase_rate,
+               CASE 
+                   WHEN uem.engagement_score >= 80 AND pps.repeat_purchase_rate >= 0.3 THEN 'HIGH_VALUE'
+                   WHEN uem.engagement_score >= 60 AND pps.repeat_purchase_rate >= 0.2 THEN 'MEDIUM_VALUE'
+                   ELSE 'LOW_VALUE'
+               END as customer_value_segment
+        FROM users u
+        LEFT JOIN user_engagement_metrics uem ON u.user_id = uem.user_id
+        LEFT JOIN product_performance_summary pps ON u.user_id = pps.user_id
+        WHERE u.status = 'ACTIVE'
+          AND uem.metric_period = 'LAST_90_DAYS'
+          AND pps.analysis_period = 'LAST_90_DAYS'
+        ORDER BY uem.engagement_score DESC, pps.repeat_purchase_rate DESC
+    </select>
+
+    <!-- 
+    패턴 9: 환경별 + INFERRED 조합 (복합 패턴)
+    INFERRED 생성: audit_logs_{env}, security_events_{env}, compliance_reports_{env}
+    -->
+    <select id="getSecurityAndComplianceReport" parameterType="map" resultType="map">
+        SELECT u.user_id, u.username, u.user_type,
+               COUNT(DISTINCT al.log_id) as audit_log_count,
+               COUNT(DISTINCT se.event_id) as security_event_count,
+               MAX(al.log_date) as last_audit_date,
+               MAX(se.event_date) as last_security_event,
+               cr.compliance_score, cr.risk_level, cr.last_review_date
+        FROM users_${environment} u
+        LEFT JOIN audit_logs_${environment} al ON u.user_id = al.user_id
+        LEFT JOIN security_events_${environment} se ON u.user_id = se.user_id
+        LEFT JOIN compliance_reports_${environment} cr ON u.user_id = cr.user_id
+        <where>
+            u.status = 'ACTIVE'
+            
+            <if test="reportDateFrom != null">
+                AND (al.log_date >= #{reportDateFrom} OR al.log_date IS NULL)
+                AND (se.event_date >= #{reportDateFrom} OR se.event_date IS NULL)
+            </if>
+            
+            <if test="userTypes != null and userTypes.size() > 0">
+                AND u.user_type IN
+                <foreach collection="userTypes" item="userType" open="(" separator="," close=")">
+                    #{userType}
+                </foreach>
+            </if>
+            
+            <if test="minComplianceScore != null">
+                AND (cr.compliance_score >= #{minComplianceScore} OR cr.compliance_score IS NULL)
+            </if>
+            
+            <if test="riskLevels != null and riskLevels.size() > 0">
+                AND (cr.risk_level IN
+                <foreach collection="riskLevels" item="riskLevel" open="(" separator="," close=")">
+                    #{riskLevel}
+                </foreach>
+                OR cr.risk_level IS NULL)
+            </if>
+        </where>
+        GROUP BY u.user_id, u.username, u.user_type,
+                 cr.compliance_score, cr.risk_level, cr.last_review_date
+        HAVING audit_log_count > 0 OR security_event_count > 0
+        ORDER BY cr.risk_level DESC, security_event_count DESC, audit_log_count DESC
+    </select>
+
+    <!-- 
+    패턴 10: 다중 환경 크로스 조인 (INFERRED 대량 생성)
+    INFERRED 생성: data_sync_logs, cross_env_mappings, migration_status
+    -->
+    <select id="getCrossEnvironmentSyncStatus" parameterType="map" resultType="map">
+        SELECT src.environment as source_env,
+               dst.environment as target_env,
+               src.table_name,
+               src.record_count as source_count,
+               dst.record_count as target_count,
+               sync.last_sync_date,
+               sync.sync_status,
+               sync.error_count,
+               mapping.mapping_rule,
+               migration.migration_status,
+               migration.completion_percentage
+        FROM (
+            SELECT 'prod' as environment, table_name, record_count
+            FROM data_sync_logs
+            WHERE environment = 'prod' AND sync_date = CURDATE()
+        ) src
+        CROSS JOIN (
+            SELECT 'dev' as environment, table_name, record_count
+            FROM data_sync_logs
+            WHERE environment = 'dev' AND sync_date = CURDATE()
+        ) dst ON src.table_name = dst.table_name
+        LEFT JOIN cross_env_mappings mapping ON src.table_name = mapping.source_table
+                                            AND dst.table_name = mapping.target_table
+        LEFT JOIN migration_status migration ON src.table_name = migration.table_name
+                                            AND migration.source_env = src.environment
+                                            AND migration.target_env = dst.environment
+        <where>
+            <if test="tableNames != null and tableNames.size() > 0">
+                src.table_name IN
+                <foreach collection="tableNames" item="tableName" open="(" separator="," close=")">
+                    #{tableName}
+                </foreach>
+            </if>
+            
+            <if test="syncStatus != null and syncStatus != ''">
+                AND (sync.sync_status = #{syncStatus} OR sync.sync_status IS NULL)
+            </if>
+            
+            <if test="showErrorsOnly == 'Y'">
+                AND sync.error_count > 0
+            </if>
+        </where>
+        ORDER BY sync.error_count DESC, src.table_name
+    </select>
+
+    <!-- 
+    패턴 11: 임시 테이블 및 뷰 사용 (INFERRED 생성)
+    INFERRED 생성: temp_user_analysis, temp_order_summary, user_order_view
+    -->
+    <select id="getTemporaryAnalysisResults" parameterType="map" resultType="map">
+        SELECT tua.user_id, tua.analysis_type, tua.score,
+               tos.order_summary, tos.trend_direction,
+               uov.comprehensive_rating, uov.recommendation
+        FROM temp_user_analysis tua
+        INNER JOIN temp_order_summary tos ON tua.user_id = tos.user_id
+        LEFT JOIN user_order_view uov ON tua.user_id = uov.user_id
+        <where>
+            tua.analysis_date = CURDATE()
+            AND tos.summary_date = CURDATE()
+            
+            <if test="analysisTypes != null and analysisTypes.size() > 0">
+                AND tua.analysis_type IN
+                <foreach collection="analysisTypes" item="analysisType" open="(" separator="," close=")">
+                    #{analysisType}
+                </foreach>
+            </if>
+            
+            <if test="minScore != null">
+                AND tua.score >= #{minScore}
+            </if>
+            
+            <if test="trendDirections != null and trendDirections.size() > 0">
+                AND tos.trend_direction IN
+                <foreach collection="trendDirections" item="trend" open="(" separator="," close=")">
+                    #{trend}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY tua.score DESC, tos.trend_direction, uov.comprehensive_rating DESC
+    </select>
+
+    <!-- 
+    패턴 12: 동적 피벗 및 INFERRED 집계
+    INFERRED 생성: pivot_sales_data, aggregated_metrics, calculated_kpis
+    -->
+    <select id="getDynamicPivotAnalysis" parameterType="map" resultType="map">
+        SELECT base_data.user_id, base_data.username,
+               pivot.jan_sales, pivot.feb_sales, pivot.mar_sales,
+               pivot.q1_total, pivot.growth_rate,
+               metrics.avg_response_time, metrics.error_rate,
+               kpis.customer_satisfaction, kpis.retention_rate
+        FROM (
+            SELECT user_id, username FROM users WHERE status = 'ACTIVE'
+        ) base_data
+        LEFT JOIN pivot_sales_data pivot ON base_data.user_id = pivot.user_id
+                                        AND pivot.analysis_year = #{analysisYear}
+        LEFT JOIN aggregated_metrics metrics ON base_data.user_id = metrics.user_id
+                                            AND metrics.metric_period = #{metricPeriod}
+        LEFT JOIN calculated_kpis kpis ON base_data.user_id = kpis.user_id
+                                      AND kpis.kpi_period = #{kpiPeriod}
+        <where>
+            <if test="hasData == 'Y'">
+                (pivot.q1_total > 0 OR metrics.avg_response_time IS NOT NULL OR kpis.customer_satisfaction IS NOT NULL)
+            </if>
+            
+            <if test="minGrowthRate != null">
+                AND (pivot.growth_rate >= #{minGrowthRate} OR pivot.growth_rate IS NULL)
+            </if>
+        </where>
+        ORDER BY pivot.q1_total DESC, kpis.customer_satisfaction DESC
+    </select>
+
+</mapper>
+
+
+
