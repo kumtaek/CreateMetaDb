@@ -11,6 +11,17 @@ include_patterns:
   - "**/*.sql"
   - "**/*.properties"
   - "**/*.jar"
+  # 프론트엔드 파일 타입 추가
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.sass"
+  - "**/*.less"
 
 # 제외할 디렉토리 패턴
 exclude_directories:
@@ -54,6 +65,17 @@ supported_extensions:
   - ".sql"
   - ".properties"
   - ".jar"
+  # 프론트엔드 확장자 추가
+  - ".jsx"
+  - ".vue"
+  - ".ts"
+  - ".tsx"
+  - ".js"
+  - ".html"
+  - ".css"
+  - ".scss"
+  - ".sass"
+  - ".less"
 
 # 특정 파일 타입별 설정
 file_type_settings:

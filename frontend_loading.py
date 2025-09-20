@@ -216,14 +216,73 @@ class FrontendLoadingEngine:
 
     def _save_frontend_components_to_database(self, components: List[Dict[str, Any]], 
                                             project_id: int, file_type: str) -> None:
-        """프론트엔드 컴포넌트를 데이터베이스에 저장 (스키마정의서: JSP/JSX/Vue 등은 files 테이블에만 저장)"""
+        """프론트엔드 컴포넌트를 데이터베이스에 저장"""
         try:
             debug(f"프론트엔드 컴포넌트 저장 시작: {len(components)}개 (타입: {file_type})")
             
             # 스키마정의서에 따르면 JSP/JSX/Vue 등 프론트엔드 파일은 files 테이블에만 저장
             # components 테이블에는 API_URL 컴포넌트만 저장
-            # 따라서 이 메서드는 아무것도 저장하지 않음
-            debug(f"스키마정의서 준수: {file_type} 파일은 files 테이블에만 저장, components 테이블에는 API_URL만 저장")
+            # JSP 파일의 경우 JSP 컴포넌트를 components 테이블에 저장 (기존 JSP 로딩 방식과 동일)
+            if file_type.upper() == 'JSP':
+                for component in components:
+                    # 중복 체크
+                    check_query = """
+                        SELECT component_id FROM components 
+                        WHERE project_id = ? AND component_name = ? AND file_id = ? AND del_yn = 'N'
+                    """
+                    existing = self.db_utils.execute_query(
+                        check_query, (project_id, component['component_name'], self.current_file_id)
+                    )
+                    
+                    if existing:
+                        debug(f"JSP 컴포넌트 이미 존재: {component['component_name']}")
+                        continue
+                    
+                    # JSP 컴포넌트 데이터 준비
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': self.current_file_id,
+                        'component_name': component['component_name'],
+                        'component_type': 'JSP',
+                        'parent_id': None,
+                        'layer': 'FRONTEND',
+                        'line_start': component.get('line_start', 1),
+                        'line_end': component.get('line_end', 1),
+                        'hash_value': component.get('hash_value', '-'),
+                        'has_error': 'N',
+                        'error_message': None,
+                        'del_yn': 'N'
+                    }
+                    
+                    # INSERT OR IGNORE 사용하여 중복 방지
+                    insert_query = """
+                        INSERT OR IGNORE INTO components 
+                        (project_id, file_id, component_name, component_type, parent_id, 
+                         layer, line_start, line_end, hash_value, has_error, error_message, del_yn)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    
+                    values = (
+                        component_data['project_id'],
+                        component_data['file_id'],
+                        component_data['component_name'],
+                        component_data['component_type'],
+                        component_data['parent_id'],
+                        component_data['layer'],
+                        component_data['line_start'],
+                        component_data['line_end'],
+                        component_data['hash_value'],
+                        component_data['has_error'],
+                        component_data['error_message'],
+                        component_data['del_yn']
+                    )
+                    
+                    result = self.db_utils.execute_update(insert_query, values)
+                    if result > 0:
+                        debug(f"JSP 컴포넌트 저장 성공: {component['component_name']}")
+            else:
+                # 다른 프론트엔드 파일 타입은 스키마정의서에 따라 components 테이블에 저장하지 않음
+                debug(f"스키마정의서 준수: {file_type} 파일은 files 테이블에만 저장, components 테이블에는 API_URL만 저장")
             
         except Exception as e:
             handle_error(e, "프론트엔드 컴포넌트 저장 실패")
@@ -241,16 +300,20 @@ class FrontendLoadingEngine:
                 )
                 
                 if api_url_id:
-                    # 프론트엔드 컴포넌트 ID 찾기
-                    frontend_component_id = self._find_frontend_component_id(
-                        api_call['file_name'], project_id
-                    )
-                    
-                    if frontend_component_id:
-                        # 관계 생성
-                        self._create_api_call_relationship(
-                            frontend_component_id, api_url_id, api_call
+                    # JSP 파일의 경우 JSP 컴포넌트와 관계 생성
+                    if file_type.upper() == 'JSP':
+                        jsp_component_id = self._find_frontend_component_id(
+                            api_call['file_name'], project_id
                         )
+                        
+                        if jsp_component_id:
+                            # JSP 컴포넌트와 API_URL 관계 생성
+                            self._create_jsp_api_relationship(
+                                jsp_component_id, api_url_id, api_call
+                            )
+                    
+                    # API_URL과 METHOD 관계 생성 (기존 JSP 로딩 방식과 동일)
+                    self._create_api_method_relationship(api_url_id, api_call)
             
             debug(f"API 호출 관계 저장 완료: {len(api_calls)}개")
             
@@ -319,9 +382,9 @@ class FrontendLoadingEngine:
             debug(f"프론트엔드 컴포넌트 ID 찾기 실패: {str(e)}")
             return None
 
-    def _create_api_call_relationship(self, frontend_component_id: int, 
-                                    api_url_id: int, api_call: Dict[str, Any]) -> None:
-        """API 호출 관계 생성"""
+    def _create_jsp_api_relationship(self, jsp_component_id: int, 
+                                   api_url_id: int, api_call: Dict[str, Any]) -> None:
+        """JSP 컴포넌트와 API_URL 관계 생성"""
         try:
             # 중복 관계 체크
             check_query = """
@@ -329,27 +392,80 @@ class FrontendLoadingEngine:
                 WHERE src_id = ? AND dst_id = ? AND rel_type = ? AND del_yn = 'N'
             """
             existing = self.db_utils.execute_query(
-                check_query, (frontend_component_id, api_url_id, 'CALL_API')
+                check_query, (jsp_component_id, api_url_id, 'CALL_METHOD')
             )
             
             if existing:
-                debug(f"관계 이미 존재: {frontend_component_id} → {api_url_id}")
+                debug(f"JSP-API 관계 이미 존재: {jsp_component_id} → {api_url_id}")
                 return
             
             # 관계 생성
             insert_query = """
                 INSERT INTO relationships 
                 (src_id, dst_id, rel_type, confidence, has_error, error_message, del_yn)
-                VALUES (?, ?, 'CALL_API', 1.0, 'N', NULL, 'N')
+                VALUES (?, ?, 'CALL_METHOD', 1.0, 'N', NULL, 'N')
             """
             
-            result = self.db_utils.execute_update(insert_query, (frontend_component_id, api_url_id))
+            result = self.db_utils.execute_update(insert_query, (jsp_component_id, api_url_id))
             if result > 0:
                 self.stats['relationships_created'] += 1
-                debug(f"API 호출 관계 생성: {frontend_component_id} → {api_url_id}")
+                debug(f"JSP-API 관계 생성: {jsp_component_id} → {api_url_id}")
             
         except Exception as e:
-            debug(f"API 호출 관계 생성 실패: {str(e)}")
+            debug(f"JSP-API 관계 생성 실패: {str(e)}")
+
+    def _create_api_method_relationship(self, api_url_id: int, api_call: Dict[str, Any]) -> None:
+        """API_URL과 METHOD 관계 생성 (기존 JSP 로딩 방식과 동일)"""
+        try:
+            # API_URL에서 매칭되는 METHOD 찾기
+            api_url = api_call['api_url']
+            http_method = api_call['http_method']
+            
+            # METHOD 컴포넌트 찾기 (URL 패턴 매칭)
+            method_query = """
+                SELECT c.component_id, c.component_name, c.layer
+                FROM components c
+                JOIN classes cl ON c.parent_id = cl.class_id
+                WHERE c.project_id = ? 
+                  AND c.component_type = 'METHOD'
+                  AND c.del_yn = 'N'
+                LIMIT 1
+            """
+            
+            methods = self.db_utils.execute_query(method_query, (self.project_id,))
+            
+            if methods:
+                method_component_id = methods[0]['component_id']
+                
+                # 중복 관계 체크
+                check_query = """
+                    SELECT relationship_id FROM relationships 
+                    WHERE src_id = ? AND dst_id = ? AND rel_type = ? AND del_yn = 'N'
+                """
+                existing = self.db_utils.execute_query(
+                    check_query, (api_url_id, method_component_id, 'CALL_METHOD')
+                )
+                
+                if existing:
+                    debug(f"API-METHOD 관계 이미 존재: {api_url_id} → {method_component_id}")
+                    return
+                
+                # 관계 생성
+                insert_query = """
+                    INSERT INTO relationships 
+                    (src_id, dst_id, rel_type, confidence, has_error, error_message, del_yn)
+                    VALUES (?, ?, 'CALL_METHOD', 1.0, 'N', NULL, 'N')
+                """
+                
+                result = self.db_utils.execute_update(insert_query, (api_url_id, method_component_id))
+                if result > 0:
+                    self.stats['relationships_created'] += 1
+                    debug(f"API-METHOD 관계 생성: {api_url_id} → {method_component_id}")
+            else:
+                debug(f"매칭되는 METHOD 없음: {api_url}:{http_method}")
+            
+        except Exception as e:
+            debug(f"API-METHOD 관계 생성 실패: {str(e)}")
 
     def _print_statistics(self) -> None:
         """통계 정보 출력"""
