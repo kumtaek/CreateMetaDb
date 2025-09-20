@@ -10,7 +10,7 @@ import sqlite3
 import os
 from typing import Optional, List, Dict, Any, Union
 from contextlib import contextmanager
-from .logger import app_logger, handle_error, error
+from .logger import app_logger, handle_error, error, debug
 import threading
 
 
@@ -162,7 +162,9 @@ class DatabaseUtils:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 
+                app_logger.debug(f"execute_query 시작: {query[:100]}...")
                 if params:
+                    app_logger.debug(f"execute_query 파라미터: {params}")
                     cursor.execute(query, params)
                 else:
                     cursor.execute(query)
@@ -171,11 +173,14 @@ class DatabaseUtils:
                 for row in cursor.fetchall():
                     results.append(dict(row))
                 
-                app_logger.debug(f"쿼리 실행 성공: {query[:50]}...")
+                app_logger.debug(f"execute_query 성공: {len(results)}개 결과")
                 return results
                 
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
+            app_logger.error(f"execute_query 실패 - 쿼리: {query}")
+            app_logger.error(f"execute_query 실패 - 파라미터: {params}")
+            app_logger.error(f"execute_query 실패 - 에러: {str(e)}")
             handle_error(e, f"쿼리 실행 실패: {query[:50]}...")
     
     def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
@@ -414,6 +419,18 @@ class DatabaseUtils:
             성공 여부 (True/False)
         """
         try:
+            # components 테이블에 대한 특별한 검증 및 로깅
+            if table_name == 'components':
+                # file_id NULL 체크
+                if data.get('file_id') is None:
+                    error(f"[DATABASE_UTILS] FATAL: components 테이블에 file_id가 NULL인 데이터 삽입 시도!")
+                    error(f"[DATABASE_UTILS] 삽입 데이터: {data}")
+                    handle_error(Exception("components 테이블에 file_id가 NULL인 데이터 삽입 시도"), f"components 테이블 삽입 실패: file_id NULL")
+                    return False
+                
+                # 디버그 로그
+                debug(f"[DATABASE_UTILS] components 테이블 삽입: {data.get('component_name')} ({data.get('component_type')}) file_id={data.get('file_id')}")
+            
             # upsert 로직 사용 (데이터베이스 호환성)
             # 테이블별 unique_columns 설정
             if table_name == 'components':
@@ -448,6 +465,18 @@ class DatabaseUtils:
             return 0
         
         try:
+            # components 테이블에 대한 특별한 검증
+            if table_name == 'components':
+                # file_id NULL 체크
+                for i, data in enumerate(data_list):
+                    if data.get('file_id') is None:
+                        error(f"[DATABASE_UTILS] FATAL: batch components 테이블에 file_id가 NULL인 데이터 삽입 시도!")
+                        error(f"[DATABASE_UTILS] 인덱스 {i} 삽입 데이터: {data}")
+                        handle_error(Exception("batch components 테이블에 file_id가 NULL인 데이터 삽입 시도"), f"batch components 테이블 삽입 실패: file_id NULL")
+                        return 0
+                
+                debug(f"[DATABASE_UTILS] batch components 테이블 삽입: {len(data_list)}개")
+            
             # 테이블별 unique_columns 설정
             if table_name == 'components':
                 unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
@@ -544,6 +573,18 @@ class DatabaseUtils:
             삽입된 레코드의 ID (실패시 0)
         """
         try:
+            # components 테이블에 대한 특별한 검증
+            if table_name == 'components':
+                # file_id NULL 체크
+                if data.get('file_id') is None:
+                    error(f"[DATABASE_UTILS] FATAL: insert_or_replace_with_id components 테이블에 file_id가 NULL인 데이터 삽입 시도!")
+                    error(f"[DATABASE_UTILS] 삽입 데이터: {data}")
+                    handle_error(Exception("insert_or_replace_with_id components 테이블에 file_id가 NULL인 데이터 삽입 시도"), f"components 테이블 삽입 실패: file_id NULL")
+                    return 0
+                
+                # 디버그 로그
+                debug(f"[DATABASE_UTILS] insert_or_replace_with_id components: {data.get('component_name')} ({data.get('component_type')}) file_id={data.get('file_id')}")
+            
             # 디버그 로그 추가
             app_logger.debug(f"Upsert 실행: {table_name}")
             app_logger.debug(f"데이터: {data}")
@@ -1166,10 +1207,16 @@ class DatabaseUtils:
             if existing_id:
                 return existing_id
 
+            # inferred 컴포넌트용 file_id 찾기 (프로젝트의 첫 번째 파일 사용)
+            inferred_file_id = self._get_inferred_file_id_for_component(project_id)
+            if not inferred_file_id:
+                error(f"inferred 테이블 컴포넌트용 file_id를 찾을 수 없음: {table_name}")
+                return None
+
             # 새 테이블 컴포넌트 생성
             component_data = {
                 'project_id': project_id,
-                'file_id': None,  # 추론된 컴포넌트는 특정 파일에 속하지 않음
+                'file_id': inferred_file_id,  # inferred 컴포넌트용 file_id 사용
                 'component_type': 'TABLE',
                 'component_name': table_name,
                 'parent_id': None,
@@ -1198,6 +1245,63 @@ class DatabaseUtils:
 
         except Exception as e:
             handle_error(e, f"추론된 테이블 컴포넌트 생성 실패: {table_name}")
+            return None
+
+    def _get_inferred_file_id_for_component(self, project_id: int) -> Optional[int]:
+        """
+        inferred 컴포넌트용 file_id 찾기 (프로젝트의 첫 번째 파일 사용)
+        
+        Args:
+            project_id: 프로젝트 ID
+            
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            # SQL 관련 파일 우선 조회 (inferred 컴포넌트는 주로 SQL 분석에서 생성)
+            sql_file_query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? AND file_type IN ('XML', 'SQL') AND del_yn = 'N'
+                ORDER BY file_type, file_id
+                LIMIT 1
+            """
+            sql_result = self.execute_query(sql_file_query, (project_id,))
+            
+            if sql_result and len(sql_result) > 0:
+                file_id = sql_result[0]['file_id']
+                debug(f"inferred 컴포넌트용 SQL 관련 file_id: {file_id}")
+                return file_id
+            
+            # Java 파일 조회 (StringBuilder SQL 분석에서도 inferred 생성 가능)
+            java_file_query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? AND file_type = 'JAVA' AND del_yn = 'N'
+                ORDER BY file_id
+                LIMIT 1
+            """
+            java_result = self.execute_query(java_file_query, (project_id,))
+            
+            if java_result and len(java_result) > 0:
+                file_id = java_result[0]['file_id']
+                debug(f"inferred 컴포넌트용 Java file_id: {file_id}")
+                return file_id
+            
+            # 마지막으로 첫 번째 파일 사용 (fallback)
+            first_file_query = "SELECT file_id FROM files WHERE project_id = ? AND del_yn = 'N' ORDER BY file_id LIMIT 1"
+            first_file_result = self.execute_query(first_file_query, (project_id,))
+            first_file_id = first_file_result[0]['file_id'] if first_file_result else None
+            
+            if not first_file_id:
+                error(f"프로젝트 {project_id}에 파일이 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                return None
+                
+            debug(f"inferred 컴포넌트용 첫 번째 file_id (fallback): {first_file_id}")
+            return first_file_id
+            
+        except Exception as e:
+            handle_error(e, f"inferred 컴포넌트용 file_id 조회 실패")
             return None
 
     def get_relationship_count(self, project_id: int = None) -> int:

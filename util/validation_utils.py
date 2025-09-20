@@ -74,7 +74,8 @@ class ValidationUtils:
         Returns:
             유효성 여부 (True/False)
         """
-        valid_types = ['java', 'xml', 'jsp', 'sql', 'csv', 'yaml', 'properties', 'txt', 'json', 'unknown']
+        valid_types = ['java', 'xml', 'jsp', 'sql', 'csv', 'yaml', 'properties', 'txt', 'json', 
+                       'jsx', 'vue', 'ts', 'tsx', 'js', 'html', 'css', 'scss', 'sass', 'less', 'unknown']
         return file_type in valid_types
     
     @staticmethod

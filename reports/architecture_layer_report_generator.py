@@ -149,6 +149,9 @@ class ArchitectureLayerReportGenerator:
             
             component_results = self.db_utils.execute_query(components_query, (self.project_name,))
             
+            # 중복 제거를 위한 컴포넌트 세트 (파일별로 고유화)
+            component_sets = {}
+            
             for row in component_results:
                 layer = row['layer'] if row['layer'] else 'NULL'
                 comp_type = row['component_type']
@@ -156,22 +159,42 @@ class ArchitectureLayerReportGenerator:
                 comp_id = row['component_id']
                 file_path = row['file_path'] if row['file_path'] else ''
                 
+                # 파일별로 컴포넌트를 고유화 (동일 파일 내 중복 제거)
+                file_name = file_path.split('/')[-1] if file_path else 'unknown'
+                unique_key = f"{file_name}::{comp_name}::{comp_type}"
+                
+                if layer not in component_sets:
+                    component_sets[layer] = {}
+                
+                # 중복 제거: 동일한 파일의 동일한 컴포넌트는 하나만 유지
+                if unique_key not in component_sets[layer]:
+                    component_sets[layer][unique_key] = {
+                        'id': comp_id,
+                        'name': comp_name,
+                        'type': comp_type,
+                        'file_path': file_path,
+                        'file_name': file_name,
+                        'display_name': f"{comp_name} ({file_name})" if file_name != 'unknown' else comp_name
+                    }
+            
+            # 세트를 리스트로 변환
+            for layer, comp_set in component_sets.items():
                 if layer not in analysis['layer_components']:
                     analysis['layer_components'][layer] = []
                 
-                analysis['layer_components'][layer].append({
-                    'id': comp_id,
-                    'name': comp_name,
-                    'type': comp_type,
-                    'file_path': file_path
-                })
+                # 파일명으로 정렬하여 일관된 순서 보장
+                sorted_components = sorted(comp_set.values(), key=lambda x: (x['file_name'], x['name']))
+                analysis['layer_components'][layer].extend(sorted_components)
                 
-                # 기존 분포 분석도 유지
+                # 중복 제거된 컴포넌트 기반으로 분포 분석 (기존 분포 분석 대신)
                 if layer not in analysis['layer_distribution']:
                     analysis['layer_distribution'][layer] = {}
-                if comp_type not in analysis['layer_distribution'][layer]:
-                    analysis['layer_distribution'][layer][comp_type] = 0
-                analysis['layer_distribution'][layer][comp_type] += 1
+                
+                for comp in sorted_components:
+                    comp_type = comp['type']
+                    if comp_type not in analysis['layer_distribution'][layer]:
+                        analysis['layer_distribution'][layer][comp_type] = 0
+                    analysis['layer_distribution'][layer][comp_type] += 1
             
             # 2. 전체 컴포넌트 수 분석
             comp_query = """
@@ -656,10 +679,10 @@ class ArchitectureLayerReportGenerator:
                     if not comp_name or comp_name.strip() == '' or comp_name.isdigit():
                         continue
                     
-                    # 컴포넌트 이름 축약 (너무 길면)
-                    display_name = comp_name
-                    if len(display_name) > 20:
-                        display_name = display_name[:17] + "..."
+                    # 컴포넌트 표시명 사용 (파일명 포함하여 중복 구분)
+                    display_name = component.get('display_name', comp_name)
+                    if len(display_name) > 25:
+                        display_name = display_name[:22] + "..."
                     
                     components_html.append(f'''
                     <div class="component-item" 

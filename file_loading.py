@@ -46,6 +46,17 @@ class FileLoadingEngine:
             'jsp_files': 0,
             'sql_files': 0,
             'csv_files': 0,
+            # 프론트엔드 파일 타입 추가
+            'jsx_files': 0,
+            'vue_files': 0,
+            'ts_files': 0,
+            'tsx_files': 0,
+            'js_files': 0,
+            'html_files': 0,
+            'css_files': 0,
+            'scss_files': 0,
+            'sass_files': 0,
+            'less_files': 0,
             'other_files': 0,
             'tables_loaded': 0,
             'tables_with_errors': 0,
@@ -168,9 +179,19 @@ class FileLoadingEngine:
                         self.stats['scanned_files'] += 1
                         
                         # 파일 타입별 통계
-                        file_type = detailed_file_info.get('file_type', 'unknown')
+                        file_type = detailed_file_info.get('file_type', 'unknown').upper()
+                        # 기본 파일 타입
                         if file_type in ['JAVA', 'XML', 'JSP', 'SQL', 'CSV']:
                             self.stats[f'{file_type.lower()}_files'] += 1
+                        # 프론트엔드 파일 타입
+                        elif file_type in ['JSX', 'VUE', 'TS', 'TSX', 'JS', 'HTML', 'CSS', 'SCSS', 'SASS', 'LESS']:
+                            # TypeScript 파일 처리 (.ts -> ts_files, .tsx -> tsx_files)
+                            if file_type == 'TS':
+                                self.stats['ts_files'] += 1
+                            elif file_type == 'TSX':
+                                self.stats['tsx_files'] += 1
+                            else:
+                                self.stats[f'{file_type.lower()}_files'] += 1
                         else:
                             self.stats['other_files'] += 1
                     else:

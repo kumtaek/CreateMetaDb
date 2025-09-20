@@ -96,8 +96,8 @@ class ERDDagreReportGenerator:
             # Cytoscape.js 노드 데이터 생성
             nodes = self._generate_cytoscape_nodes(tables_data)
             
-            # Cytoscape.js 엣지 데이터 생성
-            edges = self._generate_cytoscape_edges(relationships_data)
+            # Cytoscape.js 엣지 데이터 생성 (노드 존재 여부 검증)
+            edges = self._generate_cytoscape_edges(relationships_data, nodes)
             
             cytoscape_data = {
                 'nodes': nodes,
@@ -427,16 +427,24 @@ class ERDDagreReportGenerator:
             handle_error(e, "Cytoscape 노드 생성 실패")
             return []
     
-    def _generate_cytoscape_edges(self, relationships_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Cytoscape.js 엣지 데이터 생성 - 양방향 조인 조건 중복 제거"""
+    def _generate_cytoscape_edges(self, relationships_data: List[Dict[str, Any]], nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Cytoscape.js 엣지 데이터 생성 - 노드 존재 여부 검증 및 중복 제거"""
         try:
             edges = []
             processed_pairs = set()  # 처리된 테이블 쌍을 추적
+            
+            # 존재하는 노드 ID 목록 생성
+            existing_node_ids = {node['data']['id'] for node in nodes}
             
             for rel in relationships_data:
                 # 소스와 타겟 노드 ID 생성 (owner 제거)
                 src_id = f"table:{rel['src_table']}"
                 dst_id = f"table:{rel['dst_table']}"
+                
+                # 노드 존재 여부 검증
+                if src_id not in existing_node_ids or dst_id not in existing_node_ids:
+                    app_logger.debug(f"엣지 제외 (노드 없음): {src_id} -> {dst_id}")
+                    continue
                 
                 # 양방향 관계 중복 제거를 위한 키 생성 (정렬된 테이블명 + 컬럼명)
                 table_pair = tuple(sorted([rel['src_table'], rel['dst_table']]))

@@ -112,6 +112,7 @@ class JspParser:
                     'java_method_relationships': [],
                     'jsp_relationships': [],
                     'advanced_relationships': {},
+                    'api_calls': [],
                     'file_path': jsp_file,
                     'has_error': 'Y',
                     'error_message': 'JSP 파일 읽기 실패'
@@ -129,11 +130,15 @@ class JspParser:
             # Phase 3: 고도화 관계 분석 (EL, JSTL, Java Bean, 태그 라이브러리)
             advanced_relationships = self._analyze_advanced_relationships(jsp_content, jsp_component['jsp_name'])
 
+            # Phase 4: API 호출 분석 (프론트엔드→백엔드 API 연결)
+            api_calls = self.analyze_api_calls(jsp_content, jsp_component['jsp_name'])
+
             return {
                 'jsp_component': jsp_component,
                 'java_method_relationships': java_method_relationships,
                 'jsp_relationships': jsp_relationships,
                 'advanced_relationships': advanced_relationships,
+                'api_calls': api_calls,
                 'file_path': jsp_file,
                 'has_error': 'N',
                 'error_message': None
@@ -146,6 +151,7 @@ class JspParser:
                 'java_method_relationships': [],
                 'jsp_relationships': [],
                 'advanced_relationships': {},
+                'api_calls': [],
                 'file_path': jsp_file,
                 'has_error': 'Y',
                 'error_message': f'JSP 파일 파싱 실패: {str(e)}'
@@ -1359,23 +1365,26 @@ class JspParser:
             # 리터럴 블록을 리스트로 변환
             api_patterns = [line.strip() for line in api_patterns_text.strip().split('\n') if line.strip()]
             
-            # 각 라인별로 API 호출 패턴 분석
-            lines = jsp_content.split('\n')
-            for line_num, line in enumerate(lines, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                
-                # 각 패턴에 대해 매칭 시도
-                for pattern in api_patterns:
-                    matches = re.finditer(pattern, line, re.IGNORECASE)
-                    for match in matches:
-                        try:
-                            api_call = self._extract_api_call_info(match, line, line_num, jsp_name, default_methods)
-                            if api_call:
-                                api_calls.append(api_call)
-                        except Exception as e:
-                            handle_error(e, f"API 호출 정보 추출 실패 (라인 {line_num})")
+            # 전체 내용에 대해 API 호출 패턴 분석 (멀티라인 지원)
+            for pattern in api_patterns:
+                matches = re.finditer(pattern, jsp_content, re.IGNORECASE | re.DOTALL)
+                for match in matches:
+                    try:
+                        # 매칭된 위치의 라인 번호 계산
+                        line_num = jsp_content[:match.start()].count('\n') + 1
+
+                        # 매칭된 라인 추출
+                        lines = jsp_content.split('\n')
+                        if line_num <= len(lines):
+                            matched_line = lines[line_num - 1]
+                        else:
+                            matched_line = match.group(0)[:100] + "..."
+
+                        api_call = self._extract_api_call_info(match, matched_line, line_num, jsp_name, default_methods)
+                        if api_call:
+                            api_calls.append(api_call)
+                    except Exception as e:
+                        error(f"API 호출 정보 추출 실패: {str(e)}")
             
             debug(f"JSP API 호출 분석 완료: {jsp_name}, {len(api_calls)}개 발견")
             return api_calls

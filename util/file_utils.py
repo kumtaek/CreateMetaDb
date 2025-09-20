@@ -28,7 +28,18 @@ class FileUtils:
         'yaml': ['.yaml', '.yml'],
         'properties': ['.properties'],
         'txt': ['.txt'],
-        'json': ['.json']
+        'json': ['.json'],
+        # 프론트엔드 파일 타입 추가
+        'jsx': ['.jsx'],
+        'vue': ['.vue'],
+        'ts': ['.ts'],
+        'tsx': ['.tsx'],
+        'js': ['.js'],
+        'html': ['.html'],
+        'css': ['.css'],
+        'scss': ['.scss'],
+        'sass': ['.sass'],
+        'less': ['.less']
     }
     
     @staticmethod

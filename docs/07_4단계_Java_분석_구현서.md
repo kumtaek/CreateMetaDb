@@ -7,12 +7,15 @@
 - Java 파일 파싱, 클래스 정보 추출, 메서드 정보 추출
 - Enhanced SQL 추출 (StringBuilder + 정규식 패턴)
 - 관계 분석, 컴포넌트 등록
+- MyBatis Mapper 인터페이스 분석 및 JPA Repository/Entity 분석
+- API URL 매핑 및 Spring Controller 어노테이션 분석
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
 **구현 상태**: ✅ **구현 완료** (Enhanced SQL 추출 기능 포함)  
-**파일**: `java_loading.py`, `parser/java_parser.py`  
+**파일**: `java_loading.py`, `parser/java_parser.py`, `util/java_query_analyzer.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
 **SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
 **Enhanced 파싱**: ✅ **문자열 리터럴 SQL 패턴 추출로 누락 방지**  
+**JPA 지원**: ✅ **JPA Repository, Entity, @Query 어노테이션 분석**  
 
 ## 처리 플로우 차트 (현행화)
 
@@ -176,8 +179,9 @@ def parse_java_file(self, java_file: str) -> Dict[str, Any]:
    - `_analyze_call_query_relationships_safe()`: CALL_QUERY 관계 분석
    - `_analyze_call_method_relationships_safe()`: CALL_METHOD 관계 분석
    - `_analyze_use_table_relationships_safe()`: USE_TABLE 관계 분석
-10. **통계 업데이트**: 처리 통계 정보 업데이트
-11. **결과 반환**: 클래스/메서드 정보와 모든 관계 정보 반환
+10. **JavaQueryAnalyzer 연동**: MyBatis Mapper, JPA Repository/Entity 분석
+11. **통계 업데이트**: 처리 통계 정보 업데이트
+12. **결과 반환**: 클래스/메서드 정보와 모든 관계 정보 반환
 
 **반환 데이터 구조**:
 
@@ -913,10 +917,33 @@ flowchart TD
 
 Java 파서에 SQL 쿼리 추출 및 처리 기능이 대폭 강화되었습니다:
 
+### JavaQueryAnalyzer 신규 추가
+
+**MyBatis Mapper 인터페이스 분석**:
+- `@Mapper` 어노테이션 감지
+- 메서드명과 XML 쿼리 ID 매핑
+- METHOD → QUERY 관계 설정
+
+**JPA Repository 분석**:
+- `JpaRepository` 상속 관계 감지
+- `@Query` 어노테이션에서 JPQL/SQL 추출
+- JPA METHOD → ENTITY/TABLE 관계 설정
+
+**JPA Entity 분석**:
+- `@Entity`, `@Table`, `@Column` 어노테이션 분석
+- JPA ENTITY → DB TABLE 매핑
+- 엔티티 필드와 테이블 컬럼 매핑
+
+**Spring Controller API 분석**:
+- `@RequestMapping`, `@GetMapping` 등 어노테이션 분석
+- API URL 패턴 추출 및 정규화
+- 동적 URL 매개변수 처리 (`/api/users/{id}`)
+
 ```mermaid
 sequenceDiagram
     participant JE as JavaLoadingEngine
     participant JP as JavaParser
+    participant JQA as JavaQueryAnalyzer
     participant SJA as SqlJoinAnalyzer
     participant SCP as SqlContentProcessor
     participant DB as metadata.db
@@ -925,6 +952,12 @@ sequenceDiagram
     JE->>JP: parse_java_file()
     JP->>JP: _extract_sql_queries_from_java()
     Note over JP: StringBuilder 패턴 분석
+
+    JE->>JQA: analyze_java_file()
+    JQA->>JQA: MyBatis Mapper 분석
+    JQA->>JQA: JPA Repository 분석
+    JQA->>JQA: JPA Entity 분석
+    JQA->>JQA: Spring Controller 분석
 
     loop 각 추출된 SQL 쿼리마다
         JP->>SJA: analyze_join_relationships()
@@ -938,6 +971,10 @@ sequenceDiagram
         JE->>DB: USE_TABLE 관계 저장
         JE->>DB: JOIN 관계 저장 (EXPLICIT/IMPLICIT)
     end
+
+    JQA->>DB: METHOD → QUERY 관계 저장
+    JQA->>DB: JPA ENTITY → TABLE 매핑 저장
+    JQA->>DB: API_URL → METHOD 연결 저장
 ```
 
 ### 주요 개선 사항
@@ -969,6 +1006,24 @@ sequenceDiagram
    - JOIN_EXPLICIT: 명시적 조인 관계
    - JOIN_IMPLICIT: 암시적 조인 관계
 
+5. **MyBatis Mapper 분석**
+   
+   - `@Mapper` 어노테이션 감지
+   - 메서드명과 XML 쿼리 ID 매핑
+   - METHOD → QUERY 관계 자동 설정
+
+6. **JPA Repository/Entity 분석**
+   
+   - `JpaRepository` 상속 관계 감지
+   - `@Query` 어노테이션에서 JPQL/SQL 추출
+   - JPA ENTITY → DB TABLE 매핑
+
+7. **Spring Controller API 분석**
+   
+   - `@RequestMapping`, `@GetMapping` 등 어노테이션 분석
+   - API URL 패턴 추출 및 정규화
+   - 동적 URL 매개변수 처리
+
 ### 상세 구현 내용
 
 **공통 SQL 파서의 상세 구현 내용은 [SQL공통파서_구현서.md](./SQL공통파서_구현서.md)를 참조하세요.**
@@ -982,6 +1037,10 @@ sequenceDiagram
 | **조인 분석**       | ❌ 기본만  | ✅ Oracle EXPLICIT/IMPLICIT |
 | **테이블 관계**      | ❌ 제한적  | ✅ 완전한 관계 분석                |
 | **XML과 품질 차이**  | ❌ 큰 차이 | ✅ 동일한 수준                   |
+| **MyBatis Mapper** | ❌ 미지원  | ✅ @Mapper 어노테이션 분석       |
+| **JPA Repository** | ❌ 미지원  | ✅ JpaRepository 상속 분석      |
+| **JPA Entity**     | ❌ 미지원  | ✅ @Entity 어노테이션 분석       |
+| **Spring Controller** | ❌ 미지원 | ✅ API URL 매핑 분석           |
 
 ### 구현 완료 현황
 
@@ -989,8 +1048,11 @@ sequenceDiagram
 2. **Phase 2**: ✅ **완료** - 공통 SQL 조인 분석 모듈 적용
 3. **Phase 3**: ✅ **완료** - SQL 압축 저장 기능
 4. **Phase 4**: ✅ **완료** - 테이블 관계 분석 및 연결
+5. **Phase 5**: ✅ **완료** - MyBatis Mapper 인터페이스 분석
+6. **Phase 6**: ✅ **완료** - JPA Repository/Entity 분석
+7. **Phase 7**: ✅ **완료** - Spring Controller API 분석
 
-이 개선을 통해 Java와 XML 파서의 SQL 처리 품질이 동일한 수준으로 향상되었습니다.
+이 개선을 통해 Java와 XML 파서의 SQL 처리 품질이 동일한 수준으로 향상되었고, JPA와 MyBatis 모두 지원하는 완전한 Java 분석 시스템이 구축되었습니다.
 
 ## 📚 관련 문서
 

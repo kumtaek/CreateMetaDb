@@ -87,9 +87,19 @@ class ERDMetadataService:
             return {}
     
     def get_tables_with_columns(self) -> Dict[str, List[Dict[str, Any]]]:
-        """테이블과 컬럼 정보 조회 (기본 ERD용)"""
+        """테이블과 컬럼 정보 조회 (기본 ERD용) - 관계가 있는 테이블만 포함"""
         try:
-            query = """
+            # 1. 관계가 있는 테이블들만 조회
+            tables_with_relationships = self._get_tables_with_relationships()
+            
+            # 2. 기본 테이블-컬럼 정보 조회 (관계가 있는 테이블만)
+            if not tables_with_relationships:
+                app_logger.warning("관계가 있는 테이블이 없습니다")
+                return {}
+            
+            # IN 절을 위한 플레이스홀더 생성
+            placeholders = ','.join(['?' for _ in tables_with_relationships])
+            query = f"""
                 SELECT 
                     t.table_name,
                     t.table_owner,
@@ -108,10 +118,12 @@ class ERDMetadataService:
                 WHERE p.project_name = ? 
                   AND t.del_yn = 'N' 
                   AND c.del_yn = 'N'
+                  AND t.table_name IN ({placeholders})
                 ORDER BY t.table_name, c.column_id
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name,))
+            params = [self.project_name] + tables_with_relationships
+            results = self.db_utils.execute_query(query, params)
             
             # 테이블별로 데이터 그룹화
             tables_data = {}
@@ -130,17 +142,212 @@ class ERDMetadataService:
                     'data_default': row['data_default']
                 })
             
-            app_logger.debug(f"테이블 및 컬럼 정보 조회 완료: {len(tables_data)}개 테이블")
+            # 3. 컬럼이 없는 테이블들에 대해 조인 조건에서 컬럼 추가 (관계가 있는 테이블만)
+            for table_name in tables_with_relationships:
+                if table_name not in tables_data:
+                    # 테이블은 존재하지만 컬럼이 없는 경우
+                    tables_data[table_name] = []
+                
+                # 컬럼이 없는 경우 조인 관계에서 컬럼 추론
+                if len(tables_data.get(table_name, [])) == 0:
+                    join_columns = self._extract_columns_from_relationships(table_name)
+                    if join_columns:
+                        # 조인에서 사용된 컬럼들 추가 (추론된 컬럼)
+                        for col_name in join_columns:
+                            tables_data[table_name].append({
+                                'column_name': col_name,
+                                'data_type': 'VARCHAR2(50)',  # 기본 타입
+                                'is_primary_key': col_name.upper().endswith('_ID') or col_name.upper() == 'ID',
+                                'is_nullable': True,
+                                'column_comments': f'조인에서 추론된 컬럼',
+                                'data_length': 50,
+                                'data_default': None
+                            })
+            
+            app_logger.debug(f"관계가 있는 테이블 정보 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 제외)")
             return tables_data
             
         except Exception as e:
             handle_error(e, "테이블 및 컬럼 정보 조회 실패")
             return {}
     
-    def get_tables_with_columns_detailed(self) -> Dict[str, Dict[str, Any]]:
-        """테이블과 컬럼 정보 조회 (Dagre ERD용 - 상세 정보 포함)"""
+    def _get_all_tables(self) -> List[str]:
+        """모든 테이블 목록 조회 (CSV 등록 + 조인에서 추론된 테이블 모두 포함)"""
         try:
             query = """
+                SELECT DISTINCT t.table_name
+                FROM tables t
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE p.project_name = ? AND t.del_yn = 'N'
+                ORDER BY t.table_name
+            """
+            
+            results = self.db_utils.execute_query(query, (self.project_name,))
+            return [row['table_name'] for row in results]
+            
+        except Exception as e:
+            app_logger.error(f"모든 테이블 목록 조회 실패: {str(e)}")
+            return []
+    
+    def _get_tables_with_relationships(self) -> List[str]:
+        """관계가 있는 테이블들만 조회 (고아 엔티티 제외)"""
+        try:
+            query = """
+                SELECT DISTINCT
+                    src.component_name as table_name
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id
+                JOIN components dst ON r.dst_id = dst.component_id
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.del_yn = 'N'
+                  AND src.del_yn = 'N'
+                  AND dst.del_yn = 'N'
+                  AND src.component_type = 'TABLE'
+                
+                UNION
+                
+                SELECT DISTINCT
+                    dst.component_name as table_name
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id
+                JOIN components dst ON r.dst_id = dst.component_id
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.del_yn = 'N'
+                  AND src.del_yn = 'N'
+                  AND dst.del_yn = 'N'
+                  AND dst.component_type = 'TABLE'
+                
+                ORDER BY table_name
+            """
+            
+            results = self.db_utils.execute_query(query, (self.project_name, self.project_name))
+            table_names = [row['table_name'] for row in results]
+            
+            app_logger.debug(f"관계가 있는 테이블 조회 완료: {len(table_names)}개 테이블")
+            return table_names
+            
+        except Exception as e:
+            app_logger.error(f"관계가 있는 테이블 조회 실패: {str(e)}")
+            return []
+    
+    def _get_empty_tables_with_relationships(self) -> Dict[str, set]:
+        """빈 테이블들의 조인 조건에서 사용된 컬럼들 추출"""
+        try:
+            # 컬럼이 없는 테이블들 중에서 관계가 있는 테이블들 찾기
+            query = """
+                SELECT DISTINCT
+                    t.table_name,
+                    r.rel_type
+                FROM tables t
+                LEFT JOIN columns c ON t.table_id = c.table_id AND c.del_yn = 'N'
+                JOIN components comp ON t.component_id = comp.component_id
+                JOIN relationships r ON (comp.component_id = r.src_id OR comp.component_id = r.dst_id)
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND t.del_yn = 'N'
+                  AND comp.del_yn = 'N'
+                  AND r.del_yn = 'N'
+                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT', 'USE_TABLE')
+                GROUP BY t.table_name
+                HAVING COUNT(c.column_id) = 0
+            """
+            
+            results = self.db_utils.execute_query(query, (self.project_name,))
+            
+            empty_tables_with_joins = {}
+            for row in results:
+                table_name = row['table_name']
+                
+                # 이 테이블과 관련된 조인 조건에서 컬럼 추출
+                join_columns = self._extract_columns_from_relationships(table_name)
+                if join_columns:
+                    empty_tables_with_joins[table_name] = join_columns
+            
+            return empty_tables_with_joins
+            
+        except Exception as e:
+            app_logger.error(f"빈 테이블의 관계 컬럼 추출 실패: {str(e)}")
+            return {}
+    
+    def _extract_columns_from_relationships(self, table_name: str) -> set:
+        """특정 테이블의 관계에서 사용된 컬럼들 추출 (순환 참조 방지)"""
+        try:
+            columns = set()
+            
+            # 기본적으로 ID 컬럼 추가 (대부분의 테이블에 존재)
+            if table_name.upper().endswith('S'):
+                # 복수형 테이블명에서 단수형 ID 추출 (예: USERS -> USER_ID)
+                singular = table_name[:-1]
+                columns.add(f"{singular}_ID")
+            else:
+                columns.add(f"{table_name}_ID")
+            
+            # 일반적인 ID 컬럼도 추가
+            columns.add("ID")
+            
+            # 조인 관계에서 직접 컬럼 정보 조회 (get_relationships 호출 방지)
+            query = """
+                SELECT DISTINCT
+                    src.component_name as src_table,
+                    dst.component_name as dst_table
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id
+                JOIN components dst ON r.dst_id = dst.component_id
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.del_yn = 'N'
+                  AND src.del_yn = 'N'
+                  AND dst.del_yn = 'N'
+                  AND (src.component_name = ? OR dst.component_name = ?)
+            """
+            
+            results = self.db_utils.execute_query(query, (self.project_name, table_name, table_name))
+            
+            # 관련된 테이블들로부터 FK 컬럼 추론
+            for row in results:
+                src_table = row['src_table']
+                dst_table = row['dst_table']
+                
+                if src_table == table_name:
+                    # 이 테이블이 소스인 경우, 대상 테이블의 ID를 FK로 추가
+                    if dst_table.upper().endswith('S'):
+                        singular = dst_table[:-1]
+                        columns.add(f"{singular}_ID")
+                    else:
+                        columns.add(f"{dst_table}_ID")
+                
+                if dst_table == table_name:
+                    # 이 테이블이 대상인 경우, 소스 테이블의 ID를 FK로 추가
+                    if src_table.upper().endswith('S'):
+                        singular = src_table[:-1]
+                        columns.add(f"{singular}_ID")
+                    else:
+                        columns.add(f"{src_table}_ID")
+            
+            return columns
+            
+        except Exception as e:
+            app_logger.error(f"테이블 {table_name}의 관계 컬럼 추출 실패: {str(e)}")
+            return set()
+    
+    def get_tables_with_columns_detailed(self) -> Dict[str, Dict[str, Any]]:
+        """테이블과 컬럼 정보 조회 (Dagre ERD용 - 관계가 있는 테이블만 포함)"""
+        try:
+            # 1. 관계가 있는 테이블들만 조회
+            tables_with_relationships = self._get_tables_with_relationships()
+            
+            if not tables_with_relationships:
+                app_logger.warning("관계가 있는 테이블이 없습니다")
+                return {}
+            
+            # 2. 기본 테이블-컬럼 정보 조회 (관계가 있는 테이블만)
+            placeholders = ','.join(['?' for _ in tables_with_relationships])
+            query = f"""
                 SELECT 
                     t.table_name,
                     t.table_owner,
@@ -159,10 +366,12 @@ class ERDMetadataService:
                 WHERE p.project_name = ? 
                   AND t.del_yn = 'N' 
                   AND c.del_yn = 'N'
+                  AND t.table_name IN ({placeholders})
                 ORDER BY t.table_name, c.column_id
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name,))
+            params = [self.project_name] + tables_with_relationships
+            results = self.db_utils.execute_query(query, params)
             
             # 테이블별로 데이터 그룹화 (Dagre용 구조)
             tables_data = {}
@@ -186,7 +395,34 @@ class ERDMetadataService:
                     'data_default': row['data_default']
                 })
             
-            app_logger.debug(f"상세 테이블 데이터 조회 완료: {len(tables_data)}개 테이블")
+            # 3. 컬럼이 없는 테이블들에 대해 조인 조건에서 컬럼 추가 (관계가 있는 테이블만)
+            for table_name in tables_with_relationships:
+                if table_name not in tables_data:
+                    # 테이블은 존재하지만 컬럼이 없는 경우
+                    tables_data[table_name] = {
+                        'table_owner': 'UNKNOWN',
+                        'table_comments': f'{table_name} 테이블 (조인에서 추론)',
+                        'columns': []
+                    }
+                
+                # 컬럼이 없는 경우 조인 관계에서 컬럼 추론
+                if len(tables_data[table_name]['columns']) == 0:
+                    join_columns = self._extract_columns_from_relationships(table_name)
+                    if join_columns:
+                        # 조인에서 사용된 컬럼들 추가 (추론된 컬럼)
+                        for col_name in join_columns:
+                            tables_data[table_name]['columns'].append({
+                                'column_name': col_name,
+                                'data_type': 'VARCHAR2(50)',
+                                'is_primary_key': col_name.upper().endswith('_ID') or col_name.upper() == 'ID',
+                                'is_nullable': True,
+                                'column_comments': '조인에서 추론된 컬럼',
+                                'column_order': 1,
+                                'data_length': 50,
+                                'data_default': None
+                            })
+            
+            app_logger.debug(f"관계가 있는 상세 테이블 데이터 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 제외)")
             return tables_data
             
         except Exception as e:
@@ -194,33 +430,26 @@ class ERDMetadataService:
             return {}
     
     def get_relationships(self) -> List[Dict[str, Any]]:
-        """관계 정보 조회 - 메타데이터에서 분석된 JOIN 관계 직접 활용"""
+        """관계 정보 조회 - 간단하고 직접적인 JOIN 관계 조회"""
         try:
-            # 메타데이터에서 이미 분석된 테이블 간 JOIN 관계를 직접 조회
+            # 간단한 방법: 테이블 간 JOIN 관계를 직접 조회
             query = """
                 SELECT DISTINCT
                     r.rel_type,
-                    src_table.table_name as src_table,
-                    dst_table.table_name as dst_table
+                    src.component_name as src_table,
+                    dst.component_name as dst_table
                 FROM relationships r
-                JOIN components src_sql ON r.src_id = src_sql.component_id
-                JOIN components dst_table_comp ON r.dst_id = dst_table_comp.component_id
-                JOIN tables dst_table ON dst_table_comp.component_id = dst_table.component_id
-                JOIN relationships r2 ON src_sql.component_id = r2.src_id
-                JOIN components src_table_comp ON r2.dst_id = src_table_comp.component_id
-                JOIN tables src_table ON src_table_comp.component_id = src_table.component_id
-                JOIN projects p ON src_sql.project_id = p.project_id
+                JOIN components src ON r.src_id = src.component_id
+                JOIN components dst ON r.dst_id = dst.component_id
+                JOIN projects p ON src.project_id = p.project_id
                 WHERE p.project_name = ? 
                   AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
-                  AND r2.rel_type = 'USE_TABLE'
                   AND r.del_yn = 'N'
-                  AND r2.del_yn = 'N'
-                  AND src_sql.del_yn = 'N'
-                  AND dst_table_comp.del_yn = 'N'
-                  AND src_table_comp.del_yn = 'N'
-                  AND src_table.del_yn = 'N'
-                  AND dst_table.del_yn = 'N'
-                ORDER BY src_table.table_name, dst_table.table_name
+                  AND src.del_yn = 'N'
+                  AND dst.del_yn = 'N'
+                  AND src.component_type = 'TABLE'
+                  AND dst.component_type = 'TABLE'
+                ORDER BY src.component_name, dst.component_name
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
@@ -233,16 +462,25 @@ class ERDMetadataService:
                     row['dst_table']
                 )
                 
-                # 컬럼 정보가 없어도 관계는 유지 (테이블 레벨 관계)
+                # 관계 정보 추가
                 relationships.append({
                     'rel_type': row['rel_type'],
                     'src_table': row['src_table'],
                     'dst_table': row['dst_table'],
                     'src_column': src_column or 'id',  # 기본값 제공
-                    'dst_column': dst_column or 'id'   # 기본값 제공
+                    'dst_column': dst_column or 'id',  # 기본값 제공
+                    'confidence': 0.9,  # ERD Dagre용 기본 신뢰도
+                    'frequency': 1,     # ERD Dagre용 기본 빈도
+                    'src_owner': '',    # ERD Dagre용 기본값
+                    'dst_owner': '',    # ERD Dagre용 기본값
+                    'src_data_type': 'VARCHAR',  # ERD Dagre용 기본값
+                    'dst_data_type': 'VARCHAR',  # ERD Dagre용 기본값
+                    'join_condition': None,      # ERD Dagre용 기본값
+                    'rel_comment': '',           # ERD Dagre용 기본값
+                    'is_pk_fk': False            # ERD Dagre용 기본값 (나중에 계산)
                 })
             
-            app_logger.info(f"메타데이터 기반 관계 정보 조회 완료: {len(relationships)}개")
+            app_logger.info(f"테이블 간 JOIN 관계 조회 완료: {len(relationships)}개")
             return relationships
             
         except Exception as e:

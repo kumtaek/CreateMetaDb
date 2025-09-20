@@ -617,9 +617,6 @@ class ReportTemplates:
             </div>
         </div>
         {stats_html}
-        <div class="erd-footer">
-            ERD 분석 완료 - 마우스 휠로 확대/축소, 드래그로 이동 가능
-        </div>
     </div>
     
     <script>
@@ -629,7 +626,7 @@ class ReportTemplates:
 </html>"""
     
     def _generate_erd_stats_html(self, stats: Dict[str, int]) -> str:
-        """ERD 통계 카드 HTML 생성 - 콜체인리포트와 동일한 구조"""
+        """ERD 통계 카드 HTML 생성 - 한 줄 형태로 간소화"""
         return f"""
         <div class="erd-stats">
             <div class="erd-stat-card">
@@ -643,10 +640,6 @@ class ReportTemplates:
             <div class="erd-stat-card">
                 <div class="erd-stat-number">{stats.get('primary_keys', 0)}</div>
                 <div class="erd-stat-label">Primary Key</div>
-            </div>
-            <div class="erd-stat-card">
-                <div class="erd-stat-number">{stats.get('foreign_keys', 0)}</div>
-                <div class="erd-stat-label">Foreign Key</div>
             </div>
             <div class="erd-stat-card">
                 <div class="erd-stat-number">{stats.get('relationships', 0)}</div>
@@ -668,50 +661,54 @@ class ReportTemplates:
     def _get_erd_css(self) -> str:
         """ERD Report CSS 스타일 - 콜체인리포트와 동일한 구조 적용"""
         return """
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body.erd-body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 2px;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         .erd-container {
-            width: 100%;
-            max-width: 100%;
+            width: 100vw;
+            height: 100vh;
             margin: 0;
+            padding: 0;
             background: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
         .erd-header {
             background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
             color: white;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 4px 6px;
             box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
-            margin-bottom: 3px;
-            padding-bottom: 3px;
+            margin: 0;
             flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 40px;
+            min-height: 40px;
         }
         .erd-header .header-left {
             text-align: left;
         }
         .erd-header h1 {
             margin: 0;
-            font-size: 1.4em;
+            font-size: 1.1em;
             font-weight: 300;
         }
         .erd-header .subtitle {
-            margin: 2px 0 0 0;
+            margin: 1px 0 0 0;
             opacity: 0.9;
-            font-size: 0.8em;
+            font-size: 0.7em;
         }
         .diagram-controls {
             display: flex;
@@ -741,30 +738,37 @@ class ReportTemplates:
             opacity: 0.8;
         }
         .erd-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 6px;
-            padding: 6px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 4px;
             background: #f8f9fa;
-            margin-bottom: 3px;
+            margin: 0;
             flex-shrink: 0;
+            height: 24px;
+            min-height: 24px;
         }
         .erd-stat-card {
             background: white;
-            padding: 6px;
-            border-radius: 4px;
+            padding: 2px 6px;
+            border-radius: 2px;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
         }
         .erd-stat-card:hover {
             transform: translateY(-1px);
         }
         .erd-stat-number {
-            font-size: 1.0em;
+            font-size: 0.9em;
             font-weight: bold;
             color: #3498db;
-            margin-bottom: 1px;
+            margin: 0;
         }
         .erd-stat-label {
             color: #7f8c8d;
@@ -773,12 +777,16 @@ class ReportTemplates:
         .erd-content {
             flex: 1;
             overflow: hidden;
-            padding: 4px;
-        }
-        .erd-section {
-            height: 100%;
+            padding: 0;
             display: flex;
             flex-direction: column;
+            min-height: 0;
+        }
+        .erd-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
         .diagram-controls {
             margin-bottom: 5px;
@@ -838,23 +846,37 @@ class ReportTemplates:
             overflow: hidden;
         }
         .mermaid-container {
-            background: #f8f9fa;
-            border-radius: 4px;
-            padding: 10px;
+            background: white;
+            padding: 0;
             margin: 0;
-            border: 1px solid #e9ecef;
             position: relative;
-            overflow: auto;
-            height: 100%;
+            flex: 1;
             width: 100%;
             box-sizing: border-box;
+            overflow: auto;
+            cursor: grab;
+            min-height: 0;
         }
         
         .mermaid {
-            text-align: center;
+            width: 100%;
+            height: 100%;
             min-width: 100%;
-            min-height: 400px;
+            min-height: 100%;
             overflow: visible;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* Mermaid SVG 확대 시 스크롤 지원 - 새로운 방식 */
+        .mermaid svg {
+            width: auto !important;
+            height: auto !important;
+            transform-origin: center center;
+            display: block;
+            position: relative;
         }
         
         /* 스크롤바 스타일링 */
@@ -918,16 +940,6 @@ class ReportTemplates:
         .btn.secondary:hover {
             background: #7f8c8d;
         }
-        .erd-footer {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 2px;
-            text-align: center;
-            font-size: 9px;
-            opacity: 0.8;
-            flex-shrink: 0;
-            height: 15px;
-        }
         @media (max-width: 768px) {
             .erd-container {
                 margin: 10px;
@@ -942,19 +954,72 @@ class ReportTemplates:
     def _get_erd_javascript(self) -> str:
         """ERD Report JavaScript"""
         return """
-        // Mermaid 초기화
+        // Mermaid 초기화 - 반응형 설정
         mermaid.initialize({
             startOnLoad: true,
             theme: 'default',
             flowchart: {
-                useMaxWidth: false,
+                useMaxWidth: true,
                 htmlLabels: true,
                 curve: 'basis'
             },
             er: {
-                useMaxWidth: false,
-                htmlLabels: true
+                useMaxWidth: true,
+                htmlLabels: true,
+                diagramPadding: 20,
+                layoutDirection: 'TB'
+            },
+            // 반응형 설정
+            maxTextSize: 90000,
+            maxEdges: 200,
+            // 자동 크기 조정
+            wrap: true,
+            fontSize: 16
+        });
+        
+        // 윈도우 크기 변경 시 다이어그램 재조정
+        window.addEventListener('resize', function() {
+            setTimeout(function() {
+                const diagram = document.getElementById('erd-diagram');
+                if (diagram && diagram.querySelector('svg')) {
+                    adjustDiagramSize();
+                }
+            }, 100);
+        });
+        
+        // 다이어그램 크기 자동 조정 함수 (초기 로드 시에만 사용)
+        function adjustDiagramSize() {
+            const container = document.getElementById('mermaid-container');
+            const diagram = document.getElementById('erd-diagram');
+            const svg = diagram ? diagram.querySelector('svg') : null;
+            
+            if (container && svg && currentZoom === 1) {
+                // 줌이 기본 상태일 때만 자동 조정
+                const containerRect = container.getBoundingClientRect();
+                const svgBBox = svg.getBBox();
+                
+                // 컨테이너 크기에 맞게 스케일 계산
+                const scaleX = (containerRect.width - 40) / svgBBox.width;
+                const scaleY = (containerRect.height - 40) / svgBBox.height;
+                const scale = Math.min(scaleX, scaleY, 1); // 1을 넘지 않도록 제한
+                
+                if (scale < 1) {
+                    currentZoom = scale;
+                }
+                
+                // 초기 다이어그램 크기 설정
+                const initialWidth = Math.max(svgBBox.width, containerRect.width);
+                const initialHeight = Math.max(svgBBox.height, containerRect.height);
+                diagram.style.width = initialWidth + 'px';
+                diagram.style.height = initialHeight + 'px';
+                
+                applyZoom();
             }
+        }
+        
+        // 다이어그램 로드 완료 후 크기 조정
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(adjustDiagramSize, 500);
         });
         
         // 줌 및 팬 컨트롤
@@ -1081,12 +1146,33 @@ class ReportTemplates:
         
         function applyZoom() {
             const diagram = document.getElementById('erd-diagram');
+            const svg = diagram ? diagram.querySelector('svg') : null;
             const indicator = document.getElementById('zoom-indicator');
-            if (diagram) {
-                diagram.style.transform = `scale(${currentZoom})`;
-                diagram.style.transformOrigin = 'center top';
-                diagram.style.transition = 'transform 0.2s ease';
+            const container = document.getElementById('mermaid-container');
+            
+            if (svg && container) {
+                // SVG 스케일만 적용 (position relative로 변경했으므로)
+                svg.style.transform = `scale(${currentZoom})`;
+                svg.style.transformOrigin = 'center center';
+                svg.style.transition = 'transform 0.2s ease';
+                
+                // 확대된 크기에 맞게 다이어그램 컨테이너 크기 동적 조정
+                const svgBBox = svg.getBBox();
+                const scaledWidth = svgBBox.width * currentZoom;
+                const scaledHeight = svgBBox.height * currentZoom;
+                const padding = 100; // 스크롤을 위한 여유 공간
+                
+                // 다이어그램 영역을 확대된 크기로 설정
+                diagram.style.width = (scaledWidth + padding) + 'px';
+                diagram.style.height = (scaledHeight + padding) + 'px';
+                
+                // 컨테이너가 스크롤을 인식하도록 강제 업데이트
+                container.style.overflow = 'hidden';
+                setTimeout(() => {
+                    container.style.overflow = 'auto';
+                }, 10);
             }
+            
             if (indicator) {
                 indicator.textContent = Math.round(currentZoom * 100) + '%';
             }
@@ -1113,12 +1199,12 @@ class ReportTemplates:
             const container = document.getElementById('mermaid-container');
             if (!container) return;
             
-            // 마우스 드래그로 팬
+            // 마우스 드래그로 팬 (개선된 버전)
             container.addEventListener('mousedown', function(e) {
                 if (e.button === 0) { // 왼쪽 마우스 버튼
                     isPanning = true;
-                    startX = e.pageX - container.offsetLeft;
-                    startY = e.pageY - container.offsetTop;
+                    startX = e.clientX;
+                    startY = e.clientY;
                     scrollLeft = container.scrollLeft;
                     scrollTop = container.scrollTop;
                     container.style.cursor = 'grabbing';
@@ -1126,38 +1212,46 @@ class ReportTemplates:
                 }
             });
             
-            container.addEventListener('mouseleave', function() {
+            document.addEventListener('mouseleave', function() {
                 isPanning = false;
                 container.style.cursor = 'grab';
             });
             
-            container.addEventListener('mouseup', function() {
+            document.addEventListener('mouseup', function() {
                 isPanning = false;
                 container.style.cursor = 'grab';
             });
             
-            container.addEventListener('mousemove', function(e) {
+            document.addEventListener('mousemove', function(e) {
                 if (!isPanning) return;
                 e.preventDefault();
-                const x = e.pageX - container.offsetLeft;
-                const y = e.pageY - container.offsetTop;
-                const walkX = (x - startX) * 2;
-                const walkY = (y - startY) * 2;
-                container.scrollLeft = scrollLeft - walkX;
-                container.scrollTop = scrollTop - walkY;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                // 스크롤 위치 업데이트
+                container.scrollLeft = scrollLeft - deltaX;
+                container.scrollTop = scrollTop - deltaY;
             });
             
             // 마우스 휠로 줌 (Ctrl + 휠)
             container.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
                     e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 더 세밀한 줌 조정
+                    const zoomFactor = 1.1;
                     if (e.deltaY < 0) {
-                        zoomIn();
+                        // 휠을 위로: 확대
+                        currentZoom = Math.min(currentZoom * zoomFactor, 3);
                     } else {
-                        zoomOut();
+                        // 휠을 아래로: 축소
+                        currentZoom = Math.max(currentZoom / zoomFactor, 0.2);
                     }
+                    applyZoom();
                 }
-            });
+            }, { passive: false });
             
             // 기본 커서 설정
             container.style.cursor = 'grab';

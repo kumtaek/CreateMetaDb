@@ -426,19 +426,11 @@ class BackendEntryLoadingEngine:
             컴포넌트 데이터 딕셔너리 또는 None
         """
         try:
-            # 과거 FRONTEND_API 로직 참고: JSP 파일에서 해당 API를 호출하는지 확인
-            # 매칭 성공 시 JSP file_id, 실패 시 Java file_id 사용
-            jsp_file_id = self._find_matching_jsp_file(entry.url_pattern, entry.http_method, project_id)
-            
-            # 매칭 결과에 따른 file_id 결정
-            if jsp_file_id:
-                # 매칭 성공: JSP 파일 ID 사용 → 완전한 체인 구성
-                file_id = jsp_file_id
-                app_logger.debug(f"JSP 파일 매칭 성공: {entry.url_pattern} → JSP file_id: {jsp_file_id}")
-            else:
-                # 매칭 실패: Java 파일 ID 사용 → 끊어진 체인 (개발자가 매칭 실패 파악 가능)
-                file_id = entry.file_id
-                app_logger.debug(f"JSP 파일 매칭 실패: {entry.url_pattern} → Java file_id: {entry.file_id}")
+            # 5단계에서는 JSP 파일이 아직 분석되지 않았으므로 일단 Java file_id 사용
+            # 6단계 JSP 분석 후 올바른 file_id로 업데이트됨
+            file_id = entry.file_id
+            app_logger.debug(f"5단계 API_URL 생성: {entry.url_pattern} → Java file_id: {entry.file_id} (6단계에서 JSP 매칭 예정)")
+            app_logger.debug(f"API_URL 컴포넌트명: {entry.url_pattern}:{entry.http_method}")
             
             # API_URL 컴포넌트명 생성 (URL:HTTP_METHOD 형태)
             # 잘못된 URL 패턴 필터링 강화
@@ -493,17 +485,14 @@ class BackendEntryLoadingEngine:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"API_URL 컴포넌트 생성 실패: {entry.class_name}.{entry.method_name}")
     
-    def _find_matching_jsp_file(self, api_url: str, http_method: str, project_id: int) -> Optional[int]:
+    def _find_matching_frontend_file(self, api_url: str, http_method: str, project_id: int) -> Optional[int]:
         """
-        API_URL에 매칭되는 JSP 파일 찾기 (과거 FRONTEND_API 로직 참고)
+        API_URL에 매칭되는 프론트엔드 파일 찾기
         
         매칭 로직:
-        1. JSP 파일에서 해당 API URL을 호출하는지 확인
-        2. 매칭 성공 시 JSP 파일 ID 반환
+        1. 프론트엔드 파일(JSP, JSX, Vue, TypeScript 등)에서 해당 API URL을 호출하는지 확인
+        2. 매칭 성공 시 프론트엔드 파일 ID 반환
         3. 매칭 실패 시 None 반환 (Java 파일 ID 사용됨)
-        
-        현재 구현: 임시로 첫 번째 JSP 파일 ID 반환
-        향후 개선: JSP 파일 내용 분석하여 실제 API 호출 여부 확인
         
         Args:
             api_url: API URL 패턴 (예: /api/user-profile)
@@ -511,35 +500,39 @@ class BackendEntryLoadingEngine:
             project_id: 프로젝트 ID
             
         Returns:
-            JSP 파일 ID (매칭 성공 시) 또는 None (매칭 실패 시)
+            프론트엔드 파일 ID (매칭 성공 시) 또는 None (매칭 실패 시)
         """
         try:
-            # USER RULES: 공통함수 사용
-            # TODO: 실제 JSP 파일 내용 분석하여 API 호출 여부 확인
-            # 현재는 임시로 첫 번째 JSP 파일 ID 반환 (개발자 오타 등으로 매칭 실패 시 Java 파일 ID 사용)
-            
-            query = """
-                SELECT f.file_id 
-                FROM files f
-                JOIN projects p ON f.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND f.file_type = 'JSP' 
+            # 1. 이미 생성된 API_URL 컴포넌트에서 해당 API를 호출하는 JSP 파일 찾기
+            # 6단계에서 JSP 분석 시 생성된 API_URL 컴포넌트를 활용
+            existing_api_query = """
+                SELECT DISTINCT c.file_id, f.file_name
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                WHERE c.project_id = ? 
+                  AND c.component_type = 'API_URL'
+                  AND c.component_name = ?
+                  AND f.file_type = 'JSP'
+                  AND c.del_yn = 'N'
                   AND f.del_yn = 'N'
                 LIMIT 1
             """
-            results = self.db.execute_query(query, (self.project_name,))
+            api_component_name = f"{api_url}:{http_method}"
+            results = self.db.execute_query(existing_api_query, (project_id, api_component_name))
             
             if results and len(results) > 0:
-                jsp_file_id = results[0]['file_id']
-                app_logger.debug(f"JSP 파일 매칭 시도: {api_url}:{http_method} → JSP file_id: {jsp_file_id}")
-                return jsp_file_id
-            else:
-                app_logger.debug(f"JSP 파일 없음: {api_url}:{http_method}")
-                return None
+                frontend_file_id = results[0]['file_id']
+                file_name = results[0]['file_name']
+                app_logger.debug(f"기존 API_URL 컴포넌트에서 매칭: {api_url}:{http_method} → {file_name} (file_id: {frontend_file_id})")
+                return frontend_file_id
+            
+            # 2. 매칭 실패: 프론트엔드에서 해당 API를 호출하지 않음
+            app_logger.debug(f"프론트엔드 파일 매칭 실패: {api_url}:{http_method} (프론트엔드에서 호출하지 않음)")
+            return None
             
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"JSP 파일 매칭 실패: {api_url}:{http_method}")
+            handle_error(e, f"프론트엔드 파일 매칭 실패: {api_url}:{http_method}")
             return None
     
     

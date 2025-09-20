@@ -11,6 +11,17 @@ include_patterns:
   - "**/*.sql"
   - "**/*.properties"
   - "**/*.jar"
+  # 프론트엔드 파일 타입 추가
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.sass"
+  - "**/*.less"
 
 # 제외할 디렉토리 패턴
 exclude_directories:
@@ -55,6 +66,17 @@ supported_extensions:
   - ".sql"
   - ".properties"
   - ".jar"
+  # 프론트엔드 확장자 추가
+  - ".jsx"
+  - ".vue"
+  - ".ts"
+  - ".tsx"
+  - ".js"
+  - ".html"
+  - ".css"
+  - ".scss"
+  - ".sass"
+  - ".less"
 
 # 특정 파일 타입별 설정
 file_type_settings:
@@ -92,6 +114,44 @@ file_type_settings:
     max_size: 52428800  # 50MB
     parse_manifest: true
     parse_class_files: false  # 성능상 기본적으로 비활성화
+
+  # 프론트엔드 파일 타입 설정 추가
+  jsx:
+    enabled: true
+    max_lines: 5000
+    parse_components: true
+    parse_hooks: true
+
+  vue:
+    enabled: true
+    max_lines: 5000
+    parse_template: true
+    parse_script: true
+    parse_style: true
+
+  typescript:
+    enabled: true
+    max_lines: 10000
+    parse_interfaces: true
+    parse_types: true
+
+  javascript:
+    enabled: true
+    max_lines: 10000
+    parse_functions: true
+    parse_classes: true
+
+  html:
+    enabled: true
+    max_lines: 5000
+    parse_scripts: true
+    parse_styles: true
+
+  css:
+    enabled: true
+    max_lines: 5000
+    parse_selectors: true
+    parse_media_queries: true
 
 # =============================================================================
 # 경로 매핑 설정 (Java 파일 경로를 XML 파일 경로로 변환)

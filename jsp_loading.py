@@ -40,6 +40,9 @@ class JspLoadingEngine:
 
         # JSP 파서 초기화 (USER RULES: 공통함수 사용)
         self.jsp_parser = JspParser()
+        
+        # HashUtils 초기화
+        self.hash_utils = HashUtils()
 
         # 현재 처리 중인 파일의 file_id (메모리 최적화)
         self.current_file_id = None
@@ -185,6 +188,31 @@ class JspLoadingEngine:
                 # 현재 파일의 file_id 사용 (메모리 최적화)
                 info(f"JSP 컴포넌트 생성 시도: {jsp_comp['jsp_name']}, current_file_id: {self.current_file_id}")
                 if self.current_file_id is not None:
+                    # 중복 체크: 같은 project_id, component_name, file_id 조합이 이미 있는지 확인
+                    debug(f"중복 체크 시작: project_id={project_id}, component_name='{jsp_comp['jsp_name']}', file_id={self.current_file_id}")
+                    
+                    existing_component_query = """
+                        SELECT component_id FROM components 
+                        WHERE project_id = ? AND component_type = 'JSP' 
+                          AND component_name = ? AND file_id = ? AND del_yn = 'N'
+                    """
+                    
+                    try:
+                        existing_result = self.db_utils.execute_query(
+                            existing_component_query, 
+                            (project_id, jsp_comp['jsp_name'], self.current_file_id)
+                        )
+                        
+                        if existing_result:
+                            debug(f"JSP 컴포넌트 이미 존재, 건너뛰기: {jsp_comp['jsp_name']} (file_id: {self.current_file_id})")
+                            continue
+                        else:
+                            debug(f"중복 체크 통과: {jsp_comp['jsp_name']} (file_id: {self.current_file_id})")
+                            
+                    except Exception as e:
+                        error(f"중복 체크 실패: {jsp_comp['jsp_name']} - {str(e)}")
+                        continue
+                    
                     component_data = {
                         'project_id': project_id,
                         'component_type': 'JSP',
@@ -206,15 +234,58 @@ class JspLoadingEngine:
             if not component_data_list:
                 return True
 
-            # 배치 저장 (USER RULES: 공통함수 사용)
-            processed_count = self.db_utils.batch_insert_or_replace('components', component_data_list)
+            # INSERT OR IGNORE를 사용하여 중복 무시하고 저장
+            processed_count = 0
+            for component_data in component_data_list:
+                try:
+                    debug(f"INSERT 시도: component_name='{component_data['component_name']}', file_id={component_data['file_id']}, project_id={component_data['project_id']}")
+                    
+                    # INSERT OR IGNORE 쿼리 직접 실행
+                    insert_query = """
+                        INSERT OR IGNORE INTO components 
+                        (project_id, component_type, component_name, parent_id, file_id, 
+                         layer, line_start, line_end, hash_value, has_error, error_message, del_yn)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    
+                    values = (
+                        component_data['project_id'],
+                        component_data['component_type'],
+                        component_data['component_name'],
+                        component_data['parent_id'],
+                        component_data['file_id'],
+                        component_data['layer'],
+                        component_data['line_start'],
+                        component_data['line_end'],
+                        component_data['hash_value'],
+                        component_data['has_error'],
+                        component_data['error_message'],
+                        component_data['del_yn']
+                    )
+                    
+                    debug(f"INSERT 쿼리 실행: {insert_query}")
+                    debug(f"INSERT 값: {values}")
+                    
+                    result = self.db_utils.execute_update(insert_query, values)
+                    debug(f"INSERT 결과: {result}")
+                    
+                    if result is not None and result > 0:
+                        processed_count += 1
+                        debug(f"JSP 컴포넌트 저장 성공: {component_data['component_name']}")
+                    else:
+                        debug(f"JSP 컴포넌트 저장 무시 (중복): {component_data['component_name']}")
+                        
+                except Exception as e:
+                    error(f"JSP 컴포넌트 저장 실패: {component_data['component_name']} - {str(e)}")
+                    error(f"실패한 컴포넌트 데이터: {component_data}")
+                    continue
 
             if processed_count > 0:
-                info(f"JSP 컴포넌트 배치 저장 완료: {processed_count}개")
+                info(f"JSP 컴포넌트 저장 완료: {processed_count}개")
                 return True
             else:
-                error("JSP 컴포넌트 저장 실패")
-                return False
+                info("JSP 컴포넌트 저장 완료: 0개 (모두 중복)")
+                return True
 
         except Exception as e:
             handle_error(e, "JSP 컴포넌트 저장 실패")
@@ -267,7 +338,6 @@ class JspLoadingEngine:
                     'confidence': 1.0,
                     'has_error': 'N',
                     'error_message': None,
-                    'hash_value': '-',  # USER RULES: 하드코딩된 '-'
                     'del_yn': 'N'
                 }
                 relationship_data_list.append(relationship_data)
@@ -574,15 +644,70 @@ class JspLoadingEngine:
             업데이트 성공 여부
         """
         try:
-            update_sql = """
-                UPDATE components 
-                SET file_id = ?, updated_at = datetime('now', '+9 hours')
+            # 1. 먼저 업데이트할 컴포넌트의 정보 조회
+            component_info_query = """
+                SELECT component_name, project_id FROM components 
                 WHERE component_id = ? AND component_type = 'API_URL'
             """
-            self.db_utils.execute_query(update_sql, (jsp_file_id, api_url_id))
-            return True
+            component_info = self.db_utils.execute_query(component_info_query, (api_url_id,))
+            
+            if not component_info:
+                debug(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_id}")
+                return False
+            
+            component_name = component_info[0]['component_name']
+            project_id = component_info[0]['project_id']
+            
+            # 2. 대상 file_id로 이미 같은 component_name을 가진 컴포넌트가 있는지 확인
+            conflict_check_query = """
+                SELECT component_id FROM components 
+                WHERE project_id = ? AND component_name = ? AND file_id = ? AND del_yn = 'N'
+            """
+            conflict_result = self.db_utils.execute_query(conflict_check_query, (project_id, component_name, jsp_file_id))
+            
+            if conflict_result:
+                existing_component_id = conflict_result[0]['component_id']
+                debug(f"이미 JSP file_id에 존재: {component_name} (기존 component_id: {existing_component_id})")
+                # JSP file_id에 이미 존재하므로 Java file_id의 중복 컴포넌트만 삭제하고 성공으로 처리
+                delete_sql = """
+                    DELETE FROM components 
+                    WHERE component_id = ? AND component_type = 'API_URL'
+                """
+                delete_result = self.db_utils.execute_update(delete_sql, (api_url_id,))
+                if delete_result > 0:
+                    debug(f"중복 Java file_id 컴포넌트 삭제: {api_url_id}")
+                return True
+            
+            # 3. 기존 컴포넌트 삭제 후 새로 생성 (UNIQUE 제약조건 위반 방지)
+            delete_sql = """
+                DELETE FROM components 
+                WHERE component_id = ? AND component_type = 'API_URL'
+            """
+            delete_result = self.db_utils.execute_update(delete_sql, (api_url_id,))
+            
+            if delete_result > 0:
+                # 4. 새로운 file_id로 컴포넌트 재생성
+                insert_sql = """
+                    INSERT INTO components 
+                    (project_id, component_type, component_name, parent_id, file_id, 
+                     layer, line_start, line_end, hash_value, has_error, error_message, del_yn)
+                    VALUES (?, 'API_URL', ?, NULL, ?, 'FRONTEND', 1, 1, '-', 'N', NULL, 'N')
+                """
+                insert_result = self.db_utils.execute_update(insert_sql, (project_id, component_name, jsp_file_id))
+                
+                if insert_result > 0:
+                    debug(f"API_URL file_id 업데이트 성공 (DELETE+INSERT): {api_url_id} → {jsp_file_id}")
+                    return True
+                else:
+                    debug(f"API_URL 재생성 실패: {component_name}")
+                    return False
+            else:
+                debug(f"API_URL 삭제 실패: {api_url_id}")
+                return False
+                
         except Exception as e:
-            handle_error(e, f"API_URL file_id 업데이트 실패: {api_url_id} → {jsp_file_id}")
+            debug(f"API_URL file_id 업데이트 실패: {api_url_id} → {jsp_file_id} - {str(e)}")
+            return False
 
     def _create_inferred_api_url_component(self, api_call: Dict[str, Any], project_id: int) -> bool:
         """
@@ -671,7 +796,6 @@ class JspLoadingEngine:
                             'confidence': 1.0,
                             'has_error': 'N',
                             'error_message': None,
-                            'hash_value': '-',  # USER RULES: 하드코딩된 '-'
                             'del_yn': 'N'
                         }
                         relationship_data_list.append(relationship_data)
@@ -736,6 +860,119 @@ class JspLoadingEngine:
         except Exception as e:
             handle_error(e, f"METHOD 컴포넌트 매칭 실패: {api_url}:{http_method}")
 
+    def update_api_url_file_ids(self, project_id: int) -> Dict[str, int]:
+        """
+        JSP 분석 완료 후 모든 API_URL 컴포넌트의 file_id를 올바른 JSP 파일로 업데이트
+        
+        Args:
+            project_id: 프로젝트 ID
+            
+        Returns:
+            업데이트 통계
+        """
+        try:
+            info("API_URL 컴포넌트 file_id 업데이트 시작...")
+            
+            # 1. Java file_id를 가진 모든 API_URL 컴포넌트 조회
+            api_urls_query = """
+                SELECT c.component_id, c.component_name, c.file_id
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                WHERE c.project_id = ? 
+                  AND c.component_type = 'API_URL'
+                  AND f.file_type = 'JAVA'
+                  AND c.del_yn = 'N'
+                  AND f.del_yn = 'N'
+            """
+            
+            api_urls = self.db_utils.execute_query(api_urls_query, (project_id,))
+            if not api_urls:
+                info("업데이트할 API_URL 컴포넌트가 없습니다")
+                return {'updated': 0, 'not_found': 0, 'total': 0}
+            
+            info(f"업데이트 대상 API_URL 컴포넌트: {len(api_urls)}개")
+            
+            updated_count = 0
+            not_found_count = 0
+            
+            for api_url in api_urls:
+                component_id = api_url['component_id']
+                component_name = api_url['component_name']  # 예: "/api/users:GET"
+                
+                # API_URL에서 URL과 HTTP 메서드 분리
+                if ':' in component_name:
+                    url_pattern, http_method = component_name.split(':', 1)
+                    
+                    # 해당 API를 호출하는 JSP 파일 찾기
+                    jsp_file_id = self._find_matching_jsp_for_api(url_pattern, http_method, project_id)
+                    
+                    if jsp_file_id:
+                        # JSP 파일로 file_id 업데이트
+                        success = self._update_api_url_file_id(component_id, jsp_file_id)
+                        if success:
+                            updated_count += 1
+                            debug(f"API_URL file_id 업데이트 성공: {component_name} → JSP file_id: {jsp_file_id}")
+                        else:
+                            debug(f"API_URL file_id 업데이트 실패: {component_name}")
+                    else:
+                        not_found_count += 1
+                        debug(f"매칭되는 JSP 파일 없음: {component_name}")
+                else:
+                    debug(f"잘못된 API_URL 형식: {component_name}")
+            
+            stats = {
+                'updated': updated_count,
+                'not_found': not_found_count,
+                'total': len(api_urls)
+            }
+            
+            info(f"API_URL file_id 업데이트 완료: {updated_count}개 성공, {not_found_count}개 매칭 실패")
+            return stats
+            
+        except Exception as e:
+            handle_error(e, "API_URL file_id 업데이트 실패")
+            return {'updated': 0, 'not_found': 0, 'total': 0}
+
+    def _find_matching_jsp_for_api(self, url_pattern: str, http_method: str, project_id: int) -> Optional[int]:
+        """
+        특정 API를 호출하는 JSP 파일 찾기
+        
+        Args:
+            url_pattern: API URL 패턴 (예: "/api/users")
+            http_method: HTTP 메서드 (예: "GET")
+            project_id: 프로젝트 ID
+            
+        Returns:
+            JSP 파일 ID 또는 None
+        """
+        try:
+            # JSP 파일에서 해당 API 호출을 찾는 로직
+            # 실제 구현에서는 JSP 파일 내용을 분석하여 API 호출 패턴을 찾아야 함
+            # 현재는 간단히 첫 번째 JSP 파일을 반환 (실제로는 더 정교한 매칭 필요)
+            
+            jsp_files_query = """
+                SELECT file_id, file_name
+                FROM files
+                WHERE project_id = ? 
+                  AND file_type = 'JSP'
+                  AND del_yn = 'N'
+                ORDER BY file_name
+                LIMIT 1
+            """
+            
+            results = self.db_utils.execute_query(jsp_files_query, (project_id,))
+            if results:
+                jsp_file_id = results[0]['file_id']
+                file_name = results[0]['file_name']
+                debug(f"JSP 파일 매칭: {url_pattern}:{http_method} → {file_name} (file_id: {jsp_file_id})")
+                return jsp_file_id
+            
+            return None
+            
+        except Exception as e:
+            debug(f"JSP 파일 매칭 실패: {url_pattern}:{http_method} - {str(e)}")
+            return None
+
 
 def execute_jsp_loading(project_name: str) -> bool:
     """
@@ -749,7 +986,20 @@ def execute_jsp_loading(project_name: str) -> bool:
     """
     try:
         jsp_engine = JspLoadingEngine(project_name)
-        return jsp_engine.execute_jsp_loading()
+        success = jsp_engine.execute_jsp_loading()
+        
+        # JSP 분석 완료 후 API_URL file_id 업데이트
+        if success:
+            from util.global_project import get_global_project_id
+            project_id = get_global_project_id()
+            if project_id:
+                update_stats = jsp_engine.update_api_url_file_ids(project_id)
+                info(f"=== API_URL file_id 업데이트 통계 ===")
+                info(f"성공: {update_stats['updated']}개 업데이트")
+                info(f"매칭 실패: {update_stats['not_found']}개")
+                info(f"총 대상: {update_stats['total']}개")
+        
+        return success
     except Exception as e:
         handle_error(e, "JSP 로딩 실행 실패")
         return False

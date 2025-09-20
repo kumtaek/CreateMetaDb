@@ -1626,7 +1626,11 @@ class JavaLoadingEngine:
             # 프로젝트의 첫 번째 파일 ID 조회 (테이블 컴포넌트용)
             first_file_query = "SELECT file_id FROM files WHERE project_id = ? AND del_yn = 'N' ORDER BY file_id LIMIT 1"
             first_file_result = self.db_utils.execute_query(first_file_query, (project_id,))
-            first_file_id = first_file_result[0]['file_id'] if first_file_result else 1
+            first_file_id = first_file_result[0]['file_id'] if first_file_result else None
+            
+            if not first_file_id:
+                error(f"프로젝트 {project_id}의 파일을 찾을 수 없음")
+                return None
             
             # 새 테이블 컴포넌트 생성
             table_data = {

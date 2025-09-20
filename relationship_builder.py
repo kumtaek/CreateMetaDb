@@ -464,10 +464,16 @@ class RelationshipBuilder:
             # 2. 테이블이 없으면 생성 (inferred)
             debug(f"TABLE 컴포넌트 생성: {table_name}")
 
+            # inferred 컴포넌트용 file_id 찾기 (프로젝트의 첫 번째 파일 사용)
+            inferred_file_id = self._get_inferred_file_id()
+            if not inferred_file_id:
+                error(f"inferred 컴포넌트용 file_id를 찾을 수 없음: {table_name}")
+                return None
+
             # components 테이블에 추가
             component_data = {
                 'project_id': self.project_id,
-                'file_id': None,  # inferred 컴포넌트는 특정 파일에 속하지 않음
+                'file_id': inferred_file_id,  # inferred 컴포넌트용 file_id 사용
                 'component_type': 'TABLE',
                 'component_name': table_name,
                 'parent_id': None,
@@ -475,6 +481,15 @@ class RelationshipBuilder:
                 'hash_value': 'INFERRED',
                 'del_yn': 'N'
             }
+
+            # 디버그 로그 추가: components 테이블 삽입 전 데이터 확인
+            debug(f"[RELATIONSHIP_BUILDER] inferred TABLE 컴포넌트 생성 시도: {table_name}")
+            debug(f"[RELATIONSHIP_BUILDER] component_data: {component_data}")
+            
+            if component_data.get('file_id') is None:
+                error(f"[RELATIONSHIP_BUILDER] FATAL: file_id가 NULL입니다! table_name={table_name}, inferred_file_id={inferred_file_id}")
+                handle_error(Exception(f"file_id가 NULL입니다: {table_name}"), f"inferred TABLE 컴포넌트 생성 실패: {table_name}")
+                return None
 
             component_id = self.db_utils.insert_or_replace('components', component_data)
 
@@ -495,6 +510,67 @@ class RelationshipBuilder:
 
         except Exception as e:
             handle_error(e, f"TABLE 컴포넌트 찾기/생성 실패: {table_name}")
+            return None
+
+    def _get_inferred_file_id(self) -> Optional[int]:
+        """
+        inferred 컴포넌트용 file_id 찾기 (관계 분석 컨텍스트에 따라 결정)
+        USER RULES: 공통함수 사용, 하드코딩 금지
+        
+        관계 분석에서 inferred 컴포넌트는 주로 다음 상황에서 생성됩니다:
+        1. SQL 쿼리 분석에서 테이블명 추론 (XML/Java 파일에서)
+        2. 관계 구축에서 누락된 테이블 발견 (분석된 파일들에서)
+        
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            # 1. SQL 관련 파일 우선 조회 (inferred 테이블은 주로 SQL 분석에서 생성)
+            sql_file_query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? AND file_type IN ('XML', 'SQL') AND del_yn = 'N'
+                ORDER BY file_type, file_id
+                LIMIT 1
+            """
+            sql_result = self.db_utils.execute_query(sql_file_query, (self.project_id,))
+            
+            if sql_result and len(sql_result) > 0:
+                file_id = sql_result[0]['file_id']
+                debug(f"inferred 컴포넌트용 SQL 관련 file_id: {file_id}")
+                return file_id
+            
+            # 2. Java 파일 조회 (StringBuilder SQL 분석에서도 inferred 생성 가능)
+            java_file_query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? AND file_type = 'JAVA' AND del_yn = 'N'
+                ORDER BY file_id
+                LIMIT 1
+            """
+            java_result = self.db_utils.execute_query(java_file_query, (self.project_id,))
+            
+            if java_result and len(java_result) > 0:
+                file_id = java_result[0]['file_id']
+                debug(f"inferred 컴포넌트용 Java file_id: {file_id}")
+                return file_id
+            
+            # 3. 마지막으로 첫 번째 파일 사용 (fallback)
+            first_file_query = "SELECT file_id FROM files WHERE project_id = ? AND del_yn = 'N' ORDER BY file_id LIMIT 1"
+            first_file_result = self.db_utils.execute_query(first_file_query, (self.project_id,))
+            first_file_id = first_file_result[0]['file_id'] if first_file_result else None
+            
+            if not first_file_id:
+                # 시스템 에러: 프로젝트에 파일이 없는 것은 1단계에서 처리되지 않았음을 의미
+                handle_error(f"프로젝트 {self.project_id}에 파일이 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                return None
+                
+            debug(f"inferred 컴포넌트용 첫 번째 file_id (fallback): {first_file_id}")
+            return first_file_id
+            
+        except Exception as e:
+            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
+            handle_error(e, f"inferred 컴포넌트용 file_id 조회 실패")
             return None
 
     def _find_table_by_entity(self, entity_name: str) -> Optional[str]:
@@ -685,9 +761,15 @@ class RelationshipBuilder:
     def _create_frontend_component(self, component_name: str, file_path: str) -> Optional[int]:
         """프론트엔드 컴포넌트 생성"""
         try:
+            # 프론트엔드 파일의 file_id 찾기
+            frontend_file_id = self._get_frontend_file_id(component_name)
+            if not frontend_file_id:
+                error(f"프론트엔드 파일의 file_id를 찾을 수 없음: {component_name}")
+                return None
+
             component_data = {
                 'project_id': self.project_id,
-                'file_id': None,  # 파일 ID는 별도 처리 필요
+                'file_id': frontend_file_id,  # 프론트엔드 파일의 file_id 사용
                 'component_type': 'FRONTEND',
                 'component_name': component_name,
                 'parent_id': None,
@@ -697,11 +779,48 @@ class RelationshipBuilder:
             }
 
             component_id = self.db_utils.insert_or_replace('components', component_data)
-            debug(f"프론트엔드 컴포넌트 생성: {component_name} (ID: {component_id})")
+            debug(f"프론트엔드 컴포넌트 생성: {component_name} (ID: {component_id}) file_id={frontend_file_id}")
             return component_id
 
         except Exception as e:
             handle_error(e, f"프론트엔드 컴포넌트 생성 실패: {component_name}")
+            return None
+
+    def _get_frontend_file_id(self, component_name: str) -> Optional[int]:
+        """
+        프론트엔드 파일의 file_id 찾기 (JSP, JSX, Vue, TypeScript 등 모든 프론트엔드 파일 지원)
+        
+        Args:
+            component_name: 컴포넌트명 (예: error.jsp, App.jsx, Home.vue, index.ts)
+            
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            # 프론트엔드 파일에서 해당 파일명으로 file_id 찾기
+            # JSP, JSX, Vue, TypeScript, JavaScript, HTML 등 모든 프론트엔드 파일 타입 지원
+            query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? 
+                  AND file_name = ? 
+                  AND file_type IN ('JSP', 'JSX', 'VUE', 'TS', 'JS', 'HTML')
+                  AND del_yn = 'N'
+                LIMIT 1
+            """
+            result = self.db_utils.execute_query(query, (self.project_id, component_name))
+            
+            if result and len(result) > 0:
+                file_id = result[0]['file_id']
+                debug(f"프론트엔드 파일 찾음: {component_name} → file_id: {file_id}")
+                return file_id
+            
+            # 파일을 찾지 못한 경우
+            debug(f"프론트엔드 파일을 찾지 못함: {component_name}")
+            return None
+            
+        except Exception as e:
+            handle_error(e, f"프론트엔드 파일 file_id 조회 실패: {component_name}")
             return None
 
     def _find_or_create_api_component(self, api_url: str, http_method: str) -> Optional[int]:
@@ -715,10 +834,16 @@ class RelationshipBuilder:
             if api_id:
                 return api_id
 
+            # API 컴포넌트용 file_id 찾기 (inferred 컴포넌트용)
+            api_file_id = self._get_inferred_file_id()
+            if not api_file_id:
+                error(f"API 컴포넌트용 file_id를 찾을 수 없음: {api_name}")
+                return None
+
             # API 컴포넌트 생성
             component_data = {
                 'project_id': self.project_id,
-                'file_id': None,
+                'file_id': api_file_id,  # inferred 컴포넌트용 file_id 사용
                 'component_type': 'API',
                 'component_name': api_name,
                 'parent_id': None,
@@ -728,19 +853,7 @@ class RelationshipBuilder:
             }
 
             component_id = self.db_utils.insert_or_replace('components', component_data)
-
-            # API_URLS 테이블에도 추가
-            api_data = {
-                'project_id': self.project_id,
-                'api_url': api_url,
-                'http_method': http_method,
-                'component_id': component_id,
-                'hash_value': 'INFERRED',
-                'del_yn': 'N'
-            }
-
-            self.db_utils.insert_or_replace('api_urls', api_data)
-            debug(f"API 컴포넌트 생성: {api_name} (ID: {component_id})")
+            debug(f"API 컴포넌트 생성: {api_name} (ID: {component_id}) file_id={api_file_id}")
             return component_id
 
         except Exception as e:

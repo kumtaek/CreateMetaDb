@@ -48,7 +48,7 @@ class ERDDagreTemplates:
                 <button onclick="exportPng()">PNG 내보내기</button>
                 <button onclick="exportSvg()">SVG 내보내기</button>
                 <input type="text" id="search" placeholder="테이블명으로 검색..." />
-                <span id="current-layout">fcose</span>
+                <span id="current-layout">grid</span>
             </div>
         </div>
         <div class="erd-dagre-content">
@@ -82,9 +82,6 @@ class ERDDagreTemplates:
             </div>
         </div>
         {stats_html}
-        <div class="erd-dagre-footer">
-            고도화 ERD 분석 완료 - 드래그로 이동, 마우스 휠로 확대/축소 가능
-        </div>
     </div>
     
     <script>
@@ -173,30 +170,37 @@ class ERDDagreTemplates:
             font-size: 0.8em;
         }
         .erd-dagre-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 6px;
-            padding: 6px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 4px;
             background: #f8f9fa;
-            margin-bottom: 3px;
+            margin: 0;
             flex-shrink: 0;
+            height: 24px;
+            min-height: 24px;
         }
         .erd-dagre-stat-card {
             background: white;
-            padding: 6px;
-            border-radius: 4px;
+            padding: 2px 6px;
+            border-radius: 2px;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
         }
         .erd-dagre-stat-card:hover {
             transform: translateY(-1px);
         }
         .erd-dagre-stat-number {
-            font-size: 1.0em;
+            font-size: 0.9em;
             font-weight: bold;
             color: #3498db;
-            margin-bottom: 1px;
+            margin: 0;
         }
         .erd-dagre-stat-label {
             color: #7f8c8d;
@@ -487,16 +491,6 @@ class ERDDagreTemplates:
             color: #495057;
         }
         
-        .erd-dagre-footer {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 2px;
-            text-align: center;
-            font-size: 9px;
-            opacity: 0.8;
-            flex-shrink: 0;
-            height: 15px;
-        }
         @media (max-width: 768px) {
             #toolbar {
                 padding: 8px;
@@ -513,7 +507,7 @@ class ERDDagreTemplates:
         return f"""
         // ERD Dagre 초기화 및 이벤트 처리
         let cy;
-        let currentLayout = 'fcose';
+        let currentLayout = 'grid';
         let tooltipTimeout;
         let edgeTooltipTimeout;
         let isTooltipVisible = false;
@@ -565,11 +559,12 @@ class ERDDagreTemplates:
                     }}
                 ],
                 layout: {{
-                    name: 'fcose',
-                    quality: 'default',
-                    randomize: false,
+                    name: 'grid',               // 초기 레이아웃을 grid로 변경 (더 균등한 분산)
                     animate: true,
-                    animationDuration: 1000
+                    animationDuration: 1000,
+                    rows: 5,                    // 5행으로 배치
+                    cols: 5,                    // 5열로 배치
+                    padding: 50                 // 그리드 패딩
                 }}
             }});
         }}
@@ -587,11 +582,48 @@ class ERDDagreTemplates:
             
             document.getElementById('current-layout').textContent = currentLayout;
             
-            cy.layout({{
+            // 레이아웃별 상세 설정 (더 넓게 퍼지도록)
+            let layoutOptions = {{
                 name: currentLayout,
                 animate: true,
                 animationDuration: 1000
-            }}).run();
+            }};
+            
+            if (currentLayout === 'fcose') {{
+                layoutOptions = {{
+                    ...layoutOptions,
+                    nodeRepulsion: 25000,       // 노드 간 반발력 극대화 (15000 → 25000)
+                    idealEdgeLength: 400,       // 이상적인 엣지 길이 더 증가 (300 → 400)
+                    edgeElasticity: 0.2,        // 엣지 탄성력 더 감소
+                    nestingFactor: 0.01,        // 중첩 방지 극대화
+                    gravity: 0.05,              // 중력 극소화 (0.1 → 0.05)
+                    numIter: 4000,              // 반복 횟수 더 증가
+                    tile: true,                 // 타일링 활성화
+                    tilingPaddingVertical: 150, // 수직 패딩 더 증가 (100 → 150)
+                    tilingPaddingHorizontal: 150, // 수평 패딩 더 증가 (100 → 150)
+                    initialTemp: 300,           // 초기 온도 더 증가
+                    coolingFactor: 0.98,        // 더 천천히 냉각
+                    minTemp: 0.5                // 최소 온도 감소
+                }};
+            }} else if (currentLayout === 'dagre') {{
+                layoutOptions = {{
+                    ...layoutOptions,
+                    nodeSep: 200,               // 노드 간 간격 극대화 (150 → 200)
+                    edgeSep: 120,               // 엣지 간 간격 극대화 (80 → 120)
+                    rankSep: 300,               // 계층 간 간격 극대화 (200 → 300)
+                    rankDir: 'TB',              // 위에서 아래로 배치
+                    align: 'DR'                 // 정렬 방식
+                }};
+            }} else if (currentLayout === 'grid') {{
+                layoutOptions = {{
+                    ...layoutOptions,
+                    rows: 5,                    // 5행
+                    cols: 5,                    // 5열
+                    padding: 100                // 그리드 패딩 증가
+                }};
+            }}
+            
+            cy.layout(layoutOptions).run();
         }}
         
         function exportPng() {{
