@@ -268,31 +268,40 @@ class ReportTemplates:
         }
         .table-container {
             overflow-x: auto;
+            overflow-y: auto;
             margin: 5px 0;
             border-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            width: 100%;
         }
         table {
-            width: 100%;
+            width: auto;
+            min-width: 100%;
             border-collapse: collapse;
             background: white;
-            font-size: 1.0em;
+            font-size: 0.65em;
+            table-layout: auto;
         }
         th {
             background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
-            padding: 4px 6px;
+            padding: 2px 3px;
             text-align: left;
             font-weight: 600;
             position: sticky;
             top: 0;
             z-index: 10;
-            font-size: 0.8em;
+            font-size: 0.6em;
+            white-space: nowrap;
+            min-width: max-content;
         }
         td {
-            padding: 4px 6px;
+            padding: 2px 3px;
             border-bottom: 1px solid #ecf0f1;
             vertical-align: top;
+            white-space: nowrap;
+            min-width: max-content;
         }
         tr:hover {
             background-color: #f8f9fa;
@@ -300,12 +309,15 @@ class ReportTemplates:
         .chain-id, .frontend, .api-url, .jsp-file, .class-name, .method-name, .xml-file, .query-id, .query-type, .tables, .frontend-api, .api-entry {
             background: #f8f9fa;
             color: #495057;
-            padding: 2px 4px;
+            padding: 1px 2px;
             border: 1px solid #dee2e6;
             border-radius: 2px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 0.8em;
+            font-size: 0.6em;
             white-space: nowrap;
+            display: inline-block;
+            max-width: none;
+            word-break: keep-all;
         }
         .filter-controls {
             background: #ecf0f1;

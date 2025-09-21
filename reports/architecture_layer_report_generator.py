@@ -75,11 +75,9 @@ class ArchitectureLayerReportGenerator:
         }
     
     def _get_layer_order(self) -> List[str]:
-        """Layer 순서 정의 (USER RULES: 동적 구성)"""
+        """6개 핵심 Layer 순서 정의 (USER RULES: 동적 구성)"""
         return [
-            'FRONTEND', 'API_ENTRY', 'CONTROLLER', 'SERVICE', 
-            'REPOSITORY', 'MODEL', 'QUERY', 'TABLE', 'UTIL', 
-            'APPLICATION', 'DATA', 'DB'
+            'FRONTEND', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'MODEL', 'TABLE'
         ]
     
     def generate_report(self) -> bool:
@@ -138,13 +136,20 @@ class ArchitectureLayerReportGenerator:
                     c.component_type, 
                     c.component_name,
                     c.component_id,
-                    f.file_name as file_path
+                    f.file_name as file_path,
+                    (SELECT COUNT(*) FROM relationships r 
+                     WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
+                     AND r.del_yn = 'N') as relationship_count
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
-                WHERE c.del_yn = 'N' AND c.project_id = (
-                    SELECT project_id FROM projects WHERE project_name = ?
-                )
-                ORDER BY c.layer, c.component_type, c.component_name
+                WHERE c.del_yn = 'N' 
+                  AND c.project_id = (SELECT project_id FROM projects WHERE project_name = ?)
+                  AND c.component_type IN ('METHOD', 'TABLE', 'CLASS', 'API_URL', 'JSP', 'JS', 'HTML', 'CSS')
+                  AND c.component_name IS NOT NULL
+                  AND c.component_name != ''
+                  AND NOT (c.component_name GLOB '[0-9]*' AND LENGTH(c.component_name) <= 3)
+                  AND c.component_name GLOB '[a-zA-Z]*'
+                ORDER BY c.layer, relationship_count DESC, c.component_name
             """
             
             component_results = self.db_utils.execute_query(components_query, (self.project_name,))
@@ -174,27 +179,63 @@ class ArchitectureLayerReportGenerator:
                         'type': comp_type,
                         'file_path': file_path,
                         'file_name': file_name,
-                        'display_name': f"{comp_name} ({file_name})" if file_name != 'unknown' else comp_name
+                        'display_name': f"{comp_name} ({file_name})" if file_name != 'unknown' else comp_name,
+                        'relationship_count': row.get('relationship_count', 0)
                     }
             
-            # 세트를 리스트로 변환
+            # 6개 핵심 레이어만 필터링
+            target_layers = ['FRONTEND', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'MODEL', 'TABLE']
+            
+            # 레이어 매핑 로직 
+            def map_to_target_layer(layer, comp_type, file_path):
+                if comp_type in ['JSP', 'JS', 'HTML', 'CSS']:
+                    return 'FRONTEND'
+                elif comp_type == 'API_URL' or 'controller' in file_path.lower():
+                    return 'CONTROLLER'
+                elif 'service' in file_path.lower():
+                    return 'SERVICE'
+                elif 'repository' in file_path.lower() or 'dao' in file_path.lower():
+                    return 'REPOSITORY'
+                elif 'model' in file_path.lower() or 'entity' in file_path.lower() or 'vo' in file_path.lower() or 'dto' in file_path.lower():
+                    return 'MODEL'
+                elif comp_type == 'TABLE':
+                    return 'TABLE'
+                else:
+                    return None
+            
+            # 컴포넌트를 타겟 레이어로 재분류
+            target_component_sets = {}
             for layer, comp_set in component_sets.items():
-                if layer not in analysis['layer_components']:
-                    analysis['layer_components'][layer] = []
+                for unique_key, component in comp_set.items():
+                    target_layer = map_to_target_layer(layer, component['type'], component['file_path'])
+                    
+                    if target_layer and target_layer in target_layers:
+                        if target_layer not in target_component_sets:
+                            target_component_sets[target_layer] = {}
+                        target_component_sets[target_layer][unique_key] = component
+            
+            # 세트를 리스트로 변환 (전체 표시)
+            for target_layer in target_layers:
+                if target_layer not in analysis['layer_components']:
+                    analysis['layer_components'][target_layer] = []
                 
-                # 파일명으로 정렬하여 일관된 순서 보장
-                sorted_components = sorted(comp_set.values(), key=lambda x: (x['file_name'], x['name']))
-                analysis['layer_components'][layer].extend(sorted_components)
+                if target_layer in target_component_sets:
+                    comp_set = target_component_sets[target_layer]
+                    # 관계 개수 순으로 정렬하여 중요한 컴포넌트 우선
+                    sorted_components = sorted(comp_set.values(), key=lambda x: (-x.get('relationship_count', 0), x['file_name'], x['name']))
+                    
+                    # 전체 컴포넌트 표시 (제한 없음)
+                    analysis['layer_components'][target_layer].extend(sorted_components)
                 
-                # 중복 제거된 컴포넌트 기반으로 분포 분석 (기존 분포 분석 대신)
-                if layer not in analysis['layer_distribution']:
-                    analysis['layer_distribution'][layer] = {}
-                
-                for comp in sorted_components:
-                    comp_type = comp['type']
-                    if comp_type not in analysis['layer_distribution'][layer]:
-                        analysis['layer_distribution'][layer][comp_type] = 0
-                    analysis['layer_distribution'][layer][comp_type] += 1
+                    # 중복 제거된 컴포넌트 기반으로 분포 분석 (기존 분포 분석 대신)
+                    if target_layer not in analysis['layer_distribution']:
+                        analysis['layer_distribution'][target_layer] = {}
+                    
+                    for comp in sorted_components:
+                        comp_type = comp['type']
+                        if comp_type not in analysis['layer_distribution'][target_layer]:
+                            analysis['layer_distribution'][target_layer][comp_type] = 0
+                        analysis['layer_distribution'][target_layer][comp_type] += 1
             
             # 2. 전체 컴포넌트 수 분석
             comp_query = """
@@ -262,32 +303,89 @@ class ArchitectureLayerReportGenerator:
                 key = f"{row['src_layer']} -> {row['dst_layer']} ({row['rel_type']})"
                 analysis['layer_relationships'][key] = row['count']
             
-            # 5. 컴포넌트별 관계 데이터 조회 (인터랙티브 기능용)
+            # 5. 전체 호출 체인 관계 데이터 조회 (CallChain 스타일)
             comp_rel_query = """
+                -- Frontend → API → METHOD 관계
                 SELECT 
-                    src.component_name as src_comp,
-                    src.layer as src_layer,
-                    dst.component_name as dst_comp,
-                    dst.layer as dst_layer,
-                    r.rel_type
-                FROM relationships r
-                JOIN components src ON r.src_id = src.component_id
-                JOIN components dst ON r.dst_id = dst.component_id
-                WHERE r.del_yn = 'N' 
-                  AND src.del_yn = 'N' 
-                  AND dst.del_yn = 'N'
-                  AND src.layer IS NOT NULL 
-                  AND dst.layer IS NOT NULL
-                  AND src.component_type = 'METHOD'
-                  AND dst.component_type = 'METHOD'
-                  AND src.project_id = (
-                      SELECT project_id FROM projects WHERE project_name = ?
-                  )
-                ORDER BY src.component_name
-                LIMIT 1000
+                    frontend_file.file_name as src_comp,
+                    'FRONTEND' as src_layer,
+                    api_url.component_name as dst_comp,
+                    'API_ENTRY' as dst_layer,
+                    'CALL_API' as rel_type
+                FROM components api_url
+                JOIN files frontend_file ON api_url.file_id = frontend_file.file_id
+                JOIN projects p ON api_url.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND api_url.component_type = 'API_URL'
+                  AND frontend_file.file_type IN ('JSP', 'JSX', 'HTML')
+                  AND api_url.del_yn = 'N'
+                  AND frontend_file.del_yn = 'N'
+                
+                UNION ALL
+                
+                -- API → METHOD 관계
+                SELECT 
+                    api_url.component_name as src_comp,
+                    'API_ENTRY' as src_layer,
+                    method.component_name as dst_comp,
+                    method.layer as dst_layer,
+                    'CALL_METHOD' as rel_type
+                FROM components api_url
+                JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
+                JOIN components method ON r1.dst_id = method.component_id
+                JOIN projects p ON api_url.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND api_url.component_type = 'API_URL'
+                  AND method.component_type = 'METHOD'
+                  AND r1.del_yn = 'N'
+                  AND api_url.del_yn = 'N'
+                  AND method.del_yn = 'N'
+                
+                UNION ALL
+                
+                -- METHOD → QUERY 관계
+                SELECT 
+                    method.component_name as src_comp,
+                    method.layer as src_layer,
+                    query.component_name as dst_comp,
+                    'QUERY' as dst_layer,
+                    'CALL_QUERY' as rel_type
+                FROM components method
+                JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
+                JOIN components query ON r2.dst_id = query.component_id
+                JOIN projects p ON method.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND method.component_type = 'METHOD'
+                  AND query.component_type LIKE 'SQL_%'
+                  AND r2.del_yn = 'N'
+                  AND method.del_yn = 'N'
+                  AND query.del_yn = 'N'
+                
+                UNION ALL
+                
+                -- QUERY → TABLE 관계
+                SELECT 
+                    query.component_name as src_comp,
+                    'QUERY' as src_layer,
+                    table_comp.component_name as dst_comp,
+                    'TABLE' as dst_layer,
+                    'USE_TABLE' as rel_type
+                FROM components query
+                JOIN relationships r3 ON query.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
+                JOIN components table_comp ON r3.dst_id = table_comp.component_id
+                JOIN projects p ON query.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND query.component_type LIKE 'SQL_%'
+                  AND table_comp.component_type = 'TABLE'
+                  AND r3.del_yn = 'N'
+                  AND query.del_yn = 'N'
+                  AND table_comp.del_yn = 'N'
+                
+                ORDER BY src_comp, dst_comp
+                LIMIT 5000
             """
             
-            comp_rel_results = self.db_utils.execute_query(comp_rel_query, (self.project_name,))
+            comp_rel_results = self.db_utils.execute_query(comp_rel_query, (self.project_name, self.project_name, self.project_name, self.project_name))
             
             for row in comp_rel_results:
                 src_comp = row['src_comp']
@@ -301,6 +399,9 @@ class ArchitectureLayerReportGenerator:
                     'target_layer': row['dst_layer'],
                     'type': row['rel_type']
                 })
+                
+                # 디버그: 관계 데이터 확인
+                app_logger.debug(f"관계 추가: {src_comp} ({row['src_layer']}) -> {row['dst_comp']} ({row['dst_layer']})")
             
             # 6. 전통적 레이어 간 관계 매핑
             traditional_mapping = {
@@ -506,17 +607,17 @@ class ArchitectureLayerReportGenerator:
         .architecture-container {
             display: flex;
             flex-direction: row;
-            gap: 5px;
-            overflow-x: auto;
-            padding: 0;
+            width: 100%;
+            padding: 10px;
             background: white;
             min-height: 400px;
             position: relative;
+            box-sizing: border-box;
         }
         
         .layer-column {
-            min-width: 120px;
-            max-width: 180px;
+            flex: 1;
+            min-width: 0;
             background: #fafafa;
             border: 1px solid #ddd;
             border-radius: 3px;
@@ -524,6 +625,7 @@ class ArchitectureLayerReportGenerator:
             position: relative;
             height: 100%;
             overflow-y: auto;
+            margin: 0 2px;
         }
         
         .layer-header {
@@ -559,10 +661,25 @@ class ArchitectureLayerReportGenerator:
         }
         
         .component-item.selected {
-            background: #007bff;
-            color: white;
-            border-color: #0056b3;
-            box-shadow: 0 3px 8px rgba(0,123,255,0.3);
+            background: #007bff !important;
+            color: white !important;
+            border-color: #0056b3 !important;
+            border-width: 3px !important;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.4) !important;
+            transform: translateY(-2px) scale(1.02) !important;
+            z-index: 1000 !important;
+            position: relative !important;
+        }
+        
+        .component-item.related {
+            background: #28a745 !important;
+            color: white !important;
+            border-color: #1e7e34 !important;
+            border-width: 2px !important;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.3) !important;
+            transform: translateY(-1px) !important;
+            z-index: 500 !important;
+            position: relative !important;
         }
         
         .component-item.dimmed {
@@ -654,7 +771,10 @@ class ArchitectureLayerReportGenerator:
         for layer in self.layer_order:
             if layer in analysis['layer_components']:
                 layer_components = analysis['layer_components'][layer]
-                total_components = len(layer_components)
+                displayed_count = len(layer_components)  # 실제 표시되는 개수 (최대 100개)
+                
+                # 전체 건수 조회 (필터링 전)
+                total_count = self._get_total_component_count_by_layer(layer)
                 
                 # 레이어 헤더 색상
                 header_color = self.layer_colors.get(layer, '#e0e0e0')
@@ -663,24 +783,25 @@ class ArchitectureLayerReportGenerator:
                 header_html = f'''
                 <div class="layer-header" style="background-color: {header_color};">
                     {layer} Layer<br>
-                    <small>({total_components:,}개 컴포넌트)</small>
+                    <small>({total_count:,}개 컴포넌트)</small>
                 </div>
                 '''
                 
-                # 실제 컴포넌트 항목들 HTML
+                # 실제 컴포넌트 항목들 HTML (전체 표시)
                 components_html = []
+                
                 for idx, component in enumerate(layer_components):
                     comp_id = component['id']
                     comp_name = component['name']
                     comp_type = component['type']
                     file_path = component['file_path']
                     
-                    # 잘못된 컴포넌트 이름 필터링 (숫자만 있거나 빈 이름)
-                    if not comp_name or comp_name.strip() == '' or comp_name.isdigit():
+                    # 잘못된 컴포넌트 이름 필터링 (동적 검증)
+                    if not self._is_valid_component_name(comp_name, comp_type):
                         continue
                     
-                    # 컴포넌트 표시명 사용 (파일명 포함하여 중복 구분)
-                    display_name = component.get('display_name', comp_name)
+                    # 컴포넌트명만 표시 (괄호 제거)
+                    display_name = comp_name
                     if len(display_name) > 25:
                         display_name = display_name[:22] + "..."
                     
@@ -693,7 +814,6 @@ class ArchitectureLayerReportGenerator:
                          data-file-path="{file_path}"
                          title="{comp_name} ({comp_type}) - {file_path}">
                         {display_name}
-                        <span class="component-count">{comp_type[:3]}</span>
                     </div>
                     ''')
                 
@@ -752,6 +872,7 @@ class ArchitectureLayerReportGenerator:
         let layerRelationships = {traditional_relationships_json};
         
         console.log('관계 데이터 로드됨:', Object.keys(relationshipData).length + '개 컴포넌트');
+        console.log('관계 데이터 상세:', relationshipData);
         console.log('레이어 관계:', layerRelationships);
         
         // 간단한 클릭 이벤트
@@ -763,35 +884,57 @@ class ArchitectureLayerReportGenerator:
                         el.style.opacity = '';
                         el.style.borderColor = '';
                         el.style.borderWidth = '';
+                        el.style.zIndex = '';
+                        el.style.position = '';
                         el.classList.remove('selected', 'related', 'dimmed');
                     }});
                     
-                    // 현재 컴포넌트 선택
+                    // 현재 컴포넌트 선택 (맨 위로 올리기)
                     this.classList.add('selected');
                     this.style.borderColor = '#007bff';
+                    this.style.zIndex = '1000';
+                    this.style.position = 'relative';
                     
                     const name = this.dataset.name;
-                    console.log('선택된 컴포넌트:', name);
+                    const layer = this.dataset.layer;
+                    const type = this.dataset.type;
+                    console.log('선택된 컴포넌트:', name, '레이어:', layer, '타입:', type);
+                    console.log('해당 컴포넌트 관계 데이터:', relationshipData[name]);
                     
-                    // 관련 컴포넌트 하이라이트 (모든 레이어 포함)
+                    // 전체 호출 체인 추적 (CallChain 스타일)
                     const relatedComponents = new Set();
+                    const visited = new Set();
                     
-                    if (relationshipData[name]) {{
-                        relationshipData[name].relationships.forEach(function(rel) {{
-                            relatedComponents.add(rel.target);
-                            console.log('관계 발견:', name, '->', rel.target, '(', rel.target_layer, ')');
+                    // 재귀적으로 연결고리 추적
+                    function traceRelationships(compName, depth = 0, maxDepth = 5) {{
+                        if (depth > maxDepth || visited.has(compName)) return;
+                        visited.add(compName);
+                        
+                        // 직접 관계 추가
+                        if (relationshipData[compName]) {{
+                            relationshipData[compName].relationships.forEach(function(rel) {{
+                                relatedComponents.add(rel.target);
+                                console.log(`${{depth}}단계 관계:`, compName, '->', rel.target, `(${{rel.target_layer}})`);
+                                // 재귀적으로 다음 단계 추적
+                                traceRelationships(rel.target, depth + 1, maxDepth);
+                            }});
+                        }}
+                        
+                        // 역방향 관계 추가
+                        Object.keys(relationshipData).forEach(function(srcName) {{
+                            relationshipData[srcName].relationships.forEach(function(rel) {{
+                                if (rel.target === compName) {{
+                                    relatedComponents.add(srcName);
+                                    console.log(`${{depth}}단계 역방향:`, srcName, '->', compName);
+                                    // 재귀적으로 이전 단계 추적
+                                    traceRelationships(srcName, depth + 1, maxDepth);
+                                }}
+                            }});
                         }});
                     }}
                     
-                    // 역방향 관계도 찾기 (다른 컴포넌트가 현재 컴포넌트를 참조하는 경우)
-                    Object.keys(relationshipData).forEach(function(compName) {{
-                        relationshipData[compName].relationships.forEach(function(rel) {{
-                            if (rel.target === name) {{
-                                relatedComponents.add(compName);
-                                console.log('역방향 관계 발견:', compName, '->', name);
-                            }}
-                        }});
-                    }});
+                    // 선택된 컴포넌트부터 체인 추적 시작
+                    traceRelationships(name, 0, 5);
                     
                     // 관련 컴포넌트들 하이라이트 (모든 레이어에서)
                     relatedComponents.forEach(function(targetName) {{
@@ -800,6 +943,8 @@ class ArchitectureLayerReportGenerator:
                             target.style.borderColor = '#28a745';
                             target.style.borderWidth = '2px';
                             target.style.opacity = '1';
+                            target.style.zIndex = '500';
+                            target.style.position = 'relative';
                             target.classList.add('related');
                         }});
                     }});
@@ -833,3 +978,88 @@ class ArchitectureLayerReportGenerator:
         except Exception as e:
             app_logger.error(f"리포트 파일 저장 실패: {e}")
             raise
+    
+    def _is_valid_component_name(self, comp_name: str, comp_type: str) -> bool:
+        """
+        컴포넌트명 유효성 검증 (동적 검증)
+        
+        Args:
+            comp_name: 컴포넌트명
+            comp_type: 컴포넌트 타입
+            
+        Returns:
+            유효성 여부 (True/False)
+        """
+        try:
+            # 1. 기본 검증: 빈 값이나 공백만 있는 경우
+            if not comp_name or not comp_name.strip():
+                return False
+            
+            # 2. 숫자만으로 구성된 경우 (Java 파서 오류)
+            if comp_name.isdigit():
+                return False
+            
+            # 3. 길이가 너무 짧은 경우 (1글자 이하)
+            if len(comp_name.strip()) <= 1:
+                return False
+            
+            # 4. 타입별 추가 검증
+            if comp_type == 'METHOD':
+                # Java 메서드명 규칙: 영문자로 시작, 영문자/숫자/언더스코어 조합
+                import re
+                if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', comp_name):
+                    return False
+            
+            elif comp_type == 'CLASS':
+                # Java 클래스명 규칙: 대문자로 시작, 영문자/숫자 조합
+                import re
+                if not re.match(r'^[A-Z][a-zA-Z0-9]*$', comp_name):
+                    return False
+            
+            # 5. 특수문자만으로 구성된 경우
+            import re
+            if re.match(r'^[^a-zA-Z0-9_]+$', comp_name):
+                return False
+            
+            return True
+            
+        except Exception as e:
+            # 검증 실패 시 안전하게 False 반환
+            from util.logger import debug
+            debug(f"컴포넌트명 검증 실패: {comp_name} - {e}")
+            return False
+    
+    def _get_total_component_count_by_layer(self, layer: str) -> int:
+        """
+        레이어별 전체 컴포넌트 개수 조회 (필터링 전)
+        
+        Args:
+            layer: 레이어명
+            
+        Returns:
+            전체 컴포넌트 개수
+        """
+        try:
+            query = """
+                SELECT COUNT(*) as total_count
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                AND c.layer = ?
+                AND c.component_type IN ('METHOD', 'TABLE', 'CLASS', 'API_URL', 'JSP', 'JS', 'HTML', 'CSS')
+                AND c.del_yn = 'N' 
+                AND f.del_yn = 'N'
+                AND c.component_name IS NOT NULL
+                AND c.component_name != ''
+                AND NOT (c.component_name GLOB '[0-9]*' AND LENGTH(c.component_name) <= 3)
+                AND c.component_name GLOB '[a-zA-Z]*'
+            """
+            
+            result = self.db_utils.execute_query(query, (self.project_name, layer))
+            return result[0]['total_count'] if result else 0
+            
+        except Exception as e:
+            from util.logger import debug
+            debug(f"레이어별 전체 개수 조회 실패: {layer} - {e}")
+            return 0

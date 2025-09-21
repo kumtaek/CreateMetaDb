@@ -48,7 +48,7 @@ class ERDDagreTemplates:
                 <button onclick="exportPng()">PNG 내보내기</button>
                 <button onclick="exportSvg()">SVG 내보내기</button>
                 <input type="text" id="search" placeholder="테이블명으로 검색..." />
-                <span id="current-layout">grid</span>
+                <span id="current-layout">dagre</span>
             </div>
         </div>
         <div class="erd-dagre-content">
@@ -132,21 +132,18 @@ class ERDDagreTemplates:
         return """
         body.erd-dagre-body { 
             margin: 0; 
-            height: 100%; 
+            height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 2px;
+            padding: 0;
             background: white;
-            min-height: 100vh;
+            overflow: hidden;
         }
         .erd-dagre-container {
             height: 100vh;
             display: flex;
             flex-direction: column;
             background: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
-            min-height: 100vh;
         }
         .erd-dagre-header {
             background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
@@ -223,8 +220,9 @@ class ERDDagreTemplates:
         }
         #cy { 
             width: 100%; 
-            flex: 1;
+            height: calc(100vh - 120px);
             background: white;
+            overflow: hidden;
         }
         
         @keyframes gradientShift {
@@ -507,7 +505,7 @@ class ERDDagreTemplates:
         return f"""
         // ERD Dagre 초기화 및 이벤트 처리
         let cy;
-        let currentLayout = 'grid';
+        let currentLayout = 'dagre';
         let tooltipTimeout;
         let edgeTooltipTimeout;
         let isTooltipVisible = false;
@@ -534,10 +532,10 @@ class ERDDagreTemplates:
                             'text-valign': 'center',
                             'text-halign': 'center',
                             'color': 'white',
-                            'font-size': '12px',
+                            'font-size': '14px',
                             'font-weight': 'bold',
-                            'width': '120px',
-                            'height': '60px',
+                            'width': '160px',
+                            'height': '80px',
                             'border-width': 3,
                             'border-color': '#1e40af',
                             'shape': 'round-rectangle'
@@ -559,12 +557,14 @@ class ERDDagreTemplates:
                     }}
                 ],
                 layout: {{
-                    name: 'grid',               // 초기 레이아웃을 grid로 변경 (더 균등한 분산)
+                    name: 'dagre',              // 초기 레이아웃을 dagre로 변경 (하단 레이아웃)
                     animate: true,
                     animationDuration: 1000,
-                    rows: 5,                    // 5행으로 배치
-                    cols: 5,                    // 5열로 배치
-                    padding: 50                 // 그리드 패딩
+                    nodeSep: 80,                // 노드 간 간격 축소 (200 → 80)
+                    edgeSep: 50,                // 엣지 간 간격 축소 (120 → 50)
+                    rankSep: 120,               // 계층 간 간격 축소 (300 → 120)
+                    rankDir: 'TB',              // 위에서 아래로 배치
+                    align: 'DR'                 // 정렬 방식
                 }}
             }});
         }}
@@ -608,11 +608,23 @@ class ERDDagreTemplates:
             }} else if (currentLayout === 'dagre') {{
                 layoutOptions = {{
                     ...layoutOptions,
-                    nodeSep: 200,               // 노드 간 간격 극대화 (150 → 200)
-                    edgeSep: 120,               // 엣지 간 간격 극대화 (80 → 120)
-                    rankSep: 300,               // 계층 간 간격 극대화 (200 → 300)
+                    nodeSep: 80,                // 노드 간 간격 축소 (200 → 80)
+                    edgeSep: 50,                // 엣지 간 간격 축소 (120 → 50)
+                    rankSep: 120,               // 계층 간 간격 축소 (300 → 120)
                     rankDir: 'TB',              // 위에서 아래로 배치
                     align: 'DR'                 // 정렬 방식
+                }};
+            }} else if (currentLayout === 'circle') {{
+                layoutOptions = {{
+                    ...layoutOptions,
+                    radius: 400,                // 원의 반지름 확대 (기본값보다 크게)
+                    padding: 100,               // 원 주변 패딩
+                    startAngle: 0,              // 시작 각도
+                    sweep: Math.PI * 2,         // 전체 원 (360도)
+                    clockwise: true,            // 시계 방향
+                    sort: function(a, b) {{     // 노드 정렬 (이름순)
+                        return a.data('label').localeCompare(b.data('label'));
+                    }}
                 }};
             }} else if (currentLayout === 'grid') {{
                 layoutOptions = {{

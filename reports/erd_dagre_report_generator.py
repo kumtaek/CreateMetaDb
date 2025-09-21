@@ -437,9 +437,10 @@ class ERDDagreReportGenerator:
             existing_node_ids = {node['data']['id'] for node in nodes}
             
             for rel in relationships_data:
-                # 소스와 타겟 노드 ID 생성 (owner 제거)
-                src_id = f"table:{rel['src_table']}"
-                dst_id = f"table:{rel['dst_table']}"
+                # ERD 관계 방향 수정: PK(src) → FK(dst)를 FK(dst) → PK(src)로 반전
+                # 이유: ERD에서 1:N 관계는 1(PK) ||--o{ N(FK) 형태로 표시
+                src_id = f"table:{rel['dst_table']}"  # FK 테이블 (Many 쪽)
+                dst_id = f"table:{rel['src_table']}"  # PK 테이블 (One 쪽)
                 
                 # 노드 존재 여부 검증
                 if src_id not in existing_node_ids or dst_id not in existing_node_ids:
@@ -475,10 +476,10 @@ class ERDDagreReportGenerator:
                             'rel_type': rel['rel_type'],
                             'confidence': rel['confidence'],
                             'frequency': rel['frequency'],
-                            'src_table': rel['src_table'],
-                            'dst_table': rel['dst_table'],
-                            'src_column': rel['src_column'],
-                            'dst_column': rel['dst_column'],
+                            'src_table': rel['dst_table'],  # ERD 표시용: FK 테이블 (Many)
+                            'dst_table': rel['src_table'],  # ERD 표시용: PK 테이블 (One)
+                            'src_column': rel['dst_column'],  # ERD 표시용: FK 컬럼
+                            'dst_column': rel['src_column'],  # ERD 표시용: PK 컬럼
                             'src_data_type': rel['src_data_type'],
                             'dst_data_type': rel['dst_data_type'],
                             'join_condition': rel['join_condition'],

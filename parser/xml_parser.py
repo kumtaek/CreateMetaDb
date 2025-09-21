@@ -987,7 +987,7 @@ class XmlParser:
 
     def _create_inferred_column(self, table_name: str, column_name: str, component_id: int) -> None:
         """
-        inferred 컬럼 생성
+        inferred 컬럼 생성 (Oracle 키워드 필터링 추가)
 
         Args:
             table_name: 테이블명
@@ -995,6 +995,10 @@ class XmlParser:
             component_id: SQL 컴포넌트 ID
         """
         try:
+            # Oracle 키워드 검증 추가
+            if self._is_oracle_keyword(column_name):
+                debug(f"Oracle 키워드 '{column_name}'이므로 inferred 컬럼 생성 스킵 (테이블: {table_name})")
+                return
             # USER RULES: 공통함수 사용 지향
             from util import DatabaseUtils, PathUtils
             path_utils = PathUtils()
@@ -1891,5 +1895,47 @@ class EnhancedMybatisParser:
             # USER RULES: Exception 발생시 handle_error()로 exit()
             handle_error(e, "Enhanced MyBatis 동적 파서 분석 실패")
 
+
+    def _is_oracle_keyword(self, name: str) -> bool:
+        """
+        Oracle SQL 키워드인지 확인
+        
+        Args:
+            name: 확인할 이름
+            
+        Returns:
+            Oracle 키워드이면 True
+        """
+        try:
+            # config에서 Oracle 키워드 목록 로드
+            from util import PathUtils
+            path_utils = PathUtils()
+            config_path = path_utils.get_parser_config_path("java")
+            
+            import yaml
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            # Oracle SQL 키워드 확인
+            oracle_keywords = set(config.get('oracle_reserved_keywords', []))
+            if name.upper() in {kw.upper() for kw in oracle_keywords}:
+                return True
+                
+            return False
+            
+        except Exception as e:
+            # 설정 로드 실패 시 기본 키워드만 확인
+            debug(f"Oracle 키워드 설정 로드 실패, 기본 키워드만 확인: {e}")
+            # 기본 Oracle 키워드 (주요한 것들만)
+            basic_oracle_keywords = {
+                'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'TRUNCATE',
+                'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'FULL', 'OUTER', 'ON',
+                'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL',
+                'ORDER', 'GROUP', 'HAVING', 'DISTINCT', 'UNION', 'ALL', 'ANY', 'SOME',
+                'AS', 'BY', 'ASC', 'DESC', 'ROWNUM', 'ROWID', 'SYSDATE', 'USER', 'DUAL',
+                'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'VARCHAR', 'VARCHAR2', 'CHAR', 'NUMBER',
+                'INTEGER', 'DATE', 'TIMESTAMP', 'CLOB', 'BLOB', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END'
+            }
+            return name.upper() in basic_oracle_keywords
 
 # === Gemini 추가 끝 ===

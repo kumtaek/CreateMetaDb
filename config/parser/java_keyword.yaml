@@ -678,8 +678,50 @@ relationship_analysis:
     - "^main$"
     - "^run$"
 
-  # 테이블명 정제 패턴
-  table_name_cleaning:
+# Oracle SQL 키워드 (INFERRED 테이블/컬럼에서 제외)
+oracle_reserved_keywords:
+  - "SELECT"
+  - "FROM"
+  - "WHERE"
+  - "INSERT"
+  - "UPDATE"
+  - "DELETE"
+  - "CREATE"
+  - "DROP"
+  - "ALTER"
+  - "TABLE"
+  - "INDEX"
+  - "VIEW"
+  - "USER"
+  - "DUAL"
+  - "SYSDATE"
+  - "COUNT"
+  - "SUM"
+  - "AVG"
+  - "MIN"
+  - "MAX"
+  - "ORDER"
+  - "GROUP"
+  - "BY"
+  - "HAVING"
+  - "JOIN"
+  - "INNER"
+  - "LEFT"
+  - "RIGHT"
+  - "OUTER"
+  - "ON"
+  - "AND"
+  - "OR"
+  - "NOT"
+  - "NULL"
+  - "VARCHAR"
+  - "VARCHAR2"
+  - "NUMBER"
+  - "DATE"
+  - "TIMESTAMP"
+
+# 테이블명 정제 패턴
+table_name_cleaning:
     # 제거할 패턴
     remove_patterns:
       - "\\s+AS\\s+\\w+$"  # AS alias 제거

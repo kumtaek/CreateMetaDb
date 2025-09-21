@@ -33,13 +33,13 @@ class PathUtils:
     
     def normalize_path(self, path: str) -> str:
         """
-        경로 정규화 (절대경로로 변환)
+        경로 정규화 (절대경로로 변환 + UNIX 경로 형식)
         
         Args:
             path: 정규화할 경로
             
         Returns:
-            정규화된 절대경로
+            정규화된 절대경로 (UNIX 형식: / 사용)
         """
         try:
             if not path:
@@ -47,10 +47,13 @@ class PathUtils:
             
             # 절대경로인 경우 그대로 정규화
             if os.path.isabs(path):
-                return os.path.normpath(path)
+                normalized = os.path.normpath(path)
+            else:
+                # 상대경로인 경우 프로젝트 루트 기준으로 변환
+                normalized = os.path.normpath(os.path.join(self.project_root, path))
             
-            # 상대경로인 경우 프로젝트 루트 기준으로 변환
-            return os.path.normpath(os.path.join(self.project_root, path))
+            # 크로스플랫폼 대응: 모든 백슬래시를 슬래시로 변환 (UNIX 경로 형식)
+            return normalized.replace('\\', '/')
             
         except Exception as e:
             handle_error(e, f"경로 정규화 실패: {path}")

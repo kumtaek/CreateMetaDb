@@ -287,9 +287,16 @@ class JavaLoadingEngine:
             class_id 또는 None
         """
         try:
+            class_name = class_info.get('class_name', '')
+            
+            # Java 키워드 검증 (CLASS 컴포넌트 생성 시)
+            if self._is_java_keyword(class_name):
+                debug(f"Java 키워드 '{class_name}'이므로 CLASS 컴포넌트 생성 스킵")
+                return None
+            
             # 해시값 생성 (USER RULES: 공통함수 사용)
             class_hash = HashUtils.generate_content_hash(
-                f"{class_info.get('class_name', '')}{class_info.get('package_name', '')}{class_info.get('class_type', '')}"
+                f"{class_name}{class_info.get('package_name', '')}{class_info.get('class_type', '')}"
             )
 
             class_data = {
@@ -424,6 +431,11 @@ class JavaLoadingEngine:
         try:
             method_name = method_info.get('method_name', 'UNKNOWN')
             debug(f"_create_method_component 시작: {method_name}")
+            
+            # Java 키워드 검증 (METHOD 컴포넌트 생성 시)
+            if self._is_java_keyword(method_name):
+                debug(f"Java 키워드 '{method_name}'이므로 METHOD 컴포넌트 생성 스킵")
+                return None
             
             # Layer 분류를 위한 파일 정보 조회
             file_path, file_name = self._get_file_info_for_layer_classification(project_id, file_id)
@@ -1806,25 +1818,45 @@ class JavaLoadingEngine:
     
     def _is_java_keyword(self, name: str) -> bool:
         """
-        Java 예약어인지 확인
+        Java 예약어 또는 Oracle SQL 키워드인지 확인
         
         Args:
             name: 확인할 이름
             
         Returns:
-            Java 예약어이면 True
+            키워드이면 True
         """
-        java_keywords = {
-            'abstract', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 
-            'class', 'const', 'continue', 'default', 'do', 'double', 'else', 
-            'enum', 'extends', 'final', 'finally', 'float', 'for', 'goto', 
-            'if', 'implements', 'import', 'instanceof', 'int', 'interface', 
-            'long', 'native', 'new', 'package', 'private', 'protected', 'public',
-            'return', 'short', 'static', 'strictfp', 'super', 'switch', 
-            'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 
-            'void', 'volatile', 'while'
-        }
-        return name.lower() in java_keywords
+        try:
+            # config에서 키워드 목록 로드
+            config_path = PathUtils.get_parser_config_path("java")
+            config = self.java_parser._load_config(config_path)
+            
+            # Java 예약어 확인
+            java_keywords = set(config.get('java_reserved_keywords', []))
+            if name.lower() in {kw.lower() for kw in java_keywords}:
+                return True
+            
+            # Oracle SQL 키워드 확인
+            oracle_keywords = set(config.get('oracle_reserved_keywords', []))
+            if name.upper() in {kw.upper() for kw in oracle_keywords}:
+                return True
+                
+            return False
+            
+        except Exception as e:
+            # 설정 로드 실패 시 기본 Java 키워드만 확인
+            debug(f"키워드 설정 로드 실패, 기본 키워드만 확인: {e}")
+            java_keywords = {
+                'abstract', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 
+                'class', 'const', 'continue', 'default', 'do', 'double', 'else', 
+                'enum', 'extends', 'final', 'finally', 'float', 'for', 'goto', 
+                'if', 'implements', 'import', 'instanceof', 'int', 'interface', 
+                'long', 'native', 'new', 'package', 'private', 'protected', 'public',
+                'return', 'short', 'static', 'strictfp', 'super', 'switch', 
+                'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 
+                'void', 'volatile', 'while'
+            }
+            return name.lower() in java_keywords
     
     def _validate_table_in_sql_context(self, table_name: str, sql_content: str) -> bool:
         """

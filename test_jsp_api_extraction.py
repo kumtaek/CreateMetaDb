@@ -23,8 +23,10 @@ def test_jsp_api_extraction():
     # JSP 파서 초기화
     parser = JspParser(project_name="SampleSrc")
 
-    # 테스트할 JSP 파일 경로
-    jsp_file = "D:\\Analyzer\\CreateMetaDb\\projects\\SampleSrc\\src\\main\\webapp\\WEB-INF\\views\\user\\UserManagementPage.jsp"
+    # 테스트할 JSP 파일 경로 (공통함수 사용)
+    from util.path_utils import PathUtils
+    path_utils = PathUtils()
+    jsp_file = path_utils.join_path("projects", "SampleSrc", "src", "main", "webapp", "WEB-INF", "views", "user", "UserManagementPage.jsp")
 
     print(f"테스트 파일: {jsp_file}")
 

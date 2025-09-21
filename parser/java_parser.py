@@ -565,6 +565,11 @@ class JavaParser:
         try:
             # 클래스명 추출
             class_name = match.group(1)
+            
+            # Java 키워드 검증 (CLASS 컴포넌트 생성 시)
+            if self._is_control_keyword(class_name):
+                debug(f"Java 키워드 '{class_name}'이므로 CLASS 컴포넌트 생성 스킵")
+                return None
 
             # 클래스 타입 결정
             class_type = self._determine_class_type(match.group(0))
@@ -773,10 +778,10 @@ class JavaParser:
                 match = compiled_pattern.search(normalized_path)
                 if match:
                     package_path = match.group(1)
-                    # 파일명 제거하고 디렉토리 경로만 추출
-                    package_path = self.path_utils.get_parent_directory(package_path)
-                    # 경로 구분자를 점으로 변환
-                    package_name = package_path.replace(self.path_utils.get_path_separator(), '.').replace('/', '.')
+                    # 파일명 제거하고 디렉토리 경로만 추출 (기존 공통함수 사용)
+                    package_path = self.path_utils.get_directory_path(package_path)
+                    # 경로 구분자를 점으로 변환 (UNIX 경로 형식이므로 / 사용)
+                    package_name = package_path.replace('/', '.')
 
                     if package_name and package_name != '.':
                         return package_name
@@ -1120,25 +1125,37 @@ class JavaParser:
 
     def _is_control_keyword(self, method_name: str) -> bool:
         """
-        제어문 키워드인지 확인 (METHOD 컴포넌트로 잘못 파싱 방지)
+        Java 키워드인지 확인 (METHOD/CLASS 컴포넌트로 잘못 파싱 방지)
         
         Args:
             method_name: 확인할 메서드명
             
         Returns:
-            제어문 키워드이면 True, 아니면 False
+            Java 키워드이면 True, 아니면 False
         """
         try:
             # USER RULES: 하드코딩 지양 - 설정 파일에서 제어문 키워드 가져오기
             exclude_patterns = self.config.get('method_filter_patterns', {}).get('exclude_patterns', [])
             
-            # 제어문 키워드 패턴 확인
+            # Java 예약어 확인
+            java_keywords = set(self.config.get('java_reserved_keywords', []))
+            if method_name.lower() in {kw.lower() for kw in java_keywords}:
+                return True
+            
+            # Oracle 키워드 확인
+            oracle_keywords = set(self.config.get('oracle_reserved_keywords', []))
+            if method_name.upper() in {kw.upper() for kw in oracle_keywords}:
+                return True
+            
+            # 기존 제어문 키워드 패턴 확인 (하위 호환성)
             for pattern in exclude_patterns:
                 if pattern.startswith('^') and pattern.endswith('$'):
                     # 정확한 매치 패턴 (^keyword$)
                     keyword = pattern[1:-1]  # ^와 $ 제거
                     if method_name == keyword:
                         return True
+                elif method_name == pattern:
+                    return True
             
             return False
             

@@ -38,9 +38,35 @@ class ConsistencyValidator:
         
         self.critical_violations = []
         
+        # 현재 프로젝트 ID 조회
+        self.project_id = self._get_project_id()
+        if not self.project_id:
+            handle_error(Exception("프로젝트 ID 조회 실패"), f"프로젝트 '{project_name}'을 찾을 수 없습니다")
+        
         # CSV 파일 ID 동적 조회
         self.all_tables_file_id = self._get_csv_file_id('ALL_TABLES.csv')
         self.all_columns_file_id = self._get_csv_file_id('ALL_TAB_COLUMNS.csv')
+    
+    def _get_project_id(self) -> Optional[int]:
+        """현재 프로젝트의 project_id 조회"""
+        try:
+            result = self.db_utils.execute_query("""
+                SELECT project_id FROM projects 
+                WHERE project_name = ? AND del_yn = 'N'
+                LIMIT 1
+            """, (self.project_name,))
+            
+            if result:
+                project_id = result[0]['project_id']
+                info(f"프로젝트 ID 조회: {self.project_name} -> project_id {project_id}")
+                return project_id
+            else:
+                warning(f"프로젝트를 찾을 수 없음: {self.project_name}")
+                return None
+                
+        except Exception as e:
+            warning(f"프로젝트 ID 조회 실패: {self.project_name} - {e}")
+            return None
     
     def _get_csv_file_id(self, file_name: str) -> Optional[int]:
         """CSV 파일의 file_id 동적 조회"""
@@ -80,10 +106,11 @@ class ConsistencyValidator:
             # 치명적 비일관성 검사
             self._check_foreign_key_violations()
             self._check_file_duplicates()
+            self._check_method_duplicates()  # 추가: 메서드 중복 검사
             self._check_api_url_duplicates()
             self._check_relationship_violations()
             self._check_parent_id_violations()
-            self._check_table_column_file_id_violations()
+            # self._check_table_column_file_id_violations()  # 제거: inferred 컴포넌트는 다양한 파일에서 생성 가능
             
             # 경고성 검사
             self._check_warning_cases()
@@ -187,45 +214,98 @@ class ConsistencyValidator:
                 'description': f"파일 '{dup['file_name']}' ({dup['file_path']})이 {dup['count']}개 중복 등록됨 - UNIQUE 제약조건 위반"
             })
     
-    def _check_api_url_duplicates(self):
-        """치명적: 백엔드 API_URL 중복 (하나의 API_URL이 여러 METHOD에 매핑)"""
+    def _check_method_duplicates(self):
+        """치명적: 메서드 중복 저장 (같은 파일에서 같은 메서드가 여러 번 추출)"""
         
-        # 백엔드(JAVA 파일)에서만 같은 API_URL이 여러 개 생성된 경우 체크
-        backend_api_duplicates = self.db_utils.execute_query("""
+        method_duplicates = self.db_utils.execute_query("""
             SELECT 
                 c.component_name,
+                f.file_id,
+                f.file_name,
+                f.file_path,
                 COUNT(*) as count,
                 GROUP_CONCAT(c.component_id) as component_ids,
-                GROUP_CONCAT(f.file_name) as file_names
+                GROUP_CONCAT(c.hash_value) as hash_values
             FROM components c
             JOIN files f ON c.file_id = f.file_id
-            WHERE c.component_type = 'API_URL' 
-              AND f.file_type = 'JAVA'
+            WHERE c.component_type = 'METHOD' 
               AND c.del_yn = 'N'
               AND f.del_yn = 'N'
-            GROUP BY c.component_name 
+            GROUP BY c.component_name, f.file_id
+            HAVING COUNT(*) > 1
+            ORDER BY count DESC, c.component_name
+        """)
+        
+        for dup in method_duplicates:
+            component_ids = dup['component_ids'].split(',')
+            hash_values = dup['hash_values'].split(',')
+            unique_hashes = len(set(hash_values))
+            
+            self.critical_violations.append({
+                'type': 'METHOD_DUPLICATE',
+                'description': f"파일 '{dup['file_name']}'에서 메서드 '{dup['component_name']}'이 {dup['count']}개 중복 저장됨 (해시값 {unique_hashes}개) - component_ids: {', '.join(component_ids[:3])}"
+            })
+        
+        info(f"메서드 중복 검증 완료: {len(method_duplicates)}개 중복 발견")
+    
+    def _check_api_url_duplicates(self):
+        """치명적: API_URL 중복 검증"""
+        
+        # 1. 백엔드: 하나의 API_URL이 여러 METHOD와 관계를 맺는 경우
+        backend_multi_method_apis = self.db_utils.execute_query("""
+            SELECT 
+                api.component_name as api_name,
+                COUNT(r.dst_id) as method_count,
+                GROUP_CONCAT(method.component_name) as method_names,
+                GROUP_CONCAT(f.file_name) as file_names
+            FROM components api
+            JOIN relationships r ON api.component_id = r.src_id
+            JOIN components method ON r.dst_id = method.component_id
+            JOIN files f ON api.file_id = f.file_id
+            WHERE api.component_type = 'API_URL' 
+              AND r.rel_type = 'CALL_METHOD'
+              AND f.file_type = 'JAVA'
+              AND f.project_id = ?
+              AND api.del_yn = 'N'
+              AND r.del_yn = 'N'
+              AND method.del_yn = 'N'
+              AND f.del_yn = 'N'
+            GROUP BY api.component_name
+            HAVING COUNT(r.dst_id) > 1
+        """, (self.project_id,))
+        
+        for dup in backend_multi_method_apis:
+            method_names = dup['method_names'].split(',')[:5]  # 처음 5개만
+            self.critical_violations.append({
+                'type': 'BACKEND_API_MULTI_METHOD',
+                'description': f"백엔드 API '{dup['api_name']}'이 {dup['method_count']}개 METHOD와 연결됨 (1:1 매핑 위반) - METHOD: {', '.join(method_names)}"
+            })
+        
+        # 2. 프론트엔드: 하나의 파일에서 같은 API_URL이 여러 개 생성된 경우
+        frontend_file_duplicates = self.db_utils.execute_query("""
+            SELECT 
+                c.component_name,
+                f.file_id,
+                f.file_name,
+                f.file_path,
+                COUNT(*) as count
+            FROM components c 
+            JOIN files f ON c.file_id = f.file_id
+            WHERE c.component_type = 'API_URL' 
+              AND f.file_type IN ('JSP', 'JS', 'VUE', 'JSX', 'HTML')
+              AND c.del_yn = 'N' 
+              AND f.del_yn = 'N'
+            GROUP BY c.component_name, f.file_id
             HAVING COUNT(*) > 1
         """)
         
-        for dup in backend_api_duplicates:
-            # 백엔드 METHOD 정보 조회
-            component_ids = dup['component_ids'].split(',')
-            method_info_query = f"""
-                SELECT c.component_name, f.file_name, c.component_id
-                FROM components c
-                JOIN files f ON c.file_id = f.file_id
-                WHERE c.component_id IN ({','.join(['?' for _ in component_ids])})
-            """
-            method_infos = self.db_utils.execute_query(method_info_query, component_ids)
-            method_details = [f"{info['component_name']}({info['file_name']})" for info in method_infos]
-            
+        for dup in frontend_file_duplicates:
             self.critical_violations.append({
-                'type': 'BACKEND_API_URL_DUPLICATE',
-                'description': f"백엔드에서 API '{dup['component_name']}'이 {dup['count']}개 METHOD에 매핑됨 - METHOD: {', '.join(method_details)}"
+                'type': 'FRONTEND_API_FILE_DUPLICATE',
+                'description': f"프론트엔드 파일 '{dup['file_name']}'에서 API '{dup['component_name']}'이 {dup['count']}개 중복 생성됨"
             })
         
-        # 프론트엔드 API_URL 중복은 정상 (각 파일별로 생성되므로)
-        info(f"백엔드 API_URL 중복 검증 완료: {len(backend_api_duplicates)}개 중복 발견")
+        info(f"API_URL 중복 검증 완료: 백엔드 {len(backend_multi_method_apis)}개, 프론트엔드 {len(frontend_file_duplicates)}개 위반 발견")
     
     def _check_relationship_violations(self):
         """치명적: 관계 무결성 위반"""
@@ -319,25 +399,27 @@ class ConsistencyValidator:
     def _check_warning_cases(self):
         """경고성 검사 (정상적이지만 확인 필요)"""
         
-        # 1. 하나의 API가 여러 메서드와 연결 (버전 관리, 오버로드)
-        multi_mapped_apis = self.db_utils.execute_query("""
+        # 1. 프론트엔드 API 크로스 파일 사용량 (정보성)
+        frontend_cross_file_apis = self.db_utils.execute_query("""
             SELECT 
                 c.component_name as api_name,
-                COUNT(r.dst_id) as method_count,
-                GROUP_CONCAT(c2.component_name) as method_names
+                COUNT(DISTINCT f.file_id) as file_count,
+                GROUP_CONCAT(DISTINCT f.file_name) as file_names
             FROM components c
-            JOIN relationships r ON c.component_id = r.src_id
-            JOIN components c2 ON r.dst_id = c2.component_id
+            JOIN files f ON c.file_id = f.file_id
             WHERE c.component_type = 'API_URL' 
-              AND r.rel_type = 'CALL_METHOD' AND r.del_yn = 'N'
+              AND f.file_type IN ('JSP', 'JS', 'VUE', 'JSX', 'HTML')
+              AND c.del_yn = 'N'
+              AND f.del_yn = 'N'
             GROUP BY c.component_name
-            HAVING COUNT(r.dst_id) > 3
-            ORDER BY method_count DESC
+            HAVING COUNT(DISTINCT f.file_id) > 5
+            ORDER BY file_count DESC
+            LIMIT 10
         """)
         
-        for multi in multi_mapped_apis:
-            methods = multi['method_names'].split(',')[:3]  # 처음 3개만
-            warning(f"하나의 API가 여러 메서드와 연결: {multi['api_name']} -> {multi['method_count']}개 메서드 (예: {', '.join(methods)})")
+        for multi in frontend_cross_file_apis:
+            files = multi['file_names'].split(',')[:3]  # 처음 3개만
+            info(f"프론트엔드 API 다중 사용: {multi['api_name']} -> {multi['file_count']}개 파일에서 사용 (예: {', '.join(files)})")
         
         # 2. 백엔드 연결 없는 API (프론트엔드 전용 API일 수 있음)
         orphaned_apis = self.db_utils.execute_query("""
@@ -390,23 +472,28 @@ class ConsistencyValidator:
             for sql in sql_without_table[:3]:
                 warning(f"  - {sql['component_name']} ({sql['component_type']})")
         
-        # 5. 같은 쿼리명이 여러 XML에서 생성 (정상 - 여러 Mapper에서 같은 이름 사용 가능)
-        sql_name_duplicates = self.db_utils.execute_query("""
+        # 5. 같은 파일에서 같은 쿼리명 중복 (비정상 - 실제 중복)
+        sql_file_duplicates = self.db_utils.execute_query("""
             SELECT 
-                component_name,
-                component_type,
+                c.component_name,
+                c.component_type,
+                c.file_id,
+                f.file_name,
                 COUNT(*) as count
-            FROM components 
-            WHERE component_type LIKE 'SQL_%' AND del_yn = 'N'
-            GROUP BY component_name, component_type
+            FROM components c
+            JOIN files f ON c.file_id = f.file_id
+            WHERE c.component_type LIKE 'SQL_%' 
+              AND c.del_yn = 'N'
+              AND f.project_id = ?
+            GROUP BY c.project_id, c.file_id, c.component_name
             HAVING COUNT(*) > 1
             ORDER BY count DESC
-        """)
+        """, (self.project_id,))
         
-        if sql_name_duplicates:
-            warning(f"같은 이름의 SQL 쿼리: {len(sql_name_duplicates)}개 (여러 Mapper 파일에서 같은 이름 사용 - 정상)")
-            for dup in sql_name_duplicates[:3]:
-                warning(f"  - {dup['component_name']} ({dup['component_type']}): {dup['count']}개")
+        if sql_file_duplicates:
+            warning(f"같은 파일에서 중복된 SQL 쿼리: {len(sql_file_duplicates)}개 (파일 내 실제 중복)")
+            for dup in sql_file_duplicates[:3]:
+                warning(f"  - {dup['component_name']} ({dup['component_type']}) in {dup['file_name']}: {dup['count']}개")
 
 
 def execute_consistency_validation(project_name: str) -> bool:

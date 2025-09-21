@@ -34,6 +34,13 @@ class SqlContentManager:
     def _initialize_database(self) -> bool:
         """데이터베이스 초기화"""
         try:
+            # 프로젝트명 유효성 검증 (버그 방지)
+            from .validation_utils import ValidationUtils
+            if not ValidationUtils.is_valid_project_name(self.project_name):
+                from .logger import handle_error
+                handle_error(Exception(f"잘못된 프로젝트명: {self.project_name}"), "SQL Content Manager 초기화 실패")
+                return False
+            
             # 프로젝트별 데이터베이스 경로 생성 (공통함수 사용)
             path_utils = PathUtils()
             db_path = path_utils.join_path("projects", self.project_name, "SqlContent.db")

@@ -286,13 +286,13 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
                         # file_path와 file_id 추가
                         class_info['file_path'] = file_path
                         class_info['file_id'] = file_id
-                        # 메서드 순회
-                        for method_path, method_node in tree:
-                            if (isinstance(method_node, javalang.tree.MethodDeclaration) and 
-                                method_path[0] == path[0]):  # 같은 클래스 내 메서드
-                                method_entries = self._extract_method_info(method_node, class_info, lines)
-                                entries.extend(method_entries)
-            
+                        # 현재 클래스의 메서드만 처리 (클래스 노드에서 직접 접근)
+                        if hasattr(node, 'body') and node.body:
+                            for body_item in node.body:
+                                if isinstance(body_item, javalang.tree.MethodDeclaration):
+                                    method_entries = self._extract_method_info(body_item, class_info, lines)
+                                    entries.extend(method_entries)
+
             return entries
             
         except Exception as e:

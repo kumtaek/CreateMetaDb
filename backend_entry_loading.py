@@ -299,21 +299,23 @@ class BackendEntryLoadingEngine:
     
     def _filter_and_analyze_file(self, java_file: FileInfo) -> List[BackendEntryInfo]:
         """
-        2차 필터링을 수행하고, 통과 시 등록된 분석기로 분석
-        
+        2차 필터링을 수행하고, 통과 시 등록된 분석기로 분석 (우선순위 적용)
+
         Args:
             java_file: Java 파일 정보
-            
+
         Returns:
             백엔드 진입점 정보 리스트
         """
         file_entries = []
-        
+
+        # 우선순위: Spring > Servlet (Spring 어노테이션이 있으면 Spring만 처리)
         for analyzer in self.analyzers:
             try:
                 # 공통함수 사용 - 하드코딩 금지 (프로젝트 경로 포함)
-                full_file_path = self.path_utils.join_path("projects", self.project_name, java_file.file_path, java_file.file_name)
-                
+                # file_path에 이미 파일명이 포함되어 있음
+                full_file_path = self.path_utils.join_path("projects", self.project_name, java_file.file_path)
+
                 # 각 분석기는 자신의 설정에 따라 2차 필터링 수행
                 app_logger.debug(f"분석기 {analyzer.get_framework_name()}로 파일 {full_file_path} 필터링 확인")
                 if self._is_target_for_analyzer_with_full_path(java_file, analyzer, full_file_path):
@@ -321,13 +323,18 @@ class BackendEntryLoadingEngine:
                     entries = analyzer.analyze_backend_entry(java_file, self.stats)
                     app_logger.debug(f"분석기 {analyzer.get_framework_name()}에서 {len(entries)}개 진입점 발견")
                     file_entries.extend(entries)
+
+                    # 우선순위 적용: Spring 분석기에서 진입점을 찾았으면 다른 분석기는 스킵
+                    if analyzer.get_framework_name() == 'spring' and len(entries) > 0:
+                        app_logger.debug(f"Spring 분석기에서 진입점을 찾았으므로 다른 분석기 스킵: {full_file_path}")
+                        break
                 else:
                     app_logger.debug(f"파일 {full_file_path}이 분석기 {analyzer.get_framework_name()}의 대상이 아님")
-                    
+
             except Exception as e:
                 # USER RULE: 분석기 실행 실패는 handle_error()로 즉시 종료
                 handle_error(e, f"분석기 실행 실패: {analyzer.get_framework_name()}, 파일: {java_file.file_path}")
-        
+
         return file_entries
     
     def _is_target_for_analyzer(self, java_file: FileInfo, analyzer) -> bool:

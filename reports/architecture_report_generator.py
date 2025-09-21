@@ -219,7 +219,10 @@ class ArchitectureReportGenerator:
             # 레이어별 컴포넌트 조회 (METHOD 타입만, 중복 제거)
             placeholders = ','.join('?' * len(meta_layers))
             query = f"""
-                SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path,
+                       (SELECT COUNT(*) FROM relationships r 
+                        WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
+                        AND r.del_yn = 'N') as relationship_count
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
                 JOIN projects p ON c.project_id = p.project_id
@@ -228,7 +231,12 @@ class ArchitectureReportGenerator:
                 AND c.component_type = 'METHOD'
                 AND c.del_yn = 'N' 
                 AND f.del_yn = 'N'
-                ORDER BY c.component_name
+                AND c.component_name IS NOT NULL
+                AND c.component_name != ''
+                AND NOT (c.component_name GLOB '[0-9]*' AND LENGTH(c.component_name) <= 3)
+                AND c.component_name GLOB '[a-zA-Z]*'
+                ORDER BY relationship_count DESC, c.component_name
+                LIMIT 100
             """
             
             params = [self.project_name] + meta_layers
@@ -258,7 +266,10 @@ class ArchitectureReportGenerator:
             if not excluded_meta_layers:
                 # 모든 컴포넌트 조회
                 query = """
-                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path,
+                           (SELECT COUNT(*) FROM relationships r 
+                            WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
+                            AND r.del_yn = 'N') as relationship_count
                     FROM components c
                     JOIN files f ON c.file_id = f.file_id
                     JOIN projects p ON c.project_id = p.project_id
@@ -266,14 +277,22 @@ class ArchitectureReportGenerator:
                     AND c.component_type = 'METHOD'
                     AND c.del_yn = 'N' 
                     AND f.del_yn = 'N'
-                    ORDER BY c.component_name
+                    AND c.component_name IS NOT NULL
+                    AND c.component_name != ''
+                    AND NOT (c.component_name GLOB '[0-9]*' AND LENGTH(c.component_name) <= 3)
+                    AND c.component_name GLOB '[a-zA-Z]*'
+                    ORDER BY relationship_count DESC, c.component_name
+                    LIMIT 100
                 """
                 params = [self.project_name]
             else:
                 # 특정 레이어 제외하고 조회
                 placeholders = ','.join('?' * len(excluded_meta_layers))
                 query = f"""
-                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path
+                    SELECT DISTINCT c.component_name, c.layer, f.file_name, f.file_path,
+                           (SELECT COUNT(*) FROM relationships r 
+                            WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
+                            AND r.del_yn = 'N') as relationship_count
                     FROM components c
                     JOIN files f ON c.file_id = f.file_id
                     JOIN projects p ON c.project_id = p.project_id
@@ -282,7 +301,12 @@ class ArchitectureReportGenerator:
                     AND c.component_type = 'METHOD'
                     AND c.del_yn = 'N' 
                     AND f.del_yn = 'N'
-                    ORDER BY c.component_name
+                    AND c.component_name IS NOT NULL
+                    AND c.component_name != ''
+                    AND NOT (c.component_name GLOB '[0-9]*' AND LENGTH(c.component_name) <= 3)
+                    AND c.component_name GLOB '[a-zA-Z]*'
+                    ORDER BY relationship_count DESC, c.component_name
+                    LIMIT 100
                 """
                 params = [self.project_name] + excluded_meta_layers
             
@@ -404,10 +428,9 @@ class ArchitectureReportGenerator:
                     for pattern in folder_patterns:
                         # 와일드카드 패턴을 정규식으로 변환 (폴더 경로만 매칭)
                         import re
-                        # Windows와 Unix 경로 구분자 모두 고려
-                        normalized_path = self.path_utils.normalize_path_separator(file_path, 'unix')
+                        # 경로는 이미 UNIX 형식으로 저장되어 있음
                         regex_pattern = pattern.replace('*', '.*')
-                        if re.search(regex_pattern, normalized_path, re.IGNORECASE):
+                        if re.search(regex_pattern, file_path, re.IGNORECASE):
                             classified_classes.append(class_info)
                             all_processed_classes.add(class_name)
                             is_matched = True
@@ -522,7 +545,12 @@ class ArchitectureReportGenerator:
                 WHERE p.project_name = ? 
                   AND ({where_clause})
                   AND cls.del_yn = 'N'
+                  AND cls.class_name IS NOT NULL
+                  AND cls.class_name != ''
+                  AND NOT (cls.class_name GLOB '[0-9]*' AND LENGTH(cls.class_name) <= 3)
+                  AND cls.class_name GLOB '[A-Z]*'
                 ORDER BY cls.class_name
+                LIMIT 100
             """
             
             results = self.db_utils.execute_query(query, params)

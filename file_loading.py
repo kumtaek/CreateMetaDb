@@ -113,9 +113,13 @@ class FileLoadingEngine:
             # 프로젝트 해시값 (하드코딩)
             project_hash = HashUtils.generate_content_hash(f"{self.project_name}{self.project_source_path}")
             
+            # 공통함수 사용 (크로스플랫폼 대응) + UNIX 경로 형식으로 정규화
+            project_path_raw = self.path_utils.join_path("projects", self.project_name)
+            project_path_normalized = self.path_utils.normalize_path(project_path_raw)
+            
             project_data = {
                 'project_name': self.project_name,
-                'project_path': self.path_utils.join_path("projects", self.project_name),  # 공통함수 사용 (크로스플랫폼 대응)
+                'project_path': project_path_normalized,  # UNIX 경로 형식으로 저장
                 'hash_value': project_hash,
                 'del_yn': 'N',
                 'total_files': 0  # 나중에 업데이트
