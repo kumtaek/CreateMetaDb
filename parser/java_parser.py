@@ -92,7 +92,7 @@ class JavaParser:
 
             for pattern in class_patterns:
                 try:
-                    compiled_pattern = re.compile(pattern, re.MULTILINE)
+                    compiled_pattern = re.compile(pattern, re.MULTILINE | re.DOTALL)
                     self.compiled_class_patterns.append(compiled_pattern)
                 except re.error as e:
                     # exception은 handle_error()로 exit해야 에러 인지가 가능하다
@@ -1603,12 +1603,16 @@ class JavaParser:
                         for match in matches:
                             table_name = self._extract_table_name_from_match(match)
                             if table_name and ValidationUtils.is_valid_table_name(table_name):
+                                # 매칭된 SQL 구문을 원본 SQL로 저장
+                                original_sql = match.group(0)
+                                
                                 relationship = {
                                     'src_name': f"{class_name}.{method_name}",
                                     'dst_name': table_name,
                                     'rel_type': 'USE_TABLE',
                                     'line_number': line_start + self._find_line_in_method_body(method_body, match.start()),
-                                    'relationship_detail': match.group(0)
+                                    'relationship_detail': original_sql,
+                                    'original_sql': original_sql  # Java 예약어 검증용 원본 SQL 추가
                                 }
                                 use_table_relationships.append(relationship)
 

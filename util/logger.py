@@ -274,9 +274,16 @@ class SourceAnalyzerLogger:
         # 에러 로그 기록
         self.logger.error(error_msg)
         
+        # 로그 파일에 쓰기 완료를 보장하기 위해 잠시 대기
+        import time
+        time.sleep(0.2)  # 200ms 대기
+        
         # 프로그램 종료
         self.logger.error(f"\n[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: {exit_code})")
         self.logger.error(f"자세한 내용은 로그 파일을 확인하세요: {self.log_file_path}")
+        
+        # 종료 전 추가 대기
+        time.sleep(0.1)
         sys.exit(exit_code)
 
 

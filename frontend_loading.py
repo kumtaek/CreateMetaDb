@@ -254,6 +254,21 @@ class FrontendLoadingEngine:
                         'del_yn': 'N'
                     }
                     
+                    # 상세 로그 출력
+                    debug(f"=== JSP 컴포넌트 저장 시도 ===")
+                    debug(f"component_name: {component['component_name']}")
+                    debug(f"project_id: {project_id}")
+                    debug(f"file_id: {self.current_file_id}")
+                    debug(f"component_data: {component_data}")
+                    
+                    # 참조 데이터 존재 여부 사전 확인 및 로그 출력
+                    info(f"=== JSP 컴포넌트 저장 전 참조 데이터 확인 ===")
+                    info(f"컴포넌트명: {component['component_name']}")
+                    info(f"project_id: {project_id}")
+                    info(f"file_id: {self.current_file_id}")
+                    
+                    self._verify_reference_data_before_insert(project_id, self.current_file_id)
+                    
                     # INSERT OR IGNORE 사용하여 중복 방지
                     insert_query = """
                         INSERT OR IGNORE INTO components 
@@ -277,6 +292,10 @@ class FrontendLoadingEngine:
                         component_data['del_yn']
                     )
                     
+                    debug(f"=== JSP 컴포넌트 저장 시도 ===")
+                    debug(f"실행할 쿼리: {insert_query}")
+                    debug(f"실행할 값들: {values}")
+                    
                     result = self.db_utils.execute_update(insert_query, values)
                     if result > 0:
                         debug(f"JSP 컴포넌트 저장 성공: {component['component_name']}")
@@ -287,13 +306,103 @@ class FrontendLoadingEngine:
         except Exception as e:
             handle_error(e, "프론트엔드 컴포넌트 저장 실패")
 
+    def _verify_reference_data_before_insert(self, project_id: int, file_id: int) -> None:
+        """컴포넌트 삽입 전 참조 데이터 존재 여부 확인"""
+        try:
+            # project_id 존재 여부 확인
+            project_query = "SELECT COUNT(*) FROM projects WHERE project_id = ? AND del_yn = 'N'"
+            project_result = self.db_utils.execute_query(project_query, (project_id,))
+            project_exists = project_result[0]['COUNT(*)'] > 0 if project_result else False
+            
+            debug(f"프로젝트 존재 여부 확인: project_id={project_id}, 존재={project_exists}")
+            
+            if not project_exists:
+                # 전체 프로젝트 목록 조회
+                all_projects_query = "SELECT project_id, project_name FROM projects WHERE del_yn = 'N'"
+                all_projects = self.db_utils.execute_query(all_projects_query)
+                debug(f"사용 가능한 프로젝트 목록: {all_projects}")
+            
+            # file_id 존재 여부 확인
+            file_query = "SELECT COUNT(*) FROM files WHERE file_id = ? AND del_yn = 'N'"
+            file_result = self.db_utils.execute_query(file_query, (file_id,))
+            file_exists = file_result[0]['COUNT(*)'] > 0 if file_result else False
+            
+            debug(f"파일 존재 여부 확인: file_id={file_id}, 존재={file_exists}")
+            
+            if not file_exists:
+                # 최근 파일 목록 조회
+                recent_files_query = """
+                    SELECT file_id, file_name, file_type 
+                    FROM files 
+                    WHERE del_yn = 'N' 
+                    ORDER BY file_id DESC 
+                    LIMIT 10
+                """
+                recent_files = self.db_utils.execute_query(recent_files_query)
+                debug(f"최근 파일 목록: {recent_files}")
+                
+        except Exception as e:
+            debug(f"참조 데이터 확인 실패: {str(e)}")
+
+    def _verify_relationship_references(self, src_id: int, dst_id: int) -> None:
+        """관계 생성 전 참조 데이터 존재 여부 확인"""
+        try:
+            # src_id 존재 여부 확인
+            src_query = "SELECT COUNT(*) FROM components WHERE component_id = ? AND del_yn = 'N'"
+            src_result = self.db_utils.execute_query(src_query, (src_id,))
+            src_exists = src_result[0]['COUNT(*)'] > 0 if src_result else False
+            
+            debug(f"소스 컴포넌트 존재 여부 확인: src_id={src_id}, 존재={src_exists}")
+            
+            if not src_exists:
+                # 최근 컴포넌트 목록 조회
+                recent_components_query = """
+                    SELECT component_id, component_name, component_type 
+                    FROM components 
+                    WHERE del_yn = 'N' 
+                    ORDER BY component_id DESC 
+                    LIMIT 10
+                """
+                recent_components = self.db_utils.execute_query(recent_components_query)
+                debug(f"최근 컴포넌트 목록: {recent_components}")
+            
+            # dst_id 존재 여부 확인
+            dst_query = "SELECT COUNT(*) FROM components WHERE component_id = ? AND del_yn = 'N'"
+            dst_result = self.db_utils.execute_query(dst_query, (dst_id,))
+            dst_exists = dst_result[0]['COUNT(*)'] > 0 if dst_result else False
+            
+            debug(f"대상 컴포넌트 존재 여부 확인: dst_id={dst_id}, 존재={dst_exists}")
+            
+            if not dst_exists:
+                # 최근 컴포넌트 목록 조회
+                recent_components_query = """
+                    SELECT component_id, component_name, component_type 
+                    FROM components 
+                    WHERE del_yn = 'N' 
+                    ORDER BY component_id DESC 
+                    LIMIT 10
+                """
+                recent_components = self.db_utils.execute_query(recent_components_query)
+                debug(f"최근 컴포넌트 목록: {recent_components}")
+                
+        except Exception as e:
+            debug(f"관계 참조 데이터 확인 실패: {str(e)}")
+
     def _save_api_call_relationships_to_database(self, api_calls: List[Dict[str, Any]], 
                                                project_id: int, file_type: str) -> None:
         """API 호출 관계를 데이터베이스에 저장"""
         try:
             debug(f"API 호출 관계 저장 시작: {len(api_calls)}개")
             
+            # 현재 파일에서 사용된 프레임워크들 수집
+            frameworks_in_file = set()
+            
             for api_call in api_calls:
+                # 프레임워크 정보 수집
+                framework = api_call.get('framework')
+                if framework:
+                    frameworks_in_file.add(framework.lower())
+                
                 # API_URL 컴포넌트 찾기 또는 생성
                 api_url_id = self._find_or_create_api_url_component(
                     api_call, project_id, file_type
@@ -315,6 +424,10 @@ class FrontendLoadingEngine:
                     # API_URL과 METHOD 관계 생성 (기존 JSP 로딩 방식과 동일)
                     self._create_api_method_relationship(api_url_id, api_call)
             
+            # 파일의 frameworks 필드 업데이트
+            if frameworks_in_file and self.current_file_id:
+                self._update_file_frameworks(frameworks_in_file)
+            
             debug(f"API 호출 관계 저장 완료: {len(api_calls)}개")
             
         except Exception as e:
@@ -322,50 +435,120 @@ class FrontendLoadingEngine:
 
     def _find_or_create_api_url_component(self, api_call: Dict[str, Any], 
                                         project_id: int, file_type: str) -> Optional[int]:
-        """API_URL 컴포넌트 찾기 또는 생성"""
+        """프론트엔드 파일별 API_URL 컴포넌트 찾기 또는 생성"""
         try:
             api_url = api_call['api_url']
             http_method = api_call['http_method']
             component_name = f"{api_url}:{http_method}"
             
-            # 기존 API_URL 컴포넌트 찾기
-            find_query = """
+            debug(f"=== 프론트엔드 API_URL 컴포넌트 처리 ===")
+            debug(f"API_URL: {component_name}")
+            debug(f"현재 파일 ID: {self.current_file_id}")
+            
+            # 1. 현재 프론트엔드 파일에서 이미 해당 API_URL 컴포넌트가 있는지 확인
+            existing_frontend_api_query = """
                 SELECT component_id FROM components 
-                WHERE project_id = ? AND component_name = ? AND component_type = 'API_URL' AND del_yn = 'N'
+                WHERE project_id = ? AND component_name = ? AND component_type = 'API_URL' 
+                  AND file_id = ? AND del_yn = 'N'
             """
-            existing = self.db_utils.execute_query(find_query, (project_id, component_name))
+            existing_frontend_api = self.db_utils.execute_query(
+                existing_frontend_api_query, (project_id, component_name, self.current_file_id)
+            )
             
-            if existing:
-                return existing[0]['component_id']
+            # 2. 현재 프론트엔드 파일에 이미 존재하면 재사용
+            if existing_frontend_api:
+                api_id = existing_frontend_api[0]['component_id']
+                debug(f"현재 프론트엔드 파일에 이미 존재하는 API_URL 재사용: {component_name} (component_id: {api_id})")
+                return api_id
             
-            # 새 API_URL 컴포넌트 생성 (현재 프론트엔드 파일의 file_id 사용)
+            # 3. 현재 프론트엔드 파일에 없으면 새로 생성
+            debug(f"현재 프론트엔드 파일에 새로운 API_URL 생성: {component_name}")
+            new_api_id = self._create_frontend_api_url_component(api_call, project_id, component_name)
+            
+            if new_api_id:
+                debug(f"새로운 프론트엔드 API_URL 생성 성공: {component_name} (component_id: {new_api_id})")
+            else:
+                debug(f"새로운 프론트엔드 API_URL 생성 실패: {component_name}")
+                
+            return new_api_id
+            
+        except Exception as e:
+            handle_error(e, "API_URL 컴포넌트 찾기/생성 실패")
+
+
+    def _update_file_frameworks(self, frameworks_in_file: set) -> None:
+        """현재 파일의 frameworks 필드 업데이트"""
+        try:
+            if not self.current_file_id or not frameworks_in_file:
+                return
+            
+            # 각 프레임워크를 파일에 추가
+            for framework in frameworks_in_file:
+                success = self.db_utils.update_file_frameworks(self.current_file_id, framework)
+                if success:
+                    debug(f"파일 frameworks 업데이트: file_id={self.current_file_id}, framework={framework}")
+                else:
+                    debug(f"파일 frameworks 업데이트 실패: file_id={self.current_file_id}, framework={framework}")
+            
+        except Exception as e:
+            debug(f"파일 frameworks 업데이트 실패: {str(e)}")
+
+    def _create_frontend_api_url_component(self, api_call: Dict[str, Any], project_id: int, component_name: str) -> Optional[int]:
+        """
+        새로운 프론트엔드 API_URL 컴포넌트 생성 (매칭 실패 시)
+        
+        Args:
+            api_call: API 호출 정보
+            project_id: 프로젝트 ID
+            component_name: 컴포넌트명
+            
+        Returns:
+            생성된 컴포넌트 ID
+        """
+        try:
+            debug(f"=== API_URL 컴포넌트 생성 시도 ===")
+            debug(f"component_name: {component_name}")
+            debug(f"project_id: {project_id}")
+            debug(f"file_id: {self.current_file_id}")
+            
+            # 참조 데이터 존재 여부 사전 확인
+            self._verify_reference_data_before_insert(project_id, self.current_file_id)
+            
             insert_query = """
                 INSERT INTO components 
                 (project_id, component_type, component_name, parent_id, file_id, 
                  layer, line_start, line_end, hash_value, has_error, error_message, del_yn)
-                VALUES (?, 'API_URL', ?, NULL, ?, 'FRONTEND', ?, ?, '-', 'N', NULL, 'N')
+                VALUES (?, 'API_URL', ?, NULL, ?, 'API_ENTRY', ?, ?, '-', 'N', NULL, 'N')
             """
             
             values = (
                 project_id,
                 component_name,
-                self.current_file_id,
+                self.current_file_id,  # 프론트엔드 파일 ID
                 api_call.get('line_number', 1),
                 api_call.get('line_number', 1)
             )
             
+            debug(f"실행할 쿼리: {insert_query}")
+            debug(f"실행할 값들: {values}")
+            
             result = self.db_utils.execute_update(insert_query, values)
             if result > 0:
                 # 생성된 컴포넌트 ID 조회
-                created = self.db_utils.execute_query(find_query, (project_id, component_name))
+                find_query = """
+                    SELECT component_id FROM components 
+                    WHERE project_id = ? AND component_name = ? AND component_type = 'API_URL' 
+                      AND file_id = ? AND del_yn = 'N'
+                """
+                created = self.db_utils.execute_query(find_query, (project_id, component_name, self.current_file_id))
                 if created:
-                    debug(f"API_URL 컴포넌트 생성: {component_name}")
                     return created[0]['component_id']
             
             return None
             
         except Exception as e:
-            handle_error(e, "API_URL 컴포넌트 찾기/생성 실패")
+            debug(f"프론트엔드 API_URL 컴포넌트 생성 실패: {component_name} - {str(e)}")
+            return None
 
     def _find_frontend_component_id(self, file_name: str, project_id: int) -> Optional[int]:
         """프론트엔드 컴포넌트 ID 찾기"""
@@ -399,12 +582,25 @@ class FrontendLoadingEngine:
                 debug(f"JSP-API 관계 이미 존재: {jsp_component_id} → {api_url_id}")
                 return
             
+            # 관계 생성 전 참조 데이터 확인
+            debug(f"=== JSP-API 관계 생성 시도 ===")
+            debug(f"jsp_component_id: {jsp_component_id}")
+            debug(f"api_url_id: {api_url_id}")
+            
+            # 참조 데이터 존재 여부 확인
+            debug(f"=== 관계 생성 전 참조 데이터 확인 ===")
+            self._verify_relationship_references(jsp_component_id, api_url_id)
+            
             # 관계 생성
             insert_query = """
                 INSERT INTO relationships 
                 (src_id, dst_id, rel_type, confidence, has_error, error_message, del_yn)
                 VALUES (?, ?, 'CALL_METHOD', 1.0, 'N', NULL, 'N')
             """
+            
+            debug(f"=== JSP-API 관계 생성 시도 ===")
+            debug(f"실행할 쿼리: {insert_query}")
+            debug(f"실행할 값들: src_id={jsp_component_id}, dst_id={api_url_id}")
             
             result = self.db_utils.execute_update(insert_query, (jsp_component_id, api_url_id))
             if result > 0:
@@ -415,27 +611,41 @@ class FrontendLoadingEngine:
             debug(f"JSP-API 관계 생성 실패: {str(e)}")
 
     def _create_api_method_relationship(self, api_url_id: int, api_call: Dict[str, Any]) -> None:
-        """API_URL과 METHOD 관계 생성 (기존 JSP 로딩 방식과 동일)"""
+        """프론트엔드 API_URL과 백엔드 METHOD 관계 생성"""
         try:
-            # API_URL에서 매칭되는 METHOD 찾기
             api_url = api_call['api_url']
             http_method = api_call['http_method']
             
-            # METHOD 컴포넌트 찾기 (URL 패턴 매칭)
+            debug(f"=== 프론트엔드 API_URL → 백엔드 METHOD 관계 생성 ===")
+            debug(f"프론트엔드 API_URL ID: {api_url_id}")
+            debug(f"API_URL: {api_url}:{http_method}")
+            
+            # 백엔드 METHOD 컴포넌트 찾기 (더 정확한 매칭)
             method_query = """
-                SELECT c.component_id, c.component_name, c.layer
+                SELECT c.component_id, c.component_name, c.layer, f.file_name
                 FROM components c
-                JOIN classes cl ON c.parent_id = cl.class_id
+                JOIN files f ON c.file_id = f.file_id
                 WHERE c.project_id = ? 
                   AND c.component_type = 'METHOD'
+                  AND f.file_type = 'JAVA'
                   AND c.del_yn = 'N'
-                LIMIT 1
+                  AND f.del_yn = 'N'
+                ORDER BY c.component_id
+                LIMIT 10
             """
             
-            methods = self.db_utils.execute_query(method_query, (self.project_id,))
+            from util.global_project import get_global_project_id
+            current_project_id = get_global_project_id()
+            methods = self.db_utils.execute_query(method_query, (current_project_id,))
+            debug(f"찾은 백엔드 METHOD 개수: {len(methods)}")
             
             if methods:
+                # 첫 번째 METHOD와 관계 생성 (향후 더 정교한 매칭 로직 추가 가능)
                 method_component_id = methods[0]['component_id']
+                method_name = methods[0]['component_name']
+                method_file = methods[0]['file_name']
+                
+                debug(f"선택된 백엔드 METHOD: {method_name} (파일: {method_file}, ID: {method_component_id})")
                 
                 # 중복 관계 체크
                 check_query = """
@@ -447,7 +657,7 @@ class FrontendLoadingEngine:
                 )
                 
                 if existing:
-                    debug(f"API-METHOD 관계 이미 존재: {api_url_id} → {method_component_id}")
+                    debug(f"프론트엔드 API_URL → 백엔드 METHOD 관계 이미 존재: {api_url_id} → {method_component_id}")
                     return
                 
                 # 관계 생성
@@ -457,15 +667,20 @@ class FrontendLoadingEngine:
                     VALUES (?, ?, 'CALL_METHOD', 1.0, 'N', NULL, 'N')
                 """
                 
+                debug(f"실행할 관계 생성 쿼리: {insert_query}")
+                debug(f"관계 생성 값: src_id={api_url_id}, dst_id={method_component_id}")
+                
                 result = self.db_utils.execute_update(insert_query, (api_url_id, method_component_id))
                 if result > 0:
                     self.stats['relationships_created'] += 1
-                    debug(f"API-METHOD 관계 생성: {api_url_id} → {method_component_id}")
+                    debug(f"프론트엔드 API_URL → 백엔드 METHOD 관계 생성 성공: {api_url_id} → {method_component_id}")
+                else:
+                    debug(f"프론트엔드 API_URL → 백엔드 METHOD 관계 생성 실패")
             else:
-                debug(f"매칭되는 METHOD 없음: {api_url}:{http_method}")
+                debug(f"매칭되는 백엔드 METHOD 없음: {api_url}:{http_method}")
             
         except Exception as e:
-            debug(f"API-METHOD 관계 생성 실패: {str(e)}")
+            info(f"API-METHOD 관계 생성 실패: {str(e)}")
 
     def _print_statistics(self) -> None:
         """통계 정보 출력"""
@@ -485,165 +700,77 @@ class FrontendLoadingEngine:
             info(f"발견된 API 호출: {self.stats['api_calls_found']}개")
             info(f"생성된 관계: {self.stats['relationships_created']}개")
             
+            # frameworks 사용 현황 통계
+            self._print_frameworks_statistics()
+            
         except Exception as e:
             handle_error(e, "통계 출력 실패")
 
-    def update_api_url_file_ids(self, project_id: int) -> Dict[str, int]:
-        """API_URL 컴포넌트의 file_id 업데이트 (기존 JSP 로직 재사용)"""
+    def _print_frameworks_statistics(self) -> None:
+        """frameworks 사용 현황 통계 출력"""
         try:
-            debug("API_URL file_id 업데이트 시작...")
+            if not self.db_utils:
+                return
             
-            # Java file_id를 가진 API_URL 컴포넌트 조회
+            # 프로젝트 ID 조회
+            from util.global_project import get_global_project_id
+            project_id = get_global_project_id()
+            if not project_id:
+                return
+            
+            # 프론트엔드 파일들의 frameworks 현황 조회
             query = """
-                SELECT c.component_id, c.component_name, c.file_id, f.file_type
-                FROM components c
-                JOIN files f ON c.file_id = f.file_id
-                WHERE c.project_id = ? 
-                  AND c.component_type = 'API_URL'
-                  AND f.file_type = 'JAVA'
-                  AND c.del_yn = 'N'
-            """
-            
-            java_api_urls = self.db_utils.execute_query(query, (project_id,))
-            debug(f"Java file_id API_URL 컴포넌트: {len(java_api_urls)}개 발견")
-            
-            updated_count = 0
-            not_found_count = 0
-            
-            for api_url in java_api_urls:
-                component_id = api_url['component_id']
-                component_name = api_url['component_name']
-                
-                # API URL에서 매칭할 프론트엔드 파일 찾기
-                frontend_file_id = self._find_matching_frontend_file_for_api(component_name, project_id)
-                
-                if frontend_file_id:
-                    # file_id 업데이트
-                    if self._update_api_url_file_id(component_id, frontend_file_id):
-                        updated_count += 1
-                        debug(f"API_URL file_id 업데이트 성공: {component_name}")
-                    else:
-                        debug(f"API_URL file_id 업데이트 실패: {component_name}")
-                else:
-                    not_found_count += 1
-                    debug(f"매칭 프론트엔드 파일 없음: {component_name}")
-            
-            return {
-                'total': len(java_api_urls),
-                'updated': updated_count,
-                'not_found': not_found_count
-            }
-            
-        except Exception as e:
-            handle_error(e, "API_URL file_id 업데이트 실패")
-            return {'total': 0, 'updated': 0, 'not_found': 0}
-
-    def _find_matching_frontend_file_for_api(self, api_url_component_name: str, project_id: int) -> Optional[int]:
-        """API_URL에 매칭되는 프론트엔드 파일 찾기"""
-        try:
-            # API URL 패턴에서 URL 추출
-            if ':' in api_url_component_name:
-                url_pattern = api_url_component_name.split(':')[0]
-            else:
-                url_pattern = api_url_component_name
-            
-            # 프론트엔드 파일들 중에서 매칭되는 파일 찾기
-            frontend_types = ['JSP', 'JSX', 'VUE', 'TS', 'TSX', 'JS', 'HTML']
-            placeholders = ','.join(['?' for _ in frontend_types])
-            
-            query = f"""
-                SELECT file_id, file_name, file_path
+                SELECT file_type, frameworks, COUNT(*) as file_count
                 FROM files 
                 WHERE project_id = ? 
-                  AND file_type IN ({placeholders})
+                  AND file_type IN ('JSP', 'JSX', 'VUE', 'TS', 'TSX', 'JS', 'HTML')
+                  AND frameworks IS NOT NULL 
+                  AND frameworks != ''
                   AND del_yn = 'N'
-                ORDER BY file_type, file_name
-                LIMIT 1
+                GROUP BY file_type, frameworks
+                ORDER BY file_type, frameworks
             """
             
-            params = [project_id] + frontend_types
-            results = self.db_utils.execute_query(query, params)
+            results = self.db_utils.execute_query(query, (project_id,))
             
             if results:
-                # 첫 번째 프론트엔드 파일을 반환 (간단한 매칭)
-                frontend_file_id = results[0]['file_id']
-                file_name = results[0]['file_name']
-                debug(f"프론트엔드 파일 매칭: {url_pattern} → {file_name} (file_id: {frontend_file_id})")
-                return frontend_file_id
-            
-            return None
-            
-        except Exception as e:
-            debug(f"프론트엔드 파일 매칭 실패: {api_url_component_name} - {str(e)}")
-            return None
-
-    def _update_api_url_file_id(self, api_url_id: int, frontend_file_id: int) -> bool:
-        """API_URL 컴포넌트의 file_id 업데이트"""
-        try:
-            # 1. 먼저 업데이트할 컴포넌트의 정보 조회
-            component_info_query = """
-                SELECT component_name, project_id FROM components 
-                WHERE component_id = ? AND component_type = 'API_URL'
-            """
-            component_info = self.db_utils.execute_query(component_info_query, (api_url_id,))
-            
-            if not component_info:
-                debug(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_id}")
-                return False
-            
-            component_name = component_info[0]['component_name']
-            project_id = component_info[0]['project_id']
-            
-            # 2. 대상 file_id로 이미 같은 component_name을 가진 컴포넌트가 있는지 확인
-            conflict_check_query = """
-                SELECT component_id FROM components 
-                WHERE project_id = ? AND component_name = ? AND file_id = ? AND del_yn = 'N'
-            """
-            conflict_result = self.db_utils.execute_query(conflict_check_query, (project_id, component_name, frontend_file_id))
-            
-            if conflict_result:
-                existing_component_id = conflict_result[0]['component_id']
-                debug(f"이미 프론트엔드 file_id에 존재: {component_name} (기존 component_id: {existing_component_id})")
-                # 프론트엔드 file_id에 이미 존재하므로 Java file_id의 중복 컴포넌트만 삭제하고 성공으로 처리
-                delete_sql = """
-                    DELETE FROM components 
-                    WHERE component_id = ? AND component_type = 'API_URL'
-                """
-                delete_result = self.db_utils.execute_update(delete_sql, (api_url_id,))
-                if delete_result > 0:
-                    debug(f"중복 Java file_id 컴포넌트 삭제: {api_url_id}")
-                return True
-            
-            # 3. 기존 컴포넌트 삭제 후 새로 생성 (UNIQUE 제약조건 위반 방지)
-            delete_sql = """
-                DELETE FROM components 
-                WHERE component_id = ? AND component_type = 'API_URL'
-            """
-            delete_result = self.db_utils.execute_update(delete_sql, (api_url_id,))
-            
-            if delete_result > 0:
-                # 4. 새로운 file_id로 컴포넌트 재생성
-                insert_sql = """
-                    INSERT INTO components 
-                    (project_id, component_type, component_name, parent_id, file_id, 
-                     layer, line_start, line_end, hash_value, has_error, error_message, del_yn)
-                    VALUES (?, 'API_URL', ?, NULL, ?, 'FRONTEND', 1, 1, '-', 'N', NULL, 'N')
-                """
-                insert_result = self.db_utils.execute_update(insert_sql, (project_id, component_name, frontend_file_id))
+                info("=== 프론트엔드 Frameworks 사용 현황 ===")
                 
-                if insert_result > 0:
-                    debug(f"API_URL file_id 업데이트 성공 (DELETE+INSERT): {api_url_id} → {frontend_file_id}")
-                    return True
-                else:
-                    debug(f"API_URL 재생성 실패: {component_name}")
-                    return False
+                # 파일 타입별 frameworks 정리
+                frameworks_by_type = {}
+                all_frameworks = set()
+                
+                for row in results:
+                    file_type = row['file_type']
+                    frameworks_str = row['frameworks']
+                    file_count = row['file_count']
+                    
+                    if file_type not in frameworks_by_type:
+                        frameworks_by_type[file_type] = {}
+                    
+                    frameworks_by_type[file_type][frameworks_str] = file_count
+                    
+                    # 개별 프레임워크 수집
+                    if frameworks_str:
+                        for fw in frameworks_str.split(','):
+                            all_frameworks.add(fw.strip())
+                
+                # 파일 타입별 출력
+                for file_type in sorted(frameworks_by_type.keys()):
+                    info(f"  {file_type} 파일:")
+                    for frameworks_str, count in frameworks_by_type[file_type].items():
+                        info(f"    {frameworks_str}: {count}개 파일")
+                
+                # 전체 프레임워크 요약
+                if all_frameworks:
+                    info(f"  사용된 프레임워크: {', '.join(sorted(all_frameworks))}")
             else:
-                debug(f"API_URL 삭제 실패: {api_url_id}")
-                return False
+                info("=== 프론트엔드 Frameworks 사용 현황 ===")
+                info("  Frameworks를 사용하는 파일이 없습니다")
                 
         except Exception as e:
-            debug(f"API_URL file_id 업데이트 실패: {api_url_id} → {frontend_file_id} - {str(e)}")
-            return False
+            debug(f"frameworks 통계 출력 실패: {str(e)}")
+
 
 
 def execute_frontend_loading(project_name: str) -> bool:
@@ -660,16 +787,7 @@ def execute_frontend_loading(project_name: str) -> bool:
         frontend_engine = FrontendLoadingEngine(project_name)
         success = frontend_engine.execute_frontend_loading()
         
-        # 프론트엔드 분석 완료 후 API_URL file_id 업데이트 (기존 JSP 로직 재사용)
-        if success:
-            from util.global_project import get_global_project_id
-            project_id = get_global_project_id()
-            if project_id:
-                update_stats = frontend_engine.update_api_url_file_ids(project_id)
-                info(f"=== API_URL file_id 업데이트 통계 ===")
-                info(f"성공: {update_stats['updated']}개 업데이트")
-                info(f"매칭 실패: {update_stats['not_found']}개")
-                info(f"총 대상: {update_stats['total']}개")
+        # 프론트엔드 분석 완료 (각 파일별로 API_URL 컴포넌트가 이미 생성됨)
         
         return success
     except Exception as e:

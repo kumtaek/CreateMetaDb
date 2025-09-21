@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_path VARCHAR(500) NOT NULL,               -- 파일 디렉토리 경로 (예: 'src/main/java/com/example', 'src/main/webapp')
     file_name VARCHAR(200) NOT NULL,               -- 파일명 (예: 'User.java', 'userList.jsp', 'user-mapper.xml')
     file_type VARCHAR(20) NOT NULL,                -- 파일 타입: 'java', 'jsp', 'xml', 'sql', 'css', 'js', 'html' 등
+    frameworks VARCHAR(100),                       -- 'jquery, axios, fetch, xhr'
     has_error CHAR(1) DEFAULT 'N',                 -- 오류 여부: 'Y'=오류발생, 'N'=정상
     error_message TEXT,                            -- 오류 발생 시 상세 오류 메시지
     hash_value VARCHAR(64) NOT NULL,               -- 변경 감지용 해시값 (파일 내용 기반)
@@ -124,16 +125,18 @@ CREATE TABLE IF NOT EXISTS relationships (
     relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- 관계 고유 식별자
     src_id INTEGER NOT NULL,                       -- 소스 컴포넌트 ID (components 테이블 참조)
     dst_id INTEGER NOT NULL,                       -- 대상 컴포넌트 ID (components 테이블 참조)
-    rel_type VARCHAR(50) NOT NULL,                -- 관계 타입: 'CALL_METHOD'(API_URL->METHOD, METHOD->METHOD), 'CALL_QUERY'(METHOD->SQL/QUERY), 'USE_TABLE'(SQL/QUERY->TABLE), 'INHERITANCE'(클래스상속), 'EXTENDS'(클래스상속), 'JOIN_EXPLICIT'(명시적조인), 'JOIN_IMPLICIT'(암시적조인), 'JOIN_INFERRED'(추론조인), 'FK'(외래키), 'DEPENDENCY'(의존성), 'IMPLEMENTS'(인터페이스구현) 등
-    is_conditional CHAR(1) Default 'N',           -- 조건부 관계 여부: 'Y'=조건부, 'N'=무조건
-    condition_expression VARCHAR(1024),           -- 조건부 관계일 때의 조건 표현식
+    rel_type VARCHAR(50) NOT NULL,                -- 관계 타입: 'CALL_METHOD'(API_URL->METHOD, METHOD->METHOD), 'CALL_QUERY'(METHOD->SQL/QUERY), 'USE_TABLE'(SQL/QUERY->TABLE), 'INHERITANCE'(클래스상속), 'JOIN_EXPLICIT'(명시적조인), 'JOIN_IMPLICIT'(암시적조인), 'FK'(외래키) 등
+    --is_conditional CHAR(1) Default 'N',           -- 조건부 관계 여부: 'Y'=조건부, 'N'=무조건
+    --condition_expression VARCHAR(1024),           -- 조건부 관계일 때의 조건 표현식
     confidence FLOAT DEFAULT 1.0,                 -- 관계 신뢰도 (0.0~1.0, 1.0=100% 확신)
     has_error CHAR(1) DEFAULT 'N',                 -- 오류 여부: 'Y'=오류발생, 'N'=정상
     error_message TEXT,                            -- 오류 발생 시 상세 오류 메시지
     created_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 관계 등록일시 (한국시간)
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 관계 수정일시 (한국시간)
     del_yn CHAR(1) DEFAULT 'N',                    -- 삭제 여부: 'Y'=삭제됨, 'N'=활성상태
-    CHECK (src_id != dst_id)
+    CHECK (src_id != dst_id),
+    FOREIGN KEY (src_id) REFERENCES components(component_id),
+    FOREIGN KEY (dst_id) REFERENCES components(component_id)
 );
 CREATE UNIQUE INDEX ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
  

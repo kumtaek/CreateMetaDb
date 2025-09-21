@@ -729,7 +729,7 @@ class XmlLoadingEngine:
             
             if result and len(result) > 0:
                 file_id = result[0]['file_id']
-                info(f"inferred 테이블용 file_id 찾음: {file_id}")
+                debug(f"inferred 테이블용 file_id 찾음: {file_id}")
                 return file_id
             else:
                 # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
@@ -789,9 +789,9 @@ class XmlLoadingEngine:
             }
             
             # 컴포넌트 생성 (USER RULES: 공통함수 사용)
-            info(f"components 테이블에 데이터 삽입 시도: {component_data}")
+            debug(f"components 테이블에 데이터 삽입 시도: {component_data}")
             component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            info(f"components 테이블 삽입 결과: {component_id}")
+            debug(f"components 테이블 삽입 결과: {component_id}")
             
             if not component_id:
                 # 데이터베이스 저장 에러: components 테이블 삽입 실패 - handle_error()로 종료
@@ -812,9 +812,9 @@ class XmlLoadingEngine:
             }
             
             # 테이블 생성 (USER RULES: 공통함수 사용)
-            info(f"tables 테이블에 데이터 삽입 시도: {table_data}")
+            debug(f"tables 테이블에 데이터 삽입 시도: {table_data}")
             table_id = self.db_utils.insert_or_replace_with_id('tables', table_data)
-            info(f"tables 테이블 삽입 결과: {table_id}")
+            debug(f"tables 테이블 삽입 결과: {table_id}")
             
             if not table_id:
                 # 데이터베이스 저장 에러: tables 테이블 삽입 실패 - handle_error()로 종료
@@ -830,7 +830,7 @@ class XmlLoadingEngine:
                 if inferred_columns_created > 0:
                     info(f"inferred 컬럼 생성 완료: {table_name}, {inferred_columns_created}개")
             
-            info(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
+            debug(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
             return component_id
             
         except Exception as e:

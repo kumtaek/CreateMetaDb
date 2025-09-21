@@ -233,15 +233,20 @@ class BaseEntryAnalyzer(ABC):
             # 기본 HTTP 메서드 가져오기
             default_methods = self.get_config_value("extraction_rules.default_http_methods", ["GET", "POST"])
             
-            # method 속성에서 HTTP 메서드 추출
-            method_pattern = r'method\s*=\s*\{([^}]*)\}'
-            match = re.search(method_pattern, annotation_text)
-            if match:
-                methods_text = match.group(1)
-                # RequestMethod.GET, RequestMethod.POST 형태에서 GET, POST 추출
-                methods = re.findall(r'RequestMethod\.(\w+)', methods_text)
-                if methods:
-                    return [method.upper() for method in methods]
+            # method 속성에서 HTTP 메서드 추출 (배열과 단일 값 모두 처리)
+            method_patterns = [
+                r'method\s*=\s*\{([^}]*)\}',           # 배열: {RequestMethod.GET, RequestMethod.POST}
+                r'method\s*=\s*([^,\)]+)'              # 단일: RequestMethod.GET
+            ]
+            
+            for pattern in method_patterns:
+                match = re.search(pattern, annotation_text)
+                if match:
+                    methods_text = match.group(1)
+                    # RequestMethod.GET, RequestMethod.POST 형태에서 GET, POST 추출
+                    methods = re.findall(r'RequestMethod\.(\w+)', methods_text)
+                    if methods:
+                        return [method.upper() for method in methods]
             
             # 어노테이션 타입에서 HTTP 메서드 추출
             if '@GetMapping' in annotation_text:

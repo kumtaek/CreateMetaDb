@@ -45,7 +45,7 @@ regex_patterns:
   class_declaration: '(?m)^[ \t]*((public|private|protected)\s+)?class\s+(\w+)\s*.*{'
   # 클래스 레벨 어노테이션과 URL을 찾는 패턴
   class_annotation: '(@(?:RestController|Controller|RequestMapping)\s*(?:\(.*?\))?)\s+(?=(?:public|class))'
-  # 메서드 레벨 어노테이션과 URL, 메서드명을 찾는 패턴 (수정됨)
-  method_annotation: '(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\((?:.*?)\))?)\s+(?:(?:public|private|protected)\s+)?(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\('
+  # 메서드 레벨 어노테이션과 URL, 메서드명을 찾는 패턴 (메서드 바로 위 어노테이션만)
+  method_annotation: '(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\s*(?:\([^)]*\))?|@RequestMapping\s*\([^)]*(?:method\s*=|,\s*method\s*=)[^)]*\))\s*(?:\n\s*@\w+\s*)*\n\s*(?:public|private|protected)\s+(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\('
   # 어노테이션 속성에서 URL 값을 추출하는 패턴 (path="/api", value="/api")
   url_from_attribute: '(?:path|value)\s*=\s*"(.*?)"'

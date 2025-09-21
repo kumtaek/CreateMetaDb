@@ -13,6 +13,7 @@ USER RULES:
 """
 
 import os
+import re
 from typing import List, Dict, Any, Optional
 from util import (
     DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
@@ -92,8 +93,7 @@ class JavaLoadingEngine:
             # 1. Java 파일 수집
             java_files = self.java_parser.get_filtered_java_files(self.project_source_path)
             if not java_files:
-                warning("Java 파일이 없습니다")
-                return True
+                handle_error(Exception("Java 파일이 없습니다"), "Java 파일 스캔 실패 - 분석 대상 파일이 없음")
 
             debug(f"처리할 Java 파일 수: {len(java_files)}개")
 
@@ -125,6 +125,9 @@ class JavaLoadingEngine:
                             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                             handle_error(e, f"클래스 저장 실패: {java_file}")
                             return False
+                    else:
+                        # 클래스가 없는 경우 디버그 로그만 출력하고 계속 진행
+                        debug(f"클래스가 없는 Java 파일 (정상 또는 파서 한계): {java_file}")
 
                     # 상속 관계 처리
                     if analysis_result.get('inheritance_relationships'):
@@ -218,7 +221,7 @@ class JavaLoadingEngine:
             debug(f"저장할 클래스 수: {len(classes)}개")
 
             if not classes:
-                warning("저장할 클래스가 없습니다")
+                warning(f"[DEBUG] Java 파일에서 클래스를 찾을 수 없음: {java_file}")
                 return True
 
             # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
@@ -894,13 +897,14 @@ class JavaLoadingEngine:
                     # 대상 테이블 컴포넌트 ID 조회 (inferred 테이블 생성)
                     dst_component_id = self._get_table_component_id(project_id, rel_info['dst_name'])
                     if not dst_component_id:
-                        # inferred 테이블 생성 시도
-                        info(f"inferred 테이블 생성 시도: {rel_info['dst_name']}")
-                        dst_component_id = self._create_inferred_table(project_id, rel_info['dst_name'])
+                        # inferred 테이블 생성 시도 (원본 SQL 전달)
+                        debug(f"inferred 테이블 생성 시도: {rel_info['dst_name']}")
+                        original_sql = rel_info.get('original_sql', '')  # 원본 SQL 정보 가져오기
+                        dst_component_id = self._create_inferred_table(project_id, rel_info['dst_name'], original_sql)
                         if dst_component_id:
-                            info(f"inferred 테이블 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
+                            debug(f"inferred 테이블 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
                         else:
-                            warning(f"inferred 테이블 생성 실패: {rel_info['dst_name']}")
+                            debug(f"inferred 테이블 생성 실패 또는 스킵: {rel_info['dst_name']}")
                             continue
 
                     # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
@@ -1248,13 +1252,14 @@ class JavaLoadingEngine:
             handle_error(e, f"inferred 메서드 생성 실패: {method_name}")
             return None
 
-    def _create_inferred_table(self, project_id: int, table_name: str) -> Optional[int]:
+    def _create_inferred_table(self, project_id: int, table_name: str, original_sql: str = "") -> Optional[int]:
         """
-        inferred 테이블 생성 (components 테이블)
+        inferred 테이블 생성 (components 테이블) - Java 예약어 검증 추가
 
         Args:
             project_id: 프로젝트 ID
             table_name: 테이블명
+            original_sql: 원본 SQL (검증용)
 
         Returns:
             component_id 또는 None
@@ -1266,10 +1271,18 @@ class JavaLoadingEngine:
                 debug(f"inferred 테이블이 이미 존재함: {table_name} (ID: {existing_component_id})")
                 return existing_component_id
             
-            # inferred 테이블용 file_id 찾기 (SQL 파일 중 하나 선택)
-            inferred_file_id = self._get_inferred_sql_file_id(project_id)
+            # Java 예약어 검증 (새로운 로직)
+            if self._is_java_keyword(table_name):
+                if not self._validate_table_in_sql_context(table_name, original_sql):
+                    debug(f"Java 예약어 '{table_name}'이 SQL 컨텍스트에서 확인되지 않아 inferred 테이블 생성 스킵")
+                    return None
+                else:
+                    debug(f"Java 예약어 '{table_name}'이지만 SQL 컨텍스트에서 확인되어 inferred 테이블 생성 진행")
+            
+            # inferred 테이블용 file_id 찾기 (ALL_TABLES.csv 사용)
+            inferred_file_id = self._get_csv_file_id('ALL_TABLES.csv')
             if not inferred_file_id:
-                error(f"inferred 테이블용 file_id를 찾을 수 없습니다: {table_name}")
+                error(f"ALL_TABLES.csv file_id를 찾을 수 없습니다: {table_name}")
                 return None
 
             # components 테이블에 테이블 컴포넌트 생성
@@ -1790,3 +1803,108 @@ class JavaLoadingEngine:
         except Exception as e:
             # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
             handle_error(e, "Java SQL 조인 관계 분석 실패")
+    
+    def _is_java_keyword(self, name: str) -> bool:
+        """
+        Java 예약어인지 확인
+        
+        Args:
+            name: 확인할 이름
+            
+        Returns:
+            Java 예약어이면 True
+        """
+        java_keywords = {
+            'abstract', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 
+            'class', 'const', 'continue', 'default', 'do', 'double', 'else', 
+            'enum', 'extends', 'final', 'finally', 'float', 'for', 'goto', 
+            'if', 'implements', 'import', 'instanceof', 'int', 'interface', 
+            'long', 'native', 'new', 'package', 'private', 'protected', 'public',
+            'return', 'short', 'static', 'strictfp', 'super', 'switch', 
+            'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 
+            'void', 'volatile', 'while'
+        }
+        return name.lower() in java_keywords
+    
+    def _validate_table_in_sql_context(self, table_name: str, sql_content: str) -> bool:
+        """
+        SQL 컨텍스트에서 실제 테이블로 사용되었는지 검증
+        
+        Args:
+            table_name: 검증할 테이블명
+            sql_content: 원본 SQL 내용
+        
+        Returns:
+            SQL에서 테이블로 확인되면 True
+        """
+        if not sql_content:
+            debug(f"SQL 컨텍스트가 없어서 Java 예약어 '{table_name}' 검증 불가")
+            return False
+        
+        try:
+            # SQL 정규화
+            sql_upper = sql_content.upper()
+            table_upper = table_name.upper()
+            
+            # FROM/JOIN 절에서 테이블로 사용되는 패턴들
+            table_usage_patterns = [
+                # FROM table_name
+                rf'\bFROM\s+{re.escape(table_upper)}(?:\s+[A-Z_]\w*)?(?:\s+WHERE|\s+JOIN|\s+GROUP|\s+ORDER|\s*$)',
+                
+                # JOIN table_name
+                rf'\b(?:INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\s+{re.escape(table_upper)}(?:\s+[A-Z_]\w*)?\s+ON',
+                
+                # UPDATE table_name
+                rf'\bUPDATE\s+{re.escape(table_upper)}\s+SET',
+                
+                # INSERT INTO table_name
+                rf'\bINSERT\s+INTO\s+{re.escape(table_upper)}\s*\(',
+                
+                # DELETE FROM table_name
+                rf'\bDELETE\s+FROM\s+{re.escape(table_upper)}(?:\s+WHERE|\s*$)',
+                
+                # 별칭과 함께 사용: FROM table_name alias
+                rf'\bFROM\s+{re.escape(table_upper)}\s+[A-Z_]\w+(?:\s+WHERE|\s+JOIN)',
+            ]
+            
+            for pattern in table_usage_patterns:
+                if re.search(pattern, sql_upper):
+                    debug(f"SQL 컨텍스트에서 테이블 사용 확인: {table_name}")
+                    return True
+            
+            debug(f"SQL 컨텍스트에서 테이블 사용 확인되지 않음: {table_name}")
+            return False
+            
+        except Exception as e:
+            debug(f"SQL 컨텍스트 검증 중 오류: {table_name} - {str(e)}")
+            return False
+    
+    def _get_csv_file_id(self, csv_file_name: str) -> Optional[int]:
+        """
+        CSV 파일의 file_id 조회
+        
+        Args:
+            csv_file_name: CSV 파일명 (예: 'ALL_TABLES.csv')
+            
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            query = """
+                SELECT file_id FROM files 
+                WHERE file_name = ? AND file_type = 'CSV' AND del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.db_utils.execute_query(query, (csv_file_name,))
+            
+            if results:
+                file_id = results[0]['file_id']
+                debug(f"CSV 파일 ID 조회 성공: {csv_file_name} -> file_id {file_id}")
+                return file_id
+            else:
+                warning(f"CSV 파일을 찾을 수 없음: {csv_file_name}")
+                return None
+                
+        except Exception as e:
+            warning(f"CSV 파일 ID 조회 실패: {csv_file_name} - {str(e)}")
+            return None

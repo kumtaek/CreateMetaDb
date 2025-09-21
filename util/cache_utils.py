@@ -9,7 +9,7 @@ import threading
 import time
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
-from .logger import app_logger, handle_error
+from .logger import app_logger, handle_error, debug, warning
 
 
 @dataclass
@@ -337,7 +337,7 @@ class SqlFragmentCache:
                                 self.fragments[f"{namespace}.{node_id}"] = sql_node
                             self.fragments[node_id] = sql_node
                 except ET.ParseError as e:
-                    warning(f"XML 파싱 오류로 SQL 조각 캐시를 건너뜁니다: {file_path}, 사유: {e}")
+                    debug(f"XML 파싱 오류로 SQL 조각 캐시를 건너뜁니다: {file_path}, 사유: {e}")
                     continue # 파싱 오류는 전체를 중단시키지 않음
         except Exception as e:
             handle_error(e, "SqlFragmentCache 로딩 중 심각한 오류 발생")

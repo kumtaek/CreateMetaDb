@@ -177,11 +177,16 @@ class DatabaseUtils:
                 return results
                 
         except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            app_logger.error(f"execute_query 실패 - 쿼리: {query}")
-            app_logger.error(f"execute_query 실패 - 파라미터: {params}")
-            app_logger.error(f"execute_query 실패 - 에러: {str(e)}")
-            handle_error(e, f"쿼리 실행 실패: {query[:50]}...")
+            # 에러 발생 시에만 쿼리 로그를 error 레벨로 출력
+            app_logger.error(f"=== SQL 쿼리 실행 실패 상세 정보 ===")
+            app_logger.error(f"실행된 쿼리: {query}")
+            app_logger.error(f"바인딩 파라미터: {params}")
+            app_logger.error(f"에러 메시지: {str(e)}")
+            app_logger.error(f"에러 타입: {type(e).__name__}")
+            
+            # 모든 상세 로그가 출력된 후 Exception을 다시 발생시켜 상위에서 handle_error 호출
+            app_logger.error(f"=== 상세 로그 출력 완료, Exception 재발생 ===")
+            raise e
     
     def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
         """
@@ -206,12 +211,177 @@ class DatabaseUtils:
                 conn.commit()
                 affected_rows = cursor.rowcount
                 
-                app_logger.debug(f"업데이트 쿼리 실행 성공: {query[:50]}..., 영향받은 행: {affected_rows}")
+                app_logger.debug(f"업데이트 쿼리 실행 성공: 영향받은 행: {affected_rows}")
                 return affected_rows
                 
         except Exception as e:
-            handle_error(e, f"업데이트 쿼리 실행 실패: {query[:50]}...")
-            return 0
+            # 에러 발생 시에만 쿼리 로그를 error 레벨로 출력
+            app_logger.error(f"=== SQL 쿼리 실행 실패 상세 정보 ===")
+            app_logger.error(f"실행된 쿼리: {query}")
+            app_logger.error(f"바인딩 파라미터: {params}")
+            app_logger.error(f"에러 메시지: {str(e)}")
+            app_logger.error(f"에러 타입: {type(e).__name__}")
+            
+            # 외래키 제약조건 위반 시 추가 디버깅
+            if "FOREIGN KEY constraint failed" in str(e):
+                app_logger.error(f"=== A. file_id 문제 또는 B. project_id 문제 또는 C. 관계 생성 시 component_id 문제 ===")
+                app_logger.error(f"=== 외래키 제약조건 위반 추가 디버깅 ===")
+                # 외래키 제약조건 위반 시 참조 데이터 존재 여부 확인
+                self._debug_foreign_key_constraint(query, params)
+            
+            # UNIQUE 제약조건 위반 시 추가 정보
+            elif "UNIQUE constraint failed" in str(e):
+                app_logger.error(f"=== UNIQUE 제약조건 위반 ===")
+                app_logger.error(f"중복된 데이터로 인한 제약조건 위반")
+            
+            # NOT NULL 제약조건 위반 시 추가 정보  
+            elif "NOT NULL constraint failed" in str(e):
+                app_logger.error(f"=== NOT NULL 제약조건 위반 ===")
+                app_logger.error(f"필수 필드가 NULL 값으로 설정됨")
+            
+            # 모든 상세 로그가 출력된 후 Exception을 다시 발생시켜 상위에서 handle_error 호출
+            app_logger.error(f"=== 상세 로그 출력 완료, Exception 재발생 ===")
+            raise e
+
+    def _debug_foreign_key_constraint(self, query: str, params: tuple) -> None:
+        """
+        외래키 제약조건 위반 시 상세 디버깅 정보 출력
+        
+        Args:
+            query: 실행하려던 SQL 쿼리
+            params: 쿼리 파라미터
+        """
+        try:
+            app_logger.error(f"=== 외래키 제약조건 디버깅 시작 ===")
+            
+            # INSERT 쿼리인 경우 외래키 참조 데이터 존재 여부 확인
+            if query.strip().upper().startswith('INSERT'):
+                self._debug_insert_foreign_keys(query, params)
+            elif query.strip().upper().startswith('UPDATE'):
+                self._debug_update_foreign_keys(query, params)
+            else:
+                app_logger.error(f"지원하지 않는 쿼리 타입: {query.strip().upper().split()[0]}")
+                
+        except Exception as debug_e:
+            app_logger.error(f"외래키 디버깅 중 에러: {str(debug_e)}")
+
+    def _debug_insert_foreign_keys(self, query: str, params: tuple) -> None:
+        """INSERT 쿼리의 외래키 디버깅"""
+        try:
+            # INSERT INTO components 쿼리인 경우
+            if 'components' in query.lower():
+                app_logger.error(f"=== components 테이블 INSERT 디버깅 ===")
+                
+                # 파라미터 매핑 (INSERT 쿼리 구조에 따라)
+                if len(params) >= 12:  # components 테이블 INSERT 파라미터 개수
+                    project_id = params[0] if len(params) > 0 else None
+                    file_id = params[1] if len(params) > 1 else None
+                    component_name = params[2] if len(params) > 2 else None
+                    component_type = params[3] if len(params) > 3 else None
+                    
+                    app_logger.error(f"삽입하려는 데이터:")
+                    app_logger.error(f"  project_id: {project_id}")
+                    app_logger.error(f"  file_id: {file_id}")
+                    app_logger.error(f"  component_name: {component_name}")
+                    app_logger.error(f"  component_type: {component_type}")
+                    
+                    # 참조 데이터 존재 여부 확인
+                    self._check_referenced_data_exists(project_id, file_id)
+            
+            # INSERT INTO relationships 쿼리인 경우
+            elif 'relationships' in query.lower():
+                app_logger.error(f"=== relationships 테이블 INSERT 디버깅 ===")
+                
+                if len(params) >= 6:  # relationships 테이블 INSERT 파라미터 개수
+                    src_id = params[0] if len(params) > 0 else None
+                    dst_id = params[1] if len(params) > 1 else None
+                    rel_type = params[2] if len(params) > 2 else None
+                    
+                    app_logger.error(f"삽입하려는 관계:")
+                    app_logger.error(f"  src_id: {src_id}")
+                    app_logger.error(f"  dst_id: {dst_id}")
+                    app_logger.error(f"  rel_type: {rel_type}")
+                    
+                    # 참조 데이터 존재 여부 확인
+                    self._check_relationship_references(src_id, dst_id)
+                    
+        except Exception as e:
+            app_logger.error(f"INSERT 외래키 디버깅 실패: {str(e)}")
+
+    def _debug_update_foreign_keys(self, query: str, params: tuple) -> None:
+        """UPDATE 쿼리의 외래키 디버깅"""
+        try:
+            app_logger.error(f"=== UPDATE 쿼리 디버깅 ===")
+            app_logger.error(f"UPDATE 쿼리는 외래키 제약조건 위반이 드물지만 확인 중...")
+            
+        except Exception as e:
+            app_logger.error(f"UPDATE 외래키 디버깅 실패: {str(e)}")
+
+    def _check_referenced_data_exists(self, project_id: int, file_id: int) -> None:
+        """참조 데이터 존재 여부 확인"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # project_id 존재 여부 확인
+                if project_id is not None:
+                    cursor.execute("SELECT COUNT(*) FROM projects WHERE project_id = ? AND del_yn = 'N'", (project_id,))
+                    project_exists = cursor.fetchone()[0] > 0
+                    app_logger.error(f"  project_id {project_id} 존재 여부: {'존재' if project_exists else '존재하지 않음'}")
+                    
+                    if not project_exists:
+                        # 전체 프로젝트 목록 출력
+                        cursor.execute("SELECT project_id, project_name FROM projects WHERE del_yn = 'N'")
+                        projects = cursor.fetchall()
+                        app_logger.error(f"  사용 가능한 프로젝트: {projects}")
+                
+                # file_id 존재 여부 확인
+                if file_id is not None:
+                    cursor.execute("SELECT COUNT(*) FROM files WHERE file_id = ? AND del_yn = 'N'", (file_id,))
+                    file_exists = cursor.fetchone()[0] > 0
+                    app_logger.error(f"  file_id {file_id} 존재 여부: {'존재' if file_exists else '존재하지 않음'}")
+                    
+                    if not file_exists:
+                        # 최근 파일 목록 출력 (상위 10개)
+                        cursor.execute("SELECT file_id, file_name, file_type FROM files WHERE del_yn = 'N' ORDER BY file_id DESC LIMIT 10")
+                        files = cursor.fetchall()
+                        app_logger.error(f"  최근 파일 목록: {files}")
+                        
+        except Exception as e:
+            app_logger.error(f"참조 데이터 확인 실패: {str(e)}")
+
+    def _check_relationship_references(self, src_id: int, dst_id: int) -> None:
+        """관계 참조 데이터 존재 여부 확인"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # src_id 존재 여부 확인
+                if src_id is not None:
+                    cursor.execute("SELECT COUNT(*) FROM components WHERE component_id = ? AND del_yn = 'N'", (src_id,))
+                    src_exists = cursor.fetchone()[0] > 0
+                    app_logger.error(f"  src_id {src_id} 존재 여부: {'존재' if src_exists else '존재하지 않음'}")
+                    
+                    if not src_exists:
+                        # 최근 컴포넌트 목록 출력 (상위 10개)
+                        cursor.execute("SELECT component_id, component_name, component_type FROM components WHERE del_yn = 'N' ORDER BY component_id DESC LIMIT 10")
+                        components = cursor.fetchall()
+                        app_logger.error(f"  최근 컴포넌트 목록: {components}")
+                
+                # dst_id 존재 여부 확인
+                if dst_id is not None:
+                    cursor.execute("SELECT COUNT(*) FROM components WHERE component_id = ? AND del_yn = 'N'", (dst_id,))
+                    dst_exists = cursor.fetchone()[0] > 0
+                    app_logger.error(f"  dst_id {dst_id} 존재 여부: {'존재' if dst_exists else '존재하지 않음'}")
+                    
+                    if not dst_exists:
+                        # 최근 컴포넌트 목록 출력 (상위 10개)
+                        cursor.execute("SELECT component_id, component_name, component_type FROM components WHERE del_yn = 'N' ORDER BY component_id DESC LIMIT 10")
+                        components = cursor.fetchall()
+                        app_logger.error(f"  최근 컴포넌트 목록: {components}")
+                        
+        except Exception as e:
+            app_logger.error(f"관계 참조 데이터 확인 실패: {str(e)}")
     
     def execute_many(self, query: str, params_list: List[tuple]) -> int:
         """
@@ -235,8 +405,21 @@ class DatabaseUtils:
                 return processed_rows
                 
         except Exception as e:
-            handle_error(e, f"배치 쿼리 실행 실패: {query[:50]}...")
-            return 0
+            # 에러 발생 시에만 쿼리 로그를 error 레벨로 출력
+            app_logger.error(f"=== 배치 SQL 쿼리 실행 실패 상세 정보 ===")
+            app_logger.error(f"실행된 쿼리: {query}")
+            app_logger.error(f"바인딩 파라미터 리스트: {params_list}")
+            app_logger.error(f"파라미터 개수: {len(params_list) if params_list else 0}")
+            app_logger.error(f"에러 메시지: {str(e)}")
+            app_logger.error(f"에러 타입: {type(e).__name__}")
+            
+            # 첫 번째 파라미터만 상세 출력 (너무 많을 수 있으므로)
+            if params_list and len(params_list) > 0:
+                app_logger.error(f"첫 번째 파라미터 예시: {params_list[0]}")
+            
+            # 모든 상세 로그가 출력된 후 Exception을 다시 발생시켜 상위에서 handle_error 호출
+            app_logger.error(f"=== 상세 로그 출력 완료, Exception 재발생 ===")
+            raise e
     
     def execute_script(self, script_path: str) -> bool:
         """
@@ -1115,6 +1298,63 @@ class DatabaseUtils:
 
         except Exception as e:
             handle_error(e, f"관계 저장 실패: {src_id} → {dst_id} ({rel_type})")
+            return False
+
+    def update_file_frameworks(self, file_id: int, new_framework: str) -> bool:
+        """
+        파일의 frameworks 필드에 새로운 프레임워크 추가 (중복 제거)
+        
+        Args:
+            file_id: 파일 ID
+            new_framework: 추가할 프레임워크 ('jquery', 'axios', 'fetch', 'xhr' 등)
+            
+        Returns:
+            업데이트 성공 여부
+        """
+        try:
+            if not new_framework or not new_framework.strip():
+                return False
+            
+            new_framework = new_framework.strip().lower()
+            
+            # 현재 frameworks 값 조회
+            query = "SELECT frameworks FROM files WHERE file_id = ?"
+            result = self.execute_query(query, (file_id,))
+            
+            if not result:
+                debug(f"파일 ID {file_id}를 찾을 수 없음")
+                return False
+            
+            current_frameworks = result[0]['frameworks'] or ''
+            
+            # 기존 프레임워크들을 set으로 변환 (중복 제거)
+            existing_frameworks = set()
+            if current_frameworks:
+                existing_frameworks = {fw.strip().lower() for fw in current_frameworks.split(',') if fw.strip()}
+            
+            # 새 프레임워크 추가
+            existing_frameworks.add(new_framework)
+            
+            # 정렬된 문자열로 변환
+            updated_frameworks = ', '.join(sorted(existing_frameworks))
+            
+            # 변경사항이 있을 때만 업데이트
+            if updated_frameworks != current_frameworks:
+                update_query = "UPDATE files SET frameworks = ?, updated_at = datetime('now', '+9 hours') WHERE file_id = ?"
+                result = self.execute_update(update_query, (updated_frameworks, file_id))
+                
+                if result > 0:
+                    debug(f"파일 frameworks 업데이트 성공: file_id={file_id}, frameworks='{updated_frameworks}'")
+                    return True
+                else:
+                    debug(f"파일 frameworks 업데이트 실패: file_id={file_id}")
+                    return False
+            else:
+                debug(f"파일 frameworks 변경사항 없음: file_id={file_id}")
+                return True
+            
+        except Exception as e:
+            debug(f"파일 frameworks 업데이트 실패: file_id={file_id}, framework={new_framework} - {str(e)}")
             return False
 
     def find_component_id(self, project_id: int, component_name: str, component_type: str = None, file_id: int = None) -> Optional[int]:

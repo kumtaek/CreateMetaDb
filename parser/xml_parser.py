@@ -267,7 +267,7 @@ class XmlParser:
                 # enable_dynamic은 기본적으로 True로 설정하여 동적 SQL 분석 활성화
                 reconstructed_sqls = enhanced_parser.parse_sql_mapper(root, enable_dynamic=True)
                 if reconstructed_sqls:
-                    info(f"Enhanced 파서 성공 (include 해석): {xml_file}")
+                    debug(f"Enhanced 파서 성공 (include 해석): {xml_file}")
 
             except CircularReferenceError as e:
                 # 2. [감지] 순환 참조 예외 발생 시

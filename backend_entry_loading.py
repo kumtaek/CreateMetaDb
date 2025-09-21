@@ -487,10 +487,10 @@ class BackendEntryLoadingEngine:
     
     def _find_matching_frontend_file(self, api_url: str, http_method: str, project_id: int) -> Optional[int]:
         """
-        API_URL에 매칭되는 프론트엔드 파일 찾기
+        API_URL에 매칭되는 프론트엔드 파일 찾기 (범용 프론트엔드 지원)
         
         매칭 로직:
-        1. 프론트엔드 파일(JSP, JSX, Vue, TypeScript 등)에서 해당 API URL을 호출하는지 확인
+        1. 프론트엔드 파일(JSP, JSX, Vue, TypeScript, JS 등)에서 해당 API URL을 호출하는지 확인
         2. 매칭 성공 시 프론트엔드 파일 ID 반환
         3. 매칭 실패 시 None 반환 (Java 파일 ID 사용됨)
         
@@ -503,18 +503,28 @@ class BackendEntryLoadingEngine:
             프론트엔드 파일 ID (매칭 성공 시) 또는 None (매칭 실패 시)
         """
         try:
-            # 1. 이미 생성된 API_URL 컴포넌트에서 해당 API를 호출하는 JSP 파일 찾기
-            # 6단계에서 JSP 분석 시 생성된 API_URL 컴포넌트를 활용
+            # 1. 이미 생성된 API_URL 컴포넌트에서 해당 API를 호출하는 프론트엔드 파일 찾기
+            # 7단계에서 프론트엔드 분석 시 생성된 API_URL 컴포넌트를 활용
             existing_api_query = """
-                SELECT DISTINCT c.file_id, f.file_name
+                SELECT DISTINCT c.file_id, f.file_name, f.file_type
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
                 WHERE c.project_id = ? 
                   AND c.component_type = 'API_URL'
                   AND c.component_name = ?
-                  AND f.file_type = 'JSP'
+                  AND f.file_type IN ('JSP', 'JSX', 'VUE', 'TS', 'JS', 'HTML')
                   AND c.del_yn = 'N'
                   AND f.del_yn = 'N'
+                ORDER BY 
+                    CASE f.file_type 
+                        WHEN 'JSP' THEN 1 
+                        WHEN 'JSX' THEN 2 
+                        WHEN 'VUE' THEN 3 
+                        WHEN 'TS' THEN 4 
+                        WHEN 'JS' THEN 5 
+                        WHEN 'HTML' THEN 6 
+                        ELSE 7 
+                    END
                 LIMIT 1
             """
             api_component_name = f"{api_url}:{http_method}"
@@ -523,7 +533,8 @@ class BackendEntryLoadingEngine:
             if results and len(results) > 0:
                 frontend_file_id = results[0]['file_id']
                 file_name = results[0]['file_name']
-                app_logger.debug(f"기존 API_URL 컴포넌트에서 매칭: {api_url}:{http_method} → {file_name} (file_id: {frontend_file_id})")
+                file_type = results[0]['file_type']
+                app_logger.debug(f"기존 API_URL 컴포넌트에서 매칭: {api_url}:{http_method} → {file_name} ({file_type}, file_id: {frontend_file_id})")
                 return frontend_file_id
             
             # 2. 매칭 실패: 프론트엔드에서 해당 API를 호출하지 않음
@@ -569,18 +580,79 @@ class BackendEntryLoadingEngine:
     def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
         """
         백엔드 진입점 정보로 기존 METHOD 컴포넌트 찾기
-        
+        클래스명과 메서드명을 모두 사용하여 정확한 매칭
+
         Args:
             entry: 백엔드 진입점 정보
             project_id: 프로젝트 ID
-            
+
         Returns:
             METHOD 컴포넌트 ID (없으면 None)
         """
         try:
-            # USER RULES: 공통함수 사용 - 클래스명과 메서드명으로 정확한 매칭
-            return self.db.get_component_id(project_id, entry.method_name, 'METHOD')
-            
+            # 클래스명과 메서드명을 모두 사용한 정확한 매칭
+            # FORMAT: 클래스명.메서드명으로 매칭
+            full_method_name = f"{entry.class_name}.{entry.method_name}"
+
+            # 먼저 정확한 클래스.메서드 형태로 검색
+            query = """
+                SELECT c.component_id
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON f.project_id = p.project_id
+                WHERE p.project_id = ?
+                  AND c.component_type = 'METHOD'
+                  AND c.component_name = ?
+                  AND f.del_yn = 'N'
+                  AND c.del_yn = 'N'
+            """
+
+            results = self.db.execute_query(query, (project_id, full_method_name))
+            if results:
+                return results[0]['component_id']
+
+            # 정확한 매칭이 안되면 클래스명이 포함된 메서드 검색
+            # (다른 파일의 동일 메서드명과 구분하기 위해)
+            like_pattern = f"%{entry.class_name}.{entry.method_name}%"
+            query_like = """
+                SELECT c.component_id, c.component_name
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON f.project_id = p.project_id
+                WHERE p.project_id = ?
+                  AND c.component_type = 'METHOD'
+                  AND c.component_name LIKE ?
+                  AND f.del_yn = 'N'
+                  AND c.del_yn = 'N'
+            """
+
+            results_like = self.db.execute_query(query_like, (project_id, like_pattern))
+            if results_like:
+                # 정확한 클래스.메서드 패턴을 찾기
+                for result in results_like:
+                    component_name = result['component_name']
+                    if component_name.endswith(f"{entry.class_name}.{entry.method_name}"):
+                        return result['component_id']
+
+            # 마지막으로 파일 기반 매칭 (파일 ID로 필터링)
+            if entry.file_id and entry.file_id > 0:
+                query_file = """
+                    SELECT c.component_id
+                    FROM components c
+                    WHERE c.file_id = ?
+                      AND c.component_type = 'METHOD'
+                      AND c.component_name LIKE ?
+                      AND c.del_yn = 'N'
+                """
+                method_pattern = f"%{entry.method_name}%"
+                results_file = self.db.execute_query(query_file, (entry.file_id, method_pattern))
+                if results_file:
+                    return results_file[0]['component_id']
+
+            # 모든 매칭 실패
+            app_logger.debug(f"METHOD 컴포넌트 매칭 실패: {entry.class_name}.{entry.method_name} (file_id: {entry.file_id})")
+            return None
+
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"METHOD 컴포넌트 찾기 실패: {entry.class_name}.{entry.method_name}")

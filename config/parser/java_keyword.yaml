@@ -438,12 +438,20 @@ java_core_patterns:
 
 # Java 클래스 추출 패턴 (4단계 완전 지원)
 java_class_extraction_patterns:
+  # 기본 클래스 패턴 (어노테이션 없음)
   - "public\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
   - "class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
   - "public\\s+abstract\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
   - "abstract\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
   - "public\\s+final\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
   - "final\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?(?:\\s+implements\\s+([^{]+))?"
+  
+  # 여러 줄 어노테이션 + 클래스 패턴 (새로 추가)
+  - "@\\w+\\s*\\([^)]*\\)\\s*\\n\\s*public\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?"
+  - "@\\w+\\s*\\([^)]*\\n[^)]*\\)\\s*\\n\\s*public\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?"
+  - "@\\w+\\s*\\([\\s\\S]*?\\)\\s*\\n\\s*public\\s+class\\s+(\\w+)(?:\\s+extends\\s+(\\w+))?"
+  
+  # 인터페이스 및 기타
   - "public\\s+interface\\s+(\\w+)(?:\\s+extends\\s+([^{]+))?"
   - "interface\\s+(\\w+)(?:\\s+extends\\s+([^{]+))?"
   - "public\\s+enum\\s+(\\w+)(?:\\s+implements\\s+([^{]+))?"

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS projects (
     del_yn CHAR(1) DEFAULT 'N',                        -- 삭제 여부: 'Y'=삭제됨, 'N'=활성상태
     total_files INTEGER DEFAULT 0                     -- 프로젝트 내 총 파일 수
 );
-CREATE UNIQUE INDEX ix_projects_01 ON projects (project_name, project_path);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_projects_01 ON projects (project_name, project_path);
 
 -- 데이터베이스 테이블 정보
 CREATE TABLE IF NOT EXISTS tables (
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS tables (
     FOREIGN KEY (project_id) REFERENCES projects(project_id),
     FOREIGN KEY (component_id) REFERENCES components(component_id)
 );
-CREATE UNIQUE INDEX ix_tables_01 ON tables (table_name, table_owner, project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_tables_01 ON tables (table_name, table_owner, project_id);
 
 -- 데이터베이스 컬럼 정보
 CREATE TABLE IF NOT EXISTS columns (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS columns (
     FOREIGN KEY (table_id) REFERENCES tables(table_id),
     FOREIGN KEY (component_id) REFERENCES components(component_id)
 );
-CREATE UNIQUE INDEX ix_columns_01 ON columns (table_id, column_name);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_columns_01 ON columns (table_id, column_name);
 
 ------------------------------------------------------------------------------------------------------------------------
 -- 파일
@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_path VARCHAR(500) NOT NULL,               -- 파일 디렉토리 경로 (예: 'src/main/java/com/example', 'src/main/webapp')
     file_name VARCHAR(200) NOT NULL,               -- 파일명 (예: 'User.java', 'userList.jsp', 'user-mapper.xml')
     file_type VARCHAR(20) NOT NULL,                -- 파일 타입: 'java', 'jsp', 'xml', 'sql', 'css', 'js', 'html' 등
+    frameworks VARCHAR(100),                       -- 'jquery, axios, fetch, xhr'
     has_error CHAR(1) DEFAULT 'N',                 -- 오류 여부: 'Y'=오류발생, 'N'=정상
     error_message TEXT,                            -- 오류 발생 시 상세 오류 메시지
     hash_value VARCHAR(64) NOT NULL,               -- 변경 감지용 해시값 (파일 내용 기반)
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_size INTEGER,                             -- 파일 크기 (바이트)
     FOREIGN KEY (project_id) REFERENCES projects(project_id)
 );
-CREATE UNIQUE INDEX ix_files_01 ON files (file_name, file_path, project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_files_01 ON files (file_name, file_path, project_id);
 
 -- 1. classes 테이블 생성
 CREATE TABLE IF NOT EXISTS classes (
@@ -93,8 +94,8 @@ CREATE TABLE IF NOT EXISTS classes (
     FOREIGN KEY (project_id) REFERENCES projects(project_id),
     FOREIGN KEY (file_id) REFERENCES files(file_id)
 );
-CREATE UNIQUE INDEX ix_classes_01 ON classes (class_name, file_id, project_id);
-CREATE INDEX ix_classes_02 ON classes (parent_class_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_classes_01 ON classes (class_name, file_id, project_id);
+CREATE INDEX IF NOT EXISTS ix_classes_02 ON classes (parent_class_id);
 
 -- 코드 구성 요소 (클래스, 메서드 등의 기본 정보만)
 CREATE TABLE IF NOT EXISTS components (
@@ -116,8 +117,8 @@ CREATE TABLE IF NOT EXISTS components (
     FOREIGN KEY (project_id) REFERENCES projects(project_id),
     FOREIGN KEY (file_id) REFERENCES files(file_id)
 );
-CREATE UNIQUE INDEX ix_components_01 ON components (component_name, file_id, project_id);
-CREATE INDEX ix_components_parent_id ON components (parent_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_components_01 ON components (component_name, file_id, project_id);
+CREATE INDEX IF NOT EXISTS ix_components_parent_id ON components (parent_id);
 
 -- 통합 관계 정보 (모든 관계를 통합 관리)
 CREATE TABLE IF NOT EXISTS relationships (
@@ -133,9 +134,11 @@ CREATE TABLE IF NOT EXISTS relationships (
     created_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 관계 등록일시 (한국시간)
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),  -- 관계 수정일시 (한국시간)
     del_yn CHAR(1) DEFAULT 'N',                    -- 삭제 여부: 'Y'=삭제됨, 'N'=활성상태
-    CHECK (src_id != dst_id)
+    CHECK (src_id != dst_id),
+    FOREIGN KEY (src_id) REFERENCES components(component_id),
+    FOREIGN KEY (dst_id) REFERENCES components(component_id)
 );
-CREATE UNIQUE INDEX ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
  
 -- 데이터베이스 최적화 설정
 PRAGMA journal_mode = WAL;

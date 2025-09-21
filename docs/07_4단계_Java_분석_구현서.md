@@ -2,87 +2,41 @@
 
 ## 개요
 
-**목적**: Java 파일에서 CLASS, METHOD 추출하여 각각의 테이블에 등록하고 관계 분석을 한 번에 처리  
+**목적**: Java 파일에서 **연관관계 도출**에 필요한 핵심 정보 추출 및 관계 분석  
 **핵심 기능**: 
-- Java 파일 파싱, 클래스 정보 추출, 메서드 정보 추출
-- Enhanced SQL 추출 (StringBuilder + 정규식 패턴)
-- 관계 분석, 컴포넌트 등록
-- MyBatis Mapper 인터페이스 분석 및 JPA Repository/Entity 분석
-- API URL 매핑 및 Spring Controller 어노테이션 분석
+- **단순화된 Java 파싱**: 클래스, 메서드 추출 (복잡도 낮춤)
+- **연관관계 중심**: METHOD → SQL, METHOD → METHOD 관계 도출
+- **안정적 SQL 추출**: StringBuilder 패턴 기반 (Enhanced 기능 제거)
+- **Spring/JPA 지원**: Controller, Repository, Entity 어노테이션 분석
+- **RelationshipBuilder 연동**: 중앙 관계 관리 시스템과 통합
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
 **구현 상태**: ✅ **구현 완료** (Enhanced SQL 추출 기능 포함)  
 **파일**: `java_loading.py`, `parser/java_parser.py`, `util/java_query_analyzer.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
 **SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
-**Enhanced 파싱**: ✅ **문자열 리터럴 SQL 패턴 추출로 누락 방지**  
+**연관관계 집중**: ✅ **복잡한 파싱 대신 연결고리 도출에 집중**  
 **JPA 지원**: ✅ **JPA Repository, Entity, @Query 어노테이션 분석**  
 
-## 처리 플로우 차트 (현행화)
+## 처리 플로우 차트 (연관관계 집중 개선 버전)
 
 ```mermaid
 flowchart TD
-    A[4단계 시작] --> B[Java 파일 수집]
-    B --> C{Java 파일 존재?}
-    C -->|아니오| D[4단계 완료]
-    C -->|예| E[Java 파일별 순차 처리]
-    E --> F["Java 파일 읽기\n스트리밍 처리"]
-    F --> G["Java 파싱\n정규식 기반"]
-    G --> H["클래스 정보 추출\nCLASS, INTERFACE, ENUM"]
-    H --> I["메서드 정보 추출\n복잡도 분류 적용"]
-    I --> I2["SQL 쿼리 추출 (신규)\nStringBuilder 패턴 분석"]
-    I2 --> I3["Enhanced SQL 분석 (신규)\n정규식 패턴으로 문자열 리터럴 SQL 추출"]
-    I3 --> J["메서드-클래스 연결\n_associate_methods_with_classes"]
-    J --> K["상속 관계 분석\nextends 키워드"]
-    K --> L["CALL_QUERY 관계 분석\nSQL 호출 패턴 + Enhanced SQL"]
-    L --> M["CALL_METHOD 관계 분석\n메서드 호출 패턴"]
-    M --> N["USE_TABLE 관계 분석\n테이블 사용 패턴 + Enhanced SQL"]
-    N --> O["클래스 저장\nclasses 테이블"]
-    O --> P["클래스 컴포넌트 생성\ncomponents 테이블"]
-    P --> Q["메서드 컴포넌트 생성\ncomponents 테이블"]
-    Q --> Q2["SQL 쿼리 컴포넌트 생성 (신규)\ncomponents 테이블 + SQL 압축 저장"]
-    Q2 --> Q3["SQL 조인 관계 분석 (신규)\n공통 SqlJoinAnalyzer 사용"]
-    Q3 --> R[관계 저장 시작]
-    R --> S{관계 타입별 처리}
-    S -->|INHERITANCE| T["상속 관계 저장\nrelationships 테이블"]
-    S -->|CALL_QUERY| U1{대상 쿼리 컴포넌트 존재?}
-    U1 -->|없음| U2["inferred 쿼리 생성\ncomponents 테이블"]
-    U1 -->|있음| U3[기존 쿼리 사용]
-    U2 --> U4["CALL_QUERY 관계 저장\nrelationships 테이블"]
-    U3 --> U4
-    S -->|CALL_METHOD| V1{대상 메서드 컴포넌트 존재?}
-    V1 -->|없음| V2["inferred 메서드 생성\ncomponents 테이블"]
-    V1 -->|있음| V3[기존 메서드 사용]
-    V2 --> V4["CALL_METHOD 관계 저장\nrelationships 테이블"]
-    V3 --> V4
-    S -->|USE_TABLE| W1{대상 테이블 컴포넌트 존재?}
-    W1 -->|없음| W2["inferred 테이블 생성\ncomponents 테이블"]
-    W1 -->|있음| W3[기존 테이블 사용]
-    W2 --> W4["USE_TABLE 관계 저장\nrelationships 테이블"]
-    W3 --> W4
-    T --> X["메모리 해제\ndel analysis_result"]
-    U4 --> X
-    V4 --> X
-    W4 --> X
-    X --> Y{더 많은 파일?}
-    Y -->|예| E
-    Y -->|아니오| Z[통계 정보 출력]
-    Z --> AA[4단계 완료]
-
+    A[4단계 Java 분석 시작] --> B[Java 파일 수집]
+    B --> C[Java 파일별 순차 처리]
+    C --> D["단순 Java 파싱<br/>정규식 기반"]
+    D --> E["클래스 정보 추출<br/>CLASS, INTERFACE, ENUM"]
+    E --> F["메서드 정보 추출<br/>연관관계 중심"]
+    F --> G["SQL 호출 패턴 분석<br/>StringBuilder 기반"]
+    G --> H["Spring/JPA 어노테이션 분석<br/>@Controller, @Repository, @Entity"]
+    H --> I["컴포넌트 저장<br/>classes, components 테이블"]
+    I --> J["연관관계 수집<br/>RelationshipBuilder로 전달"]
+    J --> K["4단계 완료<br/>연관관계 정보 준비"]
+    
     style A fill:#e1f5fe
-    style AA fill:#c8e6c9
-    style C fill:#fff3e0
-    style S fill:#fff3e0
-    style U1 fill:#fff3e0
-    style V1 fill:#fff3e0
-    style W1 fill:#fff3e0
-    style Y fill:#fff3e0
-    style F fill:#f3e5f5
-    style X fill:#f3e5f5
-    style U2 fill:#ffebee
-    style V2 fill:#ffebee
-    style W2 fill:#ffebee
+    style K fill:#c8e6c9
+    style D fill:#c8e6c9
     style I fill:#e8f5e8
-    style J fill:#e8f5e8
+    style J fill:#fff3e0
 ```
 
 ## 4단계 실행 흐름 (현행화)
@@ -1028,31 +982,29 @@ sequenceDiagram
 
 **공통 SQL 파서의 상세 구현 내용은 [SQL공통파서_구현서.md](./SQL공통파서_구현서.md)를 참조하세요.**
 
-### 성능 및 품질 개선
+### 현재 구현 특징
 
-| 기능              | 이전 상태  | 개선 후                       |
-| --------------- | ------ | -------------------------- |
-| **Java SQL 처리** | ❌ 미지원  | ✅ StringBuilder 패턴 지원      |
-| **SQL 압축 저장**   | ❌ 미지원  | ✅ gzip 압축 지원               |
-| **조인 분석**       | ❌ 기본만  | ✅ Oracle EXPLICIT/IMPLICIT |
-| **테이블 관계**      | ❌ 제한적  | ✅ 완전한 관계 분석                |
-| **XML과 품질 차이**  | ❌ 큰 차이 | ✅ 동일한 수준                   |
-| **MyBatis Mapper** | ❌ 미지원  | ✅ @Mapper 어노테이션 분석       |
-| **JPA Repository** | ❌ 미지원  | ✅ JpaRepository 상속 분석      |
-| **JPA Entity**     | ❌ 미지원  | ✅ @Entity 어노테이션 분석       |
-| **Spring Controller** | ❌ 미지원 | ✅ API URL 매핑 분석           |
+| 기능 | 구현 상태 | 설명 |
+|------|-----------|------|
+| **파싱 방식** | ✅ 정규식 기반 | 단순하고 안정적인 파싱 |
+| **연관관계 도출** | ✅ 중심 목표 | METHOD → SQL, METHOD → METHOD 관계 |
+| **안정성** | ✅ 높음 | 재귀 문제 없는 안정적 처리 |
+| **SQL 처리** | ✅ StringBuilder 패턴 | Java 코드 내 SQL 추출 |
+| **관계 관리** | ✅ RelationshipBuilder | 중앙 집중식 관계 관리 |
+| **Spring 지원** | ✅ Controller, Repository | @RequestMapping, @Repository 분석 |
+| **JPA 지원** | ✅ Entity, Repository | @Entity, JpaRepository 분석 |
 
 ### 구현 완료 현황
 
-1. **Phase 1**: ✅ **완료** - StringBuilder SQL 추출 기능
-2. **Phase 2**: ✅ **완료** - 공통 SQL 조인 분석 모듈 적용
-3. **Phase 3**: ✅ **완료** - SQL 압축 저장 기능
-4. **Phase 4**: ✅ **완료** - 테이블 관계 분석 및 연결
-5. **Phase 5**: ✅ **완료** - MyBatis Mapper 인터페이스 분석
-6. **Phase 6**: ✅ **완료** - JPA Repository/Entity 분석
-7. **Phase 7**: ✅ **완료** - Spring Controller API 분석
+1. ✅ **Java 파싱**: 정규식 기반 안정적 클래스/메서드 추출
+2. ✅ **SQL 추출**: StringBuilder 패턴으로 Java 내 SQL 발견
+3. ✅ **Spring 지원**: @Controller, @RequestMapping 어노테이션 분석
+4. ✅ **JPA 지원**: @Entity, @Repository, JpaRepository 분석
+5. ✅ **MyBatis 지원**: @Mapper 인터페이스 분석
+6. ✅ **연관관계 구축**: RelationshipBuilder와 연동하여 완전한 연결고리 생성
+7. ✅ **메모리 최적화**: 스트리밍 처리로 대용량 파일 효율적 처리
 
-이 개선을 통해 Java와 XML 파서의 SQL 처리 품질이 동일한 수준으로 향상되었고, JPA와 MyBatis 모두 지원하는 완전한 Java 분석 시스템이 구축되었습니다.
+Java 파일 분석을 통해 **프론트엔드 → 백엔드 → 데이터베이스**까지의 완전한 연관관계 도출을 지원합니다.
 
 ## 📚 관련 문서
 

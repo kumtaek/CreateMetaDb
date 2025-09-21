@@ -336,6 +336,26 @@ def main():
         # JSP 분석 완료 후 API_URL 컴포넌트의 file_id가 자동으로 업데이트됨
 
         info("1-6단계 분석 및 연결고리 연결 완료")
+        
+        # 14. 메타데이터베이스 일관성 검증 (신규 추가)
+        info("\n\n\n\n일관성 검증 단계 시작 ========================================")
+        info("메타데이터베이스 일관성 검증 실행")
+        
+        try:
+            from consistency_validator import execute_consistency_validation
+            
+            validation_success = execute_consistency_validation(project_name)
+            
+            if validation_success:
+                info("일관성 검증 완료: 모든 검사 통과")
+            else:
+                warning("일관성 검증 완료: 문제 발견됨 (수정 권장)")
+                info("상세 내용은 로그를 확인하세요")
+                
+        except Exception as e:
+            warning(f"일관성 검증 실패: {str(e)}")
+            debug(f"일관성 검증 오류 상세: {e}")
+            # 일관성 검증 실패는 치명적이지 않으므로 계속 진행
 
     except KeyboardInterrupt:
         info("사용자에 의해 중단됨")

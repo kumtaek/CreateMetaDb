@@ -218,7 +218,7 @@ class JspParser:
             # 중복 제거
             method_calls = self._remove_duplicate_method_calls(method_calls)
             
-            info(f"JSP {jsp_name}에서 {len(method_calls)}개 메서드 호출 발견")
+            debug(f"JSP {jsp_name}에서 {len(method_calls)}개 메서드 호출 발견")
             return method_calls
 
         except Exception as e:
@@ -586,7 +586,7 @@ class JspParser:
             # 중복 제거
             jsp_relationships = self._remove_duplicate_jsp_relationships(jsp_relationships)
 
-            info(f"JSP {jsp_name}에서 {len(jsp_relationships)}개 JSP 관계 발견")
+            debug(f"JSP {jsp_name}에서 {len(jsp_relationships)}개 JSP 관계 발견")
             return jsp_relationships
 
         except Exception as e:
@@ -973,7 +973,7 @@ class JspParser:
             advanced_relationships['tag_libraries'] = taglib_relationships
 
             total_relations = sum(len(v) for v in advanced_relationships.values())
-            info(f"JSP {jsp_name}에서 {total_relations}개 고도화 관계 발견")
+            debug(f"JSP {jsp_name}에서 {total_relations}개 고도화 관계 발견")
 
             return advanced_relationships
 

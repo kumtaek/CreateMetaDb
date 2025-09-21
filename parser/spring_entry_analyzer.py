@@ -36,10 +36,10 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             method_annotation_pattern = self.get_config_value("regex_patterns.method_annotation")
             url_from_attribute_pattern = self.get_config_value("regex_patterns.url_from_attribute")
             
-            # 정규식 컴파일
+            # 정규식 컴파일 (DOTALL 플래그 추가 - 줄바꿈 처리)
             self.class_declaration_regex = re.compile(class_declaration_pattern) if class_declaration_pattern else None
             self.class_annotation_regex = re.compile(class_annotation_pattern) if class_annotation_pattern else None
-            self.method_annotation_regex = re.compile(method_annotation_pattern) if method_annotation_pattern else None
+            self.method_annotation_regex = re.compile(method_annotation_pattern, re.DOTALL) if method_annotation_pattern else None
             self.url_from_attribute_regex = re.compile(url_from_attribute_pattern) if url_from_attribute_pattern else None
             
             app_logger.debug("Spring 분석기 정규식 패턴 컴파일 완료")
@@ -51,7 +51,7 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
         """기본 정규식 패턴 설정"""
         self.class_declaration_regex = re.compile(r'(?m)^[ \t]*((public|private|protected)\s+)?class\s+(\w+)\s*.*{')
         self.class_annotation_regex = re.compile(r'(@(?:RestController|Controller|RequestMapping)\s*(?:\(.*?\))?)\s+(?=(?:public|class))')
-        self.method_annotation_regex = re.compile(r'(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestMapping)\s*(?:\(.*?\))?)\s+(?:public|private|protected|)\s*[\w\<\>\[\]]+\s+(\w+)\s*\(')
+        self.method_annotation_regex = re.compile(r'(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\s*(?:\([^)]*\))?|@RequestMapping\s*\([^)]*(?:method\s*=|,\s*method\s*=)[^)]*\))\s*(?:\n\s*@\w+\s*)*\n\s*(?:public|private|protected)\s+(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\(', re.DOTALL)
         self.url_from_attribute_regex = re.compile(r'(?:path|value)\s*=\s*"(.*?)"')
     
     def extract_url_from_annotation(self, annotation_text: str) -> Optional[str]:
@@ -69,13 +69,14 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             
             # 모든 Spring 매핑 어노테이션에서 URL 추출
             mapping_patterns = [
+                # 단순 형태: @GetMapping("/url")
                 r'@GetMapping\s*\(\s*"([^"]*)"\s*\)',
                 r'@PostMapping\s*\(\s*"([^"]*)"\s*\)',
                 r'@PutMapping\s*\(\s*"([^"]*)"\s*\)',
                 r'@DeleteMapping\s*\(\s*"([^"]*)"\s*\)',
                 r'@PatchMapping\s*\(\s*"([^"]*)"\s*\)',
                 r'@RequestMapping\s*\(\s*"([^"]*)"\s*\)',
-                # 속성 형태도 지원
+                # 속성 형태: value = "/url" 또는 path = "/url"
                 r'(?:path|value)\s*=\s*"([^"]*)"'
             ]
             
@@ -374,20 +375,14 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
                         elif annotation_name == 'PatchMapping':
                             http_methods = ['PATCH']
                         elif annotation_name == 'RequestMapping':
-                            http_methods = self.extract_http_method_from_annotation(str(annotation))
+                            # AST에서 직접 HTTP 메서드 추출
+                            http_methods = self._extract_http_method_from_ast_annotation(annotation)
+                            if not http_methods:
+                                # 메서드 레벨에서 HTTP 메서드를 찾지 못한 경우 GET으로 기본 처리
+                                http_methods = ['GET']
                         
                         # URL 추출
-                        # element 속성에서 직접 추출 (javalang.tree.Annotation.element)
-                        if hasattr(annotation, 'element') and annotation.element:
-                            if hasattr(annotation.element, 'value'):
-                                method_url = annotation.element.value.strip('"')
-                        
-                        # 기존 elements 방식도 유지
-                        if not method_url and hasattr(annotation, 'elements') and annotation.elements:
-                            for element in annotation.elements:
-                                if element.name in ['value', 'path']:
-                                    if hasattr(element.value, 'value'):
-                                        method_url = element.value.value.strip('"')
+                        method_url = self._extract_url_from_ast_annotation(annotation)
             
             # Spring 매핑 어노테이션이 있는지 확인
             spring_method_annotations = self.get_config_value("spring_annotations.method_annotations", [])
@@ -431,7 +426,106 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"메서드 정보 추출 실패")
-    
+
+    def _extract_http_method_from_ast_annotation(self, annotation) -> List[str]:
+        """
+        AST 어노테이션에서 HTTP 메서드 직접 추출
+
+        Args:
+            annotation: javalang AST 어노테이션 노드
+
+        Returns:
+            HTTP 메서드 리스트
+        """
+        try:
+            import javalang
+
+            # annotation.element (배열)에서 method 속성 찾기
+            if hasattr(annotation, 'element') and annotation.element:
+                if isinstance(annotation.element, list):
+                    for element in annotation.element:
+                        if hasattr(element, 'name') and element.name == 'method':
+                            # RequestMethod.GET 형태의 값 추출
+                            if hasattr(element.value, 'member'):
+                                method_value = element.value.member
+                                return [method_value.upper()]
+                            elif hasattr(element.value, 'value'):
+                                # 배열인 경우 처리 (향후 확장용)
+                                method_value = element.value.value
+                                return [method_value.upper()]
+
+            # 대안으로 annotation.elements 확인 (혹시 다른 구조가 있을 수 있음)
+            if hasattr(annotation, 'elements') and annotation.elements:
+                for element in annotation.elements:
+                    if hasattr(element, 'name') and element.name == 'method':
+                        # RequestMethod.GET 형태의 값 추출
+                        if hasattr(element.value, 'member'):
+                            method_value = element.value.member
+                            return [method_value.upper()]
+                        elif hasattr(element.value, 'value'):
+                            # 배열인 경우 처리 (향후 확장용)
+                            method_value = element.value.value
+                            return [method_value.upper()]
+
+            # method 속성이 없으면 클래스 레벨로 간주하여 빈 리스트 반환
+            return []
+
+        except Exception as e:
+            # 추출 실패 시 빈 리스트 반환
+            return []
+
+    def _extract_url_from_ast_annotation(self, annotation) -> str:
+        """
+        AST 어노테이션에서 URL 직접 추출
+
+        Args:
+            annotation: javalang AST 어노테이션 노드
+
+        Returns:
+            추출된 URL 문자열
+        """
+        try:
+            import javalang
+
+            # annotation.element가 있는지 확인
+            if hasattr(annotation, 'element') and annotation.element:
+                # 1. element가 Literal인 경우 (단일 value) - 간단한 형태: @RequestMapping("/url")
+                if hasattr(annotation.element, 'value'):
+                    return annotation.element.value.strip('"').strip("'")
+
+                # 2. element가 ElementValuePair 배열인 경우 - 복잡한 형태: @RequestMapping(value="/url", method=...)
+                elif isinstance(annotation.element, list):
+                    for element in annotation.element:
+                        # ElementValuePair에서 name이 'value' 또는 'path'인 것 찾기
+                        if hasattr(element, 'name') and element.name in ['value', 'path']:
+                            # Literal 값 추출
+                            if hasattr(element, 'value') and hasattr(element.value, 'value'):
+                                url_value = element.value.value
+                                # 문자열에서 따옴표 제거
+                                if isinstance(url_value, str):
+                                    return url_value.strip('"').strip("'")
+                                return str(url_value).strip('"').strip("'")
+
+            # 3. 대안으로 elements 배열 확인 (혹시 다른 구조가 있을 수 있음)
+            if hasattr(annotation, 'elements') and annotation.elements:
+                for element in annotation.elements:
+                    # ElementValuePair에서 name이 'value' 또는 'path'인 것 찾기
+                    if hasattr(element, 'name') and element.name in ['value', 'path']:
+                        # Literal 값 추출
+                        if hasattr(element, 'value') and hasattr(element.value, 'value'):
+                            url_value = element.value.value
+                            # 문자열에서 따옴표 제거
+                            if isinstance(url_value, str):
+                                return url_value.strip('"').strip("'")
+                            return str(url_value).strip('"').strip("'")
+
+            # URL을 찾지 못한 경우 빈 문자열 반환
+            return ""
+
+        except Exception as e:
+            # 추출 실패 시 빈 문자열 반환
+            return ""
+
     def _parse_with_regex(self, content: str, file_path: str, file_id: int = 0) -> List[BackendEntryInfo]:
         """
         정규식 기반 파싱
@@ -483,6 +577,7 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             
             if self.class_annotation_regex:
                 annotation_matches = self.class_annotation_regex.findall(content)
+                
                 for match in annotation_matches:
                     annotation_text = match[0] if isinstance(match, tuple) else match
                     class_annotations.append(annotation_text)
@@ -520,8 +615,12 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             if not self.method_annotation_regex:
                 return entries
             
-            # 메서드 어노테이션 찾기
-            method_matches = self.method_annotation_regex.findall(content)
+            # 메서드 어노테이션 찾기 (클래스 레벨 제외)
+            # 개선된 정규식: 메서드 레벨만 매치 (method 속성이 있거나 GetMapping 등의 전용 어노테이션)
+            import re
+            improved_pattern = r'(@(?:GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\s*(?:\([^)]*\))?|@RequestMapping\s*\([^)]*(?:method\s*=|,\s*method\s*=)[^)]*\))\s*(?:\n\s*@\w+\s*)*\n\s*(?:public|private|protected)\s+(?:[\w\<\>\[\],\s\?]+\s+)(\w+)\s*\('
+            improved_regex = re.compile(improved_pattern, re.DOTALL)
+            method_matches = improved_regex.findall(content)
             
             for match in method_matches:
                 try:
@@ -530,15 +629,30 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
                         method_name = match[1]
                     else:
                         continue
-                    
+
+                    # 클래스 레벨 @RequestMapping 제외 로직 추가
+                    # @RequestMapping에서 method 속성이 없으면 클래스 레벨일 가능성이 높음
+                    if annotation_text.startswith('@RequestMapping') and 'method' not in annotation_text:
+                        # 추가 검증: URL만 있고 method 속성이 없으면 클래스 레벨로 간주
+                        if self.extract_url_from_annotation(annotation_text) and 'method' not in annotation_text:
+                            continue  # 클래스 레벨로 간주하여 스킵
+
                     # HTTP 메서드 추출
                     http_methods = self.extract_http_method_from_annotation(annotation_text)
-                    
+
                     # URL 추출
                     method_url = self.extract_url_from_annotation(annotation_text)
-                    
+
+
                     # URL 조합
-                    full_url = self.normalize_url_path(class_info['url'], method_url)
+                    full_url = self._combine_urls(class_info['url'], method_url)
+
+                    # 디버깅 로그
+                    app_logger.debug(f"메서드: {method_name}, 어노테이션: {annotation_text[:50]}...")
+                    app_logger.debug(f"  HTTP 메서드들: {http_methods}")
+                    app_logger.debug(f"  메서드 URL: {method_url}")
+                    app_logger.debug(f"  클래스 URL: {class_info['url']}")
+                    app_logger.debug(f"  결합된 URL: {full_url}")
                     
                     # 각 HTTP 메서드에 대해 엔트리 생성
                     for http_method in http_methods:

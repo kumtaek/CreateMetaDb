@@ -5,12 +5,15 @@
 
 # 포함할 파일 패턴
 include_patterns:
+  # 백엔드 파일들
   - "**/*.java"
   - "**/*.jsp"
   - "**/*.xml"
   - "**/*.sql"
   - "**/*.properties"
   - "**/*.jar"
+  # 데이터베이스 스키마 파일들 (중요!)
+  - "**/*.csv"
   # 프론트엔드 파일 타입 추가
   - "**/*.jsx"
   - "**/*.vue"
@@ -23,20 +26,28 @@ include_patterns:
   - "**/*.sass"
   - "**/*.less"
 
-# 제외할 디렉토리 패턴
+# 제외할 디렉토리 패턴 (최소한만 제외)
 exclude_directories:
-  - "**/target/**"
-  - "**/build/**"
-  - "**/test/**"
+  # 버전 관리 시스템만 제외 (필수)
   - "**/.git/**"
+  - "**/.svn/**"
+  # 패키지 관리자 디렉토리만 제외 (필수)
   - "**/node_modules/**"
-  - "**/bin/**"
-  - "**/out/**"
-  - "**/report/**"
-  - "**/config/**"
+  - "**/vendor/**"
+  # 시스템 생성 로그만 제외 (필수)
   - "**/logs/**"
   - "**/temp/**"
-  - "**/backup/**"
+  
+  # 주의: 아래는 모두 포함하도록 주석 처리 (과도한 제외 방지)
+  # - "**/target/**"   # Maven 빌드 결과물 (필요시 포함)
+  # - "**/build/**"    # Gradle 빌드 결과물 (필요시 포함)
+  # - "**/bin/**"      # 컴파일된 바이너리 (필요시 포함)
+  # - "**/out/**"      # IDE 출력 디렉토리 (필요시 포함)
+  # - "**/dist/**"     # 프론트엔드 빌드 결과 (필요시 포함)
+  # - "**/test/**"     # 테스트 코드 (분석 대상일 수 있음)
+  # - "**/config/**"   # 설정 파일 (분석 대상일 수 있음)
+  # - "**/report/**"   # 기존 리포트 (소스 포함 가능)
+  # - "**/backup/**"   # 백업 파일 (소스 포함 가능)
 
 # 제외할 파일 패턴
 exclude_files:
@@ -60,12 +71,15 @@ min_file_size: 1
 
 # 분석할 파일 확장자
 supported_extensions:
+  # 백엔드 확장자
   - ".java"
   - ".jsp"
   - ".xml"
   - ".sql"
   - ".properties"
   - ".jar"
+  # 데이터베이스 스키마 확장자 (중요!)
+  - ".csv"
   # 프론트엔드 확장자 추가
   - ".jsx"
   - ".vue"
@@ -152,6 +166,13 @@ file_type_settings:
     max_lines: 5000
     parse_selectors: true
     parse_media_queries: true
+
+  # 데이터베이스 스키마 파일 설정 (중요!)
+  csv:
+    enabled: true
+    max_lines: 100000  # 대용량 테이블 정보 지원
+    parse_headers: true
+    encoding: 'utf-8'
 
 # =============================================================================
 # 경로 매핑 설정 (Java 파일 경로를 XML 파일 경로로 변환)
