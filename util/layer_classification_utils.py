@@ -109,8 +109,8 @@ class LayerClassificationUtils:
             if layer_patterns is None:
                 layer_patterns = self.get_layer_classification_patterns()
             
-            # 레이어 우선순위 순서 (model이 가장 우선)
-            layer_order = ['model', 'controller', 'service', 'repository', 'util']
+            # 레이어 우선순위 순서 (repository가 가장 우선)
+            layer_order = ['repository', 'controller', 'service', 'model', 'util']
             
             for layer_name in layer_order:
                 if layer_name not in layer_patterns:
@@ -118,15 +118,24 @@ class LayerClassificationUtils:
                 
                 patterns = layer_patterns[layer_name]
                 if self._matches_layer_patterns(component_name, file_path, file_name, patterns):
-                    app_logger.debug(f"컴포넌트 분류: {component_name} -> {layer_name.upper()}")
-                    return layer_name.upper()
+                    # 레이어 매핑 변경
+                    if layer_name == 'repository':
+                        app_logger.debug(f"컴포넌트 분류: {component_name} -> MODEL (기존 REPOSITORY)")
+                        return 'MODEL'
+                    elif layer_name == 'model':
+                        app_logger.debug(f"컴포넌트 분류: {component_name} -> ETC (기존 MODEL)")
+                        return 'ETC'
+                    else:
+                        app_logger.debug(f"컴포넌트 분류: {component_name} -> {layer_name.upper()}")
+                        return layer_name.upper()
             
             # 분류되지 않은 경우 None 반환
             app_logger.debug(f"컴포넌트 분류 실패: {component_name}")
             return None
             
         except Exception as e:
-            app_logger.error(f"컴포넌트 레이어 분류 실패: {component_name}, {e}")
+            # USER RULES: exception발생시 handle_error()로 exit()
+            handle_error(e, f"컴포넌트 레이어 분류 실패: {component_name}")
             return None
     
     def _matches_layer_patterns(self, component_name: str, file_path: str, file_name: str, 
@@ -178,7 +187,8 @@ class LayerClassificationUtils:
             return False
             
         except Exception as e:
-            app_logger.error(f"레이어 패턴 매칭 실패: {component_name}, {e}")
+            # USER RULES: exception발생시 handle_error()로 exit()
+            handle_error(e, f"레이어 패턴 매칭 실패: {component_name}")
             return False
     
     def classify_multiple_components(self, components: List[Dict[str, Any]], 
@@ -290,8 +300,15 @@ class LayerClassificationUtils:
             
             # CLASS, METHOD 타입은 패턴 매칭으로 분류
             if component_type in ['CLASS', 'METHOD']:
+                # 1. setter/getter 메서드는 ETC로 분류
+                if component_type == 'METHOD' and self._is_setter_getter_method(component_name):
+                    return 'ETC'
+                
                 classified_layer = self.classify_component_by_patterns(component_name, file_path, file_name)
                 if classified_layer:
+                    # REPOSITORY 레이어를 MODEL로 변경
+                    if classified_layer == 'REPOSITORY':
+                        return 'MODEL'
                     return classified_layer
                 else:
                     # 분류되지 않은 경우 기본값
@@ -301,8 +318,36 @@ class LayerClassificationUtils:
             return 'APPLICATION'
             
         except Exception as e:
-            app_logger.error(f"컴포넌트 레이어 결정 실패: {component_type}, {component_name}, {e}")
+            # USER RULES: exception발생시 handle_error()로 exit()
+            handle_error(e, f"컴포넌트 레이어 결정 실패: {component_type}, {component_name}")
             return 'APPLICATION'
+    
+    def _is_setter_getter_method(self, method_name: str) -> bool:
+        """
+        setter/getter 메서드인지 확인
+        
+        Args:
+            method_name: 메서드명
+            
+        Returns:
+            setter/getter 메서드이면 True
+        """
+        try:
+            # getter 패턴: get*, is*
+            if (method_name.startswith('get') and len(method_name) > 3 and method_name[3].isupper()) or \
+               (method_name.startswith('is') and len(method_name) > 2 and method_name[2].isupper()):
+                return True
+            
+            # setter 패턴: set*
+            if method_name.startswith('set') and len(method_name) > 3 and method_name[3].isupper():
+                return True
+                
+            return False
+            
+        except Exception as e:
+            # USER RULES: exception발생시 handle_error()로 exit()
+            handle_error(e, f"setter/getter 메서드 확인 실패: {method_name}")
+            return False
 
 
 # 전역 인스턴스 (싱글톤 패턴)

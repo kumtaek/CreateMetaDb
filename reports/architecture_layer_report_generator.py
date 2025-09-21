@@ -77,7 +77,7 @@ class ArchitectureLayerReportGenerator:
     def _get_layer_order(self) -> List[str]:
         """6개 핵심 Layer 순서 정의 (USER RULES: 동적 구성)"""
         return [
-            'FRONTEND', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'MODEL', 'TABLE'
+            'FRONTEND', 'CONTROLLER', 'SERVICE', 'MODEL', 'TABLE'
         ]
     
     def generate_report(self) -> bool:
@@ -154,7 +154,7 @@ class ArchitectureLayerReportGenerator:
             
             component_results = self.db_utils.execute_query(components_query, (self.project_name,))
             
-            # 중복 제거를 위한 컴포넌트 세트 (파일별로 고유화)
+            # 중복 제거를 위한 컴포넌트 세트 (컴포넌트명 기준 완전 중복 제거)
             component_sets = {}
             
             for row in component_results:
@@ -164,15 +164,15 @@ class ArchitectureLayerReportGenerator:
                 comp_id = row['component_id']
                 file_path = row['file_path'] if row['file_path'] else ''
                 
-                # 파일별로 컴포넌트를 고유화 (동일 파일 내 중복 제거)
-                file_name = file_path.split('/')[-1] if file_path else 'unknown'
-                unique_key = f"{file_name}::{comp_name}::{comp_type}"
+                # 아키텍처 다이어그램용 완전 중복 제거: 컴포넌트명 + 타입 기준
+                unique_key = f"{comp_name}::{comp_type}"
                 
                 if layer not in component_sets:
                     component_sets[layer] = {}
                 
-                # 중복 제거: 동일한 파일의 동일한 컴포넌트는 하나만 유지
+                # 중복 제거: 동일한 컴포넌트명+타입은 하나만 유지 (관계수가 많은 것 우선)
                 if unique_key not in component_sets[layer]:
+                    file_name = file_path.split('/')[-1] if file_path else 'unknown'
                     component_sets[layer][unique_key] = {
                         'id': comp_id,
                         'name': comp_name,
@@ -182,9 +182,24 @@ class ArchitectureLayerReportGenerator:
                         'display_name': f"{comp_name} ({file_name})" if file_name != 'unknown' else comp_name,
                         'relationship_count': row.get('relationship_count', 0)
                     }
+                else:
+                    # 기존 것보다 관계수가 많으면 교체
+                    existing = component_sets[layer][unique_key]
+                    current_rel_count = row.get('relationship_count', 0)
+                    if current_rel_count > existing['relationship_count']:
+                        file_name = file_path.split('/')[-1] if file_path else 'unknown'
+                        component_sets[layer][unique_key] = {
+                            'id': comp_id,
+                            'name': comp_name,
+                            'type': comp_type,
+                            'file_path': file_path,
+                            'file_name': file_name,
+                            'display_name': f"{comp_name} ({file_name})" if file_name != 'unknown' else comp_name,
+                            'relationship_count': current_rel_count
+                        }
             
-            # 6개 핵심 레이어만 필터링
-            target_layers = ['FRONTEND', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'MODEL', 'TABLE']
+            # 5개 핵심 레이어만 필터링 (REPOSITORY 제거, MODEL만 표시)
+            target_layers = ['FRONTEND', 'CONTROLLER', 'SERVICE', 'MODEL', 'TABLE']
             
             # 레이어 매핑 로직 
             def map_to_target_layer(layer, comp_type, file_path):
@@ -194,9 +209,7 @@ class ArchitectureLayerReportGenerator:
                     return 'CONTROLLER'
                 elif 'service' in file_path.lower():
                     return 'SERVICE'
-                elif 'repository' in file_path.lower() or 'dao' in file_path.lower():
-                    return 'REPOSITORY'
-                elif 'model' in file_path.lower() or 'entity' in file_path.lower() or 'vo' in file_path.lower() or 'dto' in file_path.lower():
+                elif layer == 'MODEL':  # 기존 REPOSITORY가 MODEL로 변경됨
                     return 'MODEL'
                 elif comp_type == 'TABLE':
                     return 'TABLE'
@@ -221,8 +234,8 @@ class ArchitectureLayerReportGenerator:
                 
                 if target_layer in target_component_sets:
                     comp_set = target_component_sets[target_layer]
-                    # 관계 개수 순으로 정렬하여 중요한 컴포넌트 우선
-                    sorted_components = sorted(comp_set.values(), key=lambda x: (-x.get('relationship_count', 0), x['file_name'], x['name']))
+                    # ABC 정렬 (컴포넌트명 기준)
+                    sorted_components = sorted(comp_set.values(), key=lambda x: x['name'].lower())
                     
                     # 전체 컴포넌트 표시 (제한 없음)
                     analysis['layer_components'][target_layer].extend(sorted_components)
@@ -626,6 +639,8 @@ class ArchitectureLayerReportGenerator:
             height: 100%;
             overflow-y: auto;
             margin: 0 2px;
+            display: flex;
+            flex-direction: column;
         }
         
         .layer-header {
@@ -636,6 +651,14 @@ class ArchitectureLayerReportGenerator:
             border-radius: 2px;
             margin-bottom: 4px;
             color: #333;
+            flex-shrink: 0;
+        }
+        
+        .layer-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         
         .component-item {
@@ -651,6 +674,7 @@ class ArchitectureLayerReportGenerator:
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            order: 1;
         }
         
         .component-item:hover {
@@ -669,6 +693,7 @@ class ArchitectureLayerReportGenerator:
             transform: translateY(-2px) scale(1.02) !important;
             z-index: 1000 !important;
             position: relative !important;
+            order: 0 !important;
         }
         
         .component-item.related {
@@ -821,7 +846,9 @@ class ArchitectureLayerReportGenerator:
                 column_html = f'''
                 <div class="layer-column" style="border-color: {header_color};" data-layer="{layer}">
                     {header_html}
-                    {"".join(components_html)}
+                    <div class="layer-content" id="layer-content-{layer}">
+                        {"".join(components_html)}
+                    </div>
                 </div>
                 '''
                 
@@ -868,6 +895,7 @@ class ArchitectureLayerReportGenerator:
         
         return f"""
         let selectedComponent = null;
+        let lastSelectedComponent = null;
         let relationshipData = {component_relationships_json};
         let layerRelationships = {traditional_relationships_json};
         
@@ -879,6 +907,26 @@ class ArchitectureLayerReportGenerator:
         document.addEventListener('DOMContentLoaded', function() {{
             document.querySelectorAll('.component-item').forEach(function(item) {{
                 item.addEventListener('click', function() {{
+                    const name = this.dataset.name;
+                    
+                    // 동일한 컴포넌트 두 번째 클릭 시 토글 (전체 활성화)
+                    if (lastSelectedComponent === name) {{
+                        console.log('동일 컴포넌트 두 번째 클릭 - 전체 활성화:', name);
+                        // 모든 상태 초기화 (전체 활성화)
+                        document.querySelectorAll('.component-item').forEach(function(el) {{
+                            el.style.opacity = '';
+                            el.style.borderColor = '';
+                            el.style.borderWidth = '';
+                            el.style.zIndex = '';
+                            el.style.position = '';
+                            el.style.order = '';
+                            el.classList.remove('selected', 'related', 'dimmed');
+                        }});
+                        lastSelectedComponent = null;
+                        selectedComponent = null;
+                        return;
+                    }}
+                    
                     // 기존 선택 해제 (모든 상태 초기화)
                     document.querySelectorAll('.component-item').forEach(function(el) {{
                         el.style.opacity = '';
@@ -886,20 +934,31 @@ class ArchitectureLayerReportGenerator:
                         el.style.borderWidth = '';
                         el.style.zIndex = '';
                         el.style.position = '';
+                        el.style.order = '';
                         el.classList.remove('selected', 'related', 'dimmed');
                     }});
                     
-                    // 현재 컴포넌트 선택 (맨 위로 올리기)
+                    // 현재 컴포넌트 선택 (해당 레이어 맨 위로 이동)
                     this.classList.add('selected');
                     this.style.borderColor = '#007bff';
                     this.style.zIndex = '1000';
                     this.style.position = 'relative';
                     
-                    const name = this.dataset.name;
+                    // 해당 레이어에서 맨 위로 이동
+                    const currentLayer = this.dataset.layer;
+                    const layerContent = document.getElementById('layer-content-' + currentLayer);
+                    if (layerContent && this.parentNode === layerContent) {{
+                        layerContent.insertBefore(this, layerContent.firstChild);
+                    }}
+                    
                     const layer = this.dataset.layer;
                     const type = this.dataset.type;
                     console.log('선택된 컴포넌트:', name, '레이어:', layer, '타입:', type);
                     console.log('해당 컴포넌트 관계 데이터:', relationshipData[name]);
+                    
+                    // 선택된 컴포넌트 기록
+                    lastSelectedComponent = name;
+                    selectedComponent = name;
                     
                     // 전체 호출 체인 추적 (CallChain 스타일)
                     const relatedComponents = new Set();
@@ -1063,3 +1122,26 @@ class ArchitectureLayerReportGenerator:
             from util.logger import debug
             debug(f"레이어별 전체 개수 조회 실패: {layer} - {e}")
             return 0
+
+
+if __name__ == '__main__':
+    import sys
+    from util.arg_utils import ArgUtils
+    
+    # 명령행 인자 파싱
+    arg_utils = ArgUtils()
+    parser = arg_utils.create_parser("아키텍처 레이어 다이어그램 리포트 생성기")
+    args = parser.parse_args()
+    
+    project_name = args.project_name
+    
+    print(f"아키텍처 레이어 다이어그램 리포트 생성 시작: {project_name}")
+    
+    generator = ArchitectureLayerReportGenerator(project_name, './temp')
+    result = generator.generate_report()
+    
+    if result:
+        print(f"아키텍처 레이어 다이어그램 리포트 생성 완료: {project_name}")
+    else:
+        print(f"아키텍처 레이어 다이어그램 리포트 생성 실패: {project_name}")
+        sys.exit(1)

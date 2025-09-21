@@ -81,7 +81,7 @@ class FrontendParser:
             # 파일 타입별 파싱 로직 적용
             if file_type.upper() == 'JSP':
                 return self._parse_jsp_file(file_path, file_content)
-            elif file_type.upper() in ['JSX', 'VUE', 'TS', 'JS']:
+            elif file_type.upper() in ['JSX', 'VUE', 'TS', 'TSX', 'JS']:
                 return self._parse_javascript_file(file_path, file_content, file_type)
             elif file_type.upper() == 'HTML':
                 return self._parse_html_file(file_path, file_content)

@@ -130,7 +130,6 @@ class ArchitectureReportGenerator:
             traditional_layer_mapping = {
                 'controller': ['CONTROLLER', 'API_ENTRY'],
                 'service': ['SERVICE', 'APPLICATION'], 
-                'mapper': ['REPOSITORY'],
                 'model': ['MODEL', 'DATA']
             }
             

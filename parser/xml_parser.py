@@ -1917,6 +1917,7 @@ class EnhancedMybatisParser:
                 config = yaml.safe_load(f)
             
             # Oracle SQL 키워드 확인
+            # Oracle 키워드 확인
             oracle_keywords = set(config.get('oracle_reserved_keywords', []))
             if name.upper() in {kw.upper() for kw in oracle_keywords}:
                 return True

@@ -262,7 +262,11 @@ class SequenceDiagramReportGenerator:
                 method_name = row['method_name']
                 class_name = self._clean_participant_name(row['class_name'])
                 
-                mermaid_lines.append(f'    Note over Frontend,Database: Flow {i+1} - {api_name}')
+                # Database participant가 없으면 다른 participant 사용
+                if 'Database' in participants:
+                    mermaid_lines.append(f'    Note over Frontend,Database: Flow {i+1} - {api_name}')
+                else:
+                    mermaid_lines.append(f'    Note over Frontend,API_Gateway: Flow {i+1} - {api_name}')
                 mermaid_lines.append(f'    Frontend->>API_Gateway: {api_name}')
                 mermaid_lines.append(f'    API_Gateway->>{class_name}: {method_name}()')
                 
@@ -345,7 +349,13 @@ class SequenceDiagramReportGenerator:
                 mermaid_lines.append(f'    participant {clean_name} as {participant}')
             
             mermaid_lines.append('')
-            mermaid_lines.append('    Note over ' + ','.join([self._clean_participant_name(p) for p in sorted(participants)]) + ': Method Call Chain')
+            # Note over에는 최대 2개 participant만 사용 (Mermaid 제한)
+            participant_names = [self._clean_participant_name(p) for p in sorted(participants)]
+            if len(participant_names) <= 2:
+                note_participants = ','.join(participant_names)
+            else:
+                note_participants = f'{participant_names[0]},{participant_names[-1]}'
+            mermaid_lines.append(f'    Note over {note_participants}: Method Call Chain')
             
             # 시퀀스 생성
             for row in results:
@@ -429,7 +439,13 @@ class SequenceDiagramReportGenerator:
                 mermaid_lines.append(f'    participant {clean_name} as {participant}_Layer')
             
             mermaid_lines.append('')
-            mermaid_lines.append('    Note over ' + ','.join([self._clean_participant_name(p) for p in ordered_participants]) + ': Layered Architecture Flow')
+            # Note over에는 최대 2개 participant만 사용 (Mermaid 제한)
+            participant_names = [self._clean_participant_name(p) for p in ordered_participants]
+            if len(participant_names) <= 2:
+                note_participants = ','.join(participant_names)
+            else:
+                note_participants = f'{participant_names[0]},{participant_names[-1]}'
+            mermaid_lines.append(f'    Note over {note_participants}: Layered Architecture Flow')
             
             # 시퀀스 생성
             for row in results:

@@ -437,6 +437,21 @@ class ValidationUtils:
         if not table_name or not isinstance(table_name, str):
             return False
         
+        # 실제 테이블명으로 사용될 가능성이 거의 없는 핵심 SQL 키워드만 필터링
+        # 주의: WHERE, USER, ORDER 등은 실제 테이블명으로 사용될 수 있으므로 제외
+        strict_sql_keywords = {
+            'SELECT', 'FROM', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
+            'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL',
+            'UNION', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER', 'ON', 'AS',
+            'DISTINCT', 'ALL', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
+            'IF', 'FOR', 'WHILE', 'DO', 'LOOP', 'BEGIN', 'COMMIT', 'ROLLBACK',
+            'GRANT', 'REVOKE', 'TRUNCATE', 'MERGE', 'DUAL', 'SYSDATE', 'SYSTIMESTAMP'
+        }
+        
+        # 매우 확실한 키워드만 필터링 (실제 테이블명 가능성 고려)
+        if table_name.upper() in strict_sql_keywords:
+            return False
+        
         # 테이블명 규칙: 영문자로 시작, 영문자/숫자/언더스코어 허용
         try:
             pattern = r'^[a-zA-Z][a-zA-Z0-9_]*$'

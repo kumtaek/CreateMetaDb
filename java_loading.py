@@ -734,8 +734,9 @@ class JavaLoadingEngine:
                     # 소스 메서드 컴포넌트 ID 조회
                     src_component_id = self._get_method_component_id(project_id, rel_info['src_name'])
                     if not src_component_id:
-                        # 시스템 에러: 메서드 컴포넌트가 존재하지 않음 - 프로그램 종료
-                        handle_error(Exception(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']}"), "CALL_QUERY 관계 저장 실패")
+                        # 메서드 컴포넌트가 존재하지 않음 (기본 getter/setter 등으로 제외된 경우) - 경고 후 계속
+                        warning(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']} (기본 메서드로 제외되었을 수 있음)")
+                        continue
 
                     # 대상 쿼리 컴포넌트 ID 조회 (inferred 쿼리 생성)
                     dst_component_id = self._get_query_component_id(project_id, rel_info['dst_name'])
@@ -816,8 +817,9 @@ class JavaLoadingEngine:
                     # 소스 메서드 컴포넌트 ID 조회
                     src_component_id = self._get_method_component_id(project_id, rel_info['src_name'])
                     if not src_component_id:
-                        # 시스템 에러: 메서드 컴포넌트가 존재하지 않음 - 프로그램 종료
-                        handle_error(Exception(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']}"), "CALL_METHOD 관계 저장 실패")
+                        # 메서드 컴포넌트가 존재하지 않음 (기본 getter/setter 등으로 제외된 경우) - 경고 후 계속
+                        warning(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']} (기본 메서드로 제외되었을 수 있음)")
+                        continue
 
                     # 대상 메서드 컴포넌트 ID 조회 (inferred 메서드 생성)
                     dst_component_id = self._get_method_component_id(project_id, rel_info['dst_name'])
@@ -1827,19 +1829,43 @@ class JavaLoadingEngine:
             키워드이면 True
         """
         try:
-            # config에서 키워드 목록 로드
-            config_path = PathUtils.get_parser_config_path("java")
-            config = self.java_parser._load_config(config_path)
+            # Java 예약어 (하드코딩 - 확실한 필터링)
+            java_keywords = {
+                'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return',
+                'try', 'catch', 'finally', 'throw', 'throws', 'class', 'interface', 'extends', 'implements',
+                'abstract', 'final', 'static', 'this', 'super', 'new', 'instanceof', 'public', 'protected', 'private',
+                'boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double', 'void', 'package', 'import',
+                'synchronized', 'volatile', 'transient', 'native', 'strictfp', 'assert', 'enum', 'const', 'goto',
+                'var', 'yield', 'record', 'sealed', 'permits', 'true', 'false', 'null'
+            }
             
-            # Java 예약어 확인
-            java_keywords = set(config.get('java_reserved_keywords', []))
-            if name.lower() in {kw.lower() for kw in java_keywords}:
+            # Oracle SQL 키워드 (하드코딩 - 확실한 필터링)
+            oracle_keywords = {
+                'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'TABLE', 'INDEX', 'USER', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX'
+            }
+            
+            if name.lower() in java_keywords:
+                return True
+                
+            if name.upper() in oracle_keywords:
                 return True
             
-            # Oracle SQL 키워드 확인
-            oracle_keywords = set(config.get('oracle_reserved_keywords', []))
-            if name.upper() in {kw.upper() for kw in oracle_keywords}:
-                return True
+            # 추가: config에서도 확인 (백업)
+            try:
+                config_path = PathUtils.get_parser_config_path("java")
+                config = self.java_parser._load_config(config_path)
+                
+                # Java 예약어 확인
+                config_java_keywords = set(config.get('java_reserved_keywords', []))
+                if name.lower() in {kw.lower() for kw in config_java_keywords}:
+                    return True
+                
+                # Oracle SQL 키워드 확인
+                config_oracle_keywords = set(config.get('oracle_reserved_keywords', []))
+                if name.upper() in {kw.upper() for kw in config_oracle_keywords}:
+                    return True
+            except:
+                pass  # config 로딩 실패해도 하드코딩된 키워드로 필터링
                 
             return False
             

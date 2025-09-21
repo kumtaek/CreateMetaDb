@@ -617,14 +617,15 @@ class ERDDagreTemplates:
             }} else if (currentLayout === 'circle') {{
                 layoutOptions = {{
                     ...layoutOptions,
-                    radius: 400,                // 원의 반지름 확대 (기본값보다 크게)
-                    padding: 100,               // 원 주변 패딩
+                    radius: 600,                // 원의 반지름 더 확대
+                    padding: 150,               // 원 주변 패딩 증가
                     startAngle: 0,              // 시작 각도
                     sweep: Math.PI * 2,         // 전체 원 (360도)
                     clockwise: true,            // 시계 방향
                     sort: function(a, b) {{     // 노드 정렬 (이름순)
                         return a.data('label').localeCompare(b.data('label'));
-                    }}
+                    }},
+                    spacingFactor: 1.5          // 노드 간 간격 조정
                 }};
             }} else if (currentLayout === 'grid') {{
                 layoutOptions = {{
