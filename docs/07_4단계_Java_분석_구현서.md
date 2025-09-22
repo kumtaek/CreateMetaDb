@@ -4,9 +4,10 @@
 
 **목적**: Java 파일에서 **연관관계 도출**에 필요한 핵심 정보 추출 및 관계 분석  
 **핵심 기능**: 
-- **단순화된 Java 파싱**: 클래스, 메서드 추출 (복잡도 낮춤)
-- **연관관계 중심**: METHOD → SQL, METHOD → METHOD 관계 도출
-- **안정적 SQL 추출**: StringBuilder 패턴 기반 (Enhanced 기능 제거)
+- **3단계 쿼리 분석기 완료**: 메소드-쿼리-테이블-조인조건 도출 완료
+- **1단계 쿼리 추출**: JPA @Query, StringBuilder, String.format에서 순수 SQL 추출 및 SqlContent.db 저장
+- **2단계 테이블 추출**: 설계된 SQL 패턴 기반 테이블 추출 및 INFERRED 테이블 등록
+- **3단계 조인관계 추출**: JOIN_EXPLICIT/JOIN_IMPLICIT 관계 추출 및 INFERRED 컬럼 등록
 - **Spring/JPA 지원**: Controller, Repository, Entity 어노테이션 분석
 - **RelationshipBuilder 연동**: 중앙 관계 관리 시스템과 통합
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
@@ -14,10 +15,36 @@
 **파일**: `java_loading.py`, `parser/java_parser.py`, `util/java_query_analyzer.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
 **SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
-**연관관계 집중**: ✅ **복잡한 파싱 대신 연결고리 도출에 집중**  
-**JPA 지원**: ✅ **JPA Repository, Entity, @Query 어노테이션 분석**  
+**쿼리 도려내기**: ✅ **JPA @Query, StringBuilder, String.format, JPA 메서드 쿼리 지원**  
+**쿼리 종류 인식**: ✅ **INSERT/UPDATE/DELETE/MERGE/SELECT 자동 구분 (21/21 테스트 성공)**  
+**공통부 활용**: ✅ **SqlParser + SqlJoinAnalyzer로 일관된 고품질 분석**  
 
-## 처리 플로우 차트 (연관관계 집중 개선 버전)
+## 3단계 쿼리 분석기 구현 완료 (Java 파서 적용)
+
+### 1단계 - Java 쿼리 추출 및 저장
+- **동적 쿼리 처리**: 문자열 변수의 concaternation 누적 처리
+  - `+=`, `StringBuffer.append()`, `StringBuilder.append()` 패턴 지원
+  - 각 변수별로 최종 누적된 문자열을 딕셔너리에 저장
+- **SQL 키워드 필터링**: `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`로 시작하는 쿼리만 추출
+- **문자열 정규화**: 공백, 탭, 주석 제거 후 쿼리 변수 식별
+- **JPA @Query 추출**: `@Query` 어노테이션에서 쿼리 추출 (JPQL vs Native SQL 구분)
+- **SqlContent.db 저장**: 쿼리변수명으로 components와 sqlcontent(압축)에 등록
+
+### 2단계 - 테이블 추출 (공통 처리)
+- **설계된 SQL 패턴 적용**: FROM, UPDATE, DELETE, INSERT, MERGE, JOIN 패턴에서 테이블 추출
+- **알리아스 처리**: 테이블과 알리아스를 딕셔너리 변수로 저장
+- **INFERRED 테이블 등록**: 존재하지 않는 테이블은 INFERRED로 등록 (table_owner = 'UNKNOWN')
+- **오라클 키워드 필터링**: config 폴더의 오라클 키워드 파일 참조하여 키워드 제외
+
+### 3단계 - 조인관계 추출 (공통 처리)
+- **EXPLICIT JOIN**: `JOIN ... ON <조인조건>` 패턴 분석
+- **IMPLICIT JOIN**: `WHERE ... <조인조건>` 패턴 분석
+- **테이블 알리아스 참조**: 2단계에서 넘겨받은 딕셔너리 변수 활용
+- **이퀄 조건 필터링**: `테이블1.컬럼1 = 테이블2.컬럼2` 형태만 조인조건으로 인식
+- **1:N 관계 처리**: columns 테이블 참조하여 PK쪽을 1쪽으로, N쪽을 dst_id로 설정
+- **INFERRED 컬럼 등록**: 존재하지 않는 컬럼은 INFERRED 컬럼으로 등록
+
+## 처리 플로우 차트 (3단계 쿼리 분석기 완료 버전)
 
 ```mermaid
 flowchart TD
@@ -26,15 +53,20 @@ flowchart TD
     C --> D["단순 Java 파싱<br/>정규식 기반"]
     D --> E["클래스 정보 추출<br/>CLASS, INTERFACE, ENUM"]
     E --> F["메서드 정보 추출<br/>연관관계 중심"]
-    F --> G["SQL 호출 패턴 분석<br/>StringBuilder 기반"]
-    G --> H["Spring/JPA 어노테이션 분석<br/>@Controller, @Repository, @Entity"]
+    F --> G1["1단계: 쿼리 추출<br/>JPA @Query, StringBuilder<br/>SqlContent.db 저장"]
+    G1 --> G2["2단계: 테이블 추출<br/>설계된 SQL 패턴<br/>INFERRED 테이블 등록"]
+    G2 --> G3["3단계: 조인관계 추출<br/>JOIN_EXPLICIT/IMPLICIT<br/>INFERRED 컬럼 등록"]
+    G3 --> H["Spring/JPA 어노테이션 분석<br/>@Controller, @Repository, @Entity"]
     H --> I["컴포넌트 저장<br/>classes, components 테이블"]
     I --> J["연관관계 수집<br/>RelationshipBuilder로 전달"]
-    J --> K["4단계 완료<br/>연관관계 정보 준비"]
+    J --> K["4단계 완료<br/>메소드-쿼리-테이블-조인 도출"]
     
     style A fill:#e1f5fe
     style K fill:#c8e6c9
     style D fill:#c8e6c9
+    style G1 fill:#fff3e0
+    style G2 fill:#fff3e0
+    style G3 fill:#fff3e0
     style I fill:#e8f5e8
     style J fill:#fff3e0
 ```

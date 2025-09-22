@@ -13,7 +13,7 @@ USER RULES:
 
 import os
 import re
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Set
 from .logger import app_logger, info, warning, debug, error, handle_error
 from .path_utils import PathUtils
 
@@ -76,12 +76,13 @@ class SqlJoinAnalyzer:
             handle_error(e, "SQL 분석 기본 설정 로드 실패")
             return {}
     
-    def analyze_join_relationships(self, sql_content: str, file_path: str = "", component_id: int = 0) -> List[Dict[str, Any]]:
+    def analyze_join_relationships(self, sql_content: str, alias_map: Dict[str, str], file_path: str = "", component_id: int = 0) -> List[Dict[str, Any]]:
         """
-        SQL 조인 관계 분석 (XML 파서 로직 이식)
+        SQL 조인 관계 분석. alias_map을 직접 받아 처리합니다.
         
         Args:
             sql_content: SQL 내용
+            alias_map: 테이블 별칭 맵 (e.g., {'u': 'USERS'})
             file_path: 파일 경로 (선택적)
             component_id: 컴포넌트 ID (선택적)
             
@@ -89,44 +90,27 @@ class SqlJoinAnalyzer:
             JOIN 관계 리스트
         """
         try:
-            debug(f"SQL 조인 분석 시작: {file_path or 'JAVA_SOURCE'}")
+            debug(f"SQL 조인 분석 시작 (alias_map 사용): {file_path or 'JAVA_SOURCE'}")
             
-            # 설정 로드
+            # 1. SQL 정규화
+            normalized_sql = self._normalize_sql_for_analysis(sql_content, self.config.get('dynamic_sql_patterns', {}))
+            
+            # 2. EXPLICIT JOIN 분석 (ON 절)
+            explicit_relationships = self._analyze_explicit_joins(normalized_sql, alias_map)
+            
+            # 3. IMPLICIT JOIN 분석 (WHERE 절)
             analysis_patterns = self.config.get('sql_analysis_patterns', {})
-            join_type_mapping = self.config.get('join_type_mapping', {})
-            dynamic_patterns = self.config.get('dynamic_sql_patterns', {})
+            implicit_relationships = self._analyze_implicit_joins_in_where(normalized_sql, alias_map, analysis_patterns)
             
-            # 1. SQL 정규화: 주석 제거, 대문자 변환, 동적 태그 처리
-            normalized_sql = self._normalize_sql_for_analysis(sql_content, dynamic_patterns)
-            
-            # 2. FROM 절 분석: 관계의 시작점과 별칭 맵 확보
-            base_table, alias_map = self._find_base_and_aliases(normalized_sql, analysis_patterns)
-            if not base_table:
-                debug(f"FROM 절이 없어서 JOIN 분석 불가: {file_path}")
-                return []  # FROM 절이 없으면 분석 불가
-            
-            # 3. EXPLICIT JOIN 체인 분석
-            explicit_relationships = self._analyze_explicit_join_chain(
-                normalized_sql, base_table, alias_map, analysis_patterns, join_type_mapping
-            )
-            
-            # 4. IMPLICIT JOIN 분석 (WHERE 절)
-            implicit_relationships = self._analyze_implicit_joins_in_where(
-                normalized_sql, alias_map, analysis_patterns
-            )
-            
-            # 5. 모든 관계 통합 및 중복 제거
+            # 4. 모든 관계 통합 및 후처리
             all_relationships = explicit_relationships + implicit_relationships
             unique_relationships = self._remove_duplicate_relationships(all_relationships)
-            
-            # 6. 관계 후처리 (테이블명 정규화, 유효성 검증)
             final_relationships = self._post_process_relationships(unique_relationships, alias_map)
             
             debug(f"SQL 조인 분석 완료: {len(final_relationships)}개 관계 발견")
             return final_relationships
             
         except Exception as e:
-            # USER RULES: Exception 처리 - handle_error() 공통함수 사용
             handle_error(e, f"SQL 조인 분석 실패: {file_path}")
             return []
     
@@ -154,82 +138,48 @@ class SqlJoinAnalyzer:
             handle_error(e, "SQL 정규화 실패")
             return sql_content.upper()
     
-    def _find_base_and_aliases(self, sql_content: str, analysis_patterns: dict) -> Tuple[str, Dict[str, str]]:
-        """FROM 절에서 기본 테이블과 별칭 맵 추출"""
-        try:
-            alias_map = {}
-            base_table = ""
-            
-            from_patterns = analysis_patterns.get('from_clause', [])
-            for pattern in from_patterns:
-                matches = re.findall(pattern, sql_content, re.IGNORECASE)
-                if matches:
-                    match = matches[0]
-                    if isinstance(match, tuple):
-                        base_table = match[0].upper().strip()
-                        base_alias = match[1].upper().strip() if match[1] else base_table
-                        alias_map[base_alias] = base_table
-                        
-                        # 두 번째 테이블이 있는 경우
-                        if len(match) > 2 and match[2]:
-                            second_table = match[2].upper().strip()
-                            second_alias = match[3].upper().strip() if len(match) > 3 and match[3] else second_table
-                            alias_map[second_alias] = second_table
-                    break
-            
-            # EXPLICIT JOIN에서 추가 테이블 별칭 수집
-            explicit_patterns = analysis_patterns.get('explicit_joins', [])
-            for pattern in explicit_patterns:
-                matches = re.findall(pattern, sql_content, re.IGNORECASE)
-                for match in matches:
-                    if isinstance(match, tuple) and len(match) >= 2:
-                        join_table = match[1].upper().strip()
-                        join_alias = match[2].upper().strip() if len(match) > 2 and match[2] else join_table
-                        alias_map[join_alias] = join_table
-            
-            return base_table, alias_map
-            
-        except Exception as e:
-            handle_error(e, "테이블-별칭 매핑 생성 실패")
-            return "", {}
-    
-    def _analyze_explicit_join_chain(self, sql_content: str, base_table: str, alias_map: dict, 
-                                   analysis_patterns: dict, join_type_mapping: dict) -> List[Dict[str, Any]]:
-        """EXPLICIT JOIN 체인 분석 (ANSI 표준)"""
+    def _analyze_explicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """ON 절에서 명시적 JOIN 관계를 분석합니다."""
         try:
             relationships = []
-            explicit_patterns = analysis_patterns.get('explicit_joins', [])
-            previous_table = base_table
+            # JOIN ... ON ... 패턴
+            join_pattern = r'JOIN\s+[\w\.]+\s*(?:AS)?\s*\w*\s+ON\s+([^{;]*?)(?=\bWHERE|\bGROUP|\bORDER|\bJOIN|;|$)'
+            on_clauses = re.findall(join_pattern, sql_content, re.IGNORECASE)
             
-            for pattern in explicit_patterns:
-                matches = re.findall(pattern, sql_content, re.IGNORECASE)
-                for match in matches:
-                    if isinstance(match, tuple) and len(match) >= 2:
-                        join_type_raw = match[0].upper().strip()
-                        join_table = match[1].upper().strip()
-                        on_condition = match[3].strip() if len(match) > 3 and match[3] else ""
-                        join_type = self._get_join_type_from_pattern(join_type_raw, join_type_mapping)
-                        
-                        # ON 조건에서 테이블 관계 추출
-                        if on_condition:
-                            source_table, target_table = self._parse_on_condition_for_tables(on_condition, alias_map)
-                            if source_table and target_table and source_table != target_table:
-                                relationships.append({
-                                    'source_table': source_table,
-                                    'target_table': target_table,
-                                    'rel_type': 'JOIN_EXPLICIT',
-                                    'join_type': join_type,
-                                    'description': f"EXPLICIT {join_type}: {on_condition}",
-                                    'confidence': 0.9
-                                })
-                        
-                        previous_table = join_table
-            
+            for on_clause in on_clauses:
+                condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+                conditions = re.findall(condition_pattern, on_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_EXPLICIT')
+                    if rel:
+                        relationships.append(rel)
             return relationships
-            
         except Exception as e:
             handle_error(e, "EXPLICIT JOIN 분석 실패")
             return []
+
+
+    def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[Dict[str, Any]]:
+        """조인 조건 파트에서 관계 딕셔너리를 생성합니다."""
+        if '.' not in part1 or '.' not in part2:
+            return None
+
+        alias1, col1 = part1.split('.')
+        alias2, col2 = part2.split('.')
+
+        table1 = alias_map.get(alias1.upper())
+        table2 = alias_map.get(alias2.upper())
+
+        if table1 and table2 and table1 != table2:
+            return {
+                'source_table': table1,
+                'target_table': table2,
+                'source_column': col1.upper(),
+                'target_column': col2.upper(),
+                'rel_type': rel_type,
+                'confidence': 0.9
+            }
+        return None
     
     def _analyze_implicit_joins_in_where(self, sql_content: str, alias_map: dict, 
                                        analysis_patterns: dict) -> List[Dict[str, Any]]:
@@ -253,11 +203,12 @@ class SqlJoinAnalyzer:
                                 join_type = "ORACLE_OUTER_JOIN" if "(+)" in str(match) else "IMPLICIT_JOIN"
                                 relationships.append({
                                     'source_table': table1,
+                                    'source_column': col1.upper(),
                                     'target_table': table2,
+                                    'target_column': col2.upper(),
                                     'rel_type': 'JOIN_IMPLICIT',
                                     'join_type': join_type,
-                                    'description': f"WHERE {alias1}.{col1} = {alias2}.{col2}",
-                                    'confidence': 0.8
+                                    'confidence': 0.9
                                 })
             
             return relationships

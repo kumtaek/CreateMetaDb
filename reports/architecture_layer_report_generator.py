@@ -21,6 +21,7 @@ from typing import List, Dict, Any, Optional
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
+from util.component_filter_utils import ComponentFilterUtils
 from util.report_utils import ReportUtils
 from reports.report_templates import ReportTemplates
 
@@ -42,6 +43,7 @@ class ArchitectureLayerReportGenerator:
         # USER RULES: 공통함수 사용 (기존 리포트 생성기와 동일한 구조)
         self.path_utils = PathUtils()
         self.report_utils = ReportUtils(project_name, output_dir)
+        self.filter_utils = ComponentFilterUtils()
         
         # 메타데이터베이스 연결 (USER RULES: 공통함수 사용)
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -129,7 +131,7 @@ class ArchitectureLayerReportGenerator:
                 'layer_components': {}  # 실제 컴포넌트 리스트
             }
             
-            # 1. Layer별 실제 컴포넌트 리스트 조회 (USER RULES: 동적 쿼리)
+            # 1. Layer별 실제 컴포넌트 리스트 조회 (관계 수 포함, USER RULES: 동적 쿼리)
             components_query = """
                 SELECT 
                     c.layer, 
@@ -137,11 +139,20 @@ class ArchitectureLayerReportGenerator:
                     c.component_name,
                     c.component_id,
                     f.file_name as file_path,
-                    (SELECT COUNT(*) FROM relationships r 
-                     WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
-                     AND r.del_yn = 'N') as relationship_count
+                    COALESCE(rel_count.total_relationships, 0) as relationship_count
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
+                LEFT JOIN (
+                    SELECT 
+                        component_id,
+                        COUNT(*) as total_relationships
+                    FROM (
+                        SELECT src_id as component_id FROM relationships WHERE del_yn = 'N'
+                        UNION ALL
+                        SELECT dst_id as component_id FROM relationships WHERE del_yn = 'N'
+                    ) rel_union
+                    GROUP BY component_id
+                ) rel_count ON c.component_id = rel_count.component_id
                 WHERE c.del_yn = 'N' 
                   AND c.project_id = (SELECT project_id FROM projects WHERE project_name = ?)
                   AND c.component_type IN ('METHOD', 'TABLE', 'CLASS', 'API_URL', 'JSP', 'JS', 'HTML', 'CSS')
@@ -163,6 +174,11 @@ class ArchitectureLayerReportGenerator:
                 comp_name = row['component_name']
                 comp_id = row['component_id']
                 file_path = row['file_path'] if row['file_path'] else ''
+                
+                # Java 키워드 필터링 적용
+                if self.filter_utils.is_invalid_component_name(comp_name, comp_type):
+                    app_logger.debug(f"Java 키워드 필터링: {comp_name}")
+                    continue
                 
                 # 아키텍처 다이어그램용 완전 중복 제거: 컴포넌트명 + 타입 기준
                 unique_key = f"{comp_name}::{comp_type}"
@@ -507,14 +523,9 @@ class ArchitectureLayerReportGenerator:
         </div>
         
         <div class="stats">
-            <div class="stats-grid">
-                {statistics}
-            </div>
+            {statistics}
         </div>
         
-        <div class="footer">
-            아키텍처 분석 완료 - 컴포넌트를 클릭하여 관련 요소를 확인하세요
-        </div>
     </div>
     
     <script>
@@ -585,34 +596,66 @@ class ArchitectureLayerReportGenerator:
             opacity: 0.9;
             font-size: 0.8em;
         }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 6px;
-            padding: 6px;
-            background: #f8f9fa;
-            margin: 10px 0;
+        .layer-filter {
+            margin-top: 4px;
+            text-align: center;
         }
-        .stat-card {
+        .component-filter {
             background: white;
-            padding: 6px;
+            border: 1px solid #666;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-size: 0.6em;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 120px;
+        }
+        .component-filter:hover {
+            border-color: #1976d2;
+            box-shadow: 0 1px 2px rgba(25, 118, 210, 0.2);
+        }
+        .component-filter:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+        }
+        .stats {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            margin: 6px 0;
+            border-radius: 4px;
+        }
+        .stat-item {
+            background: white;
+            padding: 8px 12px;
             border-radius: 4px;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
+            flex: 1;
+            max-width: 150px;
         }
-        .stat-card:hover {
+        .stat-item:hover {
             transform: translateY(-1px);
         }
         .stat-number {
-            font-size: 1.0em;
+            font-size: 1.2em;
             font-weight: bold;
             color: #3498db;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
+            display: block;
         }
         .stat-label {
             color: #7f8c8d;
-            font-size: 0.6em;
+            font-size: 0.7em;
+            display: block;
         }
         .content {
             padding: 4px;
@@ -745,15 +788,6 @@ class ArchitectureLayerReportGenerator:
             stroke-width: 3;
         }
         
-        .footer {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 8px;
-            text-align: center;
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 10px;
-        }
         
         /* 반응형 디자인 */
         @media (max-width: 1200px) {
@@ -804,11 +838,34 @@ class ArchitectureLayerReportGenerator:
                 # 레이어 헤더 색상
                 header_color = self.layer_colors.get(layer, '#e0e0e0')
                 
-                # 레이어 헤더 HTML
+                # 레이어별 실제 컴포넌트 옵션 생성 (관계 수 기반 TOP 30개)
+                component_options = []
+                component_options.append('<option value="all">전체 컴포넌트</option>')
+                
+                # 관계 수를 기준으로 정렬하여 모든 컴포넌트 포함
+                sorted_components = sorted(layer_components, key=lambda x: x.get('relationship_count', 0), reverse=True)
+                
+                # 모든 컴포넌트를 알파벳순으로 정렬하여 콤보박스에 추가
+                all_components_sorted = sorted(sorted_components, key=lambda x: x['name'].lower())
+                
+                for component in all_components_sorted:
+                    comp_name = component['name']
+                    comp_type = component['type']
+                    display_name = comp_name
+                    if len(display_name) > 25:
+                        display_name = display_name[:22] + "..."
+                    component_options.append(f'<option value="{comp_name}">{display_name} ({comp_type})</option>')
+                
+                # 레이어 헤더 HTML (실제 컴포넌트 옵션 포함)
                 header_html = f'''
                 <div class="layer-header" style="background-color: {header_color};">
                     {layer} Layer<br>
                     <small>({total_count:,}개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="{layer}">
+                            {"".join(component_options)}
+                        </select>
+                    </div>
                 </div>
                 '''
                 
@@ -903,8 +960,180 @@ class ArchitectureLayerReportGenerator:
         console.log('관계 데이터 상세:', relationshipData);
         console.log('레이어 관계:', layerRelationships);
         
-        // 간단한 클릭 이벤트
+        // 선택된 컴포넌트들을 추적하는 전역 변수
+        let selectedComponents = {{}};
+        
+        // 컴포넌트와 연관된 다른 컴포넌트들을 찾는 함수
+        function findRelatedComponents(componentName) {{
+            const relatedComponents = new Set();
+            const visited = new Set();
+            
+            // 재귀적으로 연결고리 추적
+            function traceRelationships(compName, depth = 0, maxDepth = 3) {{
+                if (depth > maxDepth || visited.has(compName)) return;
+                visited.add(compName);
+                
+                // 직접 관계 추가
+                if (relationshipData[compName]) {{
+                    relationshipData[compName].relationships.forEach(function(rel) {{
+                        relatedComponents.add(rel.target);
+                        traceRelationships(rel.target, depth + 1, maxDepth);
+                    }});
+                }}
+                
+                // 역방향 관계 추가
+                Object.keys(relationshipData).forEach(function(srcName) {{
+                    relationshipData[srcName].relationships.forEach(function(rel) {{
+                        if (rel.target === compName) {{
+                            relatedComponents.add(srcName);
+                            traceRelationships(srcName, depth + 1, maxDepth);
+                        }}
+                    }});
+                }});
+            }}
+            
+            traceRelationships(componentName, 0, 3);
+            return Array.from(relatedComponents);
+        }}
+        
+        // 동적 콤보박스 업데이트 함수
+        function updateComboBoxes() {{
+            // 모든 레이어의 콤보박스 업데이트
+            const allLayers = ['FRONTEND', 'CONTROLLER', 'SERVICE', 'MODEL', 'TABLE'];
+            
+            allLayers.forEach(function(layer) {{
+                const selectElement = document.querySelector('[data-layer="' + layer + '"]');
+                if (!selectElement) return;
+                
+                // 기존 옵션들 저장 (전체 컴포넌트 옵션 제외)
+                const existingOptions = Array.from(selectElement.options).slice(1);
+                const existingValues = existingOptions.map(opt => opt.value);
+                
+                // 현재 선택된 컴포넌트들로부터 연관된 컴포넌트들 수집
+                const relatedComponents = new Set();
+                
+                Object.keys(selectedComponents).forEach(function(selectedLayer) {{
+                    const selectedComp = selectedComponents[selectedLayer];
+                    if (selectedComp && selectedComp !== 'all') {{
+                        relatedComponents.add(selectedComp);
+                        const related = findRelatedComponents(selectedComp);
+                        related.forEach(function(relComp) {{
+                            relatedComponents.add(relComp);
+                        }});
+                    }}
+                }});
+                
+                // 해당 레이어의 연관된 컴포넌트들만 필터링
+                const layerRelatedComponents = Array.from(relatedComponents).filter(function(compName) {{
+                    const components = document.querySelectorAll('[data-name="' + compName + '"][data-layer="' + layer + '"]');
+                    return components.length > 0;
+                }});
+                
+                // 연관된 컴포넌트가 있으면 해당 컴포넌트들만 표시, 없으면 모든 컴포넌트 표시
+                if (layerRelatedComponents.length > 0) {{
+                    // 기존 옵션들 숨김
+                    existingOptions.forEach(function(option) {{
+                        option.style.display = 'none';
+                    }});
+                    
+                    // 연관된 컴포넌트들만 표시
+                    layerRelatedComponents.forEach(function(compName) {{
+                        const option = selectElement.querySelector('option[value="' + compName + '"]');
+                        if (option) {{
+                            option.style.display = 'block';
+                        }}
+                    }});
+                }} else {{
+                    // 연관된 컴포넌트가 없으면 모든 옵션 표시
+                    existingOptions.forEach(function(option) {{
+                        option.style.display = 'block';
+                    }});
+                }}
+            }});
+        }}
+        
+        // AND 조건으로 컴포넌트 필터링
+        function applyComponentFilters() {{
+            // 모든 컴포넌트를 먼저 숨김
+            document.querySelectorAll('.component-item').forEach(function(component) {{
+                component.style.display = 'none';
+                component.style.opacity = '0.3';
+                component.classList.remove('selected', 'related');
+            }});
+            
+            // 선택된 컴포넌트들과 관련된 컴포넌트들을 수집
+            const allRelatedComponents = new Set();
+            
+            // 각 레이어에서 선택된 컴포넌트들의 연관 컴포넌트 수집
+            Object.keys(selectedComponents).forEach(function(layer) {{
+                const selectedComp = selectedComponents[layer];
+                if (selectedComp && selectedComp !== 'all') {{
+                    allRelatedComponents.add(selectedComp);
+                    const related = findRelatedComponents(selectedComp);
+                    related.forEach(function(relComp) {{
+                        allRelatedComponents.add(relComp);
+                    }});
+                }}
+            }});
+            
+            // 관련 컴포넌트들 표시
+            allRelatedComponents.forEach(function(compName) {{
+                const components = document.querySelectorAll('[data-name="' + compName + '"]');
+                components.forEach(function(component) {{
+                    component.style.display = 'block';
+                    component.style.opacity = '1';
+                    component.classList.add('related');
+                }});
+            }});
+            
+            // 선택된 컴포넌트들 강조 표시
+            Object.keys(selectedComponents).forEach(function(layer) {{
+                const selectedComp = selectedComponents[layer];
+                if (selectedComp && selectedComp !== 'all') {{
+                    const components = document.querySelectorAll('[data-name="' + selectedComp + '"]');
+                    components.forEach(function(component) {{
+                        component.style.display = 'block';
+                        component.style.opacity = '1';
+                        component.classList.add('selected');
+                    }});
+                }}
+            }});
+            
+            // 콤보박스 동적 업데이트
+            updateComboBoxes();
+            
+            console.log('AND 조건 필터링 완료:', Object.keys(selectedComponents), '관련 컴포넌트:', allRelatedComponents.size + '개');
+        }}
+        
+        // 개별 콤보박스 이벤트 리스너
         document.addEventListener('DOMContentLoaded', function() {{
+            const componentFilters = document.querySelectorAll('.component-filter');
+            componentFilters.forEach(function(filter) {{
+                filter.addEventListener('change', function() {{
+                    const layer = this.dataset.layer;
+                    const selectedComponent = this.value;
+                    
+                    // 선택된 컴포넌트 저장
+                    if (selectedComponent === 'all') {{
+                        delete selectedComponents[layer];
+                        // 전체 컴포넌트 선택 시 모든 콤보박스 옵션 표시
+                        const allOptions = filter.querySelectorAll('option');
+                        allOptions.forEach(function(option) {{
+                            option.style.display = 'block';
+                        }});
+                    }} else {{
+                        selectedComponents[layer] = selectedComponent;
+                    }}
+                    
+                    console.log('컴포넌트 필터 변경:', layer, '->', selectedComponent);
+                    console.log('현재 선택된 컴포넌트들:', selectedComponents);
+                    
+                    // AND 조건으로 필터링 적용
+                    applyComponentFilters();
+                }});
+            }});
+            
+            // 간단한 클릭 이벤트
             document.querySelectorAll('.component-item').forEach(function(item) {{
                 item.addEventListener('click', function() {{
                     const name = this.dataset.name;
@@ -938,18 +1167,11 @@ class ArchitectureLayerReportGenerator:
                         el.classList.remove('selected', 'related', 'dimmed');
                     }});
                     
-                    // 현재 컴포넌트 선택 (해당 레이어 맨 위로 이동)
+                    // 현재 컴포넌트 선택
                     this.classList.add('selected');
                     this.style.borderColor = '#007bff';
                     this.style.zIndex = '1000';
                     this.style.position = 'relative';
-                    
-                    // 해당 레이어에서 맨 위로 이동
-                    const currentLayer = this.dataset.layer;
-                    const layerContent = document.getElementById('layer-content-' + currentLayer);
-                    if (layerContent && this.parentNode === layerContent) {{
-                        layerContent.insertBefore(this, layerContent.firstChild);
-                    }}
                     
                     const layer = this.dataset.layer;
                     const type = this.dataset.type;
@@ -1005,6 +1227,14 @@ class ArchitectureLayerReportGenerator:
                             target.style.zIndex = '500';
                             target.style.position = 'relative';
                             target.classList.add('related');
+                            
+                            // 관련 컴포넌트가 있는 레이어도 표시
+                            const relatedLayer = target.dataset.layer;
+                            const relatedColumn = document.querySelector('[data-layer="' + relatedLayer + '"]');
+                            if (relatedColumn) {{
+                                relatedColumn.style.display = 'flex';
+                                relatedColumn.style.opacity = '1';
+                            }}
                         }});
                     }});
                     
@@ -1090,7 +1320,7 @@ class ArchitectureLayerReportGenerator:
     
     def _get_total_component_count_by_layer(self, layer: str) -> int:
         """
-        레이어별 전체 컴포넌트 개수 조회 (필터링 전)
+        레이어별 전체 컴포넌트 개수 조회 (레이어 매핑 로직 적용)
         
         Args:
             layer: 레이어명
@@ -1099,13 +1329,26 @@ class ArchitectureLayerReportGenerator:
             전체 컴포넌트 개수
         """
         try:
+            # 레이어 매핑 로직 (분석 로직과 동일)
+            def map_to_target_layer(comp_type, file_path):
+                if comp_type in ['JSP', 'JS', 'HTML', 'CSS']:
+                    return 'FRONTEND'
+                elif comp_type == 'API_URL' or 'controller' in file_path.lower():
+                    return 'CONTROLLER'
+                elif 'service' in file_path.lower():
+                    return 'SERVICE'
+                elif comp_type == 'TABLE':
+                    return 'TABLE'
+                else:
+                    return 'MODEL'  # 기본적으로 MODEL로 분류
+            
+            # 모든 컴포넌트 조회 후 레이어 매핑 적용
             query = """
-                SELECT COUNT(*) as total_count
+                SELECT c.component_type, f.file_path
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
                 JOIN projects p ON c.project_id = p.project_id
                 WHERE p.project_name = ? 
-                AND c.layer = ?
                 AND c.component_type IN ('METHOD', 'TABLE', 'CLASS', 'API_URL', 'JSP', 'JS', 'HTML', 'CSS')
                 AND c.del_yn = 'N' 
                 AND f.del_yn = 'N'
@@ -1115,8 +1358,16 @@ class ArchitectureLayerReportGenerator:
                 AND c.component_name GLOB '[a-zA-Z]*'
             """
             
-            result = self.db_utils.execute_query(query, (self.project_name, layer))
-            return result[0]['total_count'] if result else 0
+            results = self.db_utils.execute_query(query, (self.project_name,))
+            
+            # 레이어 매핑 적용하여 개수 계산
+            count = 0
+            for row in results:
+                mapped_layer = map_to_target_layer(row['component_type'], row['file_path'])
+                if mapped_layer == layer:
+                    count += 1
+            
+            return count
             
         except Exception as e:
             from util.logger import debug

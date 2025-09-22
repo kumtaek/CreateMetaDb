@@ -523,6 +523,9 @@ class ERDDagreTemplates:
                 minZoom: 0.1,
                 maxZoom: 3,
                 wheelSensitivity: 0.1,  // 마우스 휠 줌 민감도를 0.1으로 설정 (더 둔감하게 조정)
+                // 마우스 커서 위치 중심 줌 활성화
+                zoomingEnabled: true,
+                userZoomingEnabled: true,
                 style: [
                     {{
                         selector: 'node',
@@ -694,5 +697,52 @@ class ERDDagreTemplates:
                     }}).style('opacity', 1);
                 }}
             }});
+            
+            // 마우스 휠 줌 이벤트 커스터마이징 (Ctrl + 휠)
+            cy.container().addEventListener('wheel', function(e) {{
+                if (e.ctrlKey) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 마우스 커서 위치를 기준으로 줌 중심점 계산
+                    const rect = cy.container().getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    // 현재 줌 레벨과 포지션 저장
+                    const currentZoom = cy.zoom();
+                    const currentPan = cy.pan();
+                    
+                    // 줌 비율 계산
+                    const zoomFactor = 1.1;
+                    let newZoom = currentZoom;
+                    
+                    if (e.deltaY < 0) {{
+                        // 휠을 위로: 확대
+                        newZoom = Math.min(currentZoom * zoomFactor, 3);
+                    }} else {{
+                        // 휠을 아래로: 축소
+                        newZoom = Math.max(currentZoom / zoomFactor, 0.1);
+                    }}
+                    
+                    // 줌 비율이 변경된 경우에만 적용
+                    if (newZoom !== currentZoom) {{
+                        // 마우스 커서 위치를 Cytoscape 좌표계로 변환
+                        const mousePos = cy.renderer().projectIntoViewport(mouseX, mouseY);
+                        
+                        // 줌 중심점 계산
+                        const zoomCenter = {{
+                            x: mousePos.x,
+                            y: mousePos.y
+                        }};
+                        
+                        // 줌 적용 (마우스 커서 위치 중심)
+                        cy.zoom({{
+                            level: newZoom,
+                            renderedPosition: zoomCenter
+                        }});
+                    }}
+                }}
+            }}, {{ passive: false }});
         }}
         """

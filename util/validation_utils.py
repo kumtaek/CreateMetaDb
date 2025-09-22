@@ -437,10 +437,10 @@ class ValidationUtils:
         if not table_name or not isinstance(table_name, str):
             return False
         
-        # 실제 테이블명으로 사용될 가능성이 거의 없는 핵심 SQL 키워드만 필터링
-        # 주의: WHERE, USER, ORDER 등은 실제 테이블명으로 사용될 수 있으므로 제외
+        # SQL 키워드 필터링 (파서 오류로 잘못 추출된 키워드들 제거)
+        # WHERE는 파서 오류로 테이블명으로 잘못 인식되는 경우가 많으므로 필터링
         strict_sql_keywords = {
-            'SELECT', 'FROM', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
+            'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
             'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL',
             'UNION', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER', 'ON', 'AS',
             'DISTINCT', 'ALL', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END',

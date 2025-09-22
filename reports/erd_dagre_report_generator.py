@@ -23,16 +23,18 @@ from reports.erd_metadata_service import ERDMetadataService
 class ERDDagreReportGenerator:
     """ERD(Dagre) Report 생성기 클래스"""
     
-    def __init__(self, project_name: str, output_dir: str):
+    def __init__(self, project_name: str, output_dir: str, include_orphan_tables: bool = False):
         """
         초기화
         
         Args:
             project_name: 프로젝트명
             output_dir: 출력 디렉토리
+            include_orphan_tables: 고아 테이블 포함 여부 (기본값: False)
         """
         self.project_name = project_name
         self.output_dir = output_dir
+        self.include_orphan_tables = include_orphan_tables
         self.path_utils = PathUtils()
         self.templates = ERDDagreTemplates()
         
@@ -87,8 +89,15 @@ class ERDDagreReportGenerator:
     def _get_cytoscape_data(self) -> Dict[str, Any]:
         """Cytoscape.js 형식의 ERD 데이터 조회 - 공용 서비스 사용"""
         try:
-            # 공용 서비스에서 테이블과 컬럼 정보 조회 (Dagre용 상세 정보)
-            tables_data = self.metadata_service.get_tables_with_columns_detailed()
+            # 고아 테이블 포함 여부에 따라 다른 메서드 호출
+            if self.include_orphan_tables:
+                # 모든 테이블 조회 (고아 테이블 포함)
+                tables_data = self.metadata_service.get_all_tables_with_columns_detailed()
+                app_logger.info("고아 테이블을 포함하여 ERD Dagre 생성")
+            else:
+                # 관계가 있는 테이블만 조회 (기존 방식)
+                tables_data = self.metadata_service.get_tables_with_columns_detailed()
+                app_logger.info("관계가 있는 테이블만으로 ERD Dagre 생성")
             
             # 공용 서비스에서 관계 정보 조회
             relationships_data = self.metadata_service.get_relationships()
@@ -695,12 +704,15 @@ if __name__ == '__main__':
     # 명령행 인자 파싱
     arg_utils = ArgUtils()
     parser = arg_utils.create_parser("ERD Dagre Report 생성기")
+    parser.add_argument('--include-orphan', action='store_true', 
+                       help='고아 테이블(관계가 없는 테이블)도 ERD에 포함')
     args = parser.parse_args()
     
     project_name = args.project_name
-    print(f"ERD Dagre Report 생성 시작: {project_name}")
+    include_orphan = args.include_orphan
+    print(f"ERD Dagre Report 생성 시작: {project_name} (고아 테이블 포함: {include_orphan})")
     
-    generator = ERDDagreReportGenerator(project_name, './temp')
+    generator = ERDDagreReportGenerator(project_name, './temp', include_orphan)
     result = generator.generate_report()
     
     if result:

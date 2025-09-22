@@ -440,13 +440,20 @@ class JavaLoadingEngine:
             # Layer 분류를 위한 파일 정보 조회
             file_path, file_name = self._get_file_info_for_layer_classification(project_id, file_id)
             
-            # Layer 분류 수행 (USER RULES: 공통함수 사용)
-            layer = self.layer_classifier.get_component_layer(
-                component_type='METHOD',
-                component_name=method_name,
-                file_path=file_path,
-                file_name=file_name
-            )
+            # Layer 분류 수행 (복잡도 고려)
+            complexity = method_info.get('complexity', 'include')
+            
+            # 단순 getter/setter는 ETC 레이어로 분류
+            if complexity == 'simple_getter_setter':
+                layer = 'ETC'
+            else:
+                # 복잡한 메서드는 파일 경로 기반으로 레이어 분류
+                layer = self.layer_classifier.get_component_layer(
+                    component_type='METHOD',
+                    component_name=method_name,
+                    file_path=file_path,
+                    file_name=file_name
+                )
             
             debug(f"메서드 Layer 분류: {method_name} -> {layer}")
             
@@ -1556,10 +1563,12 @@ class JavaLoadingEngine:
             # 각 SQL 쿼리를 components 테이블에 저장
             for sql_info in sql_queries:
                 try:
+                    query_id = sql_info['query_id']
+                    
                     component_data = {
                         'project_id': project_id,
                         'file_id': file_id,
-                        'component_name': sql_info['query_id'],
+                        'component_name': query_id,
                         'component_type': sql_info['query_type'],
                         'parent_id': None,
                         'layer': 'JAVA',
@@ -1839,15 +1848,9 @@ class JavaLoadingEngine:
                 'var', 'yield', 'record', 'sealed', 'permits', 'true', 'false', 'null'
             }
             
-            # Oracle SQL 키워드 (하드코딩 - 확실한 필터링)
-            oracle_keywords = {
-                'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'TABLE', 'INDEX', 'USER', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX'
-            }
+            # Oracle SQL 키워드는 SQL 분석에서만 사용, Java 클래스/메서드명에는 적용하지 않음
             
             if name.lower() in java_keywords:
-                return True
-                
-            if name.upper() in oracle_keywords:
                 return True
             
             # 추가: config에서도 확인 (백업)

@@ -89,7 +89,7 @@ oracle_reserved_keywords:
   - "DELETE"
   - "TABLE"
   - "INDEX"
-  - "USER"
+  # - "USER"  # Java 클래스명과 충돌하므로 제외
   - "COUNT"
   - "SUM"
   - "AVG"
@@ -311,11 +311,11 @@ method_filter_patterns:
     - "^wait$"                      # Object 메서드
     - "^clone$"                     # Object 메서드
     - "^finalize$"                  # Object 메서드
-    - "^get[A-Z][a-zA-Z]*$"         # 기본 getter
-    - "^set[A-Z][a-zA-Z]*$"         # 기본 setter
-    - "^is[A-Z][a-zA-Z]*$"          # boolean getter
-    - "^has[A-Z][a-zA-Z]*$"         # boolean getter
-    - "^can[A-Z][a-zA-Z]*$"         # boolean getter
+    # - "^get[A-Z][a-zA-Z]*$"         # 기본 getter (제외 해제)
+    # - "^set[A-Z][a-zA-Z]*$"         # 기본 setter (제외 해제)
+    # - "^is[A-Z][a-zA-Z]*$"          # boolean getter (제외 해제)
+    # - "^has[A-Z][a-zA-Z]*$"         # boolean getter (제외 해제)
+    # - "^can[A-Z][a-zA-Z]*$"         # boolean getter (제외 해제)
     - "^main$"                      # main 메서드
     - "^run$"                       # run 메서드
     - "^log[A-Z].*"                 # 로깅 메서드
@@ -476,16 +476,25 @@ java_class_extraction_patterns:
   - "public\\s+@interface\\s+(\\w+)"
   - "@interface\\s+(\\w+)"
 
-# 메서드 추출 패턴 (4단계 전용) - 단순화된 버전
+# 메서드 추출 패턴 (4단계 전용) - Spring 어노테이션 지원 강화
 method_extraction_patterns:
+  # 기본 public/private/protected 메서드 패턴
   - "public\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
   - "private\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
   - "protected\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
   - "(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
-  # @Override 등 어노테이션이 있는 메소드 패턴들
-  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\n\\s+throws\\s+[^{]+\\{"
-  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{"
-  - "@\\w+\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+)\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\n\\s+throws\\s+[^{]+)?\\s*\\{"
+  
+  # Spring 어노테이션이 있는 메서드 패턴 (강화)
+  - "@\\w+(?:\\([^)]*\\))?\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  - "@\\w+(?:\\([^)]*\\))?\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\{"
+  
+  # Spring 어노테이션 바로 다음 줄에 있는 메서드 패턴 (줄바꿈 없음)
+  - "@\\w+(?:\\([^)]*\\))?\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)"
+  - "@\\w+(?:\\([^)]*\\))?\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)"
+  
+  # 여러 줄에 걸친 Spring 어노테이션 + 메서드 패턴
+  - "@\\w+(?:\\([^)]*\\))?\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\n\\s*(?:throws\\s+[^{]+)?\\s*\\{"
+  - "@\\w+(?:\\([^)]*\\))?\\s*\\n\\s*(?:public|private|protected)\\s+(?:static\\s+)?(?:final\\s+)?(?:\\w+(?:<[^>]*>)?\\s+)*(\\w+)\\s*\\([^)]*\\)\\s*\\n\\s*throws\\s+[^{]+\\s*\\{"
 
 # 패키지 추출 패턴 (우선순위 순)
 package_extraction_patterns:
@@ -572,14 +581,14 @@ relationship_analysis:
     - "set[A-Z]\\w*\\s*\\([^)]*\\)"  # setter 메서드 호출
     - "is[A-Z]\\w*\\(\\)"  # boolean getter 메서드 호출
 
-  # USE_TABLE 관계 분석 패턴 (메서드 → 테이블)
+  # USE_TABLE 관계 분석 패턴 (메서드 → 테이블, 에센스 패턴)
   use_table_patterns:
     - "FROM\\s+(\\w+)"  # SELECT ... FROM table_name
-    - "JOIN\\s+(\\w+)"  # JOIN table_name
-    - "INNER\\s+JOIN\\s+(\\w+)"  # INNER JOIN table_name
-    - "LEFT\\s+JOIN\\s+(\\w+)"  # LEFT JOIN table_name
-    - "RIGHT\\s+JOIN\\s+(\\w+)"  # RIGHT JOIN table_name
-    - "OUTER\\s+JOIN\\s+(\\w+)"  # OUTER JOIN table_name
+    - "JOIN\\s+(?!FETCH\\s)(\\w+)"  # JOIN table_name (FETCH 제외)
+    - "INNER\\s+JOIN\\s+(?!FETCH\\s)(\\w+)"  # INNER JOIN table_name (FETCH 제외)
+    - "LEFT\\s+JOIN\\s+(?!FETCH\\s)(\\w+)"  # LEFT JOIN table_name (FETCH 제외)
+    - "RIGHT\\s+JOIN\\s+(?!FETCH\\s)(\\w+)"  # RIGHT JOIN table_name (FETCH 제외)
+    - "OUTER\\s+JOIN\\s+(?!FETCH\\s)(\\w+)"  # OUTER JOIN table_name (FETCH 제외)
     - "UPDATE\\s+(\\w+)"  # UPDATE table_name
     - "INSERT\\s+INTO\\s+(\\w+)"  # INSERT INTO table_name
     - "DELETE\\s+FROM\\s+(\\w+)"  # DELETE FROM table_name

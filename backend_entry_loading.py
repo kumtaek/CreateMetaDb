@@ -696,10 +696,11 @@ class BackendEntryLoadingEngine:
                         }
                         relationships_to_insert.append(relationship)
                         app_logger.debug(f"API_URL → METHOD 관계 생성: {api_url_name} → {entry.method_name}")
+                    elif api_url_id and not method_id:
+                        # API_URL은 있지만 METHOD가 없는 경우 - 관계 없이 API_URL만 유지
+                        app_logger.warning(f"METHOD 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name} (API_URL은 유지)")
                     elif not api_url_id:
                         app_logger.debug(f"API_URL 컴포넌트를 찾을 수 없음: {api_url_name}")
-                    elif not method_id:
-                        app_logger.warning(f"METHOD 컴포넌트를 찾을 수 없음: {entry.class_name}.{entry.method_name}")
                     else:
                         app_logger.warning(f"컴포넌트 ID 조회 실패: API_URL={api_url_id}, METHOD={method_id}, 진입점: {entry.class_name}.{entry.method_name}")
 

@@ -298,8 +298,8 @@ class XmlLoadingEngine:
                     if not sql_id or not sql_content:
                         handle_error(f"SQL 쿼리 정보가 불완전함: id={sql_id}, content={sql_content[:50]}...")
                     
-                    # 컴포넌트 타입 결정
-                    component_type = f"SQL_{tag_name.upper()}"
+                    # 컴포넌트 타입 결정 (SQL 내용 기반으로 xml_parser에서 분석된 query_type 사용)
+                    component_type = sql_query.get('query_type', f"SQL_{tag_name.upper()}")
                     
                     # 컴포넌트 데이터 구성
                     component_data = {

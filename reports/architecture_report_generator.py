@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
+from util.component_filter_utils import ComponentFilterUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -32,6 +33,7 @@ class ArchitectureReportGenerator:
         self.output_dir = output_dir
         self.path_utils = PathUtils()
         self.templates = ReportTemplates()
+        self.filter_utils = ComponentFilterUtils()
         
         # 메타데이터베이스 연결
         self.metadata_db_path = self.path_utils.get_project_metadata_db_path(project_name)
@@ -241,18 +243,27 @@ class ArchitectureReportGenerator:
             params = [self.project_name] + meta_layers
             result = self.db_utils.execute_query(query, params)
             
-            # 결과를 딕셔너리 리스트로 변환
+            # 결과를 딕셔너리 리스트로 변환 (Java 키워드 필터링 적용)
             components = []
+            filtered_count = 0
             for row in result:
+                component_name = row['component_name']
+                
+                # Java 키워드 필터링 적용
+                if self.filter_utils.is_invalid_component_name(component_name, "METHOD"):
+                    app_logger.debug(f"Java 키워드 필터링: {component_name}")
+                    filtered_count += 1
+                    continue
+                
                 component_info = {
-                    'component_name': row['component_name'],
+                    'component_name': component_name,
                     'layer': row['layer'],
                     'file_name': row['file_name'],
                     'file_path': row['file_path']
                 }
                 components.append(component_info)
             
-            app_logger.debug(f"메타레이어 {meta_layers} 컴포넌트 조회 완료: {len(components)}개")
+            app_logger.debug(f"메타레이어 {meta_layers} 컴포넌트 조회 완료: {len(components)}개 (필터링된 키워드: {filtered_count}개)")
             return components
             
         except Exception as e:
@@ -311,18 +322,27 @@ class ArchitectureReportGenerator:
             
             result = self.db_utils.execute_query(query, params)
             
-            # 결과를 딕셔너리 리스트로 변환
+            # 결과를 딕셔너리 리스트로 변환 (Java 키워드 필터링 적용)
             components = []
+            filtered_count = 0
             for row in result:
+                component_name = row['component_name']
+                
+                # Java 키워드 필터링 적용
+                if self.filter_utils.is_invalid_component_name(component_name, "METHOD"):
+                    app_logger.debug(f"Java 키워드 필터링: {component_name}")
+                    filtered_count += 1
+                    continue
+                
                 component_info = {
-                    'component_name': row['component_name'],
+                    'component_name': component_name,
                     'layer': row['layer'],
                     'file_name': row['file_name'],
                     'file_path': row['file_path']
                 }
                 components.append(component_info)
             
-            app_logger.debug(f"제외 메타레이어 {excluded_meta_layers} 외 컴포넌트 조회 완료: {len(components)}개")
+            app_logger.debug(f"제외 메타레이어 {excluded_meta_layers} 외 컴포넌트 조회 완료: {len(components)}개 (필터링된 키워드: {filtered_count}개)")
             return components
             
         except Exception as e:

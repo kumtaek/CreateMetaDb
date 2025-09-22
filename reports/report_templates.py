@@ -172,7 +172,12 @@ class ReportTemplates:
                     </td>
                     <td><span class="callchain-badge{xml_file_class}" title="XML 파일: {data['xml_file']}">{data['xml_file']}</span></td>
                     <td>
-                        <span class="callchain-badge{query_id_class}" title="쿼리 ID: {data['query_id']} (Layer: {query_layer})" style="background-color: {query_color};">
+                        <span class="callchain-badge{query_id_class} query-tooltip" 
+                              title="쿼리 ID: {data['query_id']} (Layer: {query_layer})" 
+                              style="background-color: {query_color};"
+                              data-query-content="{data.get('sql_content', '')}"
+                              data-query-type="{data.get('query_type', '')}"
+                              data-related-tables="{data.get('related_tables', '')}">
                             {data['query_id']}
                         </span>
                     </td>
@@ -277,7 +282,7 @@ class ReportTemplates:
         }
         table {
             width: auto;
-            min-width: 100%;
+            min-width: max-content;
             border-collapse: collapse;
             background: white;
             font-size: 0.65em;
@@ -300,8 +305,12 @@ class ReportTemplates:
             padding: 2px 3px;
             border-bottom: 1px solid #ecf0f1;
             vertical-align: top;
-            white-space: nowrap;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-all !important;
             min-width: max-content;
+            width: auto;
+            max-width: 300px !important;
         }
         tr:hover {
             background-color: #f8f9fa;
@@ -316,9 +325,92 @@ class ReportTemplates:
             font-size: 0.6em;
             white-space: nowrap;
             display: inline-block;
-            max-width: none;
+            max-width: none !important;
+            width: auto !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
             word-break: keep-all;
         }
+        
+        .callchain-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 12px;
+            background-color: #e3f2fd;
+            color: #1565c0;
+            font-size: 0.85em;
+            font-weight: 500;
+            border: 1px solid #bbdefb;
+            white-space: nowrap;
+            word-break: keep-all;
+            cursor: pointer;
+            /* 중요: 내용 생략 완전 제거 */
+            max-width: none !important;
+            width: auto !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
+        
+        .query-tooltip {
+            position: relative;
+        }
+        
+        .query-tooltip:hover::after {
+            content: attr(data-query-content);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-width: 400px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            word-break: break-word;
+        }
+        
+        .query-tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 95%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            z-index: 1000;
+        }
+        
+        /* 전역 텍스트 생략 방지 - 최강 설정 */
+        *, *::before, *::after {
+            text-overflow: clip !important;
+            overflow: visible !important;
+            max-width: none !important;
+            width: auto !important;
+        }
+        
+        span, div, td, th, p, a, label, input, button {
+            max-width: none !important;
+            width: auto !important;
+            text-overflow: clip !important;
+            overflow: visible !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-all !important;
+        }
+        
+        /* 테이블 관련 요소들 특별 처리 */
+        table, tbody, thead, tr, td, th {
+            table-layout: auto !important;
+            width: auto !important;
+            max-width: none !important;
+            min-width: max-content !important;
+        }
+        
         .filter-controls {
             background: #ecf0f1;
             padding: 4px;
@@ -1246,14 +1338,25 @@ class ReportTemplates:
                 container.scrollTop = scrollTop - deltaY;
             });
             
-            // 마우스 휠로 줌 (Ctrl + 휠)
+            // 마우스 휠로 줌 (Ctrl + 휠) - 마우스 커서 위치 중심으로 줌
             container.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // 더 세밀한 줌 조정
+                    // 마우스 커서 위치를 기준으로 줌 중심점 계산
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    // 줌 전 스크롤 위치 저장
+                    const scrollLeft = container.scrollLeft;
+                    const scrollTop = container.scrollTop;
+                    
+                    // 줌 비율 계산
                     const zoomFactor = 1.1;
+                    const oldZoom = currentZoom;
+                    
                     if (e.deltaY < 0) {
                         // 휠을 위로: 확대
                         currentZoom = Math.min(currentZoom * zoomFactor, 3);
@@ -1261,7 +1364,21 @@ class ReportTemplates:
                         // 휠을 아래로: 축소
                         currentZoom = Math.max(currentZoom / zoomFactor, 0.2);
                     }
-                    applyZoom();
+                    
+                    // 줌 비율이 변경된 경우에만 적용
+                    if (oldZoom !== currentZoom) {
+                        // 새로운 스크롤 위치 계산 (마우스 커서 위치를 중심으로 유지)
+                        const zoomRatio = currentZoom / oldZoom;
+                        const newScrollLeft = mouseX * zoomRatio - mouseX + scrollLeft;
+                        const newScrollTop = mouseY * zoomRatio - mouseY + scrollTop;
+                        
+                        // 줌 적용
+                        applyZoom();
+                        
+                        // 스크롤 위치 조정 (마우스 커서 위치 중심 유지)
+                        container.scrollLeft = newScrollLeft;
+                        container.scrollTop = newScrollTop;
+                    }
                 }
             }, { passive: false });
             
@@ -1394,7 +1511,6 @@ class ReportTemplates:
             # 레이어별 컴포넌트 수 계산
             controller_count = len(layer_data.get('controller', []))
             service_count = len(layer_data.get('service', []))
-            mapper_count = len(layer_data.get('mapper', []))
             model_count = len(layer_data.get('model', []))
             etc_count = len(layer_data.get('etc', []))
             
@@ -1420,17 +1536,6 @@ class ReportTemplates:
             </div>
             <div class="components-container">
                 {self._generate_layer_components_html(layer_data.get('service', []))}
-            </div>
-        </div>
-        
-                    <div class="layer-arrow">↓</div>
-                    
-        <div class="layer mapper-layer" style="background-color: #e8f5e8; border-color: #1b5e20;">
-            <div class="layer-header">
-                <h3>Mapper Layer ({mapper_count}개)</h3>
-            </div>
-            <div class="components-container">
-                {self._generate_layer_components_html(layer_data.get('mapper', []))}
             </div>
         </div>
         

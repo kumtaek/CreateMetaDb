@@ -80,7 +80,7 @@ class ComponentFilterUtils:
             # Java 기본 클래스 집합 생성
             self.java_core_classes = set(self.java_config.get('java_core_classes', []))
             
-            # Java 예약어 집합 생성
+            # Java 예약어 집합 생성 (대소문자 구분 - Java 언어 특성)
             self.java_reserved_keywords = set(self.java_config.get('java_reserved_keywords', []))
             
             app_logger.debug(f"필터링 패턴 컴파일 완료: {len(self.compiled_patterns)}개 패턴")
@@ -114,8 +114,8 @@ class ComponentFilterUtils:
                 app_logger.debug(f"Java 기본 클래스 필터링: {component_name}")
                 return True
             
-            # 3. Java 예약어 필터링
-            if component_name.lower() in self.java_reserved_keywords:
+            # 3. Java 예약어 필터링 (대소문자 구분 - Java 언어 특성)
+            if component_name in self.java_reserved_keywords:
                 app_logger.debug(f"Java 예약어 필터링: {component_name}")
                 return True
             

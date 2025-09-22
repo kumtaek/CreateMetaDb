@@ -1,3 +1,4 @@
+
 """
 SQL 파서 모듈
 - 서브쿼리, UNION, MyBatis 동적 SQL 지원
@@ -7,8 +8,9 @@ SQL 파서 모듈
 
 import re
 import yaml
+import os
 from typing import List, Dict, Set, Any, Optional, Tuple
-from util import debug, error, handle_error, PathUtils, ValidationUtils
+from util import debug, error, handle_error, PathUtils, ValidationUtils, info, warning
 
 
 class SqlParser:
@@ -17,137 +19,157 @@ class SqlParser:
     def __init__(self):
         """SQL 파서 초기화"""
         self.path_utils = PathUtils()
-        self.sql_keywords = None
-        self.exclude_patterns = None
-        self.system_functions = None
+        self.oracle_keywords = set()
         self._load_sql_configuration()
 
     def _load_sql_configuration(self) -> None:
-        """SQL 설정 파일 로드"""
+        """oracle_sql_keyword.yaml 파일에서 키워드를 로드하여 self.oracle_keywords 세트에 저장합니다."""
         try:
-            # 공통함수 사용 (하드코딩 금지)
-            config_path = self.path_utils.join_path('config', 'parser', 'sql_keyword.yaml')
+            config_path = self.path_utils.get_parser_config_path("oracle_sql")
+            if not os.path.exists(config_path):
+                warning(f"Oracle 키워드 설정 파일을 찾을 수 없습니다: {config_path}")
+                return
 
-            from util.file_utils import FileUtils
-            file_info = FileUtils.get_file_info(config_path)
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            keywords = set()
+            if isinstance(config, dict):
+                for key, value in config.items():
+                    if key.endswith('_keywords') or key.endswith('_functions'):
+                        if isinstance(value, dict):
+                            for sub_key, sub_value in value.items():
+                                if isinstance(sub_value, list):
+                                    keywords.update([kw.upper() for kw in sub_value])
+                        elif isinstance(value, list):
+                             keywords.update([kw.upper() for kw in value])
 
-            if file_info['exists']:
-                content = FileUtils.read_file_content(config_path)
-                self.sql_keywords = yaml.safe_load(content)
-
-                # 설정에서 패턴들 로드
-                self.exclude_patterns = self.sql_keywords.get('exclude_table_patterns', [])
-                self.system_functions = self._extract_system_functions()
-
-                debug(f"SQL 설정 파일 로드 완료: {config_path}")
-            else:
-                self._load_default_configuration()
-                debug("기본 SQL 설정 사용")
+            self.oracle_keywords = keywords
+            info(f"Oracle SQL 키워드 {len(self.oracle_keywords)}개 로드 완료.")
 
         except Exception as e:
-            debug(f"SQL 설정 로드 실패: {str(e)}")
-            self._load_default_configuration()
+            handle_error(e, "Oracle SQL 키워드 설정 로드 실패")
 
-    def _load_default_configuration(self) -> None:
-        """기본 SQL 설정 로드"""
+    def extract_tables_and_aliases(self, sql_content: str) -> Dict[str, str]:
+        """SQL에서 테이블명과 별칭을 추출하여 맵으로 반환합니다."""
+        alias_map = {}
         try:
-            # 기본 제외 패턴 설정
-            self.exclude_patterns = [
-                r'^DUAL$',
-                r'^SYS\.',
-                r'^USER_',
-                r'^ALL_',
-                r'^DBA_',
-                r'^V\$',
-                r'^GV\$',
-                r'^X\$',
-                r'^TEMP_',
-                r'^TMP_'
-            ]
+            # FROM 및 JOIN 절에서 "테이블명 별칭" 패턴 추출
+            pattern = r'\b(?:FROM|JOIN)\s+([\w\.]+)(?:\s+AS)?\s+([a-zA-Z_][\w]*)(?=[\s,]|\bON|\bWHERE|\bGROUP|\bORDER|;|$)'
+            matches = re.findall(pattern, sql_content, re.IGNORECASE)
+            for match in matches:
+                table_name = match[0].split('.')[-1].upper()
+                alias = match[1].upper()
+                if table_name not in self.oracle_keywords and alias not in self.oracle_keywords:
+                    alias_map[alias] = table_name
 
-            # 기본 시스템 함수 설정
-            self.system_functions = {
-                'NOW', 'SYSDATE', 'SYSTIMESTAMP', 'CURRENT_DATE', 'CURRENT_TIMESTAMP',
-                'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'ROUND', 'TRUNC',
-                'SUBSTR', 'LENGTH', 'UPPER', 'LOWER', 'TO_CHAR', 'TO_DATE'
-            }
+            # 별칭이 없는 테이블도 추가 (FROM table1, table2 ...)
+            from_clause_match = re.search(r'\bFROM\s+(.*?)(?=\bWHERE|\bGROUP|\bORDER|\bJOIN|;|$)', sql_content, re.IGNORECASE | re.DOTALL)
+            if from_clause_match:
+                from_content = from_clause_match.group(1)
+                tables_part = from_content.split('ON')[0]
+                for table_part in tables_part.split(','):
+                    parts = table_part.strip().split()
+                    if not parts:  # 빈 parts 방어 처리
+                        continue
+                    table_name = parts[0].split('.')[-1].upper()
+                    if table_name not in self.oracle_keywords and ValidationUtils.is_valid_table_name(table_name):
+                        if len(parts) == 1: # 별칭이 없는 경우
+                            if table_name not in alias_map.values():
+                                alias_map[table_name] = table_name
+                        elif len(parts) > 1: # 별칭이 있는 경우 (이미 위에서 처리되었을 수 있음)
+                            alias = parts[1].upper()
+                            if alias not in alias_map:
+                                alias_map[alias] = table_name
 
         except Exception as e:
-            handle_error(e, "기본 SQL 설정 로드 실패")
-
-    def _extract_system_functions(self) -> Set[str]:
-        """설정에서 시스템 함수 목록 추출"""
-        try:
-            functions = set()
-
-            if self.sql_keywords:
-                # 집계 함수
-                if 'sql_function_patterns' in self.sql_keywords:
-                    for category, patterns in self.sql_keywords['sql_function_patterns'].items():
-                        for pattern in patterns:
-                            # 패턴에서 함수명 추출 (예: "COUNT\\(.*\\)" -> "COUNT")
-                            func_name = re.sub(r'\\.*', '', pattern).strip()
-                            if func_name:
-                                functions.add(func_name)
-
-                # 예약어 중 함수들
-                reserved_keywords = self.sql_keywords.get('sql_reserved_keywords', [])
-                function_keywords = {
-                    'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'ROUND', 'TRUNC',
-                    'SUBSTR', 'LENGTH', 'UPPER', 'LOWER', 'TO_CHAR', 'TO_DATE',
-                    'NVL', 'DECODE', 'COALESCE', 'SYSDATE', 'SYSTIMESTAMP'
-                }
-
-                for keyword in reserved_keywords:
-                    if keyword in function_keywords:
-                        functions.add(keyword)
-
-            return functions
-
-        except Exception as e:
-            debug(f"시스템 함수 추출 중 오류: {str(e)}")
-            return {'NOW', 'SYSDATE', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX'}
+            handle_error(e, "테이블 및 별칭 추출 실패")
+        
+        debug(f"추출된 테이블/별칭 맵: {alias_map}")
+        return alias_map
 
     def extract_table_names(self, sql_content: str) -> Set[str]:
         """
-        테이블명 추출
+        SQL 내용에서 테이블명을 추출합니다. (단순 패턴 및 키워드 필터링 적용)
 
         Args:
             sql_content: SQL 컨텐츠
 
         Returns:
-            추출된 테이블명 집합
+            추출 및 필터링된 테이블명 집합
         """
         try:
             if not sql_content or not sql_content.strip():
                 return set()
 
-            # 1. SQL 전처리
+            # 1. SQL 전처리 (주석 제거, 대문자 변환 등)
             processed_sql = self._preprocess_sql(sql_content)
 
-            table_names = set()
+            # 2. 단순 패턴으로 테이블 후보 추출
+            # FROM, JOIN, UPDATE, INTO(INSERT, MERGE), USING 다음에 오는 단어 추출
+            patterns = [
+                r'\bFROM\s+([\w\.]+)',
+                r'\bJOIN\s+([\w\.]+)',
+                r'\bUPDATE\s+([\w\.]+)',
+                r'\bINTO\s+([\w\.]+)', 
+                r'\bUSING\s+([\w\.]+)' 
+            ]
+            
+            candidates = set()
+            for pattern in patterns:
+                matches = re.findall(pattern, processed_sql, re.IGNORECASE)
+                for match in matches:
+                    # 소유자.테이블명 형태일 수 있으므로 .으로 분리하여 마지막 부분을 테이블명으로 간주
+                    table_name = match.split('.')[-1]
+                    candidates.add(table_name.upper())
 
-            # 2. UNION 쿼리 분할 처리
-            union_queries = self._split_union_queries(processed_sql)
-
-            for query in union_queries:
-                # 3. 서브쿼리에서 테이블 추출
-                subquery_tables = self._extract_from_subqueries(query)
-                table_names.update(subquery_tables)
-
-                # 4. 메인 쿼리에서 테이블 추출
-                main_tables = self._extract_from_main_query(query)
-                table_names.update(main_tables)
-
-            # 5. 테이블명 필터링 및 검증
-            validated_tables = self._validate_and_filter_tables(table_names)
-
+            # 3. Oracle 키워드 필터링
+            validated_tables = {tbl for tbl in candidates if tbl not in self.oracle_keywords and ValidationUtils.is_valid_table_name(tbl)}
+            
             debug(f"테이블명 추출 결과: {validated_tables}")
             return validated_tables
 
         except Exception as e:
             debug(f"테이블명 추출 중 오류: {str(e)}")
             return set()
+
+    def determine_query_type(self, sql_content: str) -> str:
+        """
+        SQL 쿼리 종류 인식
+        
+        Args:
+            sql_content: SQL 컨텐츠
+            
+        Returns:
+            쿼리 종류 (SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_MERGE)
+        """
+        try:
+            if not sql_content or not sql_content.strip():
+                return 'SQL_UNKNOWN'
+
+            # 1. SQL 전처리 (주석 제거, 대문자 변환)
+            processed_sql = self._preprocess_sql(sql_content)
+            
+            # 2. 첫 번째 키워드 추출
+            # 공백과 특수문자 제거 후 첫 번째 단어 추출
+            first_word = processed_sql.strip().split()[0] if processed_sql.strip() else ""
+            
+            # 3. 쿼리 종류 결정
+            if first_word == 'INSERT':
+                return 'SQL_INSERT'
+            elif first_word == 'UPDATE':
+                return 'SQL_UPDATE'
+            elif first_word == 'DELETE':
+                return 'SQL_DELETE'
+            elif first_word == 'MERGE':
+                return 'SQL_MERGE'
+            else:
+                # 그 외 모든 것 (SELECT, WITH, 등)은 SELECT로 처리
+                return 'SQL_SELECT'
+                
+        except Exception as e:
+            debug(f"쿼리 종류 인식 중 오류: {str(e)}")
+            return 'SQL_UNKNOWN'
 
     def _preprocess_sql(self, sql_content: str) -> str:
         """SQL 전처리"""
@@ -243,242 +265,6 @@ class SqlParser:
             debug(f"바인딩 변수 정규화 중 오류: {str(e)}")
             return sql_content
 
-    def _split_union_queries(self, sql_content: str) -> List[str]:
-        """UNION으로 구분된 쿼리 분할"""
-        try:
-            # UNION ALL 또는 UNION으로 분할
-            queries = re.split(r'\bUNION\s+(?:ALL\s+)?', sql_content, flags=re.IGNORECASE)
-
-            # 빈 쿼리 제거 및 공백 정리
-            valid_queries = []
-            for query in queries:
-                query = query.strip()
-                if query:
-                    valid_queries.append(query)
-
-            return valid_queries if valid_queries else [sql_content]
-
-        except Exception as e:
-            debug(f"UNION 쿼리 분할 중 오류: {str(e)}")
-            return [sql_content]
-
-    def _extract_from_subqueries(self, sql_content: str) -> Set[str]:
-        """서브쿼리에서 테이블명 추출"""
-        try:
-            table_names = set()
-
-            # 서브쿼리 패턴들
-            subquery_patterns = [
-                # EXISTS 서브쿼리: EXISTS (SELECT ... FROM table ...)
-                r'EXISTS\s*\(\s*SELECT\s+.*?\s+FROM\s+([A-Z_][A-Z0-9_]*)',
-
-                # IN 서브쿼리: IN (SELECT ... FROM table ...)
-                r'IN\s*\(\s*SELECT\s+.*?\s+FROM\s+([A-Z_][A-Z0-9_]*)',
-
-                # 일반 서브쿼리: (SELECT ... FROM table ...)
-                r'\(\s*SELECT\s+.*?\s+FROM\s+([A-Z_][A-Z0-9_]*)',
-
-                # 상관 서브쿼리: SELECT ... FROM table WHERE col = (SELECT ... FROM table2 ...)
-                r'=\s*\(\s*SELECT\s+.*?\s+FROM\s+([A-Z_][A-Z0-9_]*)',
-
-                # 집계 함수 서브쿼리: (SELECT COUNT(*) FROM table WHERE ...)
-                r'\(\s*SELECT\s+(?:COUNT|SUM|AVG|MIN|MAX)\s*\([^)]*\)\s+FROM\s+([A-Z_][A-Z0-9_]*)'
-            ]
-
-            for pattern in subquery_patterns:
-                matches = re.finditer(pattern, sql_content, re.DOTALL)
-                for match in matches:
-                    table_name = match.group(1).strip()
-
-                    # 별칭이 있을 수 있으므로 첫 번째 토큰만 사용
-                    table_name = table_name.split()[0] if ' ' in table_name else table_name
-
-                    if self._is_valid_table_name_candidate(table_name):
-                        table_names.add(table_name)
-                        debug(f"서브쿼리에서 테이블 추출: {table_name}")
-
-            return table_names
-
-        except Exception as e:
-            debug(f"서브쿼리 테이블 추출 중 오류: {str(e)}")
-            return set()
-
-    def _extract_from_main_query(self, sql_content: str) -> Set[str]:
-        """메인 쿼리에서 테이블명 추출"""
-        try:
-            table_names = set()
-
-            # FROM 절에서 테이블 추출
-            from_tables = self._extract_from_clause(sql_content)
-            table_names.update(from_tables)
-
-            # JOIN 절에서 테이블 추출
-            join_tables = self._extract_join_clause(sql_content)
-            table_names.update(join_tables)
-
-            # DML 문에서 테이블 추출
-            dml_tables = self._extract_dml_tables(sql_content)
-            table_names.update(dml_tables)
-
-            return table_names
-
-        except Exception as e:
-            debug(f"메인 쿼리 테이블 추출 중 오류: {str(e)}")
-            return set()
-
-    def _extract_from_clause(self, sql_content: str) -> Set[str]:
-        """FROM 절에서 테이블명 추출"""
-        try:
-            table_names = set()
-
-            # FROM 절 패턴들 (개선된 버전)
-            from_patterns = [
-                # 단일 테이블: FROM table_name alias
-                r'\bFROM\s+([A-Z_][A-Z0-9_]*)\s+(?:[A-Z_][A-Z0-9_]*\s+)?(?=WHERE|GROUP|ORDER|HAVING|UNION|JOIN|$|;)',
-
-                # 단일 테이블 (별칭 없음): FROM table_name WHERE/GROUP/ORDER/등
-                r'\bFROM\s+([A-Z_][A-Z0-9_]*)\s+(?=WHERE|GROUP|ORDER|HAVING|UNION|$|;)',
-
-                # 콤마로 구분된 다중 테이블: FROM table1, table2, table3
-                r'\bFROM\s+([A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?(?:\s*,\s*[A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?)*)',
-            ]
-
-            for pattern in from_patterns:
-                matches = re.finditer(pattern, sql_content)
-                for match in matches:
-                    from_clause = match.group(1).strip()
-
-                    # 콤마로 구분된 테이블들 처리
-                    if ',' in from_clause:
-                        table_parts = from_clause.split(',')
-                        for part in table_parts:
-                            table_name = self._extract_table_from_part(part.strip())
-                            if table_name and self._is_valid_table_name_candidate(table_name):
-                                table_names.add(table_name)
-                                debug(f"FROM 절(다중)에서 테이블 추출: {table_name}")
-                    else:
-                        # 단일 테이블 처리
-                        table_name = self._extract_table_from_part(from_clause)
-                        if table_name and self._is_valid_table_name_candidate(table_name):
-                            table_names.add(table_name)
-                            debug(f"FROM 절(단일)에서 테이블 추출: {table_name}")
-
-            return table_names
-
-        except Exception as e:
-            debug(f"FROM 절 테이블 추출 중 오류: {str(e)}")
-            return set()
-
-    def _extract_join_clause(self, sql_content: str) -> Set[str]:
-        """JOIN 절에서 테이블명 추출"""
-        try:
-            table_names = set()
-
-            # JOIN 패턴들 (모든 JOIN 타입 지원)
-            join_patterns = [
-                r'\bINNER\s+JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bLEFT\s+(?:OUTER\s+)?JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bRIGHT\s+(?:OUTER\s+)?JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bFULL\s+(?:OUTER\s+)?JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bCROSS\s+JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bNATURAL\s+JOIN\s+([A-Z_][A-Z0-9_]*)',
-                r'\bJOIN\s+([A-Z_][A-Z0-9_]*)'  # 기본 JOIN
-            ]
-
-            for pattern in join_patterns:
-                matches = re.finditer(pattern, sql_content)
-                for match in matches:
-                    table_name = match.group(1).strip()
-
-                    if self._is_valid_table_name_candidate(table_name):
-                        table_names.add(table_name)
-                        debug(f"JOIN 절에서 테이블 추출: {table_name}")
-
-            return table_names
-
-        except Exception as e:
-            debug(f"JOIN 절 테이블 추출 중 오류: {str(e)}")
-            return set()
-
-    def _extract_dml_tables(self, sql_content: str) -> Set[str]:
-        """DML 문에서 테이블명 추출"""
-        try:
-            table_names = set()
-
-            # DML 패턴들
-            dml_patterns = [
-                r'\bINSERT\s+INTO\s+([A-Z_][A-Z0-9_]*)',
-                r'\bUPDATE\s+([A-Z_][A-Z0-9_]*)',
-                r'\bDELETE\s+FROM\s+([A-Z_][A-Z0-9_]*)',
-                r'\bMERGE\s+INTO\s+([A-Z_][A-Z0-9_]*)',
-                r'\bTRUNCATE\s+TABLE\s+([A-Z_][A-Z0-9_]*)'
-            ]
-
-            for pattern in dml_patterns:
-                matches = re.finditer(pattern, sql_content)
-                for match in matches:
-                    table_name = match.group(1).strip()
-
-                    if self._is_valid_table_name_candidate(table_name):
-                        table_names.add(table_name)
-                        debug(f"DML 문에서 테이블 추출: {table_name}")
-
-            return table_names
-
-        except Exception as e:
-            debug(f"DML 테이블 추출 중 오류: {str(e)}")
-            return set()
-
-    def _extract_table_from_part(self, table_part: str) -> Optional[str]:
-        """테이블 부분에서 테이블명 추출 (별칭 처리)"""
-        try:
-            if not table_part:
-                return None
-
-            # 공백으로 분할하여 첫 번째가 테이블명, 나머지는 별칭
-            tokens = table_part.split()
-            if tokens:
-                return tokens[0].strip()
-
-            return None
-
-        except Exception as e:
-            debug(f"테이블 부분 파싱 중 오류: {str(e)}")
-            return None
-
-    def _is_valid_table_name_candidate(self, table_name: str) -> bool:
-        """테이블명 후보 기본 검증 (필터링 전 단계)"""
-        try:
-            if not table_name or len(table_name) < 2:
-                return False
-
-            # 기본 패턴 검사 (영문자로 시작, 영문자/숫자/언더스코어 조합)
-            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
-                return False
-
-            return True
-
-        except Exception as e:
-            debug(f"테이블명 후보 검증 중 오류: {str(e)}")
-            return False
-
-    def _validate_and_filter_tables(self, table_names: Set[str]) -> Set[str]:
-        """테이블명 집합 검증 및 필터링"""
-        try:
-            validated_tables = set()
-
-            for table_name in table_names:
-                if ValidationUtils.is_valid_table_name(table_name):
-                    validated_tables.add(table_name)
-                else:
-                    debug(f"테이블명 필터링됨: {table_name}")
-
-            return validated_tables
-
-        except Exception as e:
-            debug(f"테이블명 검증 및 필터링 중 오류: {str(e)}")
-            return table_names
-
     def analyze_join_relationships(self, sql_content: str) -> List[Dict[str, Any]]:
         """
         JOIN 관계 분석
@@ -554,7 +340,7 @@ class SqlParser:
                             'relationship_type': 'JOIN_EXPLICIT'
                         }
 
-                    if self._is_valid_table_name_candidate(table_name):
+                    if ValidationUtils.is_valid_table_name(table_name):
                         join_relationships.append(join_info)
                         debug(f"명시적 JOIN 분석: {join_info}")
 
@@ -581,9 +367,9 @@ class SqlParser:
                     # alias.col = alias.col
                     r'([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)',
                     # Oracle (+) 외부 조인
-                    r'([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)\s*\\(\\+\\)\s*=\s*([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)',
+                    r'([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)\s*\(\+\)\s*=\s*([A-Z_][A-Z0-9_]*)\\.([A-Z_][A-Z0-9_]*)',
                     # 단순 조인: col = col
-                    r'\\b([A-Z_][A-Z0-9_]*)\\s*=\\s*([A-Z_][A-Z0-9_]*)\\b'
+                    r'\b([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)\b'
                 ]
 
                 for pattern in implicit_join_patterns:

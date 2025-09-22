@@ -169,7 +169,6 @@ class CallChainReportGenerator:
             # 기존 Method -> Class -> Method -> XML -> Query -> Table 연계 체인
             method_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY src_m.component_name, cls.class_name, dst_m.component_name) as chain_id,
                     '' as jsp_file,
                     '' as api_entry,
                     '' as virtual_endpoint,
@@ -200,7 +199,6 @@ class CallChainReportGenerator:
             # SQL_% 타입 쿼리 체인 (USE_TABLE 관계를 통해)
             sql_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY q.component_name) as chain_id,
                     '' as jsp_file,
                     '' as api_entry,
                     '' as virtual_endpoint,
@@ -224,7 +222,6 @@ class CallChainReportGenerator:
             # 부분 체인 쿼리 (API_URL → METHOD에서 끝나는 경우, SQL 호출이 없는 메서드)
             partial_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
                     frontend_file.file_name as jsp_file,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
@@ -254,7 +251,6 @@ class CallChainReportGenerator:
             # 끊어진 프론트 체인 쿼리 (JSP → API_URL은 있지만 METHOD 연결이 없는 경우)
             broken_frontend_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
                     frontend_file.file_name as jsp_file,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
@@ -278,7 +274,6 @@ class CallChainReportGenerator:
             # API_URL -> Method -> Query -> Table 체인
             api_chain_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY frontend_file.file_name, api_url.component_name) as chain_id,
                     frontend_file.file_name as jsp_file,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
@@ -316,7 +311,6 @@ class CallChainReportGenerator:
             # 고아 XML 쿼리 (관계가 없는 XML SQL 쿼리들)
             orphan_xml_query = """
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY xml_file.file_name, q.component_name) as chain_id,
                     '' as jsp_file,
                     '' as api_entry,
                     '' as virtual_endpoint,
@@ -342,9 +336,19 @@ class CallChainReportGenerator:
                   )
             """
             
-            # 여섯 쿼리를 UNION으로 결합하고 서브쿼리로 감싸서 ORDER BY 적용
+            # 여섯 쿼리를 UNION으로 결합하고 GROUP BY로 중복 제거 후 ORDER BY 적용
             query = f"""
-                SELECT * FROM (
+                SELECT 
+                    jsp_file,
+                    api_entry,
+                    virtual_endpoint,
+                    class_name,
+                    method_name,
+                    xml_file,
+                    query_id,
+                    query_type,
+                    GROUP_CONCAT(DISTINCT related_tables) as related_tables
+                FROM (
                     {api_chain_query}
                     UNION ALL
                     {method_chain_query}
@@ -356,7 +360,9 @@ class CallChainReportGenerator:
                     {broken_frontend_query}
                     UNION ALL
                     {orphan_xml_query}
-                ) ORDER BY 
+                ) 
+                GROUP BY jsp_file, api_entry, virtual_endpoint, class_name, method_name, xml_file, query_id, query_type
+                ORDER BY 
                     CASE WHEN api_entry = '' THEN 1 ELSE 0 END,
                     CASE WHEN class_name = '' AND method_name = '' AND xml_file != '' AND xml_file != 'NO-QUERY' THEN 1 ELSE 0 END,
                     jsp_file,
@@ -374,7 +380,7 @@ class CallChainReportGenerator:
             
             # 데이터 정제
             chain_data = []
-            for row in results:
+            for idx, row in enumerate(results):
                 query_id = row['query_id']
                 original_query_type = row['query_type']
                 
@@ -438,7 +444,7 @@ class CallChainReportGenerator:
                 query_color = layer_colors.get(query_layer, '#f1f8e9')
                 
                 chain_data.append({
-                    'chain_id': row['chain_id'],
+                    'chain_id': idx + 1,  # 순번으로 대체
                     'jsp_file': row['jsp_file'],
                     'api_entry': api_entry,
                     'virtual_endpoint': virtual_endpoint,
@@ -496,12 +502,14 @@ class CallChainReportGenerator:
             sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent.db")
             
             if not os.path.exists(sql_content_db_path):
-                handle_error(Exception(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}"), "SqlContent.db 파일 부재")
+                app_logger.warning(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}")
+                return {}
             
             # SqlContent.db 연결
             sql_content_db = DatabaseUtils(sql_content_db_path)
             if not sql_content_db.connect():
-                handle_error(Exception("SqlContent.db 연결 실패"), "SqlContent.db 연결 실패")
+                app_logger.warning(f"SqlContent.db 연결 실패: {sql_content_db_path}")
+                return {}
             
             try:
                 # 정제된 SQL 내용 조회 (SQL_% 타입과 QUERY 타입 모두 포함)
@@ -529,16 +537,26 @@ class CallChainReportGenerator:
                         clean_sql = self._extract_pure_sql(decompressed_content)
                         sql_content_map[component_name] = clean_sql
                     except Exception as decompress_error:
-                        handle_error(decompress_error, f"SQL 내용 압축 해제 실패: {component_name}")
+                        app_logger.warning(f"SQL 내용 압축 해제 실패: {component_name} - {decompress_error}")
+                        continue
                 
-                app_logger.debug(f"정제된 SQL 내용 조회 완료: {len(sql_content_map)}건")
+                app_logger.info(f"정제된 SQL 내용 조회 완료: {len(sql_content_map)}건")
+                if len(sql_content_map) == 0:
+                    app_logger.warning(f"SqlContent.db에서 SQL 내용을 찾을 수 없습니다. 프로젝트명: {self.project_name}")
+                    app_logger.warning(f"SqlContent.db 경로: {sql_content_db_path}")
+                    # 프로젝트 테이블 확인
+                    proj_results = sql_content_db.execute_query("SELECT project_id, project_name FROM projects", ())
+                    app_logger.warning(f"SqlContent.db의 프로젝트 목록: {proj_results}")
+                else:
+                    app_logger.info(f"SqlContent.db에서 SQL 내용 조회 성공: {list(sql_content_map.keys())[:5]}...")
                 return sql_content_map
                 
             finally:
                 sql_content_db.disconnect()
                 
         except Exception as e:
-            handle_error(e, "SqlContent.db 조회 실패")
+            app_logger.warning(f"SqlContent.db 조회 실패: {e}")
+            return {}
     
     def _extract_pure_sql(self, xml_content: str) -> str:
         """XML 태그를 제거하고 순수한 SQL만 추출 (MyBatis 동적 쿼리 태그 포함)"""

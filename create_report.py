@@ -21,6 +21,7 @@ from reports.architecture_report_generator import ArchitectureReportGenerator
 from reports.erd_dagre_report_generator import ERDDagreReportGenerator
 from reports.architecture_layer_report_generator import ArchitectureLayerReportGenerator
 from reports.sequence_diagram_report_generator import SequenceDiagramReportGenerator
+from reports.query_list_report_generator import QueryListReportGenerator
 
 
 def parse_arguments():
@@ -35,6 +36,7 @@ def parse_arguments():
   python create_report.py --project-name <프로젝트명> --report-type erd
   python create_report.py --project-name <프로젝트명> --report-type architecture
   python create_report.py --project-name <프로젝트명> --report-type sequence
+  python create_report.py --project-name <프로젝트명> --report-type query-list
         """
     )
     
@@ -46,7 +48,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'query-list', 'all'],
         default='all',
         help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
@@ -60,6 +62,12 @@ def parse_arguments():
         '--verbose', '-v',
         action='store_true',
         help='상세 로그 출력'
+    )
+    
+    parser.add_argument(
+        '--include-orphan',
+        action='store_true',
+        help='ERD 생성 시 고아 테이블(관계가 없는 테이블)도 포함'
     )
     
     return parser.parse_args()
@@ -121,10 +129,10 @@ def generate_callchain_report(project_name: str, output_dir: str) -> bool:
         return False
 
 
-def generate_erd_report(project_name: str, output_dir: str) -> bool:
+def generate_erd_report(project_name: str, output_dir: str, include_orphan_tables: bool = False) -> bool:
     """ERD Report 생성"""
     try:
-        generator = ERDReportGenerator(project_name, output_dir)
+        generator = ERDReportGenerator(project_name, output_dir, include_orphan_tables)
         success = generator.generate_report()
         return success
             
@@ -135,10 +143,10 @@ def generate_erd_report(project_name: str, output_dir: str) -> bool:
 
 
 
-def generate_erd_dagre_report(project_name: str, output_dir: str) -> bool:
+def generate_erd_dagre_report(project_name: str, output_dir: str, include_orphan_tables: bool = False) -> bool:
     """ERD(Dagre) Report 생성"""
     try:
-        generator = ERDDagreReportGenerator(project_name, output_dir)
+        generator = ERDDagreReportGenerator(project_name, output_dir, include_orphan_tables)
         success = generator.generate_report()
         return success
             
@@ -187,6 +195,18 @@ def generate_sequence_diagram_report(project_name: str, output_dir: str) -> bool
         return False
 
 
+def generate_query_list_report(project_name: str, output_dir: str) -> bool:
+    """Query List Report 생성"""
+    try:
+        generator = QueryListReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        return success
+            
+    except Exception as e:
+        handle_error(e, "Query List Report 생성 중 오류 발생")
+        return False
+
+
 def main():
     """메인 함수"""
     try:
@@ -227,7 +247,7 @@ def main():
             app_logger.info("\n\n\n\n2단계 시작 ========================================")
             app_logger.info("ERD Report 생성")
             total_count += 1
-            if generate_erd_report(args.project_name, output_dir):
+            if generate_erd_report(args.project_name, output_dir, args.include_orphan):
                 success_count += 1
                 app_logger.info("성공: ERD Report 생성 완료")
             else:
@@ -238,7 +258,7 @@ def main():
             app_logger.info("\n\n\n\n3단계 시작 ========================================")
             app_logger.info("ERD(Dagre) Report 생성")
             total_count += 1
-            if generate_erd_dagre_report(args.project_name, output_dir):
+            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan):
                 success_count += 1
                 app_logger.info("성공: ERD(Dagre) Report 생성 완료")
             else:
@@ -277,6 +297,17 @@ def main():
             else:
                 failed_reports.append("Sequence Diagram Report")
                 app_logger.info("실패: Sequence Diagram Report 생성 실패")
+        
+        if args.report_type in ['query-list', 'all']:
+            app_logger.info("\n\n\n\n7단계 시작 ========================================")
+            app_logger.info("Query List Report 생성")
+            total_count += 1
+            if generate_query_list_report(args.project_name, output_dir):
+                success_count += 1
+                app_logger.info("성공: Query List Report 생성 완료")
+            else:
+                failed_reports.append("Query List Report")
+                app_logger.info("실패: Query List Report 생성 실패")
         
         # 결과 출력
         app_logger.info(f"\n\n\n\n=== 리포트 생성 완료 ===")

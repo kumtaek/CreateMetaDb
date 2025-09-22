@@ -280,14 +280,17 @@ class RelationshipBuilder:
                     debug(f"QUERY 컴포넌트를 찾을 수 없음: {query_data['query_id']}")
                     continue
 
-                # 2. SQL에서 테이블 추출
-                tables = self.sql_analyzer.extract_tables_from_sql(sql_content)
+                # 2. 이미 분석된 JOIN 관계에서 테이블 추출
+                # (sql_join_analyzer에서 이미 테이블 추출 및 인퍼드 등록 완료)
+                from parser.sql_parser import SqlParser
+                sql_parser = SqlParser()
+                tables = sql_parser.extract_table_names(sql_content)
 
                 # 3. QUERY → TABLE 관계 생성
                 for table_name in tables:
                     table_id = self._find_or_create_table_component(table_name)
                     if table_id:
-                        self._insert_relationship(query_id, table_id, 'USES_TABLE')
+                        self._insert_relationship(query_id, table_id, 'USE_TABLE')
                         count += 1
 
             # JPA 쿼리 분석
@@ -306,8 +309,10 @@ class RelationshipBuilder:
                 if not method_id:
                     continue
 
-                # SQL에서 테이블 추출
-                tables = self.sql_analyzer.extract_tables_from_sql(query_sql)
+                # SQL에서 테이블 추출 (동일한 SQL 파서 사용)
+                from parser.sql_parser import SqlParser
+                sql_parser = SqlParser()
+                tables = sql_parser.extract_table_names(query_sql)
 
                 # METHOD → TABLE 관계 생성 (JPA는 직접 연결)
                 for table_name in tables:

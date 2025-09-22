@@ -299,11 +299,16 @@ class XmlParser:
                 tag_name = sql_info.get('tag_name', 'select')
 
                 if sql_content and sql_content.strip():
+                    # SQL 내용 기반으로 실제 쿼리 타입 결정
+                    from .sql_parser import SqlParser
+                    sql_parser = SqlParser()
+                    actual_query_type = sql_parser.determine_query_type(sql_content)
+
                     # SQL 쿼리 정보 생성
                     query_info = {
                         'tag_name': tag_name,
                         'query_id': sql_id,
-                        'query_type': tag_name,
+                        'query_type': actual_query_type,  # 실제 SQL 내용 기반 타입 사용
                         'sql_content': sql_content,
                         'file_path': xml_file,
                         'line_start': 1,  # DOM에서는 정확한 라인 번호 추출이 어려움
@@ -312,7 +317,7 @@ class XmlParser:
                     }
                     sql_queries.append(query_info)
 
-                    # JOIN 관계 분석
+                    # JOIN 관계 분석 (테이블 추출 및 인퍼드 등록 포함)
                     relationships = self._analyze_join_relationships(
                         sql_content, xml_file, 0
                     )
@@ -341,7 +346,7 @@ class XmlParser:
             return True
 
         # SQL 태그가 포함된 XML 파일도 MyBatis로 간주
-        sql_tags = ['select', 'insert', 'update', 'delete']
+        sql_tags = ['select', 'insert', 'update', 'delete', 'merge']
         for tag in sql_tags:
             if root.find(f'.//{{tag}}') is not None:
                 return True
@@ -419,11 +424,16 @@ class XmlParser:
             line_start, line_end = self._extract_line_numbers(element, file_path)
             hash_utils = HashUtils()
             hash_value = hash_utils.generate_md5(sql_content)
-            
+
+            # SQL 내용 기반으로 실제 쿼리 타입 결정
+            from .sql_parser import SqlParser
+            sql_parser = SqlParser()
+            actual_query_type = sql_parser.determine_query_type(sql_content)
+
             return {
                 'tag_name': tag_name,
                 'query_id': query_id,
-                'query_type': tag_name,
+                'query_type': actual_query_type,  # 실제 SQL 내용 기반 타입 사용
                 'sql_content': sql_content,
                 'file_path': file_path,
                 'line_start': line_start,
@@ -435,13 +445,51 @@ class XmlParser:
             handle_error(e, "SQL 쿼리 정보 추출 실패")
 
     def _extract_sql_content(self, element: ET.Element) -> str:
+        """XML 태그 전체 내용에서 SQL 추출 (새로운 방식 - 단순하고 누락 없음)"""
         try:
+            # 태그 전체 내용을 문자열로 변환
             xml_str = ET.tostring(element, encoding='unicode')
-            sql_content = ' '.join(xml_str.split()).strip()
-            return sql_content
+            
+            # XML 문법만 기계적 제거하여 순수 SQL 추출
+            clean_sql = self._remove_xml_syntax_mechanically(xml_str)
+            
+            return clean_sql
+            
         except Exception as e:
             # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "SQL 내용 추출 실패")
+    
+    def _extract_original_sql_content(self, element: ET.Element) -> str:
+        """원본 SQL 내용 추출 (태그 포함)"""
+        try:
+            # 엘리먼트의 텍스트 내용과 자식 엘리먼트들을 모두 포함한 원본 추출
+            content_parts = []
+            
+            # 시작 텍스트
+            if element.text:
+                content_parts.append(element.text.strip())
+            
+            # 자식 엘리먼트들 처리
+            for child in element:
+                # 자식 엘리먼트를 문자열로 변환하여 추가
+                child_str = ET.tostring(child, encoding='unicode')
+                content_parts.append(child_str)
+                
+                # 자식 엘리먼트 뒤의 tail 텍스트
+                if child.tail:
+                    content_parts.append(child.tail.strip())
+            
+            # 모든 부분을 합쳐서 반환
+            full_content = ''.join(content_parts)
+            
+            # 기본적인 공백 정리만 수행
+            full_content = re.sub(r'\s+', ' ', full_content).strip()
+            
+            return full_content
+            
+        except Exception as e:
+            debug(f"원본 SQL 내용 추출 중 오류: {str(e)}")
+            return ""
 
     def _extract_line_numbers(self, element: ET.Element, file_path: str) -> tuple[Optional[int], Optional[int]]:
         try:
@@ -461,54 +509,29 @@ class XmlParser:
 
     def _analyze_join_relationships(self, sql_content: str, file_path: str, component_id: int) -> List[Dict[str, Any]]:
         """
-        JOIN 관계 분석 (공통 모듈 사용 래퍼)
-        
-        기존 XML 파서 호출자들을 위해 메서드 시그니처를 유지하면서
-        내부적으로는 공통 SQL 조인 분석 모듈을 사용합니다.
-
-        Args:
-            sql_content: SQL 내용
-            file_path: 파일 경로
-            component_id: SQL 컴포넌트 ID
-
-        Returns:
-            모든 JOIN 관계 리스트
+        테이블/별칭 추출 및 JOIN 관계 분석을 통합 처리합니다.
         """
         try:
-            # 불필요한 DOM 재파싱 로직 제거
-            # 상위 _parse_with_dom에서 이미 전체 XML을 파싱했으며,
-            # 이 함수는 전달받은 개별 SQL 컨텐츠에 대한 분석만 책임져야 함.
+            # 1. SQL 파서 인스턴스 생성
+            from .sql_parser import SqlParser
+            sql_parser = SqlParser()
 
-            # 동적 쿼리 사전 분석 (XML 파서 특화)
-            dynamic_patterns = self.config.get('dynamic_sql_patterns', {})
-            has_dynamic_join = self._detect_dynamic_join(sql_content, dynamic_patterns)
-            if has_dynamic_join:
-                debug(f"동적 JOIN 구문 감지: {file_path}")
+            # 2. 테이블 및 별칭 추출 (2단계)
+            alias_map = sql_parser.extract_tables_and_aliases(sql_content)
 
-            # XML 파싱 에러 검사 (XML 파서 특화)
-            parsing_error = self._check_xml_parsing_handle_error(sql_content, file_path)
-            if parsing_error:
-                self._mark_parsing_handle_error(component_id, parsing_error)
-
-            # 공통 SQL 조인 분석 모듈 사용
-            join_relationships = self.sql_join_analyzer.analyze_join_relationships(
-                sql_content, file_path, component_id
-            )
-            
-            # XML 파서 특화 후처리 (INFERRED 컬럼 생성 등)
-            if join_relationships:
-                # INFERRED 컬럼 생성 (XML 파서만의 기능)
-                all_join_conditions = self._extract_all_join_conditions(join_relationships, [])
-                alias_map = {}  # 공통 모듈에서 이미 처리했으므로 빈 맵 사용
-                inferred_relationships = self._find_and_create_inferred_columns(
-                    all_join_conditions, alias_map, component_id
+            # 3. JOIN 관계 분석 (3단계)
+            # 공통 SQL 조인 분석 모듈에 alias_map 전달
+            if hasattr(self, 'sql_join_analyzer'):
+                join_relationships = self.sql_join_analyzer.analyze_join_relationships(
+                    sql_content, alias_map, file_path, component_id
                 )
-                join_relationships.extend(inferred_relationships)
-            
-            return join_relationships
+                return join_relationships
+            else:
+                warning("sql_join_analyzer가 초기화되지 않았습니다.")
+                return []
 
         except Exception as e:
-            handle_error(e, f"JOIN 관계 분석 실패: {file_path}")
+            handle_error(e, f"XML JOIN 관계 분석 실패: {file_path}")
             return []
 
     def _normalize_sql_for_analysis(self, sql_content: str, dynamic_patterns: dict) -> str:
@@ -756,7 +779,7 @@ class XmlParser:
             # MyBatis 동적 태그 내부의 JOIN 키워드 검사
             mybatis_tags = ['if', 'choose', 'when', 'otherwise', 'foreach', 'where']
             for tag in mybatis_tags:
-                pattern = f'<{tag}[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\s+JOIN.*?</{tag}>'
+                pattern = fr'<{tag}[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\s+JOIN.*?</{tag}>'
                 if re.search(pattern, sql_content, re.IGNORECASE | re.DOTALL):
                     debug(f"MyBatis {tag} 태그 내 JOIN 감지")
                     return True
@@ -1181,6 +1204,203 @@ class XmlParser:
             'errors': 0
         }
 
+    def _remove_xml_syntax_mechanically(self, xml_content: str) -> str:
+        """
+        XML 문법 기계적 제거 (새로운 방식 - 단순하고 누락 없음)
+        
+        Args:
+            xml_content: 원본 XML 내용
+            
+        Returns:
+            XML 문법이 제거된 순수 SQL 내용
+        """
+        try:
+            if not xml_content:
+                return ""
+            
+            # 1. 메인 SQL 태그 제거 (select, insert, update, delete, merge)
+            main_tag_pattern = r'<(select|insert|update|delete|merge)[^>]*>(.*?)</\1>'
+            main_match = re.search(main_tag_pattern, xml_content, re.DOTALL | re.IGNORECASE)
+            if main_match:
+                sql_content = main_match.group(2)
+            else:
+                sql_content = xml_content
+            
+            # 2. 모든 XML 태그 기계적 제거 (내용은 보존)
+            # CDATA 처리
+            sql_content = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', sql_content, flags=re.DOTALL)
+            
+            # 모든 XML 태그 제거 (if, choose, when, otherwise, where, set, trim, foreach 등)
+            sql_content = re.sub(r'<[^>]+>', ' ', sql_content)
+            
+            # 3. XML 엔티티 변환
+            xml_entities = {
+                '&lt;': '<',
+                '&gt;': '>',
+                '&amp;': '&',
+                '&quot;': '"',
+                '&apos;': "'"
+            }
+            for entity, char in xml_entities.items():
+                sql_content = sql_content.replace(entity, char)
+            
+            # 4. 기본 공백 정리
+            sql_content = re.sub(r'\s+', ' ', sql_content).strip()
+            
+            return sql_content
+            
+        except Exception as e:
+            debug(f"XML 문법 기계적 제거 중 오류: {str(e)}")
+            return xml_content
+
+    def _remove_xml_syntax_from_sql(self, sql_content: str) -> str:
+        """
+        XML 문법 제거하여 순수 SQL 추출 - 보수적 정제 로직 (쿼리 누락 방지)
+        
+        Args:
+            sql_content: 원본 SQL 내용
+            
+        Returns:
+            정리된 순수 SQL 내용
+        """
+        try:
+            if not sql_content:
+                return ""
+            
+            original_content = sql_content
+            
+            # 1. XML 선언 및 주 SQL 태그 제거 (보수적)
+            sql_content = self._remove_main_sql_tags(sql_content)
+            
+            # 2. MyBatis 동적 태그 제거 (보수적)
+            sql_content = self._remove_mybatis_tags(sql_content)
+            
+            # 3. XML 특수문자 및 CDATA 처리
+            sql_content = self._process_xml_special_chars(sql_content)
+            
+            # 4. 기본 공백 정리
+            sql_content = re.sub(r'\s+', ' ', sql_content).strip()
+            
+            # 5. 만약 결과가 너무 짧거나 비어있으면 원본 반환
+            if len(sql_content.strip()) < 3:
+                return original_content.strip()
+            
+            return sql_content
+            
+        except Exception as e:
+            debug(f"XML 문법 제거 중 오류 (원본 반환): {str(e)}")
+            return original_content
+
+    def _remove_mybatis_tags(self, sql_content: str) -> str:
+        """MyBatis 동적 태그 제거"""
+        try:
+            # MyBatis 동적 태그 패턴들 (내용은 유지, 태그만 제거)
+            tag_patterns = [
+                (r'<if\s+test=["\'][^"\']*["\'][^>]*>(.*?)</if>', r'\1'),
+                (r'<choose\s*>(.*?)</choose>', r'\1'),
+                (r'<when\s+test=["\'][^"\']*["\'][^>]*>(.*?)</when>', r'\1'),
+                (r'<otherwise\s*>(.*?)</otherwise>', r'\1'),
+                (r'<where\s*>(.*?)</where>', r' WHERE \1'),
+                (r'<set\s*>(.*?)</set>', r' SET \1'),
+                (r'<trim[^>]*>(.*?)</trim>', r'\1'),
+                (r'<foreach[^>]*>(.*?)</foreach>', r'\1'),
+                (r'<include[^>]*/>', r''),  # include 태그 제거
+                (r'<sql[^>]*>(.*?)</sql>', r'\1'),  # sql 태그 제거
+                (r'<bind[^>]*/>', r'')  # bind 태그 제거
+            ]
+
+            processed = sql_content
+            for pattern, replacement in tag_patterns:
+                processed = re.sub(pattern, replacement, processed, flags=re.DOTALL | re.IGNORECASE)
+
+            return processed
+
+        except Exception as e:
+            debug(f"MyBatis 태그 제거 중 오류: {str(e)}")
+            return sql_content
+
+    def _remove_main_sql_tags(self, sql_content: str) -> str:
+        """주 SQL 태그 제거 (select, insert, update, delete, merge)"""
+        try:
+            # 메인 SQL 태그 제거
+            main_tag_patterns = [
+                r'<select[^>]*>(.*?)</select>',
+                r'<insert[^>]*>(.*?)</insert>',
+                r'<update[^>]*>(.*?)</update>',
+                r'<delete[^>]*>(.*?)</delete>',
+                r'<merge[^>]*>(.*?)</merge>'
+            ]
+            
+            for pattern in main_tag_patterns:
+                match = re.search(pattern, sql_content, re.DOTALL | re.IGNORECASE)
+                if match:
+                    return match.group(1).strip()
+            
+            return sql_content
+            
+        except Exception as e:
+            debug(f"메인 SQL 태그 제거 중 오류: {str(e)}")
+            return sql_content
+
+    def _process_xml_special_chars(self, sql_content: str) -> str:
+        """XML 특수문자 및 CDATA 처리"""
+        try:
+            # CDATA 섹션 제거
+            sql_content = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', sql_content, flags=re.DOTALL)
+            
+            # XML 엔티티 변환
+            xml_entities = {
+                '&lt;': '<',
+                '&gt;': '>',
+                '&amp;': '&',
+                '&quot;': '"',
+                '&apos;': "'"
+            }
+            
+            for entity, char in xml_entities.items():
+                sql_content = sql_content.replace(entity, char)
+            
+            return sql_content
+            
+        except Exception as e:
+            debug(f"XML 특수문자 처리 중 오류: {str(e)}")
+            return sql_content
+
+    def _normalize_sql_keywords(self, sql_content: str) -> str:
+        """SQL 키워드 대문자 변환"""
+        try:
+            sql_keywords = [
+                'SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER',
+                'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'AND', 'OR',
+                'ORDER', 'BY', 'GROUP', 'HAVING', 'UNION', 'DISTINCT', 'COUNT', 'SUM',
+                'AVG', 'MIN', 'MAX', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'AS'
+            ]
+            
+            for keyword in sql_keywords:
+                pattern = r'\b' + keyword.lower() + r'\b'
+                sql_content = re.sub(pattern, keyword, sql_content, flags=re.IGNORECASE)
+            
+            return sql_content
+            
+        except Exception as e:
+            debug(f"SQL 키워드 정규화 중 오류: {str(e)}")
+            return sql_content
+
+    def _remove_binding_variables(self, sql_content: str) -> str:
+        """바인딩 변수 정리"""
+        try:
+            # MyBatis 바인딩 변수 #{param} -> ?
+            processed = re.sub(r'#\{[^}]*\}', '?', sql_content)
+
+            # MyBatis 바인딩 변수 ${param} -> ?
+            processed = re.sub(r'\$\{[^}]*\}', '?', processed)
+
+            return processed
+
+        except Exception as e:
+            debug(f"바인딩 변수 제거 중 오류: {str(e)}")
+            return sql_content
+
 
 
 class MybatisParser:
@@ -1231,8 +1451,8 @@ class MybatisParser:
         self.bind_context = {}  # 컨텍스트 초기화
         reconstructed_sqls = []
 
-        # 각 SQL 문(select, insert, update, delete) 처리
-        sql_tags = ['select', 'insert', 'update', 'delete']
+        # 각 SQL 문(select, insert, update, delete, merge) 처리
+        sql_tags = ['select', 'insert', 'update', 'delete', 'merge']
 
         for tag_name in sql_tags:
             for statement_node in xml_root.findall(f'.//{{tag_name}}'):
@@ -1552,8 +1772,13 @@ class EnhancedMybatisParser:
                         )
 
                         if full_sql_text.strip():
+                            # SQL 파서로 테이블 및 별칭 추출
+                            from .sql_parser import SqlParser
+                            sql_parser = SqlParser()
+                            alias_map = sql_parser.extract_tables_and_aliases(full_sql_text)
+
                             # SqlJoinAnalyzer를 사용해 테이블 및 조인 관계 분석
-                            analysis_result = self.sql_join_analyzer.analyze_join_relationships(full_sql_text)
+                            analysis_result = self.sql_join_analyzer.analyze_join_relationships(full_sql_text, alias_map, "", 0)
 
                             reconstructed_sqls.append({
                                 'sql_id': sql_id,
@@ -1865,8 +2090,13 @@ class EnhancedMybatisParser:
                         # 각 경로별로 분석
                         for i, sql_path in enumerate(sql_paths):
                             if sql_path.strip():
+                                # SQL 파서로 테이블 및 별칭 추출
+                                from .sql_parser import SqlParser
+                                sql_parser = SqlParser()
+                                alias_map = sql_parser.extract_tables_and_aliases(sql_path)
+
                                 # SqlJoinAnalyzer를 사용해 테이블 및 조인 관계 분석
-                                analysis_result = self.sql_join_analyzer.analyze_join_relationships(sql_path)
+                                analysis_result = self.sql_join_analyzer.analyze_join_relationships(sql_path, alias_map, "", 0)
 
                                 # 경로별 고유 ID 생성
                                 path_id = f"{sql_id}_path_{i+1}" if len(sql_paths) > 1 else sql_id

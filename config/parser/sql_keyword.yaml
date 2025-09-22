@@ -455,15 +455,15 @@ sql_statement_types:
 
 # JOIN 관계 분석 패턴 (Oracle SQL 메뉴얼 기반)
 join_relationship_patterns:
-  # 명시적 JOIN (Explicit JOIN) - Oracle SQL 표준 구문
+  # 명시적 JOIN (Explicit JOIN) - Oracle SQL 표준 구문만 (JPA JOIN FETCH 제외)
   explicit_joins:
-    # INNER JOIN (별칭 선택적 처리)
+    # INNER JOIN (별칭 선택적 처리, ON 절 필수)
     - |
-      \b(?:INNER\s+)?JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?\s+ON\s+([a-zA-Z0-9_.]+\s*=\s*[a-zA-Z0-9_.]+)
+      \b(?:INNER\s+)?JOIN\s+(?!FETCH\s)([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?\s+ON\s+([a-zA-Z0-9_.]+\s*=\s*[a-zA-Z0-9_.]+)
     
-    # LEFT/RIGHT/FULL OUTER JOIN (별칭 선택적 처리)
+    # LEFT/RIGHT/FULL OUTER JOIN (별칭 선택적 처리, ON 절 필수)
     - |
-      \b(?:LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?\s+ON\s+([a-zA-Z0-9_.]+\s*=\s*[a-zA-Z0-9_.]+)
+      \b(?:LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+JOIN\s+(?!FETCH\s)([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?\s+ON\s+([a-zA-Z0-9_.]+\s*=\s*[a-zA-Z0-9_.]+)
     
     # CROSS JOIN
     - |
@@ -527,31 +527,31 @@ table_extraction_patterns:
     - "\\bFROM\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
     - "\\bFROM\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
   
-  # JOIN 절 테이블명 추출 (별칭 제외)
+  # JOIN 절 테이블명 추출 (별칭 제외, ON 절 필수, FETCH 제외)
   join_clause:
-    # INNER JOIN
-    - "\\bINNER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bINNER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
-    - "\\bJOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bJOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
+    # INNER JOIN (ON 절 필수)
+    - "\\bINNER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bINNER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
+    - "\\bJOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bJOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
     
-    # LEFT JOIN
-    - "\\bLEFT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bLEFT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
-    - "\\bLEFT\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bLEFT\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
+    # LEFT JOIN (ON 절 필수, FETCH 제외)
+    - "\\bLEFT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bLEFT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
+    - "\\bLEFT\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bLEFT\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
     
-    # RIGHT JOIN
-    - "\\bRIGHT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bRIGHT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
-    - "\\bRIGHT\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bRIGHT\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
+    # RIGHT JOIN (ON 절 필수, FETCH 제외)
+    - "\\bRIGHT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bRIGHT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
+    - "\\bRIGHT\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bRIGHT\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
     
-    # FULL JOIN
-    - "\\bFULL\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bFULL\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
-    - "\\bFULL\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
-    - "\\bFULL\\s+OUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
+    # FULL JOIN (ON 절 필수, FETCH 제외)
+    - "\\bFULL\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bFULL\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
+    - "\\bFULL\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s+ON\\s"
+    - "\\bFULL\\s+OUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+ON\\s"
     
     # CROSS JOIN
     - "\\bCROSS\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s+[a-zA-Z_][a-zA-Z0-9_]*"
@@ -667,20 +667,20 @@ file_types:
   - "CSV"
   - "DUMMY"
 
-# 테이블명 추출 패턴 (XML 파싱용)
+# 테이블명 추출 패턴 (XML 파싱용, 에센스 패턴)
 table_extraction_patterns:
   - pattern: "\\bFROM\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
     description: "FROM table_name"
-  - pattern: "\\bJOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
-    description: "JOIN table_name"
-  - pattern: "\\bINNER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
-    description: "INNER JOIN table_name"
-  - pattern: "\\bLEFT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
-    description: "LEFT JOIN table_name"
-  - pattern: "\\bRIGHT\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
-    description: "RIGHT JOIN table_name"
-  - pattern: "\\bOUTER\\s+JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
-    description: "OUTER JOIN table_name"
+  - pattern: "\\bJOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+    description: "JOIN table_name (FETCH 제외)"
+  - pattern: "\\bINNER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+    description: "INNER JOIN table_name (FETCH 제외)"
+  - pattern: "\\bLEFT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+    description: "LEFT JOIN table_name (FETCH 제외)"
+  - pattern: "\\bRIGHT\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+    description: "RIGHT JOIN table_name (FETCH 제외)"
+  - pattern: "\\bOUTER\\s+JOIN\\s+(?!FETCH\\s)([a-zA-Z_][a-zA-Z0-9_]*)"
+    description: "OUTER JOIN table_name (FETCH 제외)"
   - pattern: "\\bINSERT\\s+INTO\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
     description: "INSERT INTO table_name"
   - pattern: "\\bUPDATE\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
