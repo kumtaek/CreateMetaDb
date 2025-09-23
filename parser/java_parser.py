@@ -18,7 +18,7 @@ from util import (
     ConfigUtils, FileUtils, HashUtils, PathUtils, ValidationUtils,
     app_logger, info, error, debug, warning, handle_error
 )
-from util.sql_join_analyzer import SqlJoinAnalyzer
+from .sql_join_analyzer import SqlJoinAnalyzer
 from .sql_parser import SqlParser
 
 class JavaParser:
@@ -280,50 +280,56 @@ class JavaParser:
         return value
 
     def _extract_jpa_queries(self, java_content: str, java_file: str) -> List[Dict[str, Any]]:
-        """JPA @Query 어노테이션에서 SQL 추출 (개선된 로직)"""
+        """JPA @Query 어노테이션에서 SQL 추출 (간단화된 로직)
+        @Query(...) 괄호 안의 문자열만 추출하는 심플한 방식"""
         jpa_queries = []
         try:
-            # 1. @Query 어노테이션과 그 다음 메서드 시그니처를 함께 찾음
-            #    - 그룹 1: @Query(...) 안의 내용
-            #    - 그룹 2: 메서드 이름
-            #    - re.DOTALL 플래그로 여러 줄에 걸친 어노테이션 처리
-            annotation_method_pattern = re.compile(
-                r'@Query\s*\((.*?)\)\s*(?:@\w+\s*)*'  # @Query(...)와 다른 어노테이션들
-                r'(?:public|private|protected)?\s*(?:static\s+)?(?:<[^>]+>\s+)?' # 제어자, 제네릭
-                r'[\w<>[\]]+\s+' # 반환 타입
-                r'(\w+)\s*\(',    # 메서드 이름 (그룹 2)
+            # 1. @Query(...) 괄호 안의 내용과 다음 메서드명을 추출하는 간단한 패턴
+            query_method_pattern = re.compile(
+                r'@Query\s*\((.*?)\)\s*'  # @Query(...) 괄호 안의 내용
+                r'.*?'  # 어노테이션과 메서드 사이의 모든 내용
+                r'(?:public|private|protected)?\s*(?:static\s+)?(?:<[^>]+>\s+)?'  # 접근제어자, 제네릭
+                r'[\w<>[\]]+\s+'  # 반환 타입
+                r'(\w+)\s*\(',  # 메서드명 캡처
                 re.DOTALL
             )
 
-            sql_parser = SqlParser()
-
-            for match in annotation_method_pattern.finditer(java_content):
+            for match in query_method_pattern.finditer(java_content):
                 annotation_content = match.group(1)
                 method_name = match.group(2)
 
-                # 2. 어노테이션 내용에서 모든 문자열 리터럴 추출
-                string_literals = re.findall(r'\"((?:\\\"|[^"])*)\"', annotation_content)
+                # 2. 괄호 안의 모든 문자열 리터럴만 추출 (쌍따옴표 안의 내용만)
+                string_literals = re.findall(r'"((?:\\.|[^"\\])*)"', annotation_content)
 
-                # 3. 문자열 리터럴들을 합쳐서 전체 SQL 쿼리 생성
-                sql_content = "".join(string_literals)
-                
+                # 3. 문자열들을 공백으로 연결하여 완전한 SQL 생성
+                sql_content = " ".join(string_literals)
+
                 # 빈 쿼리는 건너뜀
                 if not sql_content.strip():
                     continue
 
-                # 4. 후속 처리 (기존 로직과 유사)
-                clean_sql = sql_parser._preprocess_sql(sql_content)
-                query_type = sql_parser.determine_query_type(clean_sql)
-                alias_map = sql_parser.extract_tables_and_aliases(clean_sql)
-                join_relationships = self.sql_join_analyzer.analyze_join_relationships(clean_sql, alias_map, java_file)
+                # 4. SQL 타입 결정을 위한 간단한 체크
+                sql_upper = sql_content.upper().strip()
+                if sql_upper.startswith('SELECT'):
+                    query_type = 'SQL_SELECT'
+                elif sql_upper.startswith('INSERT'):
+                    query_type = 'SQL_INSERT'
+                elif sql_upper.startswith('UPDATE'):
+                    query_type = 'SQL_UPDATE'
+                elif sql_upper.startswith('DELETE'):
+                    query_type = 'SQL_DELETE'
+                elif sql_upper.startswith('MERGE'):
+                    query_type = 'SQL_MERGE'
+                else:
+                    query_type = 'QUERY'  # 알 수 없는 쿼리 타입
 
                 query_info = {
                     'query_id': method_name,
                     'query_type': query_type,
-                    'sql_content': sql_content, # 원본 SQL 저장
-                    'used_tables': list(alias_map.values()),
-                    'join_relationships': join_relationships,
-                    'is_dynamic': True, # 문자열 연결이 있으므로 동적으로 간주
+                    'sql_content': sql_content,
+                    'used_tables': [],  # 이후 공통 처리에서 추출
+                    'join_relationships': [],  # 이후 공통 처리에서 추출
+                    'is_dynamic': False,  # JPA 쿼리는 정적으로 간주
                     'method_name': method_name,
                     'line_start': java_content.count('\n', 0, match.start()) + 1,
                     'line_end': java_content.count('\n', 0, match.end()) + 1,

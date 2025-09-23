@@ -1,0 +1,217 @@
+아래 대화 내용으로 개발을 했는데, ./docs에 문서들에 내용에 현행화 할 부분을 수정보완해줘.  
+개발된 소스를 분석해서 문서의 내용이 다른 경우도 현행화 해주고.
+
+
+아래 대화 내용으로 개발을 하고자 했는데 개발하다 마무리를 못했어.
+개발 의도를 소스에 커멘트로 남기기도 했는데, 아래 내용개발 검토해보고 개발 마무리 해줘.
+./docs에 스키마정의서는 미리 숙지하고 개발하는게 좋아.
+
+---
+쿼리 분석기 개선을 하는데, 메소드-쿼리-테이블-조인조건을 도출해 내는게 목표야.
+복잡 정밀하고 정확한 파싱이 목표가 아니야.  목표 본질에 집중해서.
+쿼리분석기는 크게 3단계로 실행되고 아래와 같이 개발했어.
+위에 설계문서보다는 아래 내용이 우선이야.  개발이 잘 되었는지 main.py --project-name SampleSrc로 테스트를 진행해줘. 
+
+# 1단계 - 쿼리 추출 및 쿼리 저장(SqlContent.db)
+JAVA, XML(MyBatis), JPA 세가지 파일 분석해서 쿼리만 추출해냄.
+
+- JAVA
+쿼리가 아닌 java문법을 제거함.  각 문자형 변수에 +, +=, StringBuferr.append 등으로
+변수에 concaternation 누적 문자열을 추출함.  딕셔너리변수에 각 문자열변수별로 저장해 놓음.
+문자열변수에서 또는 문자열상수 일수도 있음.  문자열 상수도 임의 변수명으로 저장해 놓음.
+각 문자열에 시작에 공백, 탭, 주석 등을 제거하고 SELECT, INSERT, UPDATE, DELETE, MERGE로
+시작하는지 체크하여 쿼리를 담고 있는 변수만 추출.(이하 쿼리변수라 하자)
+쿼리변수들을 SqlContent에 압축해서 저장.  하나의 메소드에 여러 쿼리가 저장될 수 있다.
+쿼리변수명으로 components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록.
+각 쿼리변수에 대해 공통화된 아래 2,3단계 처리를 한다.
+(상기 처리에서 SELECT, INSERT, UPDATE, DELETE, MERGE가 구분되므로 2,3단계에 필요하면
+쿼리종류도 넘긴닫)
+
+- XML
+tag를 제거하고 남은 쿼리에 대해서
+components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록하고
+공통화된 아래 2,3단계 처리를 한다.
+참고로 MERGE문은 insert, update tag가 가능하다.
+
+- JPA
+상기와 같은 방식으로 쿼리를 제외한 부분을 제거하여 쿼리추출 후
+components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록하고
+공통화된 아래 2,3단계 처리를 한다.
+
+# 2단계 - 테이블 추출
+먼저 1단계로부터 넘겨받은 쿼리에서 주석을 제거한 후 2,3단계를 처리한다.
+테이블 추출.  정밀하고 복잡한 파서가 목표가 아니다.  쿼리에서 테이블이 도출되는 부분에만 집중한다.
+FROM절 뒤.  INSERT INTO 뒤.  UPDATE-SET 사이, DELETE FROM 뒤. MERGE INTO 뒤. JOIN-ON 사이
+여기에만 집중하면 테이블도출이 가능하다.
+아래 <tables>에는 테이블이 컴마로 구분되어 여러개 올 수 있다.  또한 테이블 알리아스가 있을 수 있음.
+이하 "<tables>파서"라 하자.   UPDATE <tables> SET에는 테이블에 여러개 올 수 없지만
+하나던 여러개던 처리는 동일하기 때문에 아래 모든 <tables>부분은 "<tables>파서"로 공통화할 수 있다.
+서브쿼리, 인라인뷰던 상관없이 아래 케이스만 처리할 수있으면 심플하게 테이블 도출이 가능하다.  
+config폴더에 오라클 키워드파일 참고하여 도출된 테이블이 오라클 키워드면 스킵한다.
+테이블과 알리아스는 3단계에서 필요하므로 딕셔너리 변수로 넘겨준다.
+도출된 테이블은 tables, components에 존재하지 않으면 INFERRED테이블 등록한다.
+(존재하지 않을때만 등록하기 떄문에 중복 스킵됨)
+존재여부 체크는 (project_id, table_name)으로 존재하는지 체크한다.  table_owner로는 조회 안한다.
+그래서 테이블이 여러건 조회될 수 있는데 INFERRED가 아닌 테이블을 우선으로 LIMIT 1건 추출한다.
+INFERRED테이블의 table_owner는 'UNKNOWN'으로 한다.
+
+  2단계: 테이블 추출 정규식 패턴
+  FROM <tables>
+  FROM <tables> WHERE
+  FROM <tables> GROUP
+  FROM <tables> ORDER
+  FROM <tables> UNION
+  FROM <tables>, (
+  FROM <tables> HAVING
+  FROM <tables> LIMIT
+  FROM <tables> FETCH
+  FROM <tables> FOR
+  FROM <tables> INTERSECT
+  FROM <tables> MINUS
+  FROM <tables> EXCEPT
+  UPDATE <tables> SET
+  DELETE FROM <tables>
+  DELETE FROM <tables> WHERE
+  INSERT INTO <tables> (
+  INSERT INTO <tables> SELECT
+  MERGE INTO <tables> USING
+  JOIN <tables> ON
+  USING <tables> ON
+
+# 3단계 - 조인관계 추출
+조인조건 필드들을 추출해서 relationships 테이블에 조인관계를 저장한다.
+1:N 관계에서 columns를 참조하여 PK쪽을 1쪽으로 해서 1쪽 컬럼의 compoennt_id를 src_id에 저장.
+반대편 N쪽 컬럼을 dst_id에 저장한다.  방향을 인지할 수 없는 관계는 중복제거를 위해 작은 component_id를
+src_id에 넣는다.   테이블 알리아스는 2단계에서 넘겨받은 딕셔너리 변수를 참고한다.
+조인관계 추출은 아래 두가지 패턴으로 부터 발생한다.
+조인관계에서 도출된 컬럼은 columns, components에 존재하지 않으면 INFERRED 컬럼 등록한다.
+(존재하지 않을때만 등록하기 떄문에 중복 스킵됨)
+config폴더에 오라클 키워드파일 참고하여 도출된 조인조건 컬럼이 오라클 키워드면 스킵한다.
+
+  3단계: 조인 분석 패턴
+  ① WHERE ... <조인조건> --> JOIN_IMPLICIT
+  ② JOIN ... ON <조인조건> --> JOIN_EXPLICIT
+  ③ MERGE ... USING ... ON (<조인조건>) --> JOIN_MERGEON
+
+
+---
+# JPA 쿼리 분석
+
+JPA 쿼리 분석하는 로직을 개선하려고 해. 우리는 문법적으로 정확한지 파싱하는게 아니잖아.  
+단순화해.  그냥 "@Query(...)"  괄호안에 뭐가 있던 문자열만 추려내도록 해.
+"@Query(...)" 던 "@Query(value="...")"던 "@Query(xxxx "...")"  던 괄호안에 있는 문자열만 추려내는.
+괄혼 안에 내용중에 쌍따옴표 안에 문자열외에는 모두 제거하기만 하면 되지.  그래서 +로 문자열 연결되는 구조더라도 
+쌍따옴표 밖에 있는건 그냥 무조건 제거해 버리는 로직이면 심플하잖아.  그렇게 문자열안에 내용만 추려서 다음 단계로 넘겨.   
+일반 java쪽 쿼리추려내는 로직에 변수명:문자열 형식의 딕셔너리를 만들어서 처리하잖아?
+그럼 쿼리추려내는 부분 이후는 JPA와 Java쪽을 공통화 할 수 있지.
+
+    @Query("SELECT u FROM User u WHERE " +
+           "(:username IS NULL OR u.username LIKE %:username%) AND " +
+           "(:email IS NULL OR u.email LIKE %:email%) AND " +
+           "(:status IS NULL OR u.status = :status) AND " +
+           "(:userType IS NULL OR u.userType = :userType)")
+    Page<User> findUsersByDynamicCriteria(@Param("username") String username,
+                                         @Param("email") String email,
+                                         @Param("status") UserStatus status,
+                                         @Param("userType") UserType userType,
+                                         Pageable pageable); 
+
+예를 들어 상기 케이스는 심플하게 아래처럼 나오면 되지.
+
+{'findUsersByDynamicCriteria': "SELECT u FROM User u WHERE 
+           (:username IS NULL OR u.username LIKE %:username%) AND 
+           (:email IS NULL OR u.email LIKE %:email%) AND 
+           (:status IS NULL OR u.status = :status) AND 
+           (:userType IS NULL OR u.userType = :userType)"}
+           
+아래처럼 문법이 안맞아도 상관없어 괄호안에 문자열이 아닌 것들은 다 제거할 거니까 상기와 동일하게 나오겠지.
+상기 딕셔너리만 있으면 sqlcontent에 저장하는 것도 문제 안되고, 테이블 도출하는 것도 공통부에서 처리하면 되고
+조인 조건도 마찮가지야.  그냥 뒷단계 공통부 로직에서 처리하면 되니까.           
+
+    @Query(xxxx = "SELECT u FROM User u WHERE " +  ffff +
+           "(:username IS NULL OR u.username LIKE %:username%) AND " +
+           "(:email IS NULL OR u.email LIKE %:email%) AND " +
+           "(:status IS NULL OR u.status = :status) AND " +
+           "(:userType IS NULL OR u.userType = :userType)")
+    Page<User> findUsersByDynamicCriteria(@Param("username") String username,
+                                         @Param("email") String email,
+                                         @Param("status") UserStatus status,
+                                         @Param("userType") UserType userType,
+                                         Pageable pageable);      
+
+
+
+
+---
+# XML Mybatis
+
+Mybatis 파서개선해보자.   우리 목표는 뭐다?  신택스에러 체크하는 문법적으로 정확한 파서?
+그게 아니고 1단계 쿼리를 그대로 SqlContent 테이블에 저장하고
+2단계 테이블도출해 내고
+3단계 조인관계 도출. 
+현재 Java, JPA에서 상기와 같이 심플한 로직으로 개발 완료했어.
+마찮가지로 현재 구현되어 있는 ET.parse, DOM파서 이런거 제거하고
+XML Mybatis도 동일한 논리로 목표달성만을 위한 심플한 파서를 구현하고자 함.
+
+결론적으로 아래는 Mybatis 관련 부분을 제거하고 나면
+
+    <!-- 재고 업데이트 -->
+    <update id="updateProductStock">
+        UPDATE products 
+        SET stock_quantity = stock_quantity + #{quantity},
+            updated_date = SYSDATE
+        WHERE product_id = #{productId}
+    </update>
+
+상기는 아래같은 딕셔너리가 만들어 지면 되.  그냥 Mybatis tag만 제거해 내면 되지?
+
+{"updateProductStock": '''UPDATE products 
+        SET stock_quantity = stock_quantity + #{quantity},
+            updated_date = SYSDATE
+        WHERE product_id = #{productId}'''}
+
+마찮가지로 아래도 심플하게 Mybatis Tag만 제거해 내는게 어려워?       
+    
+    <!-- 동적 상품 업데이트 -->
+    <update id="updateProductDynamic" parameterType="com.example.model.Product">
+        UPDATE products 
+        <set>
+            <if test="productName != null and productName != ''">
+                product_name = #{productName},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
+            <if test="brandId != null">
+                brand_id = #{brandId},
+            </if>
+            <if test="stockQuantity != null">
+                stock_quantity = #{stockQuantity},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+            updated_date = SYSDATE
+        </set>
+        WHERE product_id = #{productId}
+    </update>
+    
+뭐가 복잡해?  그냥 tag만 제거해 내고 쿼리만 남기는게?    
+    
+{"updateProductDynamic": '''
+        UPDATE products 
+        productName != null and productName != ''
+                product_name = #{productName},
+            price = #{price},
+            category_id = #{categoryId},
+            brand_id = #{brandId},
+            stock_quantity = #{stockQuantity},
+            status = #{status},
+            updated_date = SYSDATE
+        WHERE product_id = #{productId}''' }
+      
+저런 딕셔너리만 만들어 내면, 그 이후는 JAVA, JPA와 동일하게 공통화 해서 
+그 이후단계는 처리하면 되지.

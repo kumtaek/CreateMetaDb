@@ -14,8 +14,8 @@ USER RULES:
 import os
 import re
 from typing import List, Dict, Any, Optional, Tuple, Set
-from .logger import app_logger, info, warning, debug, error, handle_error
-from .path_utils import PathUtils
+from util.logger import app_logger, info, warning, debug, error, handle_error
+from util.path_utils import PathUtils
 
 
 class SqlJoinAnalyzer:
@@ -78,33 +78,27 @@ class SqlJoinAnalyzer:
     
     def analyze_join_relationships(self, sql_content: str, alias_map: Dict[str, str], file_path: str = "", component_id: int = 0) -> List[Dict[str, Any]]:
         """
-        SQL 조인 관계 분석. alias_map을 직접 받아 처리합니다.
-        
-        Args:
-            sql_content: SQL 내용
-            alias_map: 테이블 별칭 맵 (e.g., {'u': 'USERS'})
-            file_path: 파일 경로 (선택적)
-            component_id: 컴포넌트 ID (선택적)
-            
-        Returns:
-            JOIN 관계 리스트
+        SQL 조인 관계 분석 (세 가지 유형 분리 처리)
         """
         try:
-            debug(f"SQL 조인 분석 시작 (alias_map 사용): {file_path or 'JAVA_SOURCE'}")
+            debug(f"SQL 조인 분석 시작: {file_path or 'source'}")
+            relationships = []
             
-            # 1. SQL 정규화
             normalized_sql = self._normalize_sql_for_analysis(sql_content, self.config.get('dynamic_sql_patterns', {}))
             
-            # 2. EXPLICIT JOIN 분석 (ON 절)
-            explicit_relationships = self._analyze_explicit_joins(normalized_sql, alias_map)
+            # 1. EXPLICIT JOIN 분석 (JOIN ... ON)
+            explicit_joins = self._analyze_explicit_joins(normalized_sql, alias_map)
+            relationships.extend(explicit_joins)
             
-            # 3. IMPLICIT JOIN 분석 (WHERE 절)
-            analysis_patterns = self.config.get('sql_analysis_patterns', {})
-            implicit_relationships = self._analyze_implicit_joins_in_where(normalized_sql, alias_map, analysis_patterns)
+            # 2. MERGE JOIN 분석 (MERGE ... USING ... ON)
+            merge_joins = self._analyze_merge_joins(normalized_sql, alias_map)
+            relationships.extend(merge_joins)
+
+            # 3. IMPLICIT JOIN 분석 (WHERE ...)
+            implicit_joins = self._analyze_implicit_joins(normalized_sql, alias_map)
+            relationships.extend(implicit_joins)
             
-            # 4. 모든 관계 통합 및 후처리
-            all_relationships = explicit_relationships + implicit_relationships
-            unique_relationships = self._remove_duplicate_relationships(all_relationships)
+            unique_relationships = self._remove_duplicate_relationships(relationships)
             final_relationships = self._post_process_relationships(unique_relationships, alias_map)
             
             debug(f"SQL 조인 분석 완료: {len(final_relationships)}개 관계 발견")
@@ -112,6 +106,62 @@ class SqlJoinAnalyzer:
             
         except Exception as e:
             handle_error(e, f"SQL 조인 분석 실패: {file_path}")
+            return []
+
+    def _analyze_explicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """JOIN ... ON ... 구문에서 명시적 JOIN 관계를 분석합니다."""
+        try:
+            relationships = []
+            join_pattern = r'\bJOIN\s+[\w\.]+(?:\s+AS)?\s*\w*\s+ON\s*\(([^)]+)\)'
+            on_clauses = re.findall(join_pattern, sql_content, re.IGNORECASE)
+            
+            for on_clause in on_clauses:
+                condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+                conditions = re.findall(condition_pattern, on_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_EXPLICIT')
+                    if rel:
+                        relationships.append(rel)
+            return relationships
+        except Exception as e:
+            handle_error(e, "EXPLICIT JOIN 분석 실패")
+            return []
+
+    def _analyze_merge_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """MERGE ... USING ... ON ... 구문에서 JOIN_MERGEON 관계를 분석합니다."""
+        try:
+            relationships = []
+            merge_pattern = r'\bMERGE\s+INTO[\s\S]*?\bUSING[\s\S]*?\bON\s*\(([^)]+)\)'
+            on_clauses = re.findall(merge_pattern, sql_content, re.IGNORECASE)
+
+            for on_clause in on_clauses:
+                condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+                conditions = re.findall(condition_pattern, on_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_MERGEON')
+                    if rel:
+                        relationships.append(rel)
+            return relationships
+        except Exception as e:
+            handle_error(e, "MERGE JOIN 분석 실패")
+            return []
+
+    def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+        try:
+            relationships = []
+            where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
+            if where_match:
+                where_clause = where_match.group(1)
+                condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+                conditions = re.findall(condition_pattern, where_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
+                    if rel:
+                        relationships.append(rel)
+            return relationships
+        except Exception as e:
+            handle_error(e, "IMPLICIT JOIN 분석 실패")
             return []
     
     def _normalize_sql_for_analysis(self, sql_content: str, dynamic_patterns: dict) -> str:
