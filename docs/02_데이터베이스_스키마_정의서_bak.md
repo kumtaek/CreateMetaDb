@@ -1,4 +1,4 @@
-﻿# SourceAnalyzer 메타데이터베이스 스키마 정의서 v4.1
+# SourceAnalyzer 메타데이터베이스 스키마 정의서 v4.1
 
 ## 문서 목적
 
@@ -261,6 +261,11 @@ frameworks = 'fetch, jquery'
 | created_at     | DATETIME     | DEFAULT (datetime('now', '+9 hours')) | 생성일시                                                                                            |
 | updated_at     | DATETIME     | DEFAULT (datetime('now', '+9 hours')) | 수정일시                                                                                            |
 | del_yn         | CHAR(1)      | DEFAULT 'N'                           | 삭제 여부 (Y/N)                                                                                     |
+| api_url        | VARCHAR(500) |                                       | API URL (API_URL 타입일 때)                                                                        |
+| call_method    | VARCHAR(10)  |                                       | HTTP 메서드 (GET, POST, PUT, DELETE)                                                               |
+| class_name     | VARCHAR(200) |                                       | 클래스명 (백엔드 메서드 연결 시)                                                                      |
+| method_name    | VARCHAR(200) |                                       | 메서드명 (백엔드 메서드 연결 시)                                                                      |
+
 #### **file_id 설정 원칙**
 
 각 컴포넌트 타입별로 file_id 설정 원칙이 다릅니다:
