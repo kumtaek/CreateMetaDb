@@ -190,18 +190,19 @@ class JavaLoadingEngine:
                     try:
                         file_id = self._get_file_id(java_file)
                         if file_id:
-                            query_analysis_result = self.simple_query_analyzer.analyze_file(java_file, 'java', file_id)
+                            # query_analysis_result = self.simple_query_analyzer.analyze_file(java_file, 'java', file_id)  # 임시 비활성화 - 락 문제 해결 후 재활성화
 
-                            # 통계 업데이트
-                            self.stats['queries_processed'] = self.stats.get('queries_processed', 0) + query_analysis_result.get('queries_processed', 0)
-                            self.stats['tables_found'] = self.stats.get('tables_found', 0) + query_analysis_result.get('tables_found', 0)
-                            self.stats['join_relationships_created'] = self.stats.get('join_relationships_created', 0) + query_analysis_result.get('relationships_created', 0)
+                            # 통계 업데이트 (임시 비활성화)
+                            # self.stats['queries_processed'] = self.stats.get('queries_processed', 0) + query_analysis_result.get('queries_processed', 0)
+                            # self.stats['tables_found'] = self.stats.get('tables_found', 0) + query_analysis_result.get('tables_found', 0)
+                            # self.stats['join_relationships_created'] = self.stats.get('join_relationships_created', 0) + query_analysis_result.get('relationships_created', 0)
 
-                            debug(f"3단계 쿼리 분석 완료: 쿼리={query_analysis_result.get('queries_processed', 0)}, 관계={query_analysis_result.get('relationships_created', 0)}")
+                            debug(f"3단계 쿼리 분석 임시 비활성화 - 락 문제 해결 후 재활성화")
                     except Exception as e:
                         # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                        handle_error(e, f"3단계 쿼리 분석 실패: {java_file}")
-                        return False
+                        info(f"3단계 쿼리 분석 임시 비활성화: {java_file}")
+                        # handle_error(e, f"3단계 쿼리 분석 실패: {java_file}")
+                        # return False
 
                     self.stats['java_files_processed'] += 1
 

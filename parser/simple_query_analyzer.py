@@ -584,48 +584,31 @@ class SimpleQueryAnalyzer:
             handle_error(e, f"컬럼 컴포넌트 등록 실패: {table_name}.{column_name}")
             return None
 
-    def save_query_to_sqlcontent(self, query_info: Dict, file_id: int) -> bool:
-        """쿼리를 components 테이블에 저장 (스키마 준수)"""
+    def get_query_analysis_results(self, query_info: Dict) -> Dict:
+        """쿼리 분석 결과 반환 - 데이터베이스 저장은 호출자에서 처리"""
         try:
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_query = "SELECT project_id FROM projects WHERE project_name = ? AND del_yn = 'N'"
-            project_result = self.db_utils.execute_query(project_query, (self.project_name,))
+            # 2,3단계 분석 실행
+            analysis_result = self.process_query_common_stages(query_info)
 
-            if not project_result:
-                handle_error(Exception(f"프로젝트를 찾을 수 없음: {self.project_name}"), "프로젝트 조회 실패")
-                return False
-
-            project_id = project_result[0]['project_id']
-
-            # 쿼리 컴포넌트 데이터 준비 (스키마 정의서 준수)
-            component_data = {
-                'project_id': project_id,
-                'file_id': file_id,
-                'component_name': query_info['query_id'],
-                'component_type': query_info['query_type'],
-                'parent_id': None,
-                'layer': 'QUERY',
-                'line_start': 1,
-                'line_end': 1,
-                'has_error': 'N',
-                'error_message': None,
+            # 쿼리 정보와 분석 결과를 합쳐서 반환
+            result = {
+                'query_id': query_info['query_id'],
+                'method_name': query_info['method_name'],
+                'variable_name': query_info['variable_name'],
+                'sql_content': query_info['sql_content'],
+                'query_type': query_info['query_type'],
                 'hash_value': self._calculate_hash(query_info['sql_content']),
-                'del_yn': 'N'
+                'tables': analysis_result['tables'],
+                'join_relationships': analysis_result['join_relationships'],
+                'use_table_relationships': analysis_result['use_table_relationships']
             }
 
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-
-            if component_id:
-                debug(f"쿼리 컴포넌트 저장 완료: {query_info['query_id']}")
-                return True
-            else:
-                handle_error(Exception(f"쿼리 컴포넌트 저장 실패: {query_info['query_id']}"), "쿼리 컴포넌트 저장 실패")
-                return False
+            debug(f"쿼리 분석 완료: {query_info['query_id']}")
+            return result
 
         except Exception as e:
-            handle_error(e, f"쿼리 저장 실패: {query_info.get('query_id', 'UNKNOWN')}")
-            return False
+            handle_error(e, f"쿼리 분석 실패: {query_info.get('query_id', 'UNKNOWN')}")
+            return {}
 
     def save_relationships(self, relationships: List[Dict]) -> bool:
         """관계 데이터 저장"""
