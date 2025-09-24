@@ -129,6 +129,21 @@ class JavaLoadingEngine:
                         # 클래스가 없는 경우 디버그 로그만 출력하고 계속 진행
                         debug(f"클래스가 없는 Java 파일 (정상 또는 파서 한계): {java_file}")
 
+                    # SQL 쿼리와 관련된 메서드를 임시로 METHOD 컴포넌트 등록 (뒷단계에서 전체 분석 시 보완)
+                    if analysis_result.get('sql_queries'):
+                        try:
+                            method_names = set()
+                            for query in analysis_result['sql_queries']:
+                                if query.get('method_name'):
+                                    method_names.add(query['method_name'])
+
+                            if method_names:
+                                if self._create_temporary_method_components(method_names, java_file):
+                                    debug(f"임시 METHOD 컴포넌트 생성 완료: {len(method_names)}개")
+                        except Exception as e:
+                            handle_error(e, f"임시 메서드 컴포넌트 생성 실패: {java_file}")
+                            return False
+
                     # 상속 관계 처리
                     if analysis_result.get('inheritance_relationships'):
                         try:
@@ -1969,3 +1984,70 @@ class JavaLoadingEngine:
         except Exception as e:
             warning(f"CSV 파일 ID 조회 실패: {csv_file_name} - {str(e)}")
             return None
+
+    def _create_temporary_method_components(self, method_names: set, java_file: str) -> bool:
+        """
+        SQL 쿼리와 관련된 메서드들을 임시로 METHOD 컴포넌트 등록
+        뒷단계에서 전체 분석 시 추가 정보 보완하거나 중복 스킵
+
+        Args:
+            method_names: 메서드명 집합
+            java_file: Java 파일 경로
+
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            if not method_names:
+                return True
+
+            debug(f"임시 METHOD 컴포넌트 생성 시작: {java_file}, {len(method_names)}개")
+
+            # 프로젝트 ID 및 파일 ID 조회
+            project_id = self._get_project_id()
+            file_id = self._get_file_id(java_file)
+
+            if not project_id or not file_id:
+                handle_error(Exception(f"프로젝트 ID 또는 파일 ID를 찾을 수 없음: {java_file}"), "임시 메서드 컴포넌트 생성 실패")
+                return False
+
+            # 기존 데이터베이스 연결 사용
+            database_utils = self.db_utils
+
+            for method_name in method_names:
+                try:
+                    # 중복 체크 (이미 존재하는 메서드는 스킵)
+                    check_query = """
+                        SELECT component_id FROM components
+                        WHERE project_id = ? AND component_name = ? AND component_type = 'METHOD' AND del_yn = 'N'
+                    """
+                    existing = database_utils.execute_query(check_query, (project_id, method_name))
+
+                    if existing:
+                        debug(f"METHOD 컴포넌트 이미 존재 (스킵): {method_name}")
+                        continue
+
+                    # 임시 METHOD 컴포넌트 생성
+                    insert_query = """
+                        INSERT INTO components (
+                            project_id, file_id, component_name, component_type,
+                            layer, line_start, line_end, has_error, hash_value, created_at, updated_at, del_yn
+                        ) VALUES (?, ?, ?, 'METHOD', 'temp', 1, 1, 'N', 'temp_method', datetime('now', '+9 hours'), datetime('now', '+9 hours'), 'N')
+                    """
+
+                    result = database_utils.execute_query(insert_query, (project_id, file_id, method_name))
+
+                    if result:
+                        debug(f"임시 METHOD 컴포넌트 생성 완료: {method_name}")
+                    else:
+                        warning(f"임시 METHOD 컴포넌트 생성 실패: {method_name}")
+
+                except Exception as e:
+                    warning(f"메서드 컴포넌트 생성 중 오류: {method_name} - {str(e)}")
+                    continue
+
+            return True
+
+        except Exception as e:
+            handle_error(e, f"임시 메서드 컴포넌트 생성 실패: {java_file}")
+            return False

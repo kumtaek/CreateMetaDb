@@ -1,0 +1,119 @@
+<div class="user-management">
+  <h1>User Management System</h1>
+  
+  <!-- User Management Section -->
+  <div class="user-section">
+    <h2>User Management</h2>
+    <div class="controls">
+      <button (click)="loadUsers()" [disabled]="loading">Load Users</button>
+      <button (click)="loadUserStatistics()" [disabled]="loading">Load Statistics</button>
+      <button (click)="deleteInactiveUsers()" [disabled]="loading">Delete Inactive Users</button>
+      <button (click)="insertUserOrderStatistics()" [disabled]="loading">Insert Order Statistics</button>
+    </div>
+    
+    <div class="user-list">
+      <h3>Users</h3>
+      <div *ngIf="loading">Loading...</div>
+      <table *ngIf="!loading">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>{{ user.userId }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.status }}</td>
+            <td>
+              <button (click)="updateUserStatus(user.userId, 'ACTIVE')">Activate</button>
+              <button (click)="updateUserStatus(user.userId, 'INACTIVE')">Deactivate</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Order Management Section -->
+  <div class="order-section">
+    <h2>Order Management</h2>
+    <div class="controls">
+      <button (click)="loadOrders()" [disabled]="loading">Load Orders</button>
+      <button (click)="loadOrderStatistics()" [disabled]="loading">Load Order Statistics</button>
+    </div>
+    
+    <div class="order-list">
+      <h3>Orders</h3>
+      <div *ngIf="loading">Loading...</div>
+      <table *ngIf="!loading">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>User ID</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders">
+            <td>{{ order.orderId }}</td>
+            <td>{{ order.userId }}</td>
+            <td>{{ order.totalAmount }}</td>
+            <td>{{ order.orderStatus }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Product Management Section -->
+  <div class="product-section">
+    <h2>Product Management</h2>
+    <div class="controls">
+      <button (click)="loadProducts()" [disabled]="loading">Load Products</button>
+      <button (click)="loadProductRecommendations()" [disabled]="loading">Load Recommendations</button>
+      <button (click)="updateProductPrices()" [disabled]="loading">Update Prices</button>
+      <button (click)="insertProductRecommendations()" [disabled]="loading">Insert Recommendations</button>
+    </div>
+    
+    <div class="product-list">
+      <h3>Products</h3>
+      <div *ngIf="loading">Loading...</div>
+      <table *ngIf="!loading">
+        <thead>
+          <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td>{{ product.productId }}</td>
+            <td>{{ product.productName }}</td>
+            <td>{{ product.price }}</td>
+            <td>{{ product.stockQuantity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Statistics Section -->
+  <div class="statistics-section">
+    <h2>Statistics</h2>
+    <div class="stats">
+      <div *ngFor="let stat of statistics | keyvalue" class="stat-item">
+        <span class="stat-label">{{ stat.key }}:</span>
+        <span class="stat-value">{{ stat.value }}</span>
+      </div>
+    </div>
+  </div>
+</div>

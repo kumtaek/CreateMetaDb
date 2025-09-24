@@ -16,18 +16,21 @@
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
 **SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
 **쿼리 도려내기**: ✅ **JPA @Query, StringBuilder, String.format, JPA 메서드 쿼리 지원**  
+**JPA 단순화**: ✅ **@Query(...) 괄호 안 문자열만 추출 (문법 오류 무시)**  
 **쿼리 종류 인식**: ✅ **INSERT/UPDATE/DELETE/MERGE/SELECT 자동 구분 (21/21 테스트 성공)**  
 **공통부 활용**: ✅ **SqlParser + SqlJoinAnalyzer로 일관된 고품질 분석**  
 
 ## 3단계 쿼리 분석기 구현 완료 (Java 파서 적용)
 
-### 1단계 - Java 쿼리 추출 및 저장
+### 1단계 - Java 쿼리 추출 및 저장 (단순화된 접근법)
 - **동적 쿼리 처리**: 문자열 변수의 concaternation 누적 처리
   - `+=`, `StringBuffer.append()`, `StringBuilder.append()` 패턴 지원
   - 각 변수별로 최종 누적된 문자열을 딕셔너리에 저장
 - **SQL 키워드 필터링**: `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`로 시작하는 쿼리만 추출
 - **문자열 정규화**: 공백, 탭, 주석 제거 후 쿼리 변수 식별
-- **JPA @Query 추출**: `@Query` 어노테이션에서 쿼리 추출 (JPQL vs Native SQL 구분)
+- **JPA @Query 추출**: `@Query(...)` 괄호 안 문자열만 추출 (문법 오류 무시)
+  - `@Query("...")`, `@Query(value="...")`, `@Query(xxxx="...")` 모든 형태 지원
+  - 문자열 연결(`+`) 부분은 무시하고 쌍따옴표 안 내용만 추출
 - **SqlContent.db 저장**: 쿼리변수명으로 components와 sqlcontent(압축)에 등록
 
 ### 2단계 - 테이블 추출 (공통 처리)

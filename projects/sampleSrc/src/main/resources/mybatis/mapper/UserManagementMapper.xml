@@ -1,90 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.dao.UserManagementDao">
-
+<mapper namespace="com.example.mapper.UserManagementMapper">
+    
     <!-- 사용자 목록 조회 -->
-    <select id="selectUsers" resultType="map">
-        SELECT 
-            user_id,
-            username,
-            email,
-            status,
-            created_at,
-            updated_at
-        FROM users
-        WHERE del_yn = 'N'
-        ORDER BY created_at DESC
-    </select>
-
-    <!-- 사용자 상세 조회 -->
-    <select id="selectUserById" parameterType="long" resultType="map">
-        SELECT 
-            u.user_id,
-            u.username,
-            u.email,
-            u.status,
-            u.created_at,
-            u.updated_at,
-            ui.phone,
-            ui.address,
-            ui.birth_date
+    <select id="selectUsers" parameterType="map" resultType="com.example.model.User">
+        SELECT u.user_id, u.username, u.email, u.status, u.created_at
         FROM users u
-        LEFT JOIN user_info ui ON u.user_id = ui.user_id
-        WHERE u.user_id = #{userId}
-          AND u.del_yn = 'N'
+        <where>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND u.user_type = #{userType}
+            </if>
+        </where>
+        ORDER BY u.created_at DESC
     </select>
-
-    <!-- 사용자 생성 -->
-    <insert id="insertUser" parameterType="map">
-        INSERT INTO users (
-            username,
-            email,
-            status,
-            created_at,
-            updated_at,
-            del_yn
-        ) VALUES (
-            #{userData.username},
-            #{userData.email},
-            #{userData.status},
-            NOW(),
-            NOW(),
-            'N'
-        )
-    </insert>
-
-    <!-- 사용자 수정 -->
-    <update id="updateUser">
-        UPDATE users 
-        SET 
-            username = #{userData.username},
-            email = #{userData.email},
-            status = #{userData.status},
-            updated_at = NOW()
-        WHERE user_id = #{userId}
-          AND del_yn = 'N'
-    </update>
-
-    <!-- 사용자 삭제 (논리 삭제) -->
-    <update id="deleteUser" parameterType="long">
-        UPDATE users 
-        SET 
-            del_yn = 'Y',
-            updated_at = NOW()
-        WHERE user_id = #{userId}
-          AND del_yn = 'N'
-    </update>
-
+    
+    <!-- 사용자 상세 조회 -->
+    <select id="selectUserById" parameterType="long" resultType="com.example.model.User">
+        SELECT u.*, up.first_name, up.last_name, up.phone
+        FROM users u
+        LEFT JOIN user_profiles up ON u.user_id = up.user_id
+        WHERE u.user_id = #{userId}
+    </select>
+    
     <!-- 사용자 통계 조회 -->
     <select id="selectUserStatistics" resultType="map">
         SELECT 
             COUNT(*) as total_users,
             COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_users,
-            COUNT(CASE WHEN status = 'INACTIVE' THEN 1 END) as inactive_users,
-            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as new_users_last_30_days
+            COUNT(CASE WHEN status = 'INACTIVE' THEN 1 END) as inactive_users
         FROM users
-        WHERE del_yn = 'N'
     </select>
-
+    
+    <!-- 사용자 상태 업데이트 -->
+    <update id="updateUserStatus" parameterType="map">
+        UPDATE users 
+        SET status = #{newStatus}, updated_at = SYSDATE
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 비활성 사용자 삭제 -->
+    <delete id="deleteInactiveUsers" parameterType="string">
+        DELETE FROM users 
+        WHERE status = 'INACTIVE' 
+        AND last_login_at < #{cutoffDate}
+    </delete>
+    
+    <!-- 사용자 등록 -->
+    <insert id="insertUser" parameterType="com.example.model.User">
+        INSERT INTO users (username, email, password, status, created_at)
+        VALUES (#{username}, #{email}, #{password}, #{status}, SYSDATE)
+    </insert>
 </mapper>
