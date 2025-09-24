@@ -175,3 +175,4 @@ public interface MergeQueryRepository extends JpaRepository<Object, Long> {
                   nativeQuery = true)
     void mergeCategoryStatisticsWithJpa();
 }
+

@@ -4,6 +4,7 @@ SourceAnalyzer 공통 로깅 및 에러 처리 모듈
 - SourceAnalyzer_{timestamp}.log 파일에 기록
 - Exception 발생 시 라인번호 포함한 에러 로그 기록 및 프로그램 종료
 - 중앙 집중식 로깅 설정 사용
+- 안전한 로그 파일 핸들링 적용
 """
 
 import sys
@@ -367,3 +368,50 @@ if __name__ == "__main__":
         result = 1 / 0
     except Exception as e:
         handle_error(e, "테스트 에러 발생")
+
+
+# =============================================================================
+# 안전한 로거 통합 (하위 호환성 유지)
+# =============================================================================
+
+# 안전한 로거를 기본 로거로 설정하는 옵션
+USE_SAFE_LOGGER = True
+
+if USE_SAFE_LOGGER:
+    try:
+        from .safe_logger import (
+            get_safe_logger, safe_info, safe_warning,
+            safe_error, safe_debug, safe_handle_error
+        )
+
+        # 기존 함수들을 안전한 로거로 대체
+        def safe_info_wrapper(message: str):
+            safe_info(message)
+
+        def safe_warning_wrapper(message: str):
+            safe_warning(message)
+
+        def safe_error_wrapper(message: str):
+            safe_error(message)
+
+        def safe_debug_wrapper(message: str):
+            safe_debug(message)
+
+        def safe_handle_error_wrapper(error, context: str = ""):
+            safe_handle_error(error, context)
+
+        # 안전한 로거가 사용 가능한 경우 기본 함수들을 대체
+        # 단, 기존 코드 호환성을 위해 원래 함수들도 유지
+        info_safe = safe_info_wrapper
+        warning_safe = safe_warning_wrapper
+        error_safe = safe_error_wrapper
+        debug_safe = safe_debug_wrapper
+        handle_error_safe = safe_handle_error_wrapper
+
+    except ImportError:
+        # 안전한 로거 모듈을 찾을 수 없는 경우 기존 로거 사용
+        info_safe = info
+        warning_safe = warning
+        error_safe = error
+        debug_safe = debug
+        handle_error_safe = handle_error

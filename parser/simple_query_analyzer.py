@@ -16,6 +16,7 @@ from util import (
     info, error, warning, debug, handle_error,
     DatabaseUtils, ConfigUtils, PathUtils, HashUtils
 )
+from util.oracle_keyword_manager import get_oracle_keyword_manager
 
 
 class SimpleQueryAnalyzer:
@@ -30,8 +31,9 @@ class SimpleQueryAnalyzer:
             self.path_utils = PathUtils()
             self.hash_utils = HashUtils()
 
-            # 오라클 키워드 로드
-            self.oracle_keywords = self._load_oracle_keywords()
+            # Oracle 키워드 매니저 초기화 (싱글톤)
+            self.oracle_keyword_manager = get_oracle_keyword_manager()
+            self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
 
             # SQL 키워드 패턴 (대소문자 무관)
             self.sql_start_patterns = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']
@@ -41,38 +43,6 @@ class SimpleQueryAnalyzer:
         except Exception as e:
             handle_error(e, "심플 쿼리 분석기 초기화 실패")
 
-    def _load_oracle_keywords(self) -> Set[str]:
-        """오라클 키워드 로드 - YAML 파일에서 로드 (다른 파서와 통일)"""
-        try:
-            # USER RULES: 공통함수 사용, 하드코딩 금지
-            config_path = self.path_utils.get_parser_config_path("oracle_sql")
-
-            if not os.path.exists(config_path):
-                handle_error(Exception(f"오라클 키워드 설정 파일 없음: {config_path}"), "오라클 키워드 파일 없음 - 2,3단계 키워드 체크 불가")
-                return set()
-
-            import yaml
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-
-            keywords = set()
-            if isinstance(config, dict):
-                # oracle_sql_keywords 하위의 모든 키워드들 수집
-                for key, value in config.items():
-                    if key.endswith('_keywords') or key.endswith('_functions'):
-                        if isinstance(value, dict):
-                            for sub_key, sub_value in value.items():
-                                if isinstance(sub_value, list):
-                                    keywords.update([kw.upper() for kw in sub_value])
-                        elif isinstance(value, list):
-                             keywords.update([kw.upper() for kw in value])
-
-            debug(f"오라클 키워드 {len(keywords)}개 로드")
-            return keywords
-
-        except Exception as e:
-            handle_error(e, f"오라클 키워드 로드 실패")
-            return set()
 
     # ========== 1단계: 쿼리 추출 ==========
 
@@ -650,8 +620,8 @@ class SimpleQueryAnalyzer:
             return None
 
     def _is_oracle_keyword(self, word: str) -> bool:
-        """오라클 키워드 확인"""
-        return word.upper() in self.oracle_keywords
+        """Oracle 키워드 확인"""
+        return self.oracle_keyword_manager.is_oracle_keyword(word)
 
     def _calculate_hash(self, content: str) -> str:
         """해시 계산 - USER RULES: 공통함수 사용"""

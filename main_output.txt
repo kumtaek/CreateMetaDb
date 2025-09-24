@@ -1,0 +1,527 @@
+[DEBUG] 로깅 설정 파일 경로: config\logging.yaml
+[DEBUG] 로깅 설정 파일 존재: True
+[DEBUG] 로깅 설정 파일 읽기 시도
+[DEBUG] YAML 파싱 성공
+[DEBUG] logs 디렉토리 생성 완료
+[DEBUG] 로깅 설정 적용 완료
+[DEBUG] SourceAnalyzer 로거 생성 완료
+[DEBUG] 기존 핸들러 수: 2
+[DEBUG] 핸들러 타입: <class 'logging.StreamHandler'>
+[DEBUG] 핸들러 타입: <class 'logging.handlers.RotatingFileHandler'>
+[DEBUG] 기존 파일 핸들러 제거
+[DEBUG] 새로운 파일 핸들러 추가 완료
+[DEBUG] 로거 레벨 설정: INFO
+[DEBUG] 최종 핸들러 수: 2
+[DEBUG] 로깅 시스템 초기화 완료
+2025-09-25 00:05:09 - INFO - 로깅 시스템 테스트 - 이 메시지가 보이면 정상 작동
+[DEBUG] 테스트 로그 출력 완료
+2025-09-25 00:05:09 - INFO - Recursion limit set to: 50
+2025-09-25 00:05:09 - WARNING - 로그 파일 삭제 실패 (무시하고 계속 진행): source_analyzer.log, 오류: [WinError 32] 다른 프로세스가 파일을 사용 중이기 때문에 프로세스가 액세스 할 수 없습니다: 'D:\\Analyzer\\CreateMetaDb\\logs\\source_analyzer.log'
+2025-09-25 00:05:09 - INFO - 오래된 로그 파일 정리: 0개 파일 삭제
+2025-09-25 00:05:09 - INFO - SourceAnalyzer 시작
+2025-09-25 00:05:09 - INFO - 분석 대상 프로젝트: sampleSrc
+2025-09-25 00:05:09 - INFO - 분석 옵션:
+2025-09-25 00:05:09 - INFO -   - 메타데이터베이스 초기화: True
+2025-09-25 00:05:09 - INFO -   - 상세 로그: False
+2025-09-25 00:05:09 - INFO -   - 출력 형식: html
+2025-09-25 00:05:09 - INFO -   - 드라이런 모드: False
+2025-09-25 00:05:09 - INFO -   - 강제 실행: False
+2025-09-25 00:05:09 - INFO - 
+
+
+
+1단계 시작 ========================================
+2025-09-25 00:05:09 - INFO - 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+2025-09-25 00:05:09 - INFO - 기존 메타데이터베이스 삭제: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-25 00:05:09 - INFO - 메타데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\metadata.db
+2025-09-25 00:05:09 - INFO - === 파일 스캔 완료 ===
+2025-09-25 00:05:09 - INFO - 1단계 완료: 파일 정보 저장
+2025-09-25 00:05:09 - INFO - === 1단계 통계 ===
+2025-09-25 00:05:09 - INFO - 성공: 파일 141개 스캔 완료
+2025-09-25 00:05:09 - INFO - 성공: 메타데이터베이스 초기화 완료
+2025-09-25 00:05:09 - INFO - 실패: 0건
+2025-09-25 00:05:09 - INFO - 전역 프로젝트 정보 설정: sampleSrc (ID: 1)
+2025-09-25 00:05:09 - INFO - 
+
+
+
+2단계 시작 ========================================
+2025-09-25 00:05:09 - INFO - 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-25 00:05:09 - INFO - === 데이터베이스 로딩 시작: 데이터베이스 구조 저장 ===
+2025-09-25 00:05:09 - INFO - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TABLES.csv
+2025-09-25 00:05:09 - INFO - 인코딩 문제 감지, 다른 인코딩으로 재시도: ALL_TAB_COLUMNS.csv
+2025-09-25 00:05:09 - INFO - === 데이터베이스 로딩 완료 ===
+2025-09-25 00:05:09 - INFO - 2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성
+2025-09-25 00:05:09 - INFO - === 2단계 통계 ===
+2025-09-25 00:05:09 - INFO - 성공: 테이블 23개 로드
+2025-09-25 00:05:09 - INFO - 성공: 컬럼 52개 로드
+2025-09-25 00:05:09 - INFO - 성공: 컴포넌트 75개 생성
+2025-09-25 00:05:09 - INFO - 실패: 0건
+2025-09-25 00:05:09 - INFO - 
+
+
+
+3단계 시작 ========================================
+2025-09-25 00:05:09 - INFO - 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-25 00:05:09 - INFO - SQL 조각 캐시를 초기화합니다...
+2025-09-25 00:05:09 - INFO - SQL 조각 캐싱을 위해 8개의 XML 파일을 스캔합니다.
+2025-09-25 00:05:09 - INFO - SqlFragmentCache 초기화 완료. 총 0개의 SQL 조각 로드됨.
+2025-09-25 00:05:09 - INFO - SQL 조각 캐시 초기화 완료
+2025-09-25 00:05:09 - INFO - SQL Content 기능이 활성화되었습니다 (기본값)
+2025-09-25 00:05:09 - INFO - Oracle SQL 키워드 224개 로드 완료 (싱글톤)
+2025-09-25 00:05:09 - INFO - 심플 쿼리 분석기 초기화 완료
+2025-09-25 00:05:09 - INFO - SQL Content 데이터베이스 초기화 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\SqlContent.db
+2025-09-25 00:05:09 - INFO - SQL Content Manager 초기화 완료
+2025-09-25 00:05:09 - INFO - === XML 로딩 시작: 3~4단계 통합 처리 ===
+2025-09-25 00:05:09 - INFO - MyBatis XML files collected: 8
+2025-09-25 00:05:09 - INFO - === XML 로딩 통계 ===
+2025-09-25 00:05:09 - INFO - 처리된 XML 파일: 8개
+2025-09-25 00:05:09 - INFO - 추출된 SQL 쿼리: 59개
+2025-09-25 00:05:09 - INFO - 생성된 SQL 컴포넌트: 59개
+2025-09-25 00:05:09 - INFO - 생성된 JOIN 관계: 0개
+2025-09-25 00:05:09 - INFO - 생성된 inferred 테이블: 0개
+2025-09-25 00:05:09 - INFO - 생성된 inferred 컬럼: 0개
+2025-09-25 00:05:09 - INFO - 오류 발생: 0개
+2025-09-25 00:05:09 - INFO - === SQL Content 통계 ===
+2025-09-25 00:05:09 - INFO - 저장된 SQL 내용: 59개
+2025-09-25 00:05:09 - INFO - 총 압축 크기: 11178 bytes
+2025-09-25 00:05:09 - INFO - 평균 압축 크기: 189.46 bytes
+2025-09-25 00:05:09 - INFO - 최대 압축 크기: 524 bytes
+2025-09-25 00:05:09 - INFO - 최소 압축 크기: 62 bytes
+2025-09-25 00:05:09 - INFO - === XML 로딩 완료 ===
+2025-09-25 00:05:09 - INFO - SQL Content 데이터베이스 연결 해제
+2025-09-25 00:05:09 - INFO - 3단계 완료: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
+2025-09-25 00:05:09 - INFO - === 3단계 통계 ===
+2025-09-25 00:05:09 - INFO - 성공: XML 파일 8개 처리
+2025-09-25 00:05:09 - INFO - 성공: SQL 컴포넌트 59개 생성
+2025-09-25 00:05:09 - INFO - 성공: JOIN 관계 0개 생성
+2025-09-25 00:05:09 - INFO - 실패: 0건
+2025-09-25 00:05:09 - INFO - 
+
+
+
+4단계 시작 ========================================
+2025-09-25 00:05:09 - INFO - 4단계 실행: Java 소스코드 분석 및 관계 생성
+2025-09-25 00:05:09 - INFO - 심플 쿼리 분석기 초기화 완료
+2025-09-25 00:05:09 - INFO - Java 파일 로딩 시작 (심플 버전)
+2025-09-25 00:05:10 - INFO - 처리할 Java 파일 수: 97개
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserDao.java, 메소드=4, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserMapper.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\com\example\dynamicquery\UserSearchDto.java, 메소드=8, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\annotations\AnnotatedClass.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\comments\CommentHeavyClass.java, 메소드=12, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java, 메소드=12, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ErrorController.java, 메소드=4, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MicroserviceController.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\MixedErrorController.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProductController.java, 메소드=3, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\ProxyController.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\SyntaxErrorController.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserController.java, 메소드=11, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\UserManagementController.java, 메소드=6, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\controller\VersionedController.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java, 메소드=2, Java쿼리=3, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\JoinConditionDao.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\JoinQueryDao.java, 메소드=6, Java쿼리=18, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\MergeQueryDao.java, 메소드=5, Java쿼리=25, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\MicroserviceDao.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\ProxyDao.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\UserDao.java, 메소드=18, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\UserManagementDao.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\dao\VersionedDao.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\enums\OrderStatus.java, 메소드=3, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\errors\SyntaxErrorClass.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\generics\GenericClass.java, 메소드=7, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\BaseService.java, 메소드=4, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ComplexInheritanceChain.java, 메소드=62, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\inheritance\ConcreteService.java, 메소드=4, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\CreditCardProcessor.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\interfaces\PaymentProcessor.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\config\JpaConfig.java, 메소드=6, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\config\JpaTestDataInitializer.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java, 메소드=36, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java, 메소드=35, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java, 메소드=28, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\dto\OrderSummaryDto.java, 메소드=15, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\dto\ProductSummaryDto.java, 메소드=13, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\dto\UserSummaryDto.java, 메소드=11, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\Category.java, 메소드=30, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\Order.java, 메소드=37, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java, 메소드=28, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\OrderStatus.java, 메소드=3, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\Product.java, 메소드=33, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\ProductStatus.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\User.java, 메소드=33, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java, 메소드=38, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\UserStatus.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\entity\UserType.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java, 메소드=48, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java, 메소드=48, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java, 메소드=40, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\BrokenMapper.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\ProductMapper.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\mapper\UserMapper.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\Product.java, 메소드=53, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\model\User.java, 메소드=45, Java쿼리=1, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\OrderEntity.java, 메소드=31, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\OrderEntityService.java, 메소드=23, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\ProductEntityService.java, 메소드=35, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\UserDto.java, 메소드=122, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\UserEntity.java, 메소드=40, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\UserEntityService.java, 메소드=31, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\modern\UserResponseDto.java, 메소드=210, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\multipleclass\MultipleClassFile.java, 메소드=14, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java, 메소드=13, Java쿼리=9, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java, 메소드=39, Java쿼리=27, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\performance\ModernRestController.java, 메소드=36, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\LogicErrorService.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MicroserviceService.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\MixedErrorService.java, 메소드=6, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductService.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProductServiceImpl.java, 메소드=24, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\ProxyService.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserManagementService.java, 메소드=6, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserService.java, 메소드=16, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\UserServiceImpl.java, 메소드=23, Java쿼리=2, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\service\VersionedService.java, 메소드=6, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\AdvancedReportServlet.java, 메소드=21, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java, 메소드=14, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\ExtensionMappingServlet.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\GenericTestServlet.java, 메소드=2, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\LegacyPaymentServlet.java, 메소드=10, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java, 메소드=5, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java, 메소드=14, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\servlet\UserManagementServlet.java, 메소드=0, Java쿼리=0, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java, 메소드=13, Java쿼리=19, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - Java 분석 완료: D:\Analyzer\CreateMetaDb\projects\sampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java, 메소드=15, Java쿼리=39, JPA쿼리=0
+2025-09-25 00:05:10 - INFO - === Java 로딩 완료 ===
+2025-09-25 00:05:10 - INFO - 처리된 클래스: 86개
+2025-09-25 00:05:10 - INFO - 처리된 메서드: 1193개
+2025-09-25 00:05:10 - INFO - 추출된 쿼리: 0개
+2025-09-25 00:05:10 - INFO - 오류: 0개
+2025-09-25 00:05:10 - INFO - 4단계 완료: Java 소스코드 분석 및 관계 생성
+2025-09-25 00:05:10 - INFO - 
+
+
+
+5단계 시작 ========================================
+2025-09-25 00:05:10 - INFO - 5단계 실행: Spring API 진입점 분석 (Phase 1)
+2025-09-25 00:05:10 - INFO - 백엔드 진입점 분석 엔진 초기화 완료: sampleSrc
+2025-09-25 00:05:10 - INFO - === 백엔드 진입점 분석 시작 ===
+2025-09-25 00:05:10 - INFO - 분석 통계 수집 시작
+2025-09-25 00:05:10 - INFO - 백엔드 진입점 분석 완료: 165개 진입점
+2025-09-25 00:05:10 - INFO - API_URL 컴포넌트 생성 시작
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: MicroserviceController.getUserProfile (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: MicroserviceController.getOrderDetails (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: MicroserviceController.getDashboardData (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: MicroserviceController.globalSearch (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: MicroserviceController.sendNotification (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: ProxyController.getUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: ProxyController.createUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: ProxyController.getProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: ProxyController.getOrders (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: ProxyController.processPayment (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: SyntaxErrorController.test1 (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: SyntaxErrorController.test2 (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: SyntaxErrorController.getAllUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: SyntaxErrorController.getUserById (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: SyntaxErrorController.createUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.getUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.getUserDetail (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.createUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.updateUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.deleteUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: UserManagementController.getUserStatistics (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: VersionedController.getUsersV2 (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: VersionedController.getProductsV2 (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: VersionedController.getOrdersV2 (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.createOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderById (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.updateOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.deleteOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderByOrderNumber (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderWithDetails (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderWithItems (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByStatusWithUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByUserId (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByUserIdOrderByAmount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersBetweenDates (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersAfterDate (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersAboveAmount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByAmountRange (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.searchOrders (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderCountByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderCountByUserId (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getUserTotalAmount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getAverageOrderAmountByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderCountByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getDailyOrderCount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getTopCustomersByTotalAmount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersByPremiumUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersContainingProductsFromCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersContainingProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrdersWithMinimumItems (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.confirmOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.cancelOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.processOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.shipOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.completeOrder (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.updateShippingAddress (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.updateOrderTotal (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.applyDiscount (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getOrderSummariesByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaOrderController.getAllOrders (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.createProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductById (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.updateProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.deleteProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductByCode (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.searchProductsByName (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.searchProductsByNameIgnoreCase (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.searchProductsByDescription (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByPriceRange (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsAbovePrice (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsBelowPrice (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getLowStockProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getOutOfStockProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.addStock (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.reduceStock (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.updateProductStock (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByStatusAndPriceRange (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByCategoryAndStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.searchProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductCountByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductCountByCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getAveragePriceByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getMaxPriceByCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getTotalActiveStock (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductCountByCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsByCategoryName (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getPopularProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getNeverOrderedProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductsOrderedAfterDate (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.activateProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.deactivateProduct (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.updateProductPrice (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getProductSummariesByCategory (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaProductController.getAllProducts (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.createUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserById (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.updateUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.deleteUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserByUsername (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserByEmail (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersByUserType (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.searchUsersByUsername (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.searchUsersByEmail (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.searchUsersByFullName (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.searchUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersCreatedBetween (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersCreatedAfter (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersWithoutLogin (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserCountByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserTypeStatistics (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserStatusStatistics (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersByEmailDomain (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserWithOrders (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUsersWithHighValueOrders (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.updateLastLoginTime (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.activateUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.deactivateUser (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.upgradeUserToPremium (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.checkUsernameAvailability (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.checkEmailAvailability (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getUserSummariesByStatus (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getAllUsers (API_URL은 유지)
+2025-09-25 00:05:10 - WARNING - METHOD 컴포넌트를 찾을 수 없음: JpaUserController.getPagedUsers (API_URL은 유지)
+2025-09-25 00:05:10 - INFO - 분석 결과 DB 저장 완료
+
+=== 백엔드 진입점 분석 통계 ===
+총 파일 수: 26
+성공한 파일: 15
+실패한 파일: 11
+성공률: 57.69%
+총 진입점 수: 165
+총 처리 시간: 0.111초
+평균 처리 시간: 0.004초
+전체 분석 시간: 0.0초
+분석 프레임워크 수: 2
+
+=== 프레임워크별 통계 ===
+spring: 8/13 성공 (61.5%), 127개 진입점
+servlet: 7/13 성공 (53.8%), 38개 진입점
+
+[WARNING] 11개 파일 분석 실패
+2025-09-25 00:05:10 - INFO - === 백엔드 진입점 분석 완료 ===
+2025-09-25 00:05:10 - INFO - 분석 통계 수집 종료
+2025-09-25 00:05:10 - INFO - 5단계 완료: Spring API 진입점 분석 (Phase 1)
+2025-09-25 00:05:10 - INFO - === 5단계 통계 ===
+2025-09-25 00:05:10 - INFO - 성공: 백엔드 진입점 분석 완료 (17개 파일에서 70개 진입점 추출)
+2025-09-25 00:05:10 - INFO - 실패: 0건
+2025-09-25 00:05:10 - INFO - 필터링: 18개 파일 (프레임워크 미지원 파일)
+2025-09-25 00:05:10 - INFO - 
+
+
+
+6단계 시작 ========================================
+2025-09-25 00:05:10 - INFO - 6단계 실행: 프론트엔드 파일 분석 및 연관관계 구축
+2025-09-25 00:05:10 - INFO - 프론트엔드 파일 분석 시작...
+2025-09-25 00:05:10 - INFO - 프론트엔드 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\frontend_keyword.yaml
+2025-09-25 00:05:10 - INFO - 프론트엔드 로딩 엔진 초기화 완료: sampleSrc
+2025-09-25 00:05:10 - INFO - === 프론트엔드 파일 로딩 시작 ===
+2025-09-25 00:05:10 - INFO - 총 32개 프론트엔드 파일 발견
+2025-09-25 00:05:10 - INFO - HTML 파일: 1개
+2025-09-25 00:05:10 - INFO - JS 파일: 1개
+2025-09-25 00:05:10 - INFO - JSP 파일: 13개
+2025-09-25 00:05:10 - INFO - JSX 파일: 7개
+2025-09-25 00:05:10 - INFO - TS 파일: 3개
+2025-09-25 00:05:10 - INFO - TSX 파일: 2개
+2025-09-25 00:05:10 - INFO - VUE 파일: 5개
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: MicroserviceDashboard.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 140
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: UserManagementPage.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 141
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: error.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 128
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: list.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 119
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: list.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 129
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: partialError.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 118
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: searchResult.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 120
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: searchResult.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 130
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: syntaxError.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 109
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: test.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 3
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: typeList.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 131
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: user-list.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 133
+2025-09-25 00:05:10 - INFO - JSP 파서 초기화 완료: D:\Analyzer\CreateMetaDb\config\parser\jsp_keyword.yaml
+2025-09-25 00:05:10 - INFO - === JSP 컴포넌트 저장 전 참조 데이터 확인 ===
+2025-09-25 00:05:10 - INFO - 컴포넌트명: userManagement.jsp
+2025-09-25 00:05:10 - INFO - project_id: 1
+2025-09-25 00:05:10 - INFO - file_id: 132
+2025-09-25 00:05:10 - INFO - === 프론트엔드 파일 로딩 통계 ===
+2025-09-25 00:05:10 - INFO - 총 파일: 32개
+2025-09-25 00:05:10 - INFO - 처리 완료: 32개
+2025-09-25 00:05:10 - INFO - 에러 파일: 0개
+2025-09-25 00:05:10 - INFO - JSP 파일: 13개
+2025-09-25 00:05:10 - INFO - JSX 파일: 7개
+2025-09-25 00:05:10 - INFO - Vue 파일: 5개
+2025-09-25 00:05:10 - INFO - TS 파일: 3개
+2025-09-25 00:05:10 - INFO - TSX 파일: 2개
+2025-09-25 00:05:10 - INFO - JS 파일: 1개
+2025-09-25 00:05:10 - INFO - HTML 파일: 1개
+2025-09-25 00:05:10 - INFO - 생성된 컴포넌트: 71개
+2025-09-25 00:05:10 - INFO - 발견된 API 호출: 270개
+2025-09-25 00:05:10 - INFO - 생성된 관계: 20개
+2025-09-25 00:05:10 - INFO - === 프론트엔드 Frameworks 사용 현황 ===
+2025-09-25 00:05:10 - INFO -   Frameworks를 사용하는 파일이 없습니다
+2025-09-25 00:05:10 - INFO - === 프론트엔드 파일 로딩 완료 ===
+2025-09-25 00:05:10 - INFO - 프론트엔드 파일 분석 완료
+2025-09-25 00:05:10 - INFO - === 프론트엔드 분석 통계 ===
+2025-09-25 00:05:10 - INFO - 성공: 총 파일 32개 처리
+2025-09-25 00:05:10 - INFO - 성공: JSP 파일 13개
+2025-09-25 00:05:10 - INFO - 성공: JSX 파일 7개
+2025-09-25 00:05:10 - INFO - 성공: Vue 파일 5개
+2025-09-25 00:05:10 - INFO - 성공: TS 파일 3개
+2025-09-25 00:05:10 - INFO - 성공: TSX 파일 2개
+2025-09-25 00:05:10 - INFO - 성공: JS 파일 1개
+2025-09-25 00:05:10 - INFO - 성공: HTML 파일 1개
+2025-09-25 00:05:10 - INFO - 성공: 컴포넌트 71개 생성
+2025-09-25 00:05:10 - INFO - 성공: API 호출 270개 발견
+2025-09-25 00:05:10 - INFO - 성공: 관계 20개 생성
+2025-09-25 00:05:10 - INFO - 실패: 0건
+2025-09-25 00:05:10 - INFO - 연관관계 구축 시작...
+2025-09-25 00:05:10 - INFO - 연관관계 구축 시작
+2025-09-25 00:05:10 - INFO - MyBatis METHOD → QUERY 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - JPA METHOD → ENTITY/TABLE 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - QUERY → TABLE 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - TABLE JOIN 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - JPA ENTITY → TABLE 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - 프론트엔드 → API 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - API → METHOD 관계 구축 완료: 0개
+2025-09-25 00:05:10 - INFO - 연관관계 구축 완료: 총 0개 관계 생성
+2025-09-25 00:05:10 - INFO - 6단계 완료: 프론트엔드 파일 분석 및 연관관계 구축
+2025-09-25 00:05:10 - INFO - === 6단계 통계 ===
+2025-09-25 00:05:10 - INFO - 성공: METHOD→QUERY 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: QUERY→TABLE 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: TABLE JOIN 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: ENTITY→TABLE 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: FRONTEND→API 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: API→METHOD 관계 0개
+2025-09-25 00:05:10 - INFO - 성공: 총 관계 0개 생성
+2025-09-25 00:05:10 - INFO - 1-6단계 분석 및 연결고리 연결 완료
+2025-09-25 00:05:10 - INFO - 
+
+
+
+일관성 검증 단계 시작 ========================================
+2025-09-25 00:05:10 - INFO - 메타데이터베이스 일관성 검증 실행
+2025-09-25 00:05:10 - INFO - 프로젝트 ID 조회: sampleSrc -> project_id 1
+2025-09-25 00:05:10 - INFO - CSV 파일 ID 조회: ALL_TABLES.csv -> file_id 1
+2025-09-25 00:05:10 - INFO - CSV 파일 ID 조회: ALL_TAB_COLUMNS.csv -> file_id 2
+2025-09-25 00:05:10 - INFO - 메타데이터베이스 일관성 검증 시작
+2025-09-25 00:05:10 - INFO - 메서드 중복 검증 완료: 0개 중복 발견
+2025-09-25 00:05:10 - INFO - API_URL 중복 검증 완료: 백엔드 0개, 프론트엔드 0개 위반 발견
+2025-09-25 00:05:10 - WARNING - 백엔드 연결이 없는 API: 282개 (프론트엔드 전용 또는 JPA 자동 생성 API일 수 있음)
+2025-09-25 00:05:10 - WARNING -   - /api/user-profile:GET (파일: MicroserviceController.java)
+2025-09-25 00:05:10 - WARNING -   - /api/order-details:GET (파일: MicroserviceController.java)
+2025-09-25 00:05:10 - WARNING -   - /api/dashboard:GET (파일: MicroserviceController.java)
+2025-09-25 00:05:10 - WARNING -   - /api/search:GET (파일: MicroserviceController.java)
+2025-09-25 00:05:10 - WARNING -   - /api/notify:POST (파일: MicroserviceController.java)
+2025-09-25 00:05:10 - INFO - 메타데이터베이스 일관성 검증 통과
+2025-09-25 00:05:10 - INFO - 일관성 검증 완료: 모든 검사 통과

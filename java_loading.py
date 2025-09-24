@@ -1,2064 +1,232 @@
 """
-Java 로딩 모듈 - 4단계 통합 처리
-- Java 파일에서 클래스/메서드 추출 및 상속 관계 분석
-- 메모리 최적화 (스트리밍 처리)
-- 데이터베이스 저장 및 통계 관리
-
-USER RULES:
-- 하드코딩 금지: path_utils.get_parser_config_path("java") 사용 (크로스플랫폼 대응)
-- 파싱 에러 처리: has_error='Y', error_message 저장 후 계속 실행
-- 시스템 에러 처리: handle_error() 공통함수 사용
-- 공통함수 사용: util 모듈 활용
-- 메뉴얼 기반: parser/manual/01_java 참고
+심플 Java 로딩 모듈 - 4단계 처리
+목표: files → classes → methods 순서로 components 테이블에 등록
+관계 도출이 핵심 목표
 """
 
 import os
-import re
+import time
 from typing import List, Dict, Any, Optional
 from util import (
-    DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
-    app_logger, info, error, debug, warning, handle_error,
+    DatabaseUtils, info, warning, debug, handle_error,
     get_project_source_path, get_project_metadata_db_path
 )
-from util.sql_content_processor import SqlContentProcessor
-# USER RULES: 공통함수 사용, 하드코딩 금지
-from parser.java_parser import JavaParser
+from parser.simple_java_parser import SimpleJavaParser
 from parser.simple_query_analyzer import SimpleQueryAnalyzer
-from util.layer_classification_utils import get_layer_classifier
-from util.component_filter_utils import get_component_filter
 
-
-class JavaLoadingEngine:
-    """Java 로딩 엔진 - 4단계 통합 처리"""
+class SimpleJavaLoader:
+    """심플한 Java 파일 로더"""
 
     def __init__(self, project_name: str):
-        """
-        Java 로딩 엔진 초기화
-
-        Args:
-            project_name: 프로젝트명
-        """
+        """초기화"""
         self.project_name = project_name
         self.project_source_path = get_project_source_path(project_name)
         self.metadata_db_path = get_project_metadata_db_path(project_name)
+
         self.db_utils = None
-
-        # Java 파서 초기화 (USER RULES: 공통함수 사용)
-        self.java_parser = JavaParser()
-
-        # 심플 쿼리 분석기 초기화 (3단계 파이프라인: 쿼리→테이블→조인)
+        self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
-        
-        # Layer 분류 유틸리티 초기화 (USER RULES: 공통함수 사용)
-        self.layer_classifier = get_layer_classifier()
-        
-        # 컴포넌트 필터링 유틸리티 초기화 (메타데이터 품질 향상)
-        self.component_filter = get_component_filter()
 
-        # 통계 정보 (4~5단계 통합)
+        # 통계
         self.stats = {
-            'java_files_processed': 0,
             'classes_extracted': 0,
-            'classes_created': 0,
             'methods_extracted': 0,
-            'components_created': 0,
-            'inheritance_relationships_created': 0,
-            'call_query_relationships_created': 0,
-            'call_method_relationships_created': 0,
-            'use_table_relationships_created': 0,
-            'business_methods_filtered': 0,
-            'invalid_components_filtered': 0,  # 새로운 통계 항목
-            'errors': 0,
-            'processing_time': 0.0
+            'sql_queries_extracted': 0,
+            'errors': 0
         }
 
-    def execute_java_loading(self) -> bool:
-        """
-        Java 로딩 실행: 4단계 통합 처리
-
-        Returns:
-            실행 성공 여부
-        """
-        import time
-        start_time = time.time()
-
+    def execute_java_loading(self, project_id: int) -> bool:
+        """Java 파일 로딩 실행"""
         try:
-            info("=== Java 로딩 시작: 4단계 통합 처리 ===")
+            info("Java 파일 로딩 시작 (심플 버전)")
 
-            # 데이터베이스 연결 (USER RULES: 공통함수 사용)
+            # 데이터베이스 초기화
             self.db_utils = DatabaseUtils(self.metadata_db_path)
-            if not self.db_utils.connect():
-                error("메타데이터베이스 연결 실패")
-                return False
 
-            # SQL Content Processor 초기화 (압축 저장용)
-            self.sql_content_processor = SqlContentProcessor(self.project_name, self.db_utils)
+            # Java 파일 수집
+            java_files = []
+            for root, dirs, files in os.walk(self.project_source_path):
+                for file in files:
+                    if file.endswith('.java'):
+                        java_files.append(os.path.join(root, file))
 
-            # 1. Java 파일 수집
-            java_files = self.java_parser.get_filtered_java_files(self.project_source_path)
             if not java_files:
-                handle_error(Exception("Java 파일이 없습니다"), "Java 파일 스캔 실패 - 분석 대상 파일이 없음")
+                handle_error(Exception("Java 파일이 없습니다"), "Java 파일 스캔 실패")
 
-            debug(f"처리할 Java 파일 수: {len(java_files)}개")
+            info(f"처리할 Java 파일 수: {len(java_files)}개")
 
-            # 2. Java 파일별 통합 처리 (메모리 최적화)
+            # Java 파일별 처리
             for java_file in java_files:
                 try:
-                    # 4단계 통합 처리: 클래스/메서드 추출 + 상속 관계 분석
-                    debug(f"Java 파일 파싱 시작: {java_file}")
-                    analysis_result = self.java_parser.parse_java_file(java_file)
-                    debug(f"Java 파일 파싱 완료: {java_file}")
-
-                    # 파싱 에러 체크 (USER RULES: 파싱 에러는 계속 진행)
-                    if analysis_result.get('has_error') == 'Y':
-                        warning(f"Java 파싱 에러로 건너뜀: {java_file} - {analysis_result.get('error_message', '')}")
-                        self.stats['errors'] += 1
-                        continue
-
-                    # 클래스 정보 처리
-                    if analysis_result.get('classes'):
-                        try:
-                            if self._save_classes_to_database(analysis_result['classes'], java_file):
-                                self.stats['classes_extracted'] += len(analysis_result['classes'])
-
-                                # 메서드 정보 처리
-                                total_methods = sum(len(cls.get('methods', [])) for cls in analysis_result['classes'])
-                                if total_methods > 0:
-                                    self.stats['methods_extracted'] += total_methods
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"클래스 저장 실패: {java_file}")
-                            return False
-                    else:
-                        # 클래스가 없는 경우 디버그 로그만 출력하고 계속 진행
-                        debug(f"클래스가 없는 Java 파일 (정상 또는 파서 한계): {java_file}")
-
-                    # SQL 쿼리와 관련된 메서드를 임시로 METHOD 컴포넌트 등록 (뒷단계에서 전체 분석 시 보완)
-                    if analysis_result.get('sql_queries'):
-                        try:
-                            method_names = set()
-                            for query in analysis_result['sql_queries']:
-                                if query.get('method_name'):
-                                    method_names.add(query['method_name'])
-
-                            if method_names:
-                                if self._create_temporary_method_components(method_names, java_file):
-                                    debug(f"임시 METHOD 컴포넌트 생성 완료: {len(method_names)}개")
-                        except Exception as e:
-                            handle_error(e, f"임시 메서드 컴포넌트 생성 실패: {java_file}")
-                            return False
-
-                    # 상속 관계 처리
-                    if analysis_result.get('inheritance_relationships'):
-                        try:
-                            if self._save_inheritance_relationships_to_database(analysis_result['inheritance_relationships']):
-                                self.stats['inheritance_relationships_created'] += len(analysis_result['inheritance_relationships'])
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"상속 관계 저장 실패: {java_file}")
-                            return False
-
-                    # 5단계 관계 분석 처리 (통합)
-                    if analysis_result.get('call_query_relationships'):
-                        try:
-                            if self._save_call_query_relationships_to_database(analysis_result['call_query_relationships']):
-                                self.stats['call_query_relationships_created'] += len(analysis_result['call_query_relationships'])
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"CALL_QUERY 관계 저장 실패: {java_file}")
-                            return False
-
-                    if analysis_result.get('call_method_relationships'):
-                        try:
-                            if self._save_call_method_relationships_to_database(analysis_result['call_method_relationships']):
-                                self.stats['call_method_relationships_created'] += len(analysis_result['call_method_relationships'])
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"CALL_METHOD 관계 저장 실패: {java_file}")
-                            return False
-
-                    if analysis_result.get('use_table_relationships'):
-                        try:
-                            if self._save_use_table_relationships_to_database(analysis_result['use_table_relationships']):
-                                self.stats['use_table_relationships_created'] += len(analysis_result['use_table_relationships'])
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"USE_TABLE 관계 저장 실패: {java_file}")
-                            return False
-
-                    # 3단계 심플 쿼리 분석 (메소드→쿼리→테이블→조인조건 도출)
-                    try:
-                        file_id = self._get_file_id(java_file)
-                        if file_id:
-                            # query_analysis_result = self.simple_query_analyzer.analyze_file(java_file, 'java', file_id)  # 임시 비활성화 - 락 문제 해결 후 재활성화
-
-                            # 통계 업데이트 (임시 비활성화)
-                            # self.stats['queries_processed'] = self.stats.get('queries_processed', 0) + query_analysis_result.get('queries_processed', 0)
-                            # self.stats['tables_found'] = self.stats.get('tables_found', 0) + query_analysis_result.get('tables_found', 0)
-                            # self.stats['join_relationships_created'] = self.stats.get('join_relationships_created', 0) + query_analysis_result.get('relationships_created', 0)
-
-                            debug(f"3단계 쿼리 분석 임시 비활성화 - 락 문제 해결 후 재활성화")
-                    except Exception as e:
-                        # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                        info(f"3단계 쿼리 분석 임시 비활성화: {java_file}")
-                        # handle_error(e, f"3단계 쿼리 분석 실패: {java_file}")
-                        # return False
-
-                    self.stats['java_files_processed'] += 1
-
-                    # 메모리 최적화: 처리 후 즉시 해제
-                    del analysis_result
-
+                    self._process_java_file(java_file, project_id)
                 except Exception as e:
-                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                    # 시스템 에러 (데이터베이스, 메모리 등) - 프로그램 종료
-                    handle_error(e, f"Java 파일 처리 실패: {java_file}")
-                    return False
+                    warning(f"Java 파일 처리 실패: {java_file} - {e}")
+                    self.stats['errors'] += 1
+                    continue
 
-            # 3. 통계 정보 출력
-            self.stats['processing_time'] = time.time() - start_time
-            self._print_java_loading_statistics()
-
+            # 통계 출력
             info("=== Java 로딩 완료 ===")
+            info(f"처리된 클래스: {self.stats['classes_extracted']}개")
+            info(f"처리된 메서드: {self.stats['methods_extracted']}개")
+            info(f"추출된 쿼리: {self.stats.get('sql_queries_extracted', 0)}개")
+            info(f"오류: {self.stats['errors']}개")
+
             return True
 
         except Exception as e:
-            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "Java 로딩 실행 실패")
             return False
-        finally:
-            # 데이터베이스 연결 해제
-            if self.db_utils:
-                self.db_utils.disconnect()
 
-    def _save_classes_to_database(self, classes: List[Dict[str, Any]], java_file: str) -> bool:
-        """
-        Java 클래스를 데이터베이스에 저장 (classes/components 테이블)
+    def _process_java_file(self, java_file: str, project_id: int):
+        """개별 Java 파일 처리"""
+        # 1. 파일 ID 조회
+        file_id = self._get_file_id(java_file)
+        if not file_id:
+            debug(f"파일 ID를 찾을 수 없음: {java_file}")
+            return
 
-        Args:
-            classes: Java 클래스 정보 리스트
-            java_file: Java 파일 경로
+        # 2. Java 파일 파싱 (public/protected만)
+        debug(f"Java 파일 파싱: {java_file}")
+        parse_result = self.java_parser.parse_java_file(java_file)
 
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            debug(f"=== Java 클래스 저장 시작: {java_file} ===")
-            debug(f"저장할 클래스 수: {len(classes)}개")
+        # 3. 클래스 컴포넌트 먼저 등록하고 class_id 수집
+        class_id_map = {}  # class_name -> component_id 매핑
 
-            if not classes:
-                warning(f"[DEBUG] Java 파일에서 클래스를 찾을 수 없음: {java_file}")
-                return True
-
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_id = self._get_project_id()
-            if not project_id:
-                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "클래스 저장 실패")
-                return False
-
-            # 파일 ID 조회
-            file_id = self._get_file_id(java_file)
-            if not file_id:
-                handle_error(Exception(f"파일 ID를 찾을 수 없습니다: {java_file}"), "클래스 저장 실패")
-                return False
-
-            debug(f"프로젝트 ID: {project_id}, 파일 ID: {file_id}")
-
-            # 각 클래스별로 처리
-            for class_info in classes:
-                try:
-                    # file_id를 class_info에 추가
-                    class_info['file_id'] = file_id
-                    
-                    # 1. classes 테이블에 저장
-                    class_id = self._create_class_record(project_id, class_info)
-                    if not class_id:
-                        handle_error(Exception(f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}"), f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}")
-                        continue
-
-                    # 2. 클래스 생성 완료
-                    self.stats['classes_created'] += 1
-                    # info(f"클래스 생성 완료: {class_info.get('class_name')} (ID: {class_id})")  # 루프 로그 제거
-
-                    # 3. 메서드 처리 (METHOD 컴포넌트 생성)
-                    methods = class_info.get('methods', [])
-                    if methods:
-                        method_count = self._save_methods_to_database(
-                            project_id, file_id, class_id, methods
-                        )
-                        # if method_count > 0:
-                        #     info(f"메서드 생성 완료: {class_info.get('class_name')}, {method_count}개")  # 루프 로그 제거
-
-                except Exception as e:
-                    # 파싱 에러: 특정 클래스 처리 실패 - 계속 진행
-                    warning(f"클래스 처리 중 오류: {class_info.get('class_name', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            debug(f"=== Java 클래스 저장 완료: {java_file} ===")
-            return True
-
-        except Exception as e:
-            handle_error(e, f"클래스 데이터베이스 저장 실패: {java_file}")
-            return False
-
-    def _create_class_record(self, project_id: int, class_info: Dict[str, Any]) -> Optional[int]:
-        """
-        classes 테이블에 클래스 레코드 생성
-
-        Args:
-            project_id: 프로젝트 ID
-            class_info: 클래스 정보
-
-        Returns:
-            class_id 또는 None
-        """
-        try:
-            class_name = class_info.get('class_name', '')
-            
-            # Java 키워드 검증 (CLASS 컴포넌트 생성 시)
-            if self._is_java_keyword(class_name):
-                debug(f"Java 키워드 '{class_name}'이므로 CLASS 컴포넌트 생성 스킵")
-                return None
-            
-            # 해시값 생성 (USER RULES: 공통함수 사용)
-            class_hash = HashUtils.generate_content_hash(
-                f"{class_name}{class_info.get('package_name', '')}{class_info.get('class_type', '')}"
-            )
-
-            class_data = {
-                'project_id': project_id,
-                'file_id': class_info.get('file_id'),
-                'class_name': class_info.get('class_name', ''),
-                'parent_class_id': class_info.get('parent_class_id'),
-                'line_start': class_info.get('line_start'),
-                'line_end': class_info.get('line_end'),
-                'has_error': class_info.get('has_error', 'N'),
-                'error_message': class_info.get('error_message'),
-                'hash_value': class_hash,
-                'del_yn': 'N'
-            }
-
-            # classes 테이블에 저장 (USER RULES: 공통함수 사용)
-            class_id = self.db_utils.insert_or_replace_with_id('classes', class_data)
-            return class_id
-
-        except Exception as e:
-            handle_error(e, f"클래스 레코드 생성 실패: {class_info.get('class_name', 'UNKNOWN')}")
-            return None
-
-
-    def _get_class_id_by_name(self, project_id: int, class_name: str) -> Optional[int]:
-        """
-        클래스명으로 클래스 ID 조회 (USER RULES: 공통함수 사용)
-
-        Args:
-            project_id: 프로젝트 ID
-            class_name: 클래스명
-
-        Returns:
-            클래스 ID
-        """
-        try:
-            query = """
-                SELECT class_id FROM classes
-                WHERE project_id = ? AND class_name = ? AND del_yn = 'N'
-            """
-            results = self.db_utils.execute_query(query, (project_id, class_name))
-            
-            if results:
-                return results[0]['class_id']
-            else:
-                return None
-
-        except Exception as e:
-            handle_error(e, f"클래스 ID 조회 실패: class_name={class_name}")
-            return None
-
-    def _save_methods_to_database(self, project_id: int, file_id: int, class_id: int, methods: List[Dict[str, Any]]) -> int:
-        """
-        Java 메서드를 components 테이블에 저장
-
-        Args:
-            project_id: 프로젝트 ID
-            file_id: 파일 ID
-            class_id: 클래스 ID (classes 테이블의 class_id)
-            methods: 메서드 정보 리스트
-
-        Returns:
-            생성된 메서드 컴포넌트 수
-        """
-        try:
-            if not methods:
-                return 0
-
-            created_count = 0
-            business_methods = 0
-
-            for method_info in methods:
-                try:
-                    method_name = method_info.get('method_name', 'UNKNOWN')
-                    debug(f"메서드 처리 시작: {method_name}")
-                    
-                    # 새로운 필터링 로직: 잘못된 컴포넌트 이름 검사 (기존 로직에 영향 없음)
-                    if self.component_filter.is_invalid_component_name(method_name, 'METHOD'):
-                        debug(f"잘못된 메서드명 필터링: {method_name}")
-                        self.stats['invalid_components_filtered'] += 1
-                        continue  # 다음 메서드로 건너뛰기
-                    
-                    # 비즈니스 로직 메서드인지 확인 (USER RULES: 하드코딩 지양)
-                    simple_complexity = self.java_parser.config.get('method_complexity', {}).get('simple_complexity', 'simple')
-                    complexity = method_info.get('complexity', simple_complexity)
-                    business_complexity = self.java_parser.config.get('method_complexity', {}).get('business_complexity', 'business')
-                    complex_complexity = self.java_parser.config.get('method_complexity', {}).get('complex_business_complexity', 'complex_business')
-                    
-                    if complexity in [business_complexity, complex_complexity]:
-                        business_methods += 1
-
-                    # 메서드 컴포넌트 생성
-                    debug(f"메서드 컴포넌트 생성 시도: {method_name} (복잡도: {complexity})")
-                    method_component_id = self._create_method_component(
-                        project_id, file_id, class_id, method_info
-                    )
-
-                    if method_component_id:
-                        created_count += 1
-                        debug(f"메서드 생성 성공: {method_info.get('method_name')} (ID: {method_component_id}, 복잡도: {complexity})")
-                    else:
-                        # 파싱 에러: 개별 메서드 컴포넌트 생성 실패 - 계속 진행
-                        handle_error(Exception(f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}"), f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}")
-
-                except Exception as e:
-                    # 파싱 에러: 특정 메서드 처리 실패 - 계속 진행
-                    warning(f"메서드 처리 중 오류: {method_info.get('method_name', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            self.stats['business_methods_filtered'] += business_methods
-            self.stats['components_created'] += created_count
-
-            return created_count
-
-        except Exception as e:
-            handle_error(e, "메서드 데이터베이스 저장 실패")
-            return 0
-
-    def _create_method_component(self, project_id: int, file_id: int, parent_id: int, method_info: Dict[str, Any]) -> Optional[int]:
-        """
-        components 테이블에 메서드 컴포넌트 생성 (Layer 분류 적용)
-
-        Args:
-            project_id: 프로젝트 ID
-            file_id: 파일 ID
-            parent_id: 부모 클래스의 class_id (classes 테이블의 class_id)
-            method_info: 메서드 정보
-
-        Returns:
-            component_id 또는 None
-        """
-        try:
-            method_name = method_info.get('method_name', 'UNKNOWN')
-            debug(f"_create_method_component 시작: {method_name}")
-            
-            # Java 키워드 검증 (METHOD 컴포넌트 생성 시)
-            if self._is_java_keyword(method_name):
-                debug(f"Java 키워드 '{method_name}'이므로 METHOD 컴포넌트 생성 스킵")
-                return None
-            
-            # Layer 분류를 위한 파일 정보 조회
-            file_path, file_name = self._get_file_info_for_layer_classification(project_id, file_id)
-            
-            # Layer 분류 수행 (복잡도 고려)
-            complexity = method_info.get('complexity', 'include')
-            
-            # 단순 getter/setter는 ETC 레이어로 분류
-            if complexity == 'simple_getter_setter':
-                layer = 'ETC'
-            else:
-                # 복잡한 메서드는 파일 경로 기반으로 레이어 분류
-                layer = self.layer_classifier.get_component_layer(
-                    component_type='METHOD',
-                    component_name=method_name,
-                    file_path=file_path,
-                    file_name=file_name
-                )
-            
-            debug(f"메서드 Layer 분류: {method_name} -> {layer}")
-            
-            # 해시값 생성 (USER RULES: 공통함수 사용)
-            method_signature = method_info.get('method_signature', method_info.get('method_name', ''))
-            component_hash = HashUtils.generate_content_hash(
-                f"METHOD{project_id}{parent_id}{method_signature}"
-            )
-
-            component_data = {
+        for cls in parse_result['classes']:
+            class_comp = {
                 'project_id': project_id,
                 'file_id': file_id,
-                'component_name': method_info.get('method_name', ''),
+                'component_name': cls['name'],
+                'component_type': 'CLASS',
+                'layer_type': 'UNKNOWN',
+                'line_number': cls['line'],
+                'has_error': 'N',
+                'error_message': None,
+                'parent_id': None
+            }
+            class_id = self._upsert_component(class_comp)
+            if class_id:
+                class_id_map[cls['name']] = class_id
+                self.stats['classes_extracted'] += 1
+
+        # 4. 메서드 컴포넌트를 parent_id와 함께 등록
+        for method in parse_result['methods']:
+            parent_class_id = class_id_map.get(method['class'])
+            method_comp = {
+                'project_id': project_id,
+                'file_id': file_id,
+                'component_name': f"{method['class']}.{method['name']}",
                 'component_type': 'METHOD',
-                'parent_id': parent_id,  # 클래스의 component_id
-                'layer': layer,  # 분류된 레이어 사용
-                'line_start': method_info.get('line_start'),
-                'line_end': method_info.get('line_end'),
-                'has_error': method_info.get('has_error', 'N'),
-                'error_message': method_info.get('error_message'),
-                'hash_value': component_hash,
-                'del_yn': 'N'
-            }
-
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            return component_id
-
-        except Exception as e:
-            # 파싱 에러: 개별 메서드 컴포넌트 생성 실패 - 계속 진행
-            handle_error(e, f"메서드 컴포넌트 생성 실패: {method_info.get('method_name', 'UNKNOWN')}")
-            return None
-
-    def _save_inheritance_relationships_to_database(self, inheritance_relationships: List[Dict[str, Any]]) -> bool:
-        """
-        상속 관계를 relationships 테이블에 저장
-
-        Args:
-            inheritance_relationships: 상속 관계 리스트
-
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            if not inheritance_relationships:
-                warning("저장할 상속 관계가 없습니다")
-                return True
-
-            debug(f"저장할 상속 관계 수: {len(inheritance_relationships)}개")
-
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_id = self._get_project_id()
-            if not project_id:
-                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "상속 관계 저장 실패")
-                return False
-
-            # 관계 데이터 변환
-            relationship_data_list = []
-
-            for rel_info in inheritance_relationships:
-                try:
-                    # 자식 클래스 컴포넌트 ID 조회
-                    child_component_id = self._get_class_component_id(project_id, rel_info['child_class'])
-                    if not child_component_id:
-                        # inferred 클래스 생성 시도 (중복 체크 포함)
-                        # info(f"inferred 자식 클래스 생성 시도: {rel_info['child_class']}")  # 루프 로그 제거
-                        child_component_id = self._create_inferred_class(project_id, rel_info['child_class'])
-                        if child_component_id:
-                            # info(f"inferred 자식 클래스 생성 성공: {rel_info['child_class']} (ID: {child_component_id})")  # 루프 로그 제거
-                            pass
-                        else:
-                            handle_error(Exception(f"inferred 자식 클래스 생성 실패: {rel_info['child_class']}"), f"상속 관계 분석 실패: {rel_info['child_class']}")
-                            return False
-                    else:
-                        # 기존 클래스가 inferred인지 확인
-                        if self._is_inferred_class(project_id, rel_info['child_class']):
-                            # debug(f"inferred 자식 클래스 스킵: {rel_info['child_class']} (이미 존재)")  # 루프 로그 제거
-                            pass
-                        else:
-                            # debug(f"실제 자식 클래스 사용: {rel_info['child_class']} (ID: {child_component_id})")  # 루프 로그 제거
-                            pass
-
-                    # 부모 클래스 컴포넌트 ID 조회
-                    parent_component_id = self._get_class_component_id(project_id, rel_info['parent_class'])
-                    if not parent_component_id:
-                        # inferred 클래스 생성 시도 (중복 체크 포함)
-                        # info(f"inferred 부모 클래스 생성 시도: {rel_info['parent_class']}")  # 루프 로그 제거
-                        parent_component_id = self._create_inferred_class(project_id, rel_info['parent_class'])
-                        if parent_component_id:
-                            # info(f"inferred 부모 클래스 생성 성공: {rel_info['parent_class']} (ID: {parent_component_id})")  # 루프 로그 제거
-                            pass
-                        else:
-                            handle_error(Exception(f"inferred 부모 클래스 생성 실패: {rel_info['parent_class']}"), f"상속 관계 분석 실패: {rel_info['parent_class']}")
-                            return False
-                    else:
-                        # 기존 클래스가 inferred인지 확인
-                        if self._is_inferred_class(project_id, rel_info['parent_class']):
-                            # debug(f"inferred 부모 클래스 스킵: {rel_info['parent_class']} (이미 존재)")  # 루프 로그 제거
-                            pass
-                        else:
-                            # debug(f"실제 부모 클래스 사용: {rel_info['parent_class']} (ID: {parent_component_id})")  # 루프 로그 제거
-                            pass
-
-                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
-                    if child_component_id == parent_component_id:
-                        warning(f"자기 참조 상속 관계 스킵: {rel_info['child_class']} → {rel_info['parent_class']} (src_id == dst_id)")
-                        continue
-
-                    # 관계 데이터 생성
-                    relationship_data = {
-                        'src_id': child_component_id,  # 자식 → 부모로 관계 설정
-                        'dst_id': parent_component_id,
-                        'rel_type': 'INHERITANCE',
-                        'confidence': 1.0,
-                        'has_error': 'N',
-                        'error_message': None,
-                        'del_yn': 'N'
-                    }
-
-                    relationship_data_list.append(relationship_data)
-
-                except Exception as e:
-                    # 파싱 에러: 특정 관계 처리 실패 - 계속 진행
-                    warning(f"상속 관계 데이터 변환 실패: {rel_info.get('child_class', 'UNKNOWN')} → {rel_info.get('parent_class', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            # 배치 INSERT OR REPLACE (USER RULES: 공통함수 사용)
-            if relationship_data_list:
-                processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
-
-                if processed_count > 0:
-                    # info(f"상속 관계 저장 완료: {processed_count}개")  # 로그 제거
-                    return True
-                else:
-                    handle_error(Exception("상속 관계 저장 실패: processed_count = 0"), "상속 관계 저장 실패: processed_count = 0")
-                    return False
-            else:
-                warning("저장할 유효한 상속 관계가 없습니다")
-                return True
-
-        except Exception as e:
-            handle_error(e, "상속 관계 저장 실패")
-            return False
-
-    def _get_class_component_id(self, project_id: int, class_name: str) -> Optional[int]:
-        """
-        클래스 컴포넌트 ID 조회
-
-        Args:
-            project_id: 프로젝트 ID
-            class_name: 클래스명
-
-        Returns:
-            컴포넌트 ID
-        """
-        try:
-            # 클래스명으로 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
-            query = """
-                SELECT component_id FROM components
-                WHERE project_id = ?
-                AND component_name = ?
-                AND component_type = 'CLASS'
-                AND del_yn = 'N'
-            """
-
-            results = self.db_utils.execute_query(query, (project_id, class_name))
-
-            if results and len(results) > 0:
-                return results[0]['component_id']
-            return None
-
-        except Exception as e:
-            handle_error(e, f"클래스 컴포넌트 ID 조회 실패: {class_name}")
-            return None
-
-    def _is_inferred_class(self, project_id: int, class_name: str) -> bool:
-        """
-        inferred 클래스인지 확인
-
-        Args:
-            project_id: 프로젝트 ID
-            class_name: 클래스명
-
-        Returns:
-            inferred 클래스 여부
-        """
-        try:
-            # classes 테이블에서 inferred 클래스 확인 (line_start, line_end가 NULL인 경우)
-            query = """
-                SELECT class_id FROM classes 
-                WHERE project_id = ?
-                AND class_name = ?
-                AND line_start IS NULL
-                AND line_end IS NULL
-                AND del_yn = 'N'
-            """
-
-            results = self.db_utils.execute_query(query, (project_id, class_name))
-            return len(results) > 0
-
-        except Exception as e:
-            handle_error(e, f"inferred 클래스 확인 실패: {class_name}")
-            return False
-
-    def _create_inferred_class(self, project_id: int, class_name: str) -> Optional[int]:
-        """
-        inferred 클래스 생성 (classes/components 테이블)
-
-        Args:
-            project_id: 프로젝트 ID
-            class_name: 클래스명
-
-        Returns:
-            component_id 또는 None
-        """
-        try:
-            # 중복 체크: 이미 존재하는 inferred 클래스인지 확인
-            existing_component_id = self._get_class_component_id(project_id, class_name)
-            if existing_component_id:
-                debug(f"inferred 클래스가 이미 존재함: {class_name} (ID: {existing_component_id})")
-                return existing_component_id
-            
-            # inferred 클래스용 file_id 찾기 (Java 파일 중 하나 선택)
-            inferred_file_id = self._get_inferred_file_id(project_id)
-            if not inferred_file_id:
-                error(f"inferred 클래스용 file_id를 찾을 수 없습니다: {class_name}")
-                return None
-
-            # 1. classes 테이블에 inferred 클래스 생성
-            class_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'class_name': class_name,
-                'parent_class_id': None,
-                'line_start': None,
-                'line_end': None,
+                'layer_type': 'UNKNOWN',
+                'line_number': method['line'],
                 'has_error': 'N',
                 'error_message': None,
-                'hash_value': HashUtils.generate_content_hash(f"INFERRED_CLASS{project_id}{class_name}"),
-                'del_yn': 'N'
+                'parent_id': parent_class_id
             }
+            if self._upsert_component(method_comp):
+                self.stats['methods_extracted'] += 1
 
-            # classes 테이블에 저장 (USER RULES: 공통함수 사용)
-            class_id = self.db_utils.insert_or_replace_with_id('classes', class_data)
-            if not class_id:
-                handle_error(Exception(f"inferred 클래스 레코드 생성 실패: {class_name}"), f"inferred 클래스 저장 실패: {class_name}")
-                return None
+        debug(f"컴포넌트 등록 완료: 클래스 {len(parse_result['classes'])}개, 메서드 {len(parse_result['methods'])}개")
 
-            # 2. inferred 클래스는 classes 테이블에만 저장 (components 테이블에는 저장하지 않음)
-            debug(f"inferred 클래스 생성 완료: {class_name} (ID: {class_id})")
-            return class_id
-
-        except Exception as e:
-            handle_error(e, f"inferred 클래스 생성 실패: {class_name}")
-            return None
-
-    def _save_call_query_relationships_to_database(self, call_query_relationships: List[Dict[str, Any]]) -> bool:
-        """
-        CALL_QUERY 관계를 relationships 테이블에 저장
-
-        Args:
-            call_query_relationships: CALL_QUERY 관계 리스트
-
-        Returns:
-            저장 성공 여부
-        """
+        # 4. 쿼리 분석 (3단계 파이프라인)
         try:
-            if not call_query_relationships:
-                info("저장할 CALL_QUERY 관계가 없습니다")
-                return True
-
-                debug(f"저장할 CALL_QUERY 관계 수: {len(call_query_relationships)}개")
-
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_id = self._get_project_id()
-            if not project_id:
-                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "CALL_QUERY 관계 저장 실패")
-                return False
-
-            # 관계 데이터 변환
-            relationship_data_list = []
-
-            for rel_info in call_query_relationships:
-                try:
-                    # 소스 메서드 컴포넌트 ID 조회
-                    src_component_id = self._get_method_component_id(project_id, rel_info['src_name'])
-                    if not src_component_id:
-                        # 메서드 컴포넌트가 존재하지 않음 (기본 getter/setter 등으로 제외된 경우) - 경고 후 계속
-                        warning(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']} (기본 메서드로 제외되었을 수 있음)")
-                        continue
-
-                    # 대상 쿼리 컴포넌트 ID 조회 (inferred 쿼리 생성)
-                    dst_component_id = self._get_query_component_id(project_id, rel_info['dst_name'])
-                    if not dst_component_id:
-                        # inferred 쿼리 생성 시도
-                        debug(f"inferred 쿼리 생성 시도: {rel_info['dst_name']}")
-                        dst_component_id = self._create_inferred_query(project_id, rel_info['dst_name'])
-                        if dst_component_id:
-                            debug(f"inferred 쿼리 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
-                        else:
-                            # 시스템 에러: inferred 쿼리 생성 실패 - 프로그램 종료
-                            handle_error(Exception(f"inferred 쿼리 생성 실패: {rel_info['dst_name']}"), "CALL_QUERY 관계 저장 실패")
-
-                    # 관계 데이터 생성
-                    relationship_data = {
-                        'src_id': src_component_id,
-                        'dst_id': dst_component_id,
-                        'rel_type': 'CALL_QUERY',
-                        'confidence': 1.0,
-                        'has_error': 'N',
-                        'error_message': None,
-                        'del_yn': 'N'
-                    }
-
-                    relationship_data_list.append(relationship_data)
-
-                except Exception as e:
-                    # 파싱 에러: 특정 관계 처리 실패 - 계속 진행
-                    warning(f"CALL_QUERY 관계 데이터 변환 실패: {rel_info.get('src_name', 'UNKNOWN')} → {rel_info.get('dst_name', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            # 배치 INSERT OR REPLACE (USER RULES: 공통함수 사용)
-            if relationship_data_list:
-                processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
-
-                if processed_count > 0:
-                    debug(f"CALL_QUERY 관계 저장 완료: {processed_count}개")
-                    return True
-                else:
-                    # 시스템 에러: 관계 저장 실패 - 프로그램 종료
-                    handle_error(Exception("CALL_QUERY 관계 저장 실패: processed_count = 0"), "CALL_QUERY 관계 저장 실패")
-            else:
-                info("저장할 유효한 CALL_QUERY 관계가 없습니다")
-                return True
-
+            query_analysis = self.simple_query_analyzer.analyze_java_file(java_file, file_id)
+            if query_analysis and query_analysis.get('queries'):
+                self.stats['sql_queries_extracted'] += len(query_analysis['queries'])
         except Exception as e:
-            handle_error(e, "CALL_QUERY 관계 저장 실패")
-            return False
-
-    def _save_call_method_relationships_to_database(self, call_method_relationships: List[Dict[str, Any]]) -> bool:
-        """
-        CALL_METHOD 관계를 relationships 테이블에 저장
-
-        Args:
-            call_method_relationships: CALL_METHOD 관계 리스트
-
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            if not call_method_relationships:
-                warning("저장할 CALL_METHOD 관계가 없습니다")
-                return True
-
-                debug(f"저장할 CALL_METHOD 관계 수: {len(call_method_relationships)}개")
-
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_id = self._get_project_id()
-            if not project_id:
-                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "CALL_METHOD 관계 저장 실패")
-                return False
-
-            # 관계 데이터 변환
-            relationship_data_list = []
-
-            for rel_info in call_method_relationships:
-                try:
-                    # 소스 메서드 컴포넌트 ID 조회
-                    src_component_id = self._get_method_component_id(project_id, rel_info['src_name'])
-                    if not src_component_id:
-                        # 메서드 컴포넌트가 존재하지 않음 (기본 getter/setter 등으로 제외된 경우) - 경고 후 계속
-                        warning(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']} (기본 메서드로 제외되었을 수 있음)")
-                        continue
-
-                    # 대상 메서드 컴포넌트 ID 조회 (inferred 메서드 생성)
-                    dst_component_id = self._get_method_component_id(project_id, rel_info['dst_name'])
-                    if not dst_component_id:
-                        # inferred 메서드 생성 시도
-                        debug(f"inferred 메서드 생성 시도: {rel_info['dst_name']}")
-                        dst_component_id = self._create_inferred_method(project_id, rel_info['dst_name'])
-                        if dst_component_id:
-                            debug(f"inferred 메서드 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
-                        else:
-                            # 시스템 에러: inferred 메서드 생성 실패 - 프로그램 종료
-                            handle_error(Exception(f"inferred 메서드 생성 실패: {rel_info['dst_name']}"), "CALL_METHOD 관계 저장 실패")
-
-                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
-                    if src_component_id == dst_component_id:
-                        debug(f"자기 참조 CALL_METHOD 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
-                        continue
-
-                    # 관계 데이터 생성
-                    relationship_data = {
-                        'src_id': src_component_id,
-                        'dst_id': dst_component_id,
-                        'rel_type': 'CALL_METHOD',
-                        'confidence': 1.0,
-                        'has_error': 'N',
-                        'error_message': None,
-                        'del_yn': 'N'
-                    }
-
-                    relationship_data_list.append(relationship_data)
-
-                except Exception as e:
-                    # 파싱 에러: 특정 관계 처리 실패 - 계속 진행
-                    warning(f"CALL_METHOD 관계 데이터 변환 실패: {rel_info.get('src_name', 'UNKNOWN')} → {rel_info.get('dst_name', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            # 배치 INSERT OR REPLACE (USER RULES: 공통함수 사용)
-            if relationship_data_list:
-                processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
-
-                if processed_count > 0:
-                    debug(f"CALL_METHOD 관계 저장 완료: {processed_count}개")
-                    return True
-                else:
-                    handle_error(Exception("CALL_METHOD 관계 저장 실패: processed_count = 0"), "CALL_METHOD 관계 저장 실패: processed_count = 0")
-                    return False
-            else:
-                warning("저장할 유효한 CALL_METHOD 관계가 없습니다")
-                return True
-
-        except Exception as e:
-            handle_error(e, "CALL_METHOD 관계 저장 실패")
-            return False
-
-    def _save_use_table_relationships_to_database(self, use_table_relationships: List[Dict[str, Any]]) -> bool:
-        """
-        USE_TABLE 관계를 relationships 테이블에 저장
-
-        Args:
-            use_table_relationships: USE_TABLE 관계 리스트
-
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            if not use_table_relationships:
-                warning("저장할 USE_TABLE 관계가 없습니다")
-                return True
-
-            info(f"저장할 USE_TABLE 관계 수: {len(use_table_relationships)}개")
-
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
-            project_id = self._get_project_id()
-            if not project_id:
-                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "USE_TABLE 관계 저장 실패")
-                return False
-
-            # 관계 데이터 변환
-            relationship_data_list = []
-
-            for rel_info in use_table_relationships:
-                try:
-                    # 소스 메서드 컴포넌트 ID 조회
-                    src_component_id = self._get_method_component_id(project_id, rel_info['src_name'])
-                    if not src_component_id:
-                        warning(f"소스 메서드 컴포넌트 ID를 찾을 수 없습니다: {rel_info['src_name']}")
-                        continue
-
-                    # 대상 테이블 컴포넌트 ID 조회 (inferred 테이블 생성)
-                    dst_component_id = self._get_table_component_id(project_id, rel_info['dst_name'])
-                    if not dst_component_id:
-                        # inferred 테이블 생성 시도 (원본 SQL 전달)
-                        debug(f"inferred 테이블 생성 시도: {rel_info['dst_name']}")
-                        original_sql = rel_info.get('original_sql', '')  # 원본 SQL 정보 가져오기
-                        dst_component_id = self._create_inferred_table(project_id, rel_info['dst_name'], original_sql)
-                        if dst_component_id:
-                            debug(f"inferred 테이블 생성 성공: {rel_info['dst_name']} (ID: {dst_component_id})")
-                        else:
-                            debug(f"inferred 테이블 생성 실패 또는 스킵: {rel_info['dst_name']}")
-                            continue
-
-                    # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
-                    if src_component_id == dst_component_id:
-                        warning(f"자기 참조 USE_TABLE 관계 스킵: {rel_info['src_name']} → {rel_info['dst_name']} (src_id == dst_id)")
-                        continue
-
-                    # 관계 데이터 생성
-                    relationship_data = {
-                        'src_id': src_component_id,
-                        'dst_id': dst_component_id,
-                        'rel_type': 'USE_TABLE',
-                        'confidence': 1.0,
-                        'has_error': 'N',
-                        'error_message': None,
-                        'del_yn': 'N'
-                    }
-
-                    relationship_data_list.append(relationship_data)
-
-                except Exception as e:
-                    # 파싱 에러: 특정 관계 처리 실패 - 계속 진행
-                    warning(f"USE_TABLE 관계 데이터 변환 실패: {rel_info.get('src_name', 'UNKNOWN')} → {rel_info.get('dst_name', 'UNKNOWN')} - {str(e)}")
-                    continue
-
-            # 배치 INSERT OR REPLACE (USER RULES: 공통함수 사용)
-            if relationship_data_list:
-                processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
-
-                if processed_count > 0:
-                    info(f"USE_TABLE 관계 저장 완료: {processed_count}개")
-                    return True
-                else:
-                    handle_error(Exception("USE_TABLE 관계 저장 실패: processed_count = 0"), "USE_TABLE 관계 저장 실패: processed_count = 0")
-                    return False
-            else:
-                warning("저장할 유효한 USE_TABLE 관계가 없습니다")
-                return True
-
-        except Exception as e:
-            handle_error(e, "USE_TABLE 관계 저장 실패")
-            return False
-
-    def _create_indirect_use_table_relationships(self, project_id: int) -> bool:
-        """
-        CALL_QUERY 관계와 SQL의 테이블 사용 정보를 조합하여 USE_TABLE 관계 생성
-
-        Args:
-            project_id: 프로젝트 ID
-
-        Returns:
-            생성 성공 여부
-        """
-        try:
-            debug("간접 USE_TABLE 관계 생성 시작")
-
-            # CALL_QUERY 관계 조회 (Method -> SQL)
-            query = """
-                SELECT r.src_id as method_id, r.dst_id as sql_id,
-                       c1.component_name as method_name, c2.component_name as sql_name
-                FROM relationships r
-                JOIN components c1 ON r.src_id = c1.component_id
-                JOIN components c2 ON r.dst_id = c2.component_id
-                WHERE r.rel_type = 'CALL_QUERY'
-                AND r.del_yn = 'N'
-                AND c1.project_id = ?
-            """
-
-            call_query_results = self.db_utils.execute_query(query, (project_id,))
-            if not call_query_results:
-                warning("CALL_QUERY 관계가 없습니다")
-                return True
-
-            debug(f"CALL_QUERY 관계 {len(call_query_results)}개 발견")
-
-            use_table_relationships = []
-
-            for call_query in call_query_results:
-                method_id = call_query['method_id']
-                sql_id = call_query['sql_id']
-                method_name = call_query['method_name']
-                sql_name = call_query['sql_name']
-
-                # 해당 SQL이 사용하는 테이블들 조회 (USE_TABLE 관계에서 추출)
-                table_query = """
-                    SELECT DISTINCT c.component_id, c.component_name
-                    FROM relationships r
-                    JOIN components c ON r.dst_id = c.component_id
-                    WHERE r.src_id = ?
-                    AND r.rel_type = 'USE_TABLE'
-                    AND c.component_type = 'TABLE'
-                    AND r.del_yn = 'N'
-                    AND c.del_yn = 'N'
-                """
-
-                table_results = self.db_utils.execute_query(table_query, (sql_id,))
-
-                for table_result in table_results:
-                    table_id = table_result['component_id']
-                    table_name = table_result['component_name']
-
-                    # Method -> Table USE_TABLE 관계 생성
-                    if method_id != table_id:  # 자기 참조 방지
-                        use_table_relationships.append({
-                            'src_id': method_id,
-                            'dst_id': table_id,
-                            'rel_type': 'USE_TABLE',
-                            'confidence': 1.0,
-                            'has_error': 'N',
-                            'error_message': None,
-                            'del_yn': 'N'
-                        })
-
-                        debug(f"간접 USE_TABLE 관계 생성: {method_name} -> {table_name}")
-
-            # 배치 저장
-            if use_table_relationships:
-                processed_count = self.db_utils.batch_insert_or_replace('relationships', use_table_relationships)
-                debug(f"간접 USE_TABLE 관계 저장 완료: {processed_count}개")
-                return True
-            else:
-                warning("생성할 간접 USE_TABLE 관계가 없습니다")
-                return True
-
-        except Exception as e:
-            handle_error(e, "간접 USE_TABLE 관계 생성 실패")
-            return False
-
-    def _get_method_component_id(self, project_id: int, method_name: str) -> Optional[int]:
-        """
-        메서드 컴포넌트 ID 조회
-
-        Args:
-            project_id: 프로젝트 ID
-            method_name: 메서드명 (클래스명.메서드명 형식 또는 메서드명만)
-
-        Returns:
-            컴포넌트 ID
-        """
-        try:
-            # 클래스명.메서드명 형식에서 메서드명만 추출
-            if '.' in method_name:
-                method_name_only = method_name.split('.')[-1]
-            else:
-                method_name_only = method_name
-
-            debug(f"메서드 컴포넌트 ID 조회: {method_name} -> {method_name_only}")
-
-            # 메서드명으로 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
-            query = """
-                SELECT component_id FROM components
-                WHERE project_id = ?
-                AND component_name = ?
-                AND component_type = 'METHOD'
-                AND del_yn = 'N'
-            """
-
-            results = self.db_utils.execute_query(query, (project_id, method_name_only))
-
-            if results and len(results) > 0:
-                debug(f"메서드 컴포넌트 ID 조회 성공: {method_name_only} -> {results[0]['component_id']}")
-                return results[0]['component_id']
-            else:
-                debug(f"메서드 컴포넌트 ID 조회 실패: {method_name_only} (존재하지 않음)")
-                return None
-
-        except Exception as e:
-            handle_error(e, f"메서드 컴포넌트 ID 조회 실패: {method_name}")
-            return None
-
-    def _get_query_component_id(self, project_id: int, query_id: str) -> Optional[int]:
-        """
-        쿼리 컴포넌트 ID 조회 (XML 쿼리만 검색)
-        
-        INFERRED 쿼리 처리 개선 방안:
-        - 기존: component_type = 'QUERY'로만 검색 (문제: XML에서 생성된 SQL_* 타입을 찾지 못함)
-        - 개선: 오직 SQL_* 타입만 검색하여 XML에서 파싱된 실제 쿼리만 매칭
-        - QUERY 타입(inferred 쿼리)은 제외하여 중복 생성 방지
-        
-        검색 대상:
-        - SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE 등 (XML에서 파싱된 쿼리만)
-        
-        Args:
-            project_id: 프로젝트 ID
-            query_id: 쿼리 ID (예: findUsersWithAnsiJoin)
-
-        Returns:
-            컴포넌트 ID (XML에서 파싱된 SQL_* 타입만, 없으면 None)
-        """
-        try:
-            # XML에서 파싱된 SQL_* 타입 쿼리만 검색 (QUERY 타입 제외)
-            # 이렇게 하면 실제 XML 쿼리만 찾고, 없으면 inferred 쿼리를 생성함
-            query = """
-                SELECT component_id, component_type FROM components
-                WHERE project_id = ?
-                AND component_name = ?
-                AND component_type LIKE 'SQL_%'
-                AND del_yn = 'N'
-                ORDER BY component_id
-            """
-
-            results = self.db_utils.execute_query(query, (project_id, query_id))
-
-            if results and len(results) > 0:
-                component_id = results[0]['component_id']
-                component_type = results[0]['component_type'] if 'component_type' in results[0] else 'UNKNOWN'
-                debug(f"XML 쿼리 컴포넌트 ID 조회 성공: {query_id} -> {component_id} ({component_type})")
-                return component_id
-            
-            debug(f"XML 쿼리 컴포넌트 ID 조회 실패: {query_id} (XML에서 찾을 수 없음 - inferred 쿼리 생성 필요)")
-            return None
-
-        except Exception as e:
-            handle_error(e, f"쿼리 컴포넌트 ID 조회 실패: {query_id}")
-            return None
-
-    def _get_table_component_id(self, project_id: int, table_name: str) -> Optional[int]:
-        """
-        테이블 컴포넌트 ID 조회
-
-        Args:
-            project_id: 프로젝트 ID
-            table_name: 테이블명
-
-        Returns:
-            컴포넌트 ID
-        """
-        try:
-            # 테이블명으로 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
-            query = """
-                SELECT component_id FROM components
-                WHERE project_id = ?
-                AND component_name = ?
-                AND component_type = 'TABLE'
-                AND del_yn = 'N'
-            """
-
-            results = self.db_utils.execute_query(query, (project_id, table_name))
-
-            if results and len(results) > 0:
-                return results[0]['component_id']
-            return None
-
-        except Exception as e:
-            handle_error(e, f"테이블 컴포넌트 ID 조회 실패: {table_name}")
-            return None
-
-    def _create_inferred_query(self, project_id: int, query_id: str) -> Optional[int]:
-        """
-        inferred 쿼리 생성 (components 테이블)
-
-        Args:
-            project_id: 프로젝트 ID
-            query_id: 쿼리 ID
-
-        Returns:
-            component_id 또는 None
-        """
-        try:
-            # inferred 쿼리용 file_id 찾기 (XML 파일 중 하나 선택)
-            inferred_file_id = self._get_inferred_xml_file_id(project_id)
-            if not inferred_file_id:
-                error(f"inferred 쿼리용 file_id를 찾을 수 없습니다: {query_id}")
-                return None
-
-            # components 테이블에 쿼리 컴포넌트 생성
-            component_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'component_name': query_id,
-                'component_type': 'QUERY',
-                'parent_id': None,
-                'layer': 'DATA',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': '-',
-                'del_yn': 'N'
-            }
-
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            if component_id:
-                debug(f"inferred 쿼리 생성 완료: {query_id} (ID: {component_id})")
-                return component_id
-            else:
-                handle_error(Exception(f"inferred 쿼리 컴포넌트 생성 실패: {query_id}"), f"inferred 쿼리 컴포넌트 생성 실패: {query_id}")
-                return None
-
-        except Exception as e:
-            handle_error(e, f"inferred 쿼리 생성 실패: {query_id}")
-            return None
-
-    def _create_inferred_method(self, project_id: int, method_name: str) -> Optional[int]:
-        """
-        inferred 메서드 생성 (components 테이블)
-
-        Args:
-            project_id: 프로젝트 ID
-            method_name: 메서드명
-
-        Returns:
-            component_id 또는 None
-        """
-        try:
-            # 중복 체크: 이미 존재하는 inferred 메서드인지 확인
-            existing_component_id = self._get_method_component_id(project_id, method_name)
-            if existing_component_id:
-                debug(f"inferred 메서드가 이미 존재함: {method_name} (ID: {existing_component_id})")
-                return existing_component_id
-            
-            # inferred 메서드용 file_id 찾기 (Java 파일 중 하나 선택)
-            inferred_file_id = self._get_inferred_file_id(project_id)
-            if not inferred_file_id:
-                error(f"inferred 메서드용 file_id를 찾을 수 없습니다: {method_name}")
-                return None
-
-            # components 테이블에 메서드 컴포넌트 생성
-            component_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'component_name': method_name,
-                'component_type': 'METHOD',
-                'parent_id': None,
-                'layer': 'APPLICATION',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': '-',
-                'del_yn': 'N'
-            }
-
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            if component_id:
-                debug(f"inferred 메서드 생성 완료: {method_name} (ID: {component_id})")
-                return component_id
-            else:
-                handle_error(Exception(f"inferred 메서드 컴포넌트 생성 실패: {method_name}"), f"inferred 메서드 컴포넌트 생성 실패: {method_name}")
-                return None
-
-        except Exception as e:
-            handle_error(e, f"inferred 메서드 생성 실패: {method_name}")
-            return None
-
-    def _create_inferred_table(self, project_id: int, table_name: str, original_sql: str = "") -> Optional[int]:
-        """
-        inferred 테이블 생성 (components 테이블) - Java 예약어 검증 추가
-
-        Args:
-            project_id: 프로젝트 ID
-            table_name: 테이블명
-            original_sql: 원본 SQL (검증용)
-
-        Returns:
-            component_id 또는 None
-        """
-        try:
-            # 중복 체크: 이미 존재하는 inferred 테이블인지 확인
-            existing_component_id = self._get_table_component_id(project_id, table_name)
-            if existing_component_id:
-                debug(f"inferred 테이블이 이미 존재함: {table_name} (ID: {existing_component_id})")
-                return existing_component_id
-            
-            # Java 예약어 검증 (새로운 로직)
-            if self._is_java_keyword(table_name):
-                if not self._validate_table_in_sql_context(table_name, original_sql):
-                    debug(f"Java 예약어 '{table_name}'이 SQL 컨텍스트에서 확인되지 않아 inferred 테이블 생성 스킵")
-                    return None
-                else:
-                    debug(f"Java 예약어 '{table_name}'이지만 SQL 컨텍스트에서 확인되어 inferred 테이블 생성 진행")
-            
-            # inferred 테이블용 file_id 찾기 (ALL_TABLES.csv 사용)
-            inferred_file_id = self._get_csv_file_id('ALL_TABLES.csv')
-            if not inferred_file_id:
-                error(f"ALL_TABLES.csv file_id를 찾을 수 없습니다: {table_name}")
-                return None
-
-            # components 테이블에 테이블 컴포넌트 생성
-            component_data = {
-                'project_id': project_id,
-                'file_id': inferred_file_id,
-                'component_name': table_name,
-                'component_type': 'TABLE',
-                'parent_id': None,
-                'layer': 'TABLE',
-                'line_start': None,
-                'line_end': None,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': '-',
-                'del_yn': 'N'
-            }
-
-            # components 테이블에 저장 (USER RULES: 공통함수 사용)
-            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-            if component_id:
-                debug(f"inferred 테이블 생성 완료: {table_name} (ID: {component_id})")
-                return component_id
-            else:
-                handle_error(Exception(f"inferred 테이블 컴포넌트 생성 실패: {table_name}"), f"inferred 테이블 컴포넌트 생성 실패: {table_name}")
-                return None
-
-        except Exception as e:
-            handle_error(e, f"inferred 테이블 생성 실패: {table_name}")
-            return None
-
-    def _get_inferred_xml_file_id(self, project_id: int) -> Optional[int]:
-        """
-        inferred 쿼리용 file_id 찾기 (XML 파일 중 하나 선택)
-        USER RULES: 공통함수 사용, 하드코딩 금지
-
-        Args:
-            project_id: 프로젝트 ID
-
-        Returns:
-            file_id 또는 None
-        """
-        try:
-            # USER RULES: 공통함수 사용 - DatabaseUtils의 execute_query 사용
-            query = """
-                SELECT file_id
-                FROM files
-                WHERE project_id = ? AND file_type = 'XML' AND del_yn = 'N'
-                LIMIT 1
-            """
-            result = self.db_utils.execute_query(query, (project_id,))
-
-            if result and len(result) > 0:
-                file_id = result[0]['file_id']
-                debug(f"inferred 쿼리용 file_id 찾음: {file_id}")
-                return file_id
-            else:
-                # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error("XML 파일이 files 테이블에 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
-                return None
-
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "inferred 쿼리용 file_id 조회 실패")
-            return None
-
-    def _get_inferred_sql_file_id(self, project_id: int) -> Optional[int]:
-        """
-        inferred 테이블용 file_id 찾기 (SQL 파일 중 하나 선택)
-        USER RULES: 공통함수 사용, 하드코딩 금지
-
-        Args:
-            project_id: 프로젝트 ID
-
-        Returns:
-            file_id 또는 None
-        """
-        try:
-            # USER RULES: 공통함수 사용 - DatabaseUtils의 execute_query 사용
-            query = """
-                SELECT file_id
-                FROM files
-                WHERE project_id = ? AND file_type = 'SQL' AND del_yn = 'N'
-                LIMIT 1
-            """
-            result = self.db_utils.execute_query(query, (project_id,))
-
-            if result and len(result) > 0:
-                file_id = result[0]['file_id']
-                debug(f"inferred 테이블용 file_id 찾음: {file_id}")
-                return file_id
-            else:
-                # inferred 테이블용으로는 Java 파일도 사용 가능
-                return self._get_inferred_file_id(project_id)
-
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "inferred 테이블용 file_id 조회 실패")
-            return None
-
-    def _get_inferred_file_id(self, project_id: int) -> Optional[int]:
-        """
-        inferred 클래스용 file_id 찾기 (Java 파일 중 하나 선택)
-        USER RULES: 공통함수 사용, 하드코딩 금지
-
-        Args:
-            project_id: 프로젝트 ID
-
-        Returns:
-            file_id 또는 None
-        """
-        try:
-            # USER RULES: 공통함수 사용 - DatabaseUtils의 execute_query 사용
-            query = """
-                SELECT file_id
-                FROM files
-                WHERE project_id = ? AND file_type = 'JAVA' AND del_yn = 'N'
-                LIMIT 1
-            """
-            result = self.db_utils.execute_query(query, (project_id,))
-
-            if result and len(result) > 0:
-                file_id = result[0]['file_id']
-                debug(f"inferred 클래스용 file_id 찾음: {file_id}")
-                return file_id
-            else:
-                # 시스템 에러: Java 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error("Java 파일이 files 테이블에 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
-                return None
-
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "inferred 클래스용 file_id 조회 실패")
-            return None
-
-    def _get_project_id(self) -> Optional[int]:
-        """프로젝트 ID 조회 (USER RULES: 공통함수 사용)"""
-        try:
-            return self.db_utils.get_project_id(self.project_name)
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "프로젝트 ID 조회 실패")
-            return None
-
-    def _get_file_info_for_layer_classification(self, project_id: int, file_id: int) -> tuple[str, str]:
-        """
-        Layer 분류를 위한 파일 정보 조회
-        
-        Args:
-            project_id: 프로젝트 ID
-            file_id: 파일 ID
-            
-        Returns:
-            (file_path, file_name) 튜플
-        """
-        try:
-            query = """
-                SELECT file_path, file_name 
-                FROM files 
-                WHERE project_id = ? AND file_id = ? AND del_yn = 'N'
-            """
-            result = self.db_utils.execute_query(query, (project_id, file_id))
-            
-            if result and len(result) > 0:
-                return result[0]['file_path'], result[0]['file_name']
-            else:
-                return "", ""
-                
-        except Exception as e:
-            debug(f"파일 정보 조회 실패: {e}")
-            return "", ""
+            debug(f"쿼리 분석 실패: {java_file} - {e}")
 
     def _get_file_id(self, file_path: str) -> Optional[int]:
-        """
-        파일 ID 조회 (USER RULES: 공통함수 사용)
-
-        Args:
-            file_path: 파일 경로
-
-        Returns:
-            파일 ID
-        """
+        """파일 경로로 file_id 조회"""
         try:
-            # USER RULES: 공통함수 사용 - PathUtils로 상대경로 변환 (1단계와 완전히 동일한 방식)
-            path_utils = PathUtils()
-            # 1단계 파일 스캔과 동일한 방식: get_relative_path()만 사용 (OS 자동 감지)
-            relative_path = path_utils.get_relative_path(file_path, self.project_source_path)
-            # Unix 스타일로 정규화 (DB 저장 형식과 일치)
-            relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
-            
-            file_query = """
-                SELECT file_id FROM files
-                WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?)
-                AND file_path = ?
-                AND del_yn = 'N'
+            # 상대 경로로 변환
+            relative_path = os.path.relpath(file_path, self.project_source_path)
+            relative_path = relative_path.replace('\\', '/')  # Windows 경로 처리
+
+            query = "SELECT file_id FROM files WHERE file_path = ?"
+            result = self.db_utils.execute_query(query, (relative_path,))
+
+            return result[0]['file_id'] if result else None
+
+        except Exception as e:
+            debug(f"파일 ID 조회 실패: {file_path} - {e}")
+            return None
+
+    def _upsert_component(self, comp_data: Dict) -> Optional[int]:
+        """컴포넌트 UPSERT (있으면 업데이트, 없으면 생성) - component_id 반환"""
+        try:
+            # 기존 컴포넌트 확인
+            check_query = """
+                SELECT component_id FROM components
+                WHERE project_id = ? AND file_id = ? AND component_name = ? AND component_type = ?
             """
+            existing = self.db_utils.execute_query(check_query, (
+                comp_data['project_id'],
+                comp_data['file_id'],
+                comp_data['component_name'],
+                comp_data['component_type']
+            ))
 
-            file_results = self.db_utils.execute_query(file_query, (self.project_name, relative_path))
-
-            if file_results:
-                return file_results[0]['file_id']
+            if existing:
+                # 업데이트 (parent_id 포함)
+                update_query = """
+                    UPDATE components
+                    SET line_start = ?, layer = ?, has_error = ?, error_message = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE component_id = ?
+                """
+                self.db_utils.execute_query(update_query, (
+                    comp_data['line_number'],
+                    comp_data['layer_type'],
+                    comp_data['has_error'],
+                    comp_data['error_message'],
+                    comp_data.get('parent_id'),
+                    existing[0]['component_id']
+                ))
+                debug(f"컴포넌트 업데이트: {comp_data['component_name']}")
+                return existing[0]['component_id']
             else:
-                # 시스템 에러: Java 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
-                error(f"파일 ID를 찾을 수 없습니다: {relative_path} (원본: {file_path}). 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
-                return None
+                # 생성 (parent_id 포함)
+                insert_query = """
+                    INSERT INTO components (
+                        project_id, file_id, component_name, component_type,
+                        line_start, layer, has_error, error_message, parent_id, hash_value, created_at, updated_at, del_yn
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'N')
+                """
+
+                # 간단한 해시값 생성
+                import hashlib
+                hash_value = hashlib.md5(f"{comp_data['component_name']}{comp_data['component_type']}".encode()).hexdigest()
+
+                self.db_utils.execute_query(insert_query, (
+                    comp_data['project_id'],
+                    comp_data['file_id'],
+                    comp_data['component_name'],
+                    comp_data['component_type'],
+                    comp_data['line_number'],
+                    comp_data['layer_type'],
+                    comp_data['has_error'],
+                    comp_data['error_message'],
+                    comp_data.get('parent_id'),
+                    hash_value
+                ))
+                debug(f"컴포넌트 생성: {comp_data['component_name']}")
+
+                # 새로 생성된 component_id 조회
+                new_component = self.db_utils.execute_query(check_query, (
+                    comp_data['project_id'],
+                    comp_data['file_id'],
+                    comp_data['component_name'],
+                    comp_data['component_type']
+                ))
+                return new_component[0]['component_id'] if new_component else None
 
         except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "파일 ID 조회 실패")
+            warning(f"컴포넌트 UPSERT 실패: {comp_data.get('component_name', 'unknown')} - {e}")
             return None
 
-    def _print_java_loading_statistics(self):
-        """Java 로딩 통계 출력 (4~5단계 통합)"""
-        try:
-            info("=== Java 로딩 통계 (4~5단계 통합) ===")
-            info(f"처리된 Java 파일: {self.stats['java_files_processed']}개")
-            info(f"추출된 클래스: {self.stats['classes_extracted']}개")
-            info(f"추출된 메서드: {self.stats['methods_extracted']}개")
-            info(f"생성된 컴포넌트: {self.stats['components_created']}개")
-            info(f"생성된 상속 관계: {self.stats['inheritance_relationships_created']}개")
-            info(f"생성된 CALL_QUERY 관계: {self.stats['call_query_relationships_created']}개")
-            info(f"생성된 CALL_METHOD 관계: {self.stats['call_method_relationships_created']}개")
-            info(f"생성된 USE_TABLE 관계: {self.stats['use_table_relationships_created']}개")
-            info(f"비즈니스 로직 메서드: {self.stats['business_methods_filtered']}개")
-            info(f"필터링된 잘못된 컴포넌트: {self.stats['invalid_components_filtered']}개")
-            info(f"처리 시간: {self.stats['processing_time']:.2f}초")
-            info(f"오류 발생: {self.stats['errors']}개")
 
-        except Exception as e:
-            handle_error(e, "통계 출력 실패")
-
-    def _save_java_sql_queries_to_database(self, sql_queries: List[Dict[str, Any]], java_file: str) -> bool:
-        """
-        Java에서 추출한 SQL 쿼리를 components 테이블에 저장
-        
-        Args:
-            sql_queries: SQL 쿼리 정보 리스트
-            java_file: Java 파일 경로
-            
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            debug(f"Java SQL 쿼리 저장 시작: {java_file}, {len(sql_queries)}개")
-            
-            if not sql_queries:
-                return True
-            
-            # 프로젝트 ID 및 파일 ID 조회
-            project_id = self._get_project_id()
-            file_id = self._get_file_id(java_file)
-            
-            if not project_id or not file_id:
-                handle_error(Exception(f"프로젝트 ID 또는 파일 ID를 찾을 수 없음: {java_file}"), "Java SQL 쿼리 저장 실패")
-                return False
-            
-            # 각 SQL 쿼리를 components 테이블에 저장
-            for sql_info in sql_queries:
-                try:
-                    query_id = sql_info['query_id']
-                    
-                    component_data = {
-                        'project_id': project_id,
-                        'file_id': file_id,
-                        'component_name': query_id,
-                        'component_type': sql_info['query_type'],
-                        'parent_id': None,
-                        'layer': 'JAVA',
-                        'line_start': sql_info.get('line_start', 0),
-                        'line_end': sql_info.get('line_end', 0),
-                        'has_error': sql_info.get('has_error', 'N'),
-                        'error_message': sql_info.get('error_message'),
-                        'hash_value': '-',  # USER RULES: 프로젝트 hash_value는 하드코딩 '-'
-                        'created_at': 'datetime("now")',
-                        'updated_at': 'datetime("now")',
-                        'del_yn': 'N'
-                    }
-                    
-                    # components 테이블에 저장 (USER RULES: 공통함수 사용)
-                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-                    if component_id:
-                        debug(f"Java SQL 컴포넌트 저장 성공: {sql_info['query_id']} (ID: {component_id})")
-                        
-                        # SQL 내용 압축 저장 (SqlContent.db)
-                        self._save_java_sql_content_compressed(sql_info, component_id, project_id, file_id, java_file)
-                        
-                        # 테이블 사용 관계도 저장 (오라클 조인 분석 포함)
-                        self._save_java_sql_table_relationships_enhanced(sql_info, component_data, project_id)
-                    else:
-                        # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-                        handle_error(Exception(f"Java SQL 컴포넌트 저장 실패: {sql_info['query_id']}"), "Java SQL 컴포넌트 저장 실패")
-                        return False
-                        
-                except Exception as e:
-                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-                    handle_error(e, f"개별 Java SQL 쿼리 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')}")
-                    return False
-            
-            return True
-            
-        except Exception as e:
-            handle_error(e, f"Java SQL 쿼리 저장 실패: {java_file}")
-            return False
-
-    def _save_java_sql_table_relationships(self, sql_info: Dict[str, Any], component_data: Dict[str, Any], project_id: int):
-        """Java SQL 쿼리의 테이블 사용 관계 저장"""
-        try:
-            # 사용된 테이블들에 대한 USE_TABLE 관계 생성
-            for table_name in sql_info.get('used_tables', []):
-                try:
-                    # 테이블 컴포넌트 ID 조회 또는 생성
-                    table_component_id = self._get_or_create_table_component(table_name, project_id)
-                    
-                    if table_component_id:
-                        # 쿼리 컴포넌트 ID 조회
-                        query_component_id = self._get_component_id_by_name(sql_info['query_id'], project_id)
-                        
-                        if query_component_id:
-                            # USE_TABLE 관계 저장
-                            relationship_data = {
-                                'src_id': query_component_id,
-                                'dst_id': table_component_id,
-                                'rel_type': 'USE_TABLE',
-                                'confidence': 1.0,
-                                'has_error': 'N',
-                                'error_message': None,
-                                'created_at': 'datetime("now")',
-                                'updated_at': 'datetime("now")',
-                                'del_yn': 'N'
-                            }
-                            
-                            # USER RULES: UNIQUE 제약조건 대응 - 중복 삽입 방지
-                            self.db_utils.insert_or_replace('relationships', relationship_data)
-                            debug(f"Java SQL 테이블 관계 저장: {sql_info['query_id']} → {table_name}")
-                
-                except Exception as e:
-                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-                    handle_error(e, f"Java SQL 테이블 관계 저장 중 오류: {table_name}")
-                    return
-                    
-        except Exception as e:
-            handle_error(e, "Java SQL 테이블 관계 저장 실패")
-
-    def _get_or_create_table_component(self, table_name: str, project_id: int) -> Optional[int]:
-        """테이블 컴포넌트 조회 또는 생성"""
-        try:
-            # 기존 테이블 컴포넌트 조회 (USER RULES: 공통함수 사용)
-            existing_components = self.db_utils.execute_query(
-                "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
-                (table_name, project_id)
-            )
-            
-            if existing_components and len(existing_components) > 0:
-                return existing_components[0]['component_id']
-            
-            # 프로젝트의 첫 번째 파일 ID 조회 (테이블 컴포넌트용)
-            first_file_query = "SELECT file_id FROM files WHERE project_id = ? AND del_yn = 'N' ORDER BY file_id LIMIT 1"
-            first_file_result = self.db_utils.execute_query(first_file_query, (project_id,))
-            first_file_id = first_file_result[0]['file_id'] if first_file_result else None
-            
-            if not first_file_id:
-                error(f"프로젝트 {project_id}의 파일을 찾을 수 없음")
-                return None
-            
-            # 새 테이블 컴포넌트 생성
-            table_data = {
-                'project_id': project_id,
-                'file_id': first_file_id,  # 프로젝트의 첫 번째 파일 ID 사용
-                'component_name': table_name,
-                'component_type': 'TABLE',
-                'parent_id': None,
-                'layer': 'DB',
-                'line_start': 0,
-                'line_end': 0,
-                'has_error': 'N',
-                'error_message': None,
-                'hash_value': '-',
-                'created_at': 'datetime("now")',
-                'updated_at': 'datetime("now")',
-                'del_yn': 'N'
-            }
-            
-            success = self.db_utils.insert_record('components', table_data)
-            if success:
-                # 생성된 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
-                new_components = self.db_utils.execute_query(
-                    "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE' AND project_id = ?",
-                    (table_name, project_id)
-                )
-                return new_components[0]['component_id'] if new_components and len(new_components) > 0 else None
-            
-            return None
-            
-        except Exception as e:
-            handle_error(e, f"테이블 컴포넌트 조회/생성 실패: {table_name}")
-            return None
-
-    def _get_component_id_by_name(self, component_name: str, project_id: int) -> Optional[int]:
-        """컴포넌트명으로 컴포넌트 ID 조회"""
-        try:
-            # USER RULES: 공통함수 사용
-            components = self.db_utils.execute_query(
-                "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? ORDER BY component_id DESC LIMIT 1",
-                (component_name, project_id)
-            )
-            
-            return components[0]['component_id'] if components and len(components) > 0 else None
-            
-        except Exception as e:
-            handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
-            return None
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """통계 정보 반환"""
-        return self.stats.copy()
-
-    def reset_statistics(self):
-        """통계 초기화"""
-        self.stats = {
-            'java_files_processed': 0,
-            'classes_extracted': 0,
-            'classes_created': 0,
-            'methods_extracted': 0,
-            'components_created': 0,
-            'inheritance_relationships_created': 0,
-            'call_query_relationships_created': 0,
-            'call_method_relationships_created': 0,
-            'use_table_relationships_created': 0,
-            'business_methods_filtered': 0,
-            'errors': 0,
-            'processing_time': 0.0
-        }
-
-    def _save_java_sql_content_compressed(self, sql_info: Dict[str, Any], component_id: int, project_id: int, file_id: int, java_file: str):
-        """Java SQL 내용을 압축하여 SqlContent.db에 저장"""
-        try:
-            sql_content = sql_info.get('sql_content', '')
-            if not sql_content:
-                return
-            
-            # SQL Content Processor를 통해 압축 저장
-            sql_content_data = {
-                'file_id': file_id,
-                'component_id': component_id,
-                'component_name': sql_info['query_id'],
-                'query_type': sql_info['query_type'],
-                'file_path': java_file,
-                'file_name': os.path.basename(java_file),
-                'line_start': sql_info.get('line_start', 0),
-                'line_end': sql_info.get('line_end', 0),
-                'hash_value': '-'  # USER RULES: 하드코딩 '-'
-            }
-            
-            # USER RULES: 공통함수 사용 - SqlContentManager를 통해 저장
-            success = self.sql_content_processor.sql_content_manager.save_sql_content(
-                sql_content, project_id, **sql_content_data
-            )
-            
-            if success:
-                debug(f"Java SQL 내용 압축 저장 완료: {sql_info['query_id']}")
-            else:
-                # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-                handle_error(Exception(f"Java SQL 내용 압축 저장 실패: {sql_info['query_id']}"), "Java SQL 내용 압축 저장 실패")
-                
-        except Exception as e:
-            # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-            handle_error(e, f"Java SQL 내용 압축 저장 중 오류: {sql_info.get('query_id', 'UNKNOWN')}")
-
-    def _save_java_sql_table_relationships_enhanced(self, sql_info: Dict[str, Any], component_data: Dict[str, Any], project_id: int):
-        """Java SQL 쿼리의 테이블 관계 저장 (오라클 조인 분석 포함)"""
-        try:
-            # 기존 테이블 사용 관계 저장
-            self._save_java_sql_table_relationships(sql_info, component_data, project_id)
-            
-            # 오라클 조인 관계 분석 및 저장 (XML 파서 로직 참조)
-            self._save_java_sql_join_relationships(sql_info, project_id)
-            
-        except Exception as e:
-            handle_error(e, "Java SQL 테이블 관계 저장 실패 (Enhanced)")
-
-    def _save_java_sql_join_relationships(self, sql_info: Dict[str, Any], project_id: int):
-        """Java SQL의 조인 관계 분석 및 저장 (XML 파서 로직 참조)"""
-        try:
-            sql_content = sql_info.get('sql_content', '')
-            if not sql_content:
-                return
-            
-            # XML 파서의 조인 분석 로직 사용 (향후 구현)
-            # TODO: XML 파서의 _analyze_join_relationships() 메서드 참조하여 구현
-            # - EXPLICIT JOIN (ANSI 표준)
-            # - IMPLICIT JOIN (Oracle 전통 방식)
-            # - INFERRED 테이블/컬럼 생성
-            
-            join_relationships = sql_info.get('join_relationships', [])
-            for join_rel in join_relationships:
-                try:
-                    # 조인 관계를 relationships 테이블에 저장
-                    relationship_data = {
-                        'src_id': self._get_or_create_table_component(join_rel.get('source_table'), project_id),
-                        'dst_id': self._get_or_create_table_component(join_rel.get('target_table'), project_id),
-                        'rel_type': join_rel.get('rel_type', 'JOIN_EXPLICIT'),
-                        'confidence': join_rel.get('confidence', 0.8),
-                        'has_error': 'N',
-                        'error_message': None,
-                        'created_at': 'datetime("now")',
-                        'updated_at': 'datetime("now")',
-                        'del_yn': 'N'
-                    }
-                    
-                    if relationship_data['src_id'] and relationship_data['dst_id']:
-                        # USER RULES: UNIQUE 제약조건 대응 - 중복 삽입 방지
-                        self.db_utils.insert_or_replace('relationships', relationship_data)
-                        debug(f"Java SQL 조인 관계 저장: {join_rel.get('source_table')} → {join_rel.get('target_table')}")
-                        
-                except Exception as e:
-                    # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-                    handle_error(e, f"Java SQL 조인 관계 저장 중 오류")
-                    return
-                    
-        except Exception as e:
-            # USER RULES: exception발생시 handle_error()로 exit! warning후 계속 실행하면 안됨
-            handle_error(e, "Java SQL 조인 관계 분석 실패")
-    
-    def _is_java_keyword(self, name: str) -> bool:
-        """
-        Java 예약어 또는 Oracle SQL 키워드인지 확인
-        
-        Args:
-            name: 확인할 이름
-            
-        Returns:
-            키워드이면 True
-        """
-        try:
-            # Java 예약어 (하드코딩 - 확실한 필터링)
-            java_keywords = {
-                'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return',
-                'try', 'catch', 'finally', 'throw', 'throws', 'class', 'interface', 'extends', 'implements',
-                'abstract', 'final', 'static', 'this', 'super', 'new', 'instanceof', 'public', 'protected', 'private',
-                'boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double', 'void', 'package', 'import',
-                'synchronized', 'volatile', 'transient', 'native', 'strictfp', 'assert', 'enum', 'const', 'goto',
-                'var', 'yield', 'record', 'sealed', 'permits', 'true', 'false', 'null'
-            }
-            
-            # Oracle SQL 키워드는 SQL 분석에서만 사용, Java 클래스/메서드명에는 적용하지 않음
-            
-            if name.lower() in java_keywords:
-                return True
-            
-            # 추가: config에서도 확인 (백업)
-            try:
-                config_path = PathUtils.get_parser_config_path("java")
-                config = self.java_parser._load_config(config_path)
-                
-                # Java 예약어 확인
-                config_java_keywords = set(config.get('java_reserved_keywords', []))
-                if name.lower() in {kw.lower() for kw in config_java_keywords}:
-                    return True
-                
-                # Oracle SQL 키워드 확인
-                config_oracle_keywords = set(config.get('oracle_reserved_keywords', []))
-                if name.upper() in {kw.upper() for kw in config_oracle_keywords}:
-                    return True
-            except:
-                pass  # config 로딩 실패해도 하드코딩된 키워드로 필터링
-                
-            return False
-            
-        except Exception as e:
-            # 설정 로드 실패 시 기본 Java 키워드만 확인
-            debug(f"키워드 설정 로드 실패, 기본 키워드만 확인: {e}")
-            java_keywords = {
-                'abstract', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 
-                'class', 'const', 'continue', 'default', 'do', 'double', 'else', 
-                'enum', 'extends', 'final', 'finally', 'float', 'for', 'goto', 
-                'if', 'implements', 'import', 'instanceof', 'int', 'interface', 
-                'long', 'native', 'new', 'package', 'private', 'protected', 'public',
-                'return', 'short', 'static', 'strictfp', 'super', 'switch', 
-                'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 
-                'void', 'volatile', 'while'
-            }
-            return name.lower() in java_keywords
-    
-    def _validate_table_in_sql_context(self, table_name: str, sql_content: str) -> bool:
-        """
-        SQL 컨텍스트에서 실제 테이블로 사용되었는지 검증
-        
-        Args:
-            table_name: 검증할 테이블명
-            sql_content: 원본 SQL 내용
-        
-        Returns:
-            SQL에서 테이블로 확인되면 True
-        """
-        if not sql_content:
-            debug(f"SQL 컨텍스트가 없어서 Java 예약어 '{table_name}' 검증 불가")
-            return False
-        
-        try:
-            # SQL 정규화
-            sql_upper = sql_content.upper()
-            table_upper = table_name.upper()
-            
-            # FROM/JOIN 절에서 테이블로 사용되는 패턴들
-            table_usage_patterns = [
-                # FROM table_name
-                rf'\bFROM\s+{re.escape(table_upper)}(?:\s+[A-Z_]\w*)?(?:\s+WHERE|\s+JOIN|\s+GROUP|\s+ORDER|\s*$)',
-                
-                # JOIN table_name
-                rf'\b(?:INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\s+{re.escape(table_upper)}(?:\s+[A-Z_]\w*)?\s+ON',
-                
-                # UPDATE table_name
-                rf'\bUPDATE\s+{re.escape(table_upper)}\s+SET',
-                
-                # INSERT INTO table_name
-                rf'\bINSERT\s+INTO\s+{re.escape(table_upper)}\s*\(',
-                
-                # DELETE FROM table_name
-                rf'\bDELETE\s+FROM\s+{re.escape(table_upper)}(?:\s+WHERE|\s*$)',
-                
-                # 별칭과 함께 사용: FROM table_name alias
-                rf'\bFROM\s+{re.escape(table_upper)}\s+[A-Z_]\w+(?:\s+WHERE|\s+JOIN)',
-            ]
-            
-            for pattern in table_usage_patterns:
-                if re.search(pattern, sql_upper):
-                    debug(f"SQL 컨텍스트에서 테이블 사용 확인: {table_name}")
-                    return True
-            
-            debug(f"SQL 컨텍스트에서 테이블 사용 확인되지 않음: {table_name}")
-            return False
-            
-        except Exception as e:
-            debug(f"SQL 컨텍스트 검증 중 오류: {table_name} - {str(e)}")
-            return False
-    
-    def _get_csv_file_id(self, csv_file_name: str) -> Optional[int]:
-        """
-        CSV 파일의 file_id 조회
-        
-        Args:
-            csv_file_name: CSV 파일명 (예: 'ALL_TABLES.csv')
-            
-        Returns:
-            file_id 또는 None
-        """
-        try:
-            query = """
-                SELECT file_id FROM files 
-                WHERE file_name = ? AND file_type = 'CSV' AND del_yn = 'N'
-                LIMIT 1
-            """
-            results = self.db_utils.execute_query(query, (csv_file_name,))
-            
-            if results:
-                file_id = results[0]['file_id']
-                debug(f"CSV 파일 ID 조회 성공: {csv_file_name} -> file_id {file_id}")
-                return file_id
-            else:
-                warning(f"CSV 파일을 찾을 수 없음: {csv_file_name}")
-                return None
-                
-        except Exception as e:
-            warning(f"CSV 파일 ID 조회 실패: {csv_file_name} - {str(e)}")
-            return None
-
-    def _create_temporary_method_components(self, method_names: set, java_file: str) -> bool:
-        """
-        SQL 쿼리와 관련된 메서드들을 임시로 METHOD 컴포넌트 등록
-        뒷단계에서 전체 분석 시 추가 정보 보완하거나 중복 스킵
-
-        Args:
-            method_names: 메서드명 집합
-            java_file: Java 파일 경로
-
-        Returns:
-            저장 성공 여부
-        """
-        try:
-            if not method_names:
-                return True
-
-            debug(f"임시 METHOD 컴포넌트 생성 시작: {java_file}, {len(method_names)}개")
-
-            # 프로젝트 ID 및 파일 ID 조회
-            project_id = self._get_project_id()
-            file_id = self._get_file_id(java_file)
-
-            if not project_id or not file_id:
-                handle_error(Exception(f"프로젝트 ID 또는 파일 ID를 찾을 수 없음: {java_file}"), "임시 메서드 컴포넌트 생성 실패")
-                return False
-
-            # 기존 데이터베이스 연결 사용
-            database_utils = self.db_utils
-
-            for method_name in method_names:
-                try:
-                    # 중복 체크 (이미 존재하는 메서드는 스킵)
-                    check_query = """
-                        SELECT component_id FROM components
-                        WHERE project_id = ? AND component_name = ? AND component_type = 'METHOD' AND del_yn = 'N'
-                    """
-                    existing = database_utils.execute_query(check_query, (project_id, method_name))
-
-                    if existing:
-                        debug(f"METHOD 컴포넌트 이미 존재 (스킵): {method_name}")
-                        continue
-
-                    # 임시 METHOD 컴포넌트 생성
-                    insert_query = """
-                        INSERT INTO components (
-                            project_id, file_id, component_name, component_type,
-                            layer, line_start, line_end, has_error, hash_value, created_at, updated_at, del_yn
-                        ) VALUES (?, ?, ?, 'METHOD', 'temp', 1, 1, 'N', 'temp_method', datetime('now', '+9 hours'), datetime('now', '+9 hours'), 'N')
-                    """
-
-                    result = database_utils.execute_query(insert_query, (project_id, file_id, method_name))
-
-                    if result:
-                        debug(f"임시 METHOD 컴포넌트 생성 완료: {method_name}")
-                    else:
-                        warning(f"임시 METHOD 컴포넌트 생성 실패: {method_name}")
-
-                except Exception as e:
-                    warning(f"메서드 컴포넌트 생성 중 오류: {method_name} - {str(e)}")
-                    continue
-
-            return True
-
-        except Exception as e:
-            handle_error(e, f"임시 메서드 컴포넌트 생성 실패: {java_file}")
-            return False
+# 편의 함수
+def load_java_files_simple(project_name: str, project_id: int) -> bool:
+    """심플한 Java 파일 로딩 실행"""
+    loader = SimpleJavaLoader(project_name)
+    return loader.execute_java_loading(project_id)

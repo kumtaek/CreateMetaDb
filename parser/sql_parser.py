@@ -10,44 +10,30 @@ import yaml
 import os
 from typing import List, Dict, Set, Any, Optional, Tuple
 from util import debug, error, handle_error, PathUtils, ValidationUtils, info, warning
+from util.oracle_keyword_manager import get_oracle_keyword_manager
 
 
 class SqlParser:
-    """SQL 파서 클래스"""
+    """SQL 파서 클래스 - 싱글톤 패턴"""
+
+    _instance: Optional['SqlParser'] = None
+    _initialized: bool = False
+
+    def __new__(cls) -> 'SqlParser':
+        if cls._instance is None:
+            cls._instance = super(SqlParser, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         """SQL 파서 초기화"""
-        self.path_utils = PathUtils()
-        self.oracle_keywords = set()
-        self._load_sql_configuration()
+        if not SqlParser._initialized:
+            self.path_utils = PathUtils()
+            # Oracle 키워드 매니저 초기화 (싱글톤)
+            self.oracle_keyword_manager = get_oracle_keyword_manager()
+            self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
+            debug(f"SQL 파서 초기화 완료 (싱글톤)")
+            SqlParser._initialized = True
 
-    def _load_sql_configuration(self) -> None:
-        """oracle_sql_keyword.yaml 파일에서 키워드를 로드하여 self.oracle_keywords 세트에 저장합니다."""
-        try:
-            config_path = self.path_utils.get_parser_config_path("oracle_sql")
-            if not os.path.exists(config_path):
-                warning(f"Oracle 키워드 설정 파일을 찾을 수 없습니다: {config_path}")
-                return
-
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-            
-            keywords = set()
-            if isinstance(config, dict):
-                for key, value in config.items():
-                    if key.endswith('_keywords') or key.endswith('_functions'):
-                        if isinstance(value, dict):
-                            for sub_key, sub_value in value.items():
-                                if isinstance(sub_value, list):
-                                    keywords.update([kw.upper() for kw in sub_value])
-                        elif isinstance(value, list):
-                             keywords.update([kw.upper() for kw in value])
-
-            self.oracle_keywords = keywords
-            info(f"Oracle SQL 키워드 {len(self.oracle_keywords)}개 로드 완료.")
-
-        except Exception as e:
-            handle_error(e, "Oracle SQL 키워드 설정 로드 실패")
 
     def extract_tables_and_aliases(self, sql_content: str) -> Dict[str, str]:
         """SQL에서 테이블명과 별칭을 추출하여 맵으로 반환합니다. (사용자 정의 패턴 기반)"""

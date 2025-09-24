@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Set, Optional
 from util import (
     DatabaseUtils, PathUtils, app_logger, info, error, debug, warning, handle_error
 )
+from util.oracle_keyword_manager import get_oracle_keyword_manager
 from util.simple_relationship_analyzer import SimpleRelationshipAnalyzer
 from util.java_query_analyzer import JavaQueryAnalyzer
 from util.frontend_api_analyzer import FrontendApiAnalyzer
@@ -35,6 +36,9 @@ class RelationshipBuilder:
         self.sql_analyzer = SimpleRelationshipAnalyzer()
         self.java_analyzer = JavaQueryAnalyzer()
         self.frontend_analyzer = FrontendApiAnalyzer()
+
+        # Oracle 키워드 매니저 초기화 (싱글톤)
+        self.oracle_keyword_manager = get_oracle_keyword_manager()
 
         # 수집된 단서들
         self.collected_data = {
@@ -932,35 +936,11 @@ class RelationshipBuilder:
     def _is_oracle_keyword(self, name: str) -> bool:
         """
         Oracle SQL 키워드인지 확인
-        
+
         Args:
             name: 확인할 이름
-            
+
         Returns:
             Oracle 키워드이면 True
         """
-        try:
-            # config에서 Oracle 키워드 목록 로드
-            from util import PathUtils
-            path_utils = PathUtils()
-            config_path = path_utils.get_parser_config_path("java")
-            
-            # YAML 파일 로드
-            import yaml
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-            
-            # Oracle 키워드 확인
-            oracle_keywords = set(config.get('oracle_reserved_keywords', []))
-            return name.upper() in {kw.upper() for kw in oracle_keywords}
-            
-        except Exception as e:
-            # 설정 로드 실패 시 기본 키워드만 확인
-            debug(f"Oracle 키워드 설정 로드 실패, 기본 키워드만 확인: {e}")
-            basic_oracle_keywords = {
-                'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP',
-                'ALTER', 'TABLE', 'INDEX', 'VIEW', 'GRANT', 'REVOKE', 'USER', 'DUAL',
-                'SYSDATE', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'ORDER', 'GROUP', 'BY',
-                'HAVING', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER', 'ON', 'AND', 'OR', 'NOT'
-            }
-            return name.upper() in basic_oracle_keywords
+        return self.oracle_keyword_manager.is_oracle_keyword(name)

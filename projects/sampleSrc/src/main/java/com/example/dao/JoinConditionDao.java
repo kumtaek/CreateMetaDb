@@ -53,3 +53,4 @@ public interface JoinConditionDao {
      */
     int deleteProductWithCategory(Map<String, Object> params);
 }
+

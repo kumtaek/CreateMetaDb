@@ -180,3 +180,4 @@ public class MergeQueryDao {
         System.out.println("Executing mergeCategoryStatistics: " + mergeQuery.toString());
     }
 }
+

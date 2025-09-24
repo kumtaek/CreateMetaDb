@@ -224,3 +224,4 @@ public interface JoinConditionRepository extends JpaRepository<Object, Long> {
     int deleteProductWithCategory(@Param("categoryName") String categoryName,
                                   @Param("orderStatus") String orderStatus);
 }
+

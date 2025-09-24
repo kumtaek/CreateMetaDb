@@ -215,10 +215,9 @@ def main():
         info("\n\n\n\n4단계 시작 ========================================")
         info("4단계 실행: Java 소스코드 분석 및 관계 생성")
         
-        from java_loading import JavaLoadingEngine
-        
-        java_engine = JavaLoadingEngine(project_name)
-        success = java_engine.execute_java_loading()
+        from java_loading import load_java_files_simple
+
+        success = load_java_files_simple(project_name, project_id)
         
         if success:
             info("4단계 완료: Java 소스코드 분석 및 관계 생성")
@@ -239,11 +238,8 @@ def main():
             debug("간접 USE_TABLE 관계 생성 시작")
             project_id = get_global_project_id()
             if project_id:
-                success_indirect = java_engine._create_indirect_use_table_relationships(project_id)
-                if success_indirect:
-                    debug("간접 USE_TABLE 관계 생성 완료")
-                else:
-                    warning("간접 USE_TABLE 관계 생성 실패")
+                # 간접 USE_TABLE 관계 생성은 java loading에서 처리됨
+                debug("간접 USE_TABLE 관계 생성 생략 (java loading에서 처리됨)")
             else:
                 warning("프로젝트 ID를 찾을 수 없어 간접 USE_TABLE 관계를 생성할 수 없습니다")
         else:
