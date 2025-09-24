@@ -20,6 +20,7 @@ from util import (
 )
 # USER RULES: 공통함수 사용, 하드코딩 금지
 from parser.xml_parser import XmlParser
+from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
 # from util.sql_content_processor import SqlContentProcessor  # 보류 상태
 
@@ -43,6 +44,9 @@ class XmlLoadingEngine:
         
         # XML 파서 초기화 (USER RULES: 공통함수 사용, 전역 프로젝트 정보 활용)
         self.xml_parser = XmlParser()
+
+        # 심플 쿼리 분석기 초기화 (3단계 파이프라인: 쿼리→테이블→조인)
+        self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
         
         # SQL Content Manager 초기화 (부속 기능 - 에러 시 무시)
         if self.sql_content_enabled:

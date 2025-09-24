@@ -15,7 +15,9 @@
       "Bash(timeout 120 python:*)",
       "Bash(timeout:*)",
       "WebSearch",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(tasklist)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

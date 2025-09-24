@@ -23,6 +23,7 @@ from util import (
 from util.sql_content_processor import SqlContentProcessor
 # USER RULES: 공통함수 사용, 하드코딩 금지
 from parser.java_parser import JavaParser
+from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.layer_classification_utils import get_layer_classifier
 from util.component_filter_utils import get_component_filter
 
@@ -44,6 +45,9 @@ class JavaLoadingEngine:
 
         # Java 파서 초기화 (USER RULES: 공통함수 사용)
         self.java_parser = JavaParser()
+
+        # 심플 쿼리 분석기 초기화 (3단계 파이프라인: 쿼리→테이블→조인)
+        self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
         
         # Layer 분류 유틸리티 초기화 (USER RULES: 공통함수 사용)
         self.layer_classifier = get_layer_classifier()
@@ -182,16 +186,22 @@ class JavaLoadingEngine:
                             handle_error(e, f"USE_TABLE 관계 저장 실패: {java_file}")
                             return False
 
-                    # SQL 쿼리 저장 (새로운 기능 추가)
-                    if analysis_result.get('sql_queries'):
-                        try:
-                            if self._save_java_sql_queries_to_database(analysis_result['sql_queries'], java_file):
-                                self.stats['java_sql_queries_created'] = self.stats.get('java_sql_queries_created', 0) + len(analysis_result['sql_queries'])
-                                debug(f"Java SQL 쿼리 저장 완료: {len(analysis_result['sql_queries'])}개")
-                        except Exception as e:
-                            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                            handle_error(e, f"Java SQL 쿼리 저장 실패: {java_file}")
-                            return False
+                    # 3단계 심플 쿼리 분석 (메소드→쿼리→테이블→조인조건 도출)
+                    try:
+                        file_id = self._get_file_id(java_file)
+                        if file_id:
+                            query_analysis_result = self.simple_query_analyzer.analyze_file(java_file, 'java', file_id)
+
+                            # 통계 업데이트
+                            self.stats['queries_processed'] = self.stats.get('queries_processed', 0) + query_analysis_result.get('queries_processed', 0)
+                            self.stats['tables_found'] = self.stats.get('tables_found', 0) + query_analysis_result.get('tables_found', 0)
+                            self.stats['join_relationships_created'] = self.stats.get('join_relationships_created', 0) + query_analysis_result.get('relationships_created', 0)
+
+                            debug(f"3단계 쿼리 분석 완료: 쿼리={query_analysis_result.get('queries_processed', 0)}, 관계={query_analysis_result.get('relationships_created', 0)}")
+                    except Exception as e:
+                        # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+                        handle_error(e, f"3단계 쿼리 분석 실패: {java_file}")
+                        return False
 
                     self.stats['java_files_processed'] += 1
 
