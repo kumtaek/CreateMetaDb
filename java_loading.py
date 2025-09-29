@@ -26,6 +26,9 @@ class SimpleJavaLoader:
         self.db_utils = None
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
+        
+        # 단일 DB 연결 관리
+        self.db_connection = None
 
         # 통계
         self.stats = {
@@ -42,6 +45,9 @@ class SimpleJavaLoader:
 
             # 데이터베이스 초기화
             self.db_utils = DatabaseUtils(self.metadata_db_path)
+            
+            # SQL 쿼리 수집용 리스트 초기화
+            self.collected_sql_queries = []
 
             # Java 파일 수집
             java_files = []
@@ -63,6 +69,17 @@ class SimpleJavaLoader:
                     warning(f"Java 파일 처리 실패: {java_file} - {e}")
                     self.stats['errors'] += 1
                     continue
+
+            # Common SQL Processor 호출
+            if hasattr(self, 'collected_sql_queries') and self.collected_sql_queries:
+                info("Common SQL Processor를 사용하여 처리 시작")
+                try:
+                    from util.common_sql_processor import CommonSqlAnalyzer
+                    common_processor = CommonSqlAnalyzer(self.project_name)
+                    result = common_processor.analyze_all_queries()
+                    info(f"Common SQL Processor 처리 결과: {result}")
+                except Exception as e:
+                    warning(f"Common SQL Processor 처리 실패: {e}")
 
             # 통계 출력
             info("=== Java 로딩 완료 ===")
@@ -88,26 +105,39 @@ class SimpleJavaLoader:
         # 2. Java 파일 파싱 (public/protected만)
         debug(f"Java 파일 파싱: {java_file}")
         parse_result = self.java_parser.parse_java_file(java_file)
+        info(f"파싱 결과: 클래스 {len(parse_result.get('classes', []))}개, 메서드 {len(parse_result.get('methods', []))}개")
+        if parse_result.get('classes'):
+            info(f"추출된 클래스들: {[cls['name'] for cls in parse_result['classes']]}")
+        else:
+            warning(f"클래스가 추출되지 않았습니다: {java_file}")
 
         # 3. 클래스 컴포넌트 먼저 등록하고 class_id 수집
         class_id_map = {}  # class_name -> component_id 매핑
 
         for cls in parse_result['classes']:
-            class_comp = {
-                'project_id': project_id,
-                'file_id': file_id,
-                'component_name': cls['name'],
-                'component_type': 'CLASS',
-                'layer_type': 'UNKNOWN',
-                'line_number': cls['line'],
-                'has_error': 'N',
-                'error_message': None,
-                'parent_id': None
-            }
-            class_id = self._upsert_component(class_comp)
+            info(f"클래스 등록 시도: {cls['name']}")
+            # classes 테이블에 등록
+            class_id = self._upsert_class(cls, project_id, file_id)
             if class_id:
                 class_id_map[cls['name']] = class_id
                 self.stats['classes_extracted'] += 1
+                info(f"클래스 등록 성공: {cls['name']} (ID: {class_id})")
+            else:
+                warning(f"클래스 등록 실패: {cls['name']}")
+                
+                # components 테이블에도 등록
+                class_comp = {
+                    'project_id': project_id,
+                    'file_id': file_id,
+                    'component_name': cls['name'],
+                    'component_type': 'CLASS',
+                    'layer_type': 'UNKNOWN',
+                    'line_number': cls['line'],
+                    'has_error': 'N',
+                    'error_message': None,
+                    'parent_id': None
+                }
+                self._upsert_component(class_comp)
 
         # 4. 메서드 컴포넌트를 parent_id와 함께 등록
         for method in parse_result['methods']:
@@ -224,9 +254,97 @@ class SimpleJavaLoader:
             warning(f"컴포넌트 UPSERT 실패: {comp_data.get('component_name', 'unknown')} - {e}")
             return None
 
+    def _get_db_connection(self):
+        """단일 DB 연결 반환"""
+        if self.db_connection is None:
+            import sqlite3
+            self.db_connection = sqlite3.connect(self.metadata_db_path, timeout=60.0)
+            self.db_connection.execute("PRAGMA journal_mode = WAL")
+            self.db_connection.execute("PRAGMA busy_timeout = 30000")
+        return self.db_connection
+
+    def _upsert_class(self, cls_data: dict, project_id: int, file_id: int) -> Optional[int]:
+        """클래스를 classes 테이블에 UPSERT"""
+        import time
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                # 단일 DB 연결 사용
+                conn = self._get_db_connection()
+                cursor = conn.cursor()
+                
+                # 기존 클래스 확인
+                check_query = """
+                    SELECT class_id FROM classes 
+                    WHERE project_id = ? AND file_id = ? AND class_name = ?
+                """
+                cursor.execute(check_query, (project_id, file_id, cls_data['name']))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # 업데이트
+                    update_query = """
+                        UPDATE classes SET 
+                            line_start = ?, has_error = 'N', error_message = NULL, 
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE class_id = ?
+                    """
+                    cursor.execute(update_query, (cls_data['line'], existing[0]))
+                    conn.commit()
+                    debug(f"클래스 업데이트: {cls_data['name']}")
+                    return existing[0]
+                else:
+                    # 생성
+                    import hashlib
+                    hash_value = hashlib.md5(f"{cls_data['name']}{cls_data['line']}".encode()).hexdigest()
+                    
+                    insert_query = """
+                        INSERT INTO classes (
+                            project_id, file_id, class_name, line_start, 
+                            has_error, error_message, hash_value, created_at, updated_at, del_yn
+                        ) VALUES (?, ?, ?, ?, 'N', NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'N')
+                    """
+                    cursor.execute(insert_query, (
+                        project_id, file_id, cls_data['name'], cls_data['line'], hash_value
+                    ))
+                    conn.commit()
+                    debug(f"클래스 생성: {cls_data['name']}")
+                    
+                    # 새로 생성된 class_id 조회 (같은 연결 사용)
+                    cursor.execute(check_query, (project_id, file_id, cls_data['name']))
+                    new_class = cursor.fetchone()
+                    class_id = new_class[0] if new_class else None
+                    return class_id
+                    
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e) and attempt < max_retries - 1:
+                    warning(f"데이터베이스 잠금 - 재시도 {attempt + 1}/{max_retries}: {cls_data.get('name', 'unknown')}")
+                    time.sleep(1.0 * (attempt + 1))  # 더 긴 대기 (1초, 2초, 3초)
+                    continue
+                else:
+                    from util.logger import handle_error
+                    handle_error(e, f"클래스 UPSERT 실패: {cls_data.get('name', 'unknown')}")
+                    return None
+            except Exception as e:
+                from util.logger import handle_error
+                handle_error(e, f"클래스 UPSERT 실패: {cls_data.get('name', 'unknown')}")
+                return None
+        
+        return None
+    
+    def close_connection(self):
+        """DB 연결 종료"""
+        if self.db_connection:
+            self.db_connection.close()
+            self.db_connection = None
+
 
 # 편의 함수
 def load_java_files_simple(project_name: str, project_id: int) -> bool:
     """심플한 Java 파일 로딩 실행"""
     loader = SimpleJavaLoader(project_name)
-    return loader.execute_java_loading(project_id)
+    try:
+        return loader.execute_java_loading(project_id)
+    finally:
+        loader.close_connection()

@@ -11,7 +11,7 @@ from util import (
 )
 from util.oracle_keyword_manager import get_oracle_keyword_manager
 from util.simple_relationship_analyzer import SimpleRelationshipAnalyzer
-from util.java_query_analyzer import JavaQueryAnalyzer
+# JavaQueryAnalyzer는 삭제됨 (중복 기능)
 from util.frontend_api_analyzer import FrontendApiAnalyzer
 
 
@@ -34,7 +34,8 @@ class RelationshipBuilder:
         self.db_path = self.path_utils.get_metadata_db_path(project_name)
         self.db_utils = DatabaseUtils(self.db_path)
         self.sql_analyzer = SimpleRelationshipAnalyzer()
-        self.java_analyzer = JavaQueryAnalyzer()
+        # JavaQueryAnalyzer는 삭제됨 (중복 기능)
+        # self.java_analyzer = JavaQueryAnalyzer()
         self.frontend_analyzer = FrontendApiAnalyzer()
 
         # Oracle 키워드 매니저 초기화 (싱글톤)

@@ -272,7 +272,7 @@ def main():
         try:
             from relationship_builder import RelationshipBuilder
             from util.frontend_api_analyzer import FrontendApiAnalyzer
-            from util.java_query_analyzer import JavaQueryAnalyzer
+            # JavaQueryAnalyzer는 삭제됨 (중복 기능)
             from frontend_loading import FrontendLoadingEngine
 
             project_id = get_global_project_id()
@@ -324,9 +324,7 @@ def main():
                 info(f"성공: 총 관계 {relationship_stats.get('total_relationships', 0)}개 생성")
 
         except Exception as e:
-            warning(f"6단계 실패: 프론트엔드 파일 분석 및 연관관계 구축 - {str(e)}")
-            debug(f"연관관계 구축 오류 상세: {e}")
-            # 연관관계 구축 실패는 치명적이지 않으므로 계속 진행
+            handle_error(e, "6단계 실패: 프론트엔드 파일 분석 및 연관관계 구축")
 
         # 13. 누락된 연결고리 연결 (6단계에서 자동 처리됨)
         # JSP 분석 완료 후 API_URL 컴포넌트의 file_id가 자동으로 업데이트됨

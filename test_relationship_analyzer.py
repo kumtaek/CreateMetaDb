@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 from util.simple_relationship_analyzer import SimpleRelationshipAnalyzer
-from util.java_query_analyzer import JavaQueryAnalyzer
+# JavaQueryAnalyzer는 삭제됨 (중복 기능)
 from util import app_logger, info, error, debug
 
 
@@ -87,7 +87,9 @@ def test_java_method_analysis():
     """Java 메서드 분석 테스트"""
     print("\n\n=== Java 메서드 분석 테스트 ===")
 
-    analyzer = JavaQueryAnalyzer()
+    # JavaQueryAnalyzer는 삭제됨 (중복 기능)
+    from util.logger import handle_error
+    handle_error(NotImplementedError("JavaQueryAnalyzer 기능이 삭제됨"), "Java 메서드 분석 테스트 불가")
 
     # MyBatis Mapper 인터페이스 테스트
     mybatis_content = """

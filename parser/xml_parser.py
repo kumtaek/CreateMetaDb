@@ -177,7 +177,6 @@ class XmlParser:
 
             return {
                 'sql_queries': sql_queries,
-                'join_relationships': [],  # 공통 처리에서 처리
                 'file_path': xml_file,
                 'has_error': 'N',
                 'error_message': None
@@ -193,6 +192,7 @@ class XmlParser:
                 'error_message': f"XML 파싱 실패: {str(e)}"
             }
 
+
     def get_statistics(self) -> Dict[str, Any]:
         return self.stats.copy()
 
@@ -200,6 +200,5 @@ class XmlParser:
         self.stats = {
             'files_processed': 0,
             'sql_queries_extracted': 0,
-            'join_relationships_created': 0,
             'errors': 0
         }

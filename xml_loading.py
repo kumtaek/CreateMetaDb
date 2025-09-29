@@ -48,6 +48,10 @@ class XmlLoadingEngine:
         # 심플 쿼리 분석기 초기화 (3단계 파이프라인: 쿼리→테이블→조인)
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
         
+        # Common SQL Processor 초기화
+        from util.common_sql_processor import CommonSqlAnalyzer
+        self.common_sql_processor = CommonSqlAnalyzer(project_name)
+        
         # SQL Content Manager 초기화 (부속 기능 - 에러 시 무시)
         if self.sql_content_enabled:
             try:
@@ -72,7 +76,6 @@ class XmlLoadingEngine:
             'xml_files_processed': 0,
             'sql_queries_extracted': 0,
             'sql_components_created': 0,
-            'join_relationships_created': 0,
             'inferred_tables_created': 0,
             'inferred_columns_created': 0,
             'errors': 0
@@ -168,15 +171,7 @@ class XmlLoadingEngine:
                             handle_error(e, f"SQL 컴포넌트 저장 실패: {xml_file}")
                             return False
                         
-                        # 4단계: JOIN 관계 저장
-                        if analysis_result['join_relationships']:
-                            try:
-                                if self._save_join_relationships_to_database(analysis_result['join_relationships']):
-                                    self.stats['join_relationships_created'] += len(analysis_result['join_relationships'])
-                            except Exception as e:
-                                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-                                handle_error(e, f"JOIN 관계 저장 실패: {xml_file}")
-                                return False
+                        # JOIN 관계는 공통 분석기에서 처리
                     
                     self.stats['xml_files_processed'] += 1
                     self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
@@ -272,22 +267,22 @@ class XmlLoadingEngine:
             
             debug(f"프로젝트 ID: {project_id}")
             
-            # SQL Content Processor를 사용하여 처리 (보류 상태)
-            # if self.sql_content_processor:
-            #     info("SQL Content Processor를 사용하여 처리 시작")
-            #     info(f"process_sql_queries 호출 전: sql_queries={len(sql_queries) if sql_queries else 0}, project_id={project_id}")
-            #     try:
-            #         result = self.sql_content_processor.process_sql_queries(sql_queries, project_id)
-            #         info(f"process_sql_queries 호출 후: result={result}")
-            #         info(f"SQL Content Processor 처리 결과: {result}")
-            #         info(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 완료 ===")
-            #         return result
-            #     except Exception as e:
-            #         handle_error(e, "process_sql_queries 호출 실패")
-            #         return False
-            # else:
-            #     error("SQL Content Processor가 초기화되지 않았습니다")
-            #     return False
+            # SQL Content Processor를 사용하여 처리
+            if self.common_sql_processor:
+                info("Common SQL Processor를 사용하여 처리 시작")
+                info(f"process_sql_queries 호출 전: sql_queries={len(sql_queries) if sql_queries else 0}, project_id={project_id}")
+                try:
+                    result = self.common_sql_processor.analyze_all_queries()
+                    info(f"process_sql_queries 호출 후: result={result}")
+                    info(f"Common SQL Processor 처리 결과: {result}")
+                    info(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 완료 ===")
+                    return result
+                except Exception as e:
+                    handle_error(e, "process_sql_queries 호출 실패")
+                    return False
+            else:
+                error("Common SQL Processor가 초기화되지 않았습니다")
+                return False
             
             # 기존 방식으로 SQL 컴포넌트 저장 (SQL Content Processor 보류 상태)
             success_count = 0
@@ -540,7 +535,7 @@ class XmlLoadingEngine:
             return False
     
     
-    def _save_join_relationships_to_database(self, join_relationships: List[Dict[str, Any]]) -> bool:
+    def _save_join_relationships_to_database_removed(self, join_relationships: List[Dict[str, Any]]) -> bool:
         """
         JOIN 관계를 데이터베이스에 저장 (4단계)
         
@@ -1141,7 +1136,6 @@ class XmlLoadingEngine:
             info(f"처리된 XML 파일: {self.stats['xml_files_processed']}개")
             info(f"추출된 SQL 쿼리: {self.stats['sql_queries_extracted']}개")
             info(f"생성된 SQL 컴포넌트: {self.stats['sql_components_created']}개")
-            info(f"생성된 JOIN 관계: {self.stats['join_relationships_created']}개")
             info(f"생성된 inferred 테이블: {self.stats['inferred_tables_created']}개")
             info(f"생성된 inferred 컬럼: {self.stats['inferred_columns_created']}개")
             info(f"오류 발생: {self.stats['errors']}개")
@@ -1194,7 +1188,6 @@ class XmlLoadingEngine:
             'xml_files_processed': 0,
             'sql_queries_extracted': 0,
             'sql_components_created': 0,
-            'join_relationships_created': 0,
             'inferred_tables_created': 0,
             'inferred_columns_created': 0,
             'errors': 0

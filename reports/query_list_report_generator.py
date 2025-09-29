@@ -543,13 +543,17 @@ class QueryListReportGenerator:
             margin-left: 5px;
         }}
         .query-list-table tr:hover {{
-            background-color: #f8f9ff;
+            background-color: #bbdefb;
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4);
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+            border-left: 4px solid #1976d2;
         }}
-        /* 컬럼 너비 설정 - 내용에 맞춰 자동 조정, SQL만 제한 */
-        .query-list-table th:nth-child(1), .query-list-table td:nth-child(1) {{ width: auto; min-width: 200px; }} /* 파일명 */
-        .query-list-table th:nth-child(2), .query-list-table td:nth-child(2) {{ width: auto; min-width: 200px; }} /* 쿼리 ID */
-        .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 600px; max-width: 600px; }} /* SQL 내용 - 넓게 설정 */
-        .query-list-table th:nth-child(4), .query-list-table td:nth-child(4) {{ width: auto; min-width: 150px; }} /* 관련 테이블 */
+        /* 컬럼 너비 설정 - 내용에 맞춰 자동 조정, SQL만 넓게 설정 */
+        .query-list-table th:nth-child(1), .query-list-table td:nth-child(1) {{ width: auto; min-width: 120px; max-width: 200px; }} /* 파일명 - 내용에 맞춰 줄임 */
+        .query-list-table th:nth-child(2), .query-list-table td:nth-child(2) {{ width: auto; min-width: 100px; max-width: 150px; }} /* 쿼리 ID - 내용에 맞춰 줄임 */
+        .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 800px; min-width: 800px; }} /* SQL 내용 - 더 넓게 설정 */
+        .query-list-table th:nth-child(4), .query-list-table td:nth-child(4) {{ width: auto; min-width: 120px; max-width: 200px; }} /* 관련 테이블 - 내용에 맞춰 줄임 */
         .file-type-java {{
             background: #e3f2fd;
             color: #1976d2;
@@ -615,7 +619,7 @@ class QueryListReportGenerator:
             .query-list-table th, .query-list-table td {{
                 padding: 4px 2px;
             }}
-            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 400px; max-width: 400px; }} /* SQL 내용 조정 */
+            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 500px; min-width: 500px; }} /* SQL 내용 조정 */
         }}
         @media (max-width: 480px) {{
             .query-list-stats {{
@@ -624,7 +628,7 @@ class QueryListReportGenerator:
             .query-list-table {{
                 min-width: 600px;
             }}
-            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 300px; max-width: 300px; }} /* SQL 내용 더 조정 */
+            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) {{ width: 400px; min-width: 400px; }} /* SQL 내용 더 조정 */
         }}
     </style>
 </head>

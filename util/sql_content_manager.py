@@ -95,14 +95,10 @@ class SqlContentManager:
                 'file_id': kwargs.get('file_id'),
                 'component_id': kwargs.get('component_id'),
                 'sql_content_compressed': compressed_content,
-                'query_type': kwargs.get('query_type', 'UNKNOWN'),
                 'file_path': kwargs.get('file_path'),
                 'component_name': kwargs.get('component_name'),
                 'file_name': kwargs.get('file_name'),
-                'line_start': kwargs.get('line_start'),
-                'line_end': kwargs.get('line_end'),
                 'hash_value': kwargs.get('hash_value'),
-                'error_message': kwargs.get('error_message'),
                 'del_yn': 'N'
             }
             
@@ -152,23 +148,18 @@ class SqlContentManager:
                 # project_id와 component_id로 업데이트
                 update_query = """
                     UPDATE sql_contents 
-                    SET file_id = ?, sql_content_compressed = ?, query_type = ?, 
+                    SET file_id = ?, sql_content_compressed = ?, 
                         file_path = ?, component_name = ?, file_name = ?, 
-                        line_start = ?, line_end = ?, hash_value = ?, 
-                        error_message = ?, del_yn = 'N'
+                        hash_value = ?, del_yn = 'N'
                     WHERE project_id = ? AND component_id = ?
                 """
                 update_values = (
                     sql_content_data.get('file_id'),
                     sql_content_data.get('sql_content_compressed'),
-                    sql_content_data.get('query_type'),
                     sql_content_data.get('file_path'),
                     sql_content_data.get('component_name'),
                     sql_content_data.get('file_name'),
-                    sql_content_data.get('line_start'),
-                    sql_content_data.get('line_end'),
                     hash_value,
-                    sql_content_data.get('error_message'),
                     project_id,
                     component_id
                 )
@@ -317,7 +308,7 @@ class SqlContentManager:
         try:
             query = """
             SELECT 
-                content_id, file_path, component_name, query_type,
+                content_id, file_path, component_name,
                 hash_value, created_at, sql_content_compressed
             FROM sql_contents 
             WHERE project_id = ? AND del_yn = 'N'
@@ -334,7 +325,6 @@ class SqlContentManager:
                     'content_id': row[0],
                     'file_path': row[1],
                     'component_name': row[2],
-                    'query_type': row[3],
                     'hash_value': row[4],
                     'created_at': row[5],
                     'sql_content': self._decompress_content(row[6])
@@ -391,13 +381,11 @@ class SqlContentManager:
             # 쿼리 타입별 통계
             type_query = """
             SELECT 
-                query_type,
                 COUNT(*) as total_sql_contents,
                 SUM(LENGTH(sql_content_compressed)) as total_compressed_size,
                 AVG(LENGTH(sql_content_compressed)) as avg_compressed_size
             FROM sql_contents 
             WHERE project_id = ? AND del_yn = 'N'
-            GROUP BY query_type
             ORDER BY total_compressed_size DESC
             """
             
