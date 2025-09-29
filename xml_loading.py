@@ -267,6 +267,34 @@ class XmlLoadingEngine:
             
             debug(f"프로젝트 ID: {project_id}")
             
+            # SQL Content 저장 (공통부)
+            if sql_queries:
+                info(f"수집된 SQL 쿼리 {len(sql_queries)}개를 SQL Content에 저장")
+                try:
+                    from util.sql_content_manager import SqlContentManager
+                    sql_content_manager = SqlContentManager(self.project_name)
+                    
+                    if sql_content_manager.initialized:
+                        for query in sql_queries:
+                            success = sql_content_manager.save_sql_content(
+                                sql_content=query.get('sql_content', ''),
+                                project_id=project_id,
+                                file_id=query.get('file_id', 0),
+                                component_id=query.get('component_id'),
+                                file_path=query.get('file_path', ''),
+                                component_name=query.get('sql_id', ''),
+                                file_name=query.get('file_name', ''),
+                                hash_value=query.get('hash_value', '-')
+                            )
+                            if success:
+                                debug(f"SQL Content 저장 성공: {query.get('sql_id', '')}")
+                            else:
+                                warning(f"SQL Content 저장 실패: {query.get('sql_id', '')}")
+                    else:
+                        warning("SQL Content Manager 초기화 실패")
+                except Exception as e:
+                    warning(f"SQL Content 저장 실패: {e}")
+            
             # SQL Content Processor를 사용하여 처리
             if self.common_sql_processor:
                 info("Common SQL Processor를 사용하여 처리 시작")
@@ -323,31 +351,7 @@ class XmlLoadingEngine:
                         success_count += 1
                         debug(f"SQL 컴포넌트 저장 성공: {sql_id} (component_id: {component_id})")
                         
-                        # SQL Content Manager에 정제된 SQL 내용 저장 (부속 기능)
-                        try:
-                            if self.sql_content_manager and self.sql_content_manager.initialized:
-                                # 정제된 SQL 내용 저장
-                                sql_content_success = self.sql_content_manager.save_sql_content(
-                                    sql_content=sql_content,
-                                    project_id=project_id,
-                                    file_id=file_id,
-                                    component_id=component_id,
-                                    query_type=component_type,
-                                    file_path='',  # XML 파일에서는 파일 경로 정보가 제한적
-                                    component_name=sql_id,
-                                    file_name='',  # XML 파일에서는 파일명 정보가 제한적
-                                    line_start=1,
-                                    line_end=1,
-                                    hash_value='-',
-                                    error_message=None
-                                )
-                                if sql_content_success:
-                                    debug(f"SQL Content 저장 성공: {sql_id}")
-                                else:
-                                    error(f"SQL Content 저장 실패: {sql_id} (무시하고 계속 진행)")
-                        except Exception as e:
-                            # SQL Content 저장 실패는 무시하고 계속 진행
-                            error(f"SQL Content 저장 중 오류 발생 (무시): {sql_id} - {str(e)}")
+                        # SQL Content 저장은 공통부에서 처리
 
                         # SQL과 테이블 간의 USE_TABLE 관계 생성
                         self._create_sql_table_relationships(component_id, sql_content, project_id)

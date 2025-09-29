@@ -13,6 +13,7 @@ from util import (
 )
 from parser.simple_java_parser import SimpleJavaParser
 from parser.simple_query_analyzer import SimpleQueryAnalyzer
+from util.sql_content_manager import SqlContentManager
 
 class SimpleJavaLoader:
     """심플한 Java 파일 로더"""
@@ -26,6 +27,9 @@ class SimpleJavaLoader:
         self.db_utils = None
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.metadata_db_path)
+        
+        # SQL Content Manager 초기화
+        self.sql_content_manager = SqlContentManager(project_name)
         
         # 단일 DB 연결 관리
         self.db_connection = None
@@ -70,6 +74,31 @@ class SimpleJavaLoader:
                     self.stats['errors'] += 1
                     continue
 
+            # SQL Content 저장 (공통부)
+            if hasattr(self, 'collected_sql_queries') and self.collected_sql_queries:
+                info(f"수집된 SQL 쿼리 {len(self.collected_sql_queries)}개를 SQL Content에 저장")
+                try:
+                    if self.sql_content_manager and self.sql_content_manager.initialized:
+                        for query_data in self.collected_sql_queries:
+                            success = self.sql_content_manager.save_sql_content(
+                                sql_content=query_data['sql_content'],
+                                project_id=query_data['project_id'],
+                                file_id=query_data['file_id'],
+                                component_id=None,  # Java에서는 component_id가 없음
+                                file_path='',
+                                component_name=query_data['query_id'],
+                                file_name='',
+                                hash_value='-'
+                            )
+                            if success:
+                                debug(f"SQL Content 저장 성공: {query_data['query_id']}")
+                            else:
+                                warning(f"SQL Content 저장 실패: {query_data['query_id']}")
+                    else:
+                        warning("SQL Content Manager 초기화 실패")
+                except Exception as e:
+                    warning(f"SQL Content 저장 실패: {e}")
+            
             # Common SQL Processor 호출
             if hasattr(self, 'collected_sql_queries') and self.collected_sql_queries:
                 info("Common SQL Processor를 사용하여 처리 시작")
@@ -163,6 +192,15 @@ class SimpleJavaLoader:
             query_analysis = self.simple_query_analyzer.analyze_java_file(java_file, file_id)
             if query_analysis and query_analysis.get('queries'):
                 self.stats['sql_queries_extracted'] += len(query_analysis['queries'])
+                
+                # SQL Content 저장 (공통부)
+                for query in query_analysis['queries']:
+                    self.collected_sql_queries.append({
+                        'sql_content': query.get('sql_content', ''),
+                        'query_id': query.get('query_id', ''),
+                        'file_id': file_id,
+                        'project_id': project_id
+                    })
         except Exception as e:
             debug(f"쿼리 분석 실패: {java_file} - {e}")
 
@@ -190,12 +228,17 @@ class SimpleJavaLoader:
                 SELECT component_id FROM components
                 WHERE project_id = ? AND file_id = ? AND component_name = ? AND component_type = ?
             """
-            existing = self.db_utils.execute_query(check_query, (
+            # 단일 DB 연결 사용
+            conn = self._get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute(check_query, (
                 comp_data['project_id'],
                 comp_data['file_id'],
                 comp_data['component_name'],
                 comp_data['component_type']
             ))
+            existing = cursor.fetchone()
 
             if existing:
                 # 업데이트 (parent_id 포함)
@@ -204,16 +247,17 @@ class SimpleJavaLoader:
                     SET line_start = ?, layer = ?, has_error = ?, error_message = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE component_id = ?
                 """
-                self.db_utils.execute_query(update_query, (
+                cursor.execute(update_query, (
                     comp_data['line_number'],
                     comp_data['layer_type'],
                     comp_data['has_error'],
                     comp_data['error_message'],
                     comp_data.get('parent_id'),
-                    existing[0]['component_id']
+                    existing[0]
                 ))
+                conn.commit()  # 건건 커밋
                 debug(f"컴포넌트 업데이트: {comp_data['component_name']}")
-                return existing[0]['component_id']
+                return existing[0]
             else:
                 # 생성 (parent_id 포함)
                 insert_query = """
@@ -227,7 +271,7 @@ class SimpleJavaLoader:
                 import hashlib
                 hash_value = hashlib.md5(f"{comp_data['component_name']}{comp_data['component_type']}".encode()).hexdigest()
 
-                self.db_utils.execute_query(insert_query, (
+                cursor.execute(insert_query, (
                     comp_data['project_id'],
                     comp_data['file_id'],
                     comp_data['component_name'],
@@ -239,16 +283,18 @@ class SimpleJavaLoader:
                     comp_data.get('parent_id'),
                     hash_value
                 ))
+                conn.commit()  # 건건 커밋
                 debug(f"컴포넌트 생성: {comp_data['component_name']}")
 
                 # 새로 생성된 component_id 조회
-                new_component = self.db_utils.execute_query(check_query, (
+                cursor.execute(check_query, (
                     comp_data['project_id'],
                     comp_data['file_id'],
                     comp_data['component_name'],
                     comp_data['component_type']
                 ))
-                return new_component[0]['component_id'] if new_component else None
+                new_component = cursor.fetchone()
+                return new_component[0] if new_component else None
 
         except Exception as e:
             warning(f"컴포넌트 UPSERT 실패: {comp_data.get('component_name', 'unknown')} - {e}")
@@ -259,79 +305,64 @@ class SimpleJavaLoader:
         if self.db_connection is None:
             import sqlite3
             self.db_connection = sqlite3.connect(self.metadata_db_path, timeout=60.0)
-            self.db_connection.execute("PRAGMA journal_mode = WAL")
-            self.db_connection.execute("PRAGMA busy_timeout = 30000")
+            self.db_connection.execute("PRAGMA journal_mode=WAL")  # 공백 제거
+            self.db_connection.execute("PRAGMA busy_timeout=30000")  # 공백 제거
         return self.db_connection
 
     def _upsert_class(self, cls_data: dict, project_id: int, file_id: int) -> Optional[int]:
         """클래스를 classes 테이블에 UPSERT"""
-        import time
-        max_retries = 3
-        
-        for attempt in range(max_retries):
-            try:
-                # 단일 DB 연결 사용
-                conn = self._get_db_connection()
-                cursor = conn.cursor()
-                
-                # 기존 클래스 확인
-                check_query = """
-                    SELECT class_id FROM classes 
-                    WHERE project_id = ? AND file_id = ? AND class_name = ?
+        try:
+            # 단일 DB 연결 사용 (한 번만 생성)
+            conn = self._get_db_connection()
+            cursor = conn.cursor()
+            
+            # 기존 클래스 확인
+            check_query = """
+                SELECT class_id FROM classes 
+                WHERE project_id = ? AND file_id = ? AND class_name = ?
+            """
+            cursor.execute(check_query, (project_id, file_id, cls_data['name']))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # 업데이트
+                update_query = """
+                    UPDATE classes SET 
+                        line_start = ?, has_error = 'N', error_message = NULL, 
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE class_id = ?
                 """
-                cursor.execute(check_query, (project_id, file_id, cls_data['name']))
-                existing = cursor.fetchone()
+                cursor.execute(update_query, (cls_data['line'], existing[0]))
+                conn.commit()
+                debug(f"클래스 업데이트: {cls_data['name']}")
+                return existing[0]
+            else:
+                # 생성
+                import hashlib
+                hash_value = hashlib.md5(f"{cls_data['name']}{cls_data['line']}".encode()).hexdigest()
                 
-                if existing:
-                    # 업데이트
-                    update_query = """
-                        UPDATE classes SET 
-                            line_start = ?, has_error = 'N', error_message = NULL, 
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE class_id = ?
-                    """
-                    cursor.execute(update_query, (cls_data['line'], existing[0]))
-                    conn.commit()
-                    debug(f"클래스 업데이트: {cls_data['name']}")
-                    return existing[0]
-                else:
-                    # 생성
-                    import hashlib
-                    hash_value = hashlib.md5(f"{cls_data['name']}{cls_data['line']}".encode()).hexdigest()
-                    
-                    insert_query = """
-                        INSERT INTO classes (
-                            project_id, file_id, class_name, line_start, 
-                            has_error, error_message, hash_value, created_at, updated_at, del_yn
-                        ) VALUES (?, ?, ?, ?, 'N', NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'N')
-                    """
-                    cursor.execute(insert_query, (
-                        project_id, file_id, cls_data['name'], cls_data['line'], hash_value
-                    ))
-                    conn.commit()
-                    debug(f"클래스 생성: {cls_data['name']}")
-                    
-                    # 새로 생성된 class_id 조회 (같은 연결 사용)
-                    cursor.execute(check_query, (project_id, file_id, cls_data['name']))
-                    new_class = cursor.fetchone()
-                    class_id = new_class[0] if new_class else None
-                    return class_id
-                    
-            except sqlite3.OperationalError as e:
-                if "database is locked" in str(e) and attempt < max_retries - 1:
-                    warning(f"데이터베이스 잠금 - 재시도 {attempt + 1}/{max_retries}: {cls_data.get('name', 'unknown')}")
-                    time.sleep(1.0 * (attempt + 1))  # 더 긴 대기 (1초, 2초, 3초)
-                    continue
-                else:
-                    from util.logger import handle_error
-                    handle_error(e, f"클래스 UPSERT 실패: {cls_data.get('name', 'unknown')}")
-                    return None
-            except Exception as e:
-                from util.logger import handle_error
-                handle_error(e, f"클래스 UPSERT 실패: {cls_data.get('name', 'unknown')}")
-                return None
-        
-        return None
+                insert_query = """
+                    INSERT INTO classes (
+                        project_id, file_id, class_name, line_start, 
+                        has_error, error_message, hash_value, created_at, updated_at, del_yn
+                    ) VALUES (?, ?, ?, ?, 'N', NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'N')
+                """
+                cursor.execute(insert_query, (
+                    project_id, file_id, cls_data['name'], cls_data['line'], hash_value
+                ))
+                conn.commit()
+                debug(f"클래스 생성: {cls_data['name']}")
+                
+                # 새로 생성된 class_id 조회 (같은 연결 사용)
+                cursor.execute(check_query, (project_id, file_id, cls_data['name']))
+                new_class = cursor.fetchone()
+                class_id = new_class[0] if new_class else None
+                return class_id
+                
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, f"클래스 UPSERT 실패: {cls_data.get('name', 'unknown')}")
+            return None
     
     def close_connection(self):
         """DB 연결 종료"""
