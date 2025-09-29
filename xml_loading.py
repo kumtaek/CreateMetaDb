@@ -282,7 +282,7 @@ class XmlLoadingEngine:
                                 file_id=query.get('file_id', 0),
                                 component_id=query.get('component_id'),
                                 file_path=query.get('file_path', ''),
-                                component_name=query.get('sql_id', ''),
+                                component_name=query.get('sql_id', '') or query.get('query_id', '') or f"query_{query.get('file_id', 0)}_{len(sql_queries)}",
                                 file_name=query.get('file_name', ''),
                                 hash_value=query.get('hash_value', '-')
                             )

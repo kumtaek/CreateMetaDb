@@ -128,54 +128,18 @@ class SqlContentManager:
             component_id = sql_content_data.get('component_id')
             hash_value = sql_content_data.get('hash_value', '-')
             
-            # 기존 데이터 조회 (hash_value 비교용)
+            # 기존 데이터 조회 (hash_value로 중복 체크)
             check_query = """
                 SELECT content_id, hash_value, del_yn 
                 FROM sql_contents 
-                WHERE project_id = ? AND component_id = ?
+                WHERE hash_value = ?
             """
-            existing_results = self.db_utils.execute_query(check_query, (project_id, component_id))
+            existing_results = self.db_utils.execute_query(check_query, (hash_value,))
             
             if existing_results:
-                existing_content_id, existing_hash, existing_del_yn = existing_results[0]
-                
-                # hash_value가 같으면 업데이트 불필요
-                if existing_hash == hash_value and existing_del_yn == 'N':
-                    app_logger.debug(f"SQL Content 변경 없음 (스킵): {sql_content_data.get('component_name', 'unknown')}")
-                    return True
-                
-                # hash_value가 다르면 UPSERT (기존 데이터 업데이트)
-                # project_id와 component_id로 업데이트
-                update_query = """
-                    UPDATE sql_contents 
-                    SET file_id = ?, sql_content_compressed = ?, 
-                        file_path = ?, component_name = ?, file_name = ?, 
-                        hash_value = ?, del_yn = 'N'
-                    WHERE project_id = ? AND component_id = ?
-                """
-                update_values = (
-                    sql_content_data.get('file_id'),
-                    sql_content_data.get('sql_content_compressed'),
-                    sql_content_data.get('file_path'),
-                    sql_content_data.get('component_name'),
-                    sql_content_data.get('file_name'),
-                    hash_value,
-                    project_id,
-                    component_id
-                )
-                
-                with self.db_utils.get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute(update_query, update_values)
-                    conn.commit()
-                    
-                    if cursor.rowcount > 0:
-                        app_logger.debug(f"SQL Content UPSERT 성공 (업데이트): {sql_content_data.get('component_name', 'unknown')}")
-                        return True
-                    else:
-                        app_logger.error(f"SQL Content 업데이트 실패 (영향받은 행 없음): {sql_content_data.get('component_name', 'unknown')}")
-                        return False
-                
+                # hash_value가 이미 존재하면 스킵
+                app_logger.debug(f"SQL Content 중복 (스킵): {sql_content_data.get('component_name', 'unknown')} (hash_value: {hash_value})")
+                return True
             else:
                 # 기존 데이터가 없으면 INSERT
                 success = self.db_utils.insert_record('sql_contents', sql_content_data)

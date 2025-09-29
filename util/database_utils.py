@@ -617,7 +617,7 @@ class DatabaseUtils:
             # upsert 로직 사용 (데이터베이스 호환성)
             # 테이블별 unique_columns 설정
             if table_name == 'components':
-                unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+                unique_columns = ['project_id', 'file_id', 'component_name']
             elif table_name == 'tables':
                 unique_columns = ['project_id', 'table_name', 'table_owner']
             elif table_name == 'columns':

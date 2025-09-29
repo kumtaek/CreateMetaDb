@@ -512,15 +512,14 @@ class CallChainReportGenerator:
                 return {}
             
             try:
-                # 정제된 SQL 내용 조회 (SQL_% 타입과 QUERY 타입 모두 포함)
+                # 정제된 SQL 내용 조회 (모든 SQL 내용 포함)
                 query = """
-                    SELECT component_name, sql_content_compressed, query_type
+                    SELECT component_name, sql_content_compressed, file_path
                     FROM sql_contents
                     WHERE project_id = (
                         SELECT project_id FROM projects WHERE project_name = ?
                     )
                     AND del_yn = 'N'
-                    AND (query_type LIKE 'SQL_%' OR query_type = 'QUERY')
                 """
                 
                 results = sql_content_db.execute_query(query, (self.project_name,))

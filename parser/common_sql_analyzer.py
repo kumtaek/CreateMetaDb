@@ -62,7 +62,7 @@ class CommonSqlAnalyzer:
             
             # SqlContent.db에서 모든 쿼리 가져오기
             cursor.execute("""
-                SELECT component_name, sql_content_compressed, query_type, file_path
+                SELECT component_name, sql_content_compressed, file_path
                 FROM sql_contents 
                 WHERE del_yn = 'N'
             """)
@@ -73,7 +73,7 @@ class CommonSqlAnalyzer:
             all_tables = set()
             all_joins = []
             
-            for component_name, compressed_sql, query_type, file_path in queries:
+            for component_name, compressed_sql, file_path in queries:
                 try:
                     # 압축된 SQL 해제
                     if compressed_sql:
