@@ -1,0 +1,699 @@
+﻿"""\nSimple Query Analyzer - overview\n\n- Phase 1: extract queries (Java/XML/JPA)\n- Phase 2: extract tables (common)\n- Phase 3: build relationships (common)\n"""
+
+import re
+import os
+import zlib
+import json
+import sqlite3
+from typing import Dict, List, Set, Tuple, Any, Optional
+from util import (
+    info, error, warning, debug, handle_error,
+    DatabaseUtils, ConfigUtils, PathUtils, HashUtils
+)
+from util.oracle_keyword_manager import get_oracle_keyword_manager
+
+
+class SimpleQueryAnalyzer:\n    """Simple SQL query analyzer (multi-phase)."""\n\n    def __init__(self, project_name: str, conn: sqlite3.Connection):
+        """珥덇린??""
+        try:
+            self.project_name = project_name
+            self.conn = conn
+            # db_path媛 ?꾩슂 ?놁쑝誘濡?None?쇰줈 ?ㅼ젙
+            self.db_utils = DatabaseUtils(None)
+            self.config_utils = ConfigUtils()
+            self.path_utils = PathUtils()
+            self.hash_utils = HashUtils()
+
+            # Oracle ?ㅼ썙??留ㅻ땲? 珥덇린??(?깃???
+            self.oracle_keyword_manager = get_oracle_keyword_manager()
+            self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
+
+            # SQL ?ㅼ썙???⑦꽩 (??뚮Ц??臾닿?)
+            self.sql_start_patterns = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']
+
+            info("?ы뵆 荑쇰━ 遺꾩꽍湲?珥덇린???꾨즺")
+
+        except Exception as e:
+            handle_error(e, "?ы뵆 荑쇰━ 遺꾩꽍湲?珥덇린???ㅽ뙣")
+
+
+    # ========== 1?④퀎: 荑쇰━ 異붿텧 ==========
+
+    def analyze_java_file(self, file_path: str, file_id: int) -> Dict[str, List[Dict]]:
+        """Java ?뚯씪 遺꾩꽍 - 1?④퀎 荑쇰━ 異붿텧"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            results = {
+                'java_queries': [],
+                'jpa_queries': [],
+                'methods': []
+            }
+
+            # 硫붿냼??異붿텧
+            methods = self._extract_java_methods(content)
+            results['methods'] = methods
+
+            # 媛?硫붿냼?쒕퀎 荑쇰━ 異붿텧
+            for method in methods:
+                method_name = method['name']
+                method_content = method['content']
+
+                # 1-1. Java ?숈쟻 荑쇰━ 異붿텧
+                java_queries = self._extract_java_queries(method_content, method_name)
+                results['java_queries'].extend(java_queries)
+
+                # 1-2. JPA 荑쇰━ 異붿텧
+                jpa_queries = self._extract_jpa_queries(method_content, method_name)
+                results['jpa_queries'].extend(jpa_queries)
+
+            info(f"Java 遺꾩꽍 ?꾨즺: {file_path}, 硫붿냼??{len(methods)}, Java荑쇰━={len(results['java_queries'])}, JPA荑쇰━={len(results['jpa_queries'])}")
+            return results
+
+        except Exception as e:
+            handle_error(e, f"Java ?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
+            return {'java_queries': [], 'jpa_queries': [], 'methods': []}
+
+    def _extract_java_methods(self, content: str) -> List[Dict]:
+        """Java 硫붿냼??異붿텧"""
+        try:
+            methods = []
+            # 硫붿냼???⑦꽩: public/private/protected + 由ы꽩???+ 硫붿냼?쒕챸(?뚮씪誘명꽣) { ... }
+            pattern = r'(public|private|protected)\s+[^{]+?(\w+)\s*\([^)]*\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
+
+            matches = re.finditer(pattern, content, re.DOTALL | re.IGNORECASE)
+            for match in matches:
+                method_name = match.group(2)
+                method_content = match.group(3)
+
+                methods.append({
+                    'name': method_name,
+                    'content': method_content
+                })
+
+            return methods
+
+        except Exception as e:
+            handle_error(e, f"Java 硫붿냼??異붿텧 ?ㅽ뙣")
+            return []
+
+    def _extract_java_queries(self, method_content: str, method_name: str) -> List[Dict]:
+        """Java ?숈쟻 荑쇰━ 異붿텧 - 臾몄옄??蹂??concatenation 遺꾩꽍"""
+        try:
+            queries = []
+
+            # 臾몄옄??蹂???뺤뀛?덈━ 援ъ꽦
+            string_vars = {}
+
+            # 1. 臾몄옄???곸닔 異붿텧 (?꾩쓽 蹂?섎챸?쇰줈 ???
+            string_constants = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', method_content, re.DOTALL)
+            for i, const in enumerate(string_constants):
+                var_name = f"STRING_CONST_{i}"
+                string_vars[var_name] = const.strip()
+
+            # 2. 臾몄옄??蹂???좊떦 異붿텧 (String var = "...";)
+            var_pattern = r'String\s+(\w+)\s*=\s*"([^"]*)"'
+            matches = re.finditer(var_pattern, method_content, re.IGNORECASE)
+            for match in matches:
+                var_name = match.group(1)
+                var_value = match.group(2).strip()
+                string_vars[var_name] = var_value
+
+            # 3. 臾몄옄??concatenation 異붿텧 (var += "..."; var = var + "...";)
+            concat_patterns = [
+                r'(\w+)\s*\+=\s*"([^"\\]*(?:\\.[^"\\]*)*)"',  # var += "..."
+                r'(\w+)\s*=\s*\w+\s*\+\s*"([^"\\]*(?:\\.[^"\\]*)*)"',  # var = var + "..."
+            ]
+
+            for pattern in concat_patterns:
+                matches = re.finditer(pattern, method_content, re.IGNORECASE)
+                for match in matches:
+                    var_name = match.group(1)
+                    append_value = match.group(2).strip()
+
+                    if var_name in string_vars:
+                        string_vars[var_name] += " " + append_value
+                    else:
+                        string_vars[var_name] = append_value
+
+            # 4. StringBuilder 泥섎━
+            sb_pattern = r'StringBuilder\s+(\w+).*?\.append\("([^"\\]*(?:\\.[^"\\]*)*)"\)'
+            matches = re.finditer(sb_pattern, method_content, re.DOTALL | re.IGNORECASE)
+            for match in matches:
+                var_name = match.group(1)
+                append_value = match.group(2).strip()
+
+                if var_name in string_vars:
+                    string_vars[var_name] += " " + append_value
+                else:
+                    string_vars[var_name] = append_value
+
+            # 5. 荑쇰━ 蹂?섎쭔 ?꾪꽣留?(SQL ?ㅼ썙?쒕줈 ?쒖옉?섎뒗 寃껊뱾)
+            for var_name, var_content in string_vars.items():
+                cleaned_content = var_content.strip()
+                if self._is_sql_query(cleaned_content):
+                    query_type = self._detect_query_type(cleaned_content)
+
+                    queries.append({
+                        'query_id': f"{method_name}_{var_name}",
+                        'method_name': method_name,
+                        'variable_name': var_name,
+                        'sql_content': cleaned_content,
+                        'query_type': query_type
+                    })
+
+                # 6. String.format ?⑦꽩 ?몄떇 諛?SQL ?쒗뵆由?異붿텧
+                try:
+                    from parser.string_format_extractor import extract_string_format_queries\n                        fmt_extracted = extract_string_format_queries(method_content, method_name)
+                    if fmt_extracted:
+                        queries.extend(fmt_extracted)
+                except Exception:
+                    pass
+
+                return queries
+
+        except Exception as e:
+            handle_error(e, f"Java 荑쇰━ 異붿텧 ?ㅽ뙣: {method_name}")
+            return []
+
+    def _extract_jpa_queries(self, method_content: str, method_name: str) -> List[Dict]:
+        """JPA 荑쇰━ 異붿텧 - @Query(...) 愿꾪샇 ???띾뵲?댄몴 臾몄옄?대쭔 ?ы뵆 異붿텧"""
+        try:
+            queries = []
+
+            # @Query(...) ?⑦꽩 李얘린 - 愿꾪샇 ??紐⑤뱺 ?댁슜 異붿텧 (硫?곕씪???ы븿)
+            query_pattern = r'@Query\s*\(\s*([\s\S]+?)\s*\)'
+            matches = re.finditer(query_pattern, method_content, re.DOTALL | re.IGNORECASE)
+
+            for match in matches:
+                query_annotation = match.group(1)
+
+                # ?ы뵆 濡쒖쭅: ?띾뵲?댄몴 ??臾몄옄?대쭔 異붿텧, ?섎㉧吏??紐⑤몢 ?쒓굅
+                string_parts = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', query_annotation, re.DOTALL)
+
+                if string_parts:
+                    # 紐⑤뱺 ?띾뵲?댄몴 臾몄옄?댁쓣 怨듬갚?쇰줈 ?곌껐 (+ ?곗궛 ?쒕??덉씠??
+                    full_query = ' '.join(part.strip() for part in string_parts).strip()
+
+                    # 媛쒗뻾臾몄옄 ?뺣━
+                    full_query = re.sub(r'\s+', ' ', full_query)
+
+                    if self._is_sql_query(full_query):
+                        query_type = self._detect_query_type(full_query)
+
+                        queries.append({
+                            'query_id': method_name,  # ???ы뵆?섍쾶 硫붿냼?쒕챸 洹몃?濡?
+                            'method_name': method_name,
+                            'variable_name': method_name,
+                            'sql_content': full_query,
+                            'query_type': query_type
+                        })
+
+            return queries
+
+        except Exception as e:
+            handle_error(e, f"JPA 荑쇰━ 異붿텧 ?ㅽ뙣: {method_name}")
+            return []
+
+    def analyze_xml_file(self, file_path: str, file_id: int) -> Dict[str, List[Dict]]:
+        """XML(MyBatis) ?뚯씪 遺꾩꽍 - 1?④퀎 荑쇰━ 異붿텧"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            queries = []
+
+            # MyBatis 荑쇰━ ?쒓렇 ?⑦꽩
+            tag_patterns = [
+                r'<select\s+id="([^"]+)"[^>]*>(.*?)</select>',
+                r'<insert\s+id="([^"]+)"[^>]*>(.*?)</insert>',
+                r'<update\s+id="([^"]+)"[^>]*>(.*?)</update>',
+                r'<delete\s+id="([^"]+)"[^>]*>(.*?)</delete>',
+            ]
+
+            for pattern in tag_patterns:
+                matches = re.finditer(pattern, content, re.DOTALL | re.IGNORECASE)
+                for match in matches:
+                    query_id = match.group(1)
+                    raw_content = match.group(2)
+
+                    # ?쒓렇 ?쒓굅 ??荑쇰━留?異붿텧
+                    sql_content = self._remove_mybatis_tags(raw_content)
+
+                    if self._is_sql_query(sql_content):
+                        query_type = self._detect_query_type(sql_content)
+
+                        # MERGE 泥섎━: insert/update ?쒓렇??MERGE 荑쇰━媛 ?????덉쓬
+                        if 'MERGE' in sql_content.upper():
+                            query_type = 'SQL_MERGE'
+
+                        queries.append({
+                            'query_id': query_id,
+                            'method_name': query_id,  # XML?먯꽌??query_id媛 硫붿냼?쒕챸 ??븷
+                            'variable_name': query_id,
+                            'sql_content': sql_content,
+                            'query_type': query_type
+                        })
+
+            info(f"XML 遺꾩꽍 ?꾨즺: {file_path}, 荑쇰━={len(queries)}")
+            return {'xml_queries': queries}
+
+        except Exception as e:
+            handle_error(e, f"XML ?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
+            return {'xml_queries': []}
+
+    def _remove_mybatis_tags(self, content: str) -> str:
+        """MyBatis ?쒓렇 ?쒓굅 - ?ы뵆??諛⑹떇"""
+        try:
+            # 紐⑤뱺 XML ?쒓렇 ?쒓굅 (二쇱꽍???쒓굅)
+            content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
+            content = re.sub(r'<[^>]+>', ' ', content)
+
+            # ?щ윭 怨듬갚???섎굹濡??뺣━
+            content = re.sub(r'\s+', ' ', content)
+
+            return content.strip()
+
+        except Exception as e:
+            handle_error(e, f"MyBatis ?쒓렇 ?쒓굅 ?ㅽ뙣")
+            return content
+
+    def _is_sql_query(self, content: str) -> bool:
+        """SQL 荑쇰━?몄? ?뺤씤"""
+        try:
+            cleaned = content.strip().upper()
+            return any(cleaned.startswith(keyword) for keyword in self.sql_start_patterns)
+        except Exception as e:
+            handle_error(e, f"SQL 荑쇰━ ?뺤씤 ?ㅽ뙣: {content[:50]}...")
+            return False
+
+    def _detect_query_type(self, content: str) -> str:
+        """荑쇰━ ???媛먯?"""
+        try:
+            cleaned = content.strip().upper()
+
+            if cleaned.startswith('SELECT'):
+                return 'SQL_SELECT'
+            elif cleaned.startswith('INSERT'):
+                return 'SQL_INSERT'
+            elif cleaned.startswith('UPDATE'):
+                return 'SQL_UPDATE'
+            elif cleaned.startswith('DELETE'):
+                return 'SQL_DELETE'
+            elif cleaned.startswith('MERGE'):
+                return 'SQL_MERGE'
+            else:
+                return 'SQL_SELECT'  # 湲곕낯媛?
+
+        except Exception as e:
+            handle_error(e, f"荑쇰━ ???媛먯? ?ㅽ뙣: {content[:50]}...")
+            return 'SQL_SELECT'
+
+    # ========== 怨듯넻 2,3?④퀎 泥섎━ ==========
+
+    def process_query_common_stages(self, query_info: Dict, file_id: int) -> Dict:
+        """怨듯넻 2,3?④퀎 泥섎━: ?뚯씠釉?異붿텧 ??議곗씤愿怨?遺꾩꽍"""
+        try:
+            result = {
+                'tables': [],
+                'join_relationships': [],
+                'use_table_relationships': []
+            }
+
+            sql_content = query_info['sql_content']
+            query_id = query_info['query_id']
+
+            # 2?④퀎: ?뚯씠釉?異붿텧
+            tables_and_aliases = self._extract_tables_stage2(sql_content)
+
+            # ?뚯씠釉?而댄룷?뚰듃 ?깅줉 諛?USE_TABLE 愿怨??앹꽦
+            for table_name, alias in tables_and_aliases.items():
+                if not self._is_oracle_keyword(table_name):
+                    # ?뚯씠釉?而댄룷?뚰듃 ?깅줉
+                    table_id = self._register_table_component(table_name, file_id)
+
+                    # USE_TABLE 愿怨??앹꽦 (荑쇰━ ???뚯씠釉?
+                    result['use_table_relationships'].append({
+                        'src_name': query_id,
+                        'dst_name': table_name,
+                        'relationship_type': 'USE_TABLE',
+                        'src_type': query_info['query_type'],
+                        'dst_type': 'TABLE'
+                    })
+
+            # 3?④퀎: 議곗씤愿怨?異붿텧
+            join_relations = self._extract_joins_stage3(sql_content, tables_and_aliases)
+            result['join_relationships'] = join_relations
+
+            result['tables'] = list(tables_and_aliases.keys())
+
+            return result
+
+        except Exception as e:
+            handle_error(e, f"怨듯넻 2,3?④퀎 泥섎━ ?ㅽ뙣: {query_info.get('query_id', 'UNKNOWN')}")
+            return {'tables': [], 'join_relationships': [], 'use_table_relationships': []}
+
+    def _extract_tables_stage2(self, sql_content: str) -> Dict[str, str]:
+        """2?④퀎: ?뚯씠釉?異붿텧 - ?뺢퇋???⑦꽩 湲곕컲"""
+        try:
+            tables_and_aliases = {}
+
+            # 二쇱꽍 ?쒓굅
+            sql_content = re.sub(r'/\*.*?\*/', '', sql_content, flags=re.DOTALL)
+            sql_content = re.sub(r'--.*', '', sql_content)
+
+            # ?뚯씠釉?異붿텧 ?⑦꽩??
+            patterns = [
+                r'FROM\s+([^,\s]+(?:\s+\w+)?)\s*(?:WHERE|GROUP|ORDER|UNION|HAVING|LIMIT|FETCH|FOR|INTERSECT|MINUS|EXCEPT|$)',
+                r'FROM\s+([^,\s]+(?:\s+\w+)?)\s*,',
+                r'UPDATE\s+([^,\s]+(?:\s+\w+)?)\s+SET',
+                r'DELETE\s+FROM\s+([^,\s]+(?:\s+\w+)?)\s*(?:WHERE|$)',
+                r'INSERT\s+INTO\s+([^,\s]+(?:\s+\w+)?)\s*[\(\s]',
+                r'MERGE\s+INTO\s+([^,\s]+(?:\s+\w+)?)\s+USING',
+                r'JOIN\s+([^,\s]+(?:\s+\w+)?)\s+ON',
+                r'USING\s+([^,\s]+(?:\s+\w+)?)\s+ON',
+            ]
+
+            for pattern in patterns:
+                matches = re.finditer(pattern, sql_content, re.IGNORECASE | re.DOTALL)
+                for match in matches:
+                    table_part = match.group(1).strip()
+
+                    # ?뚯씠釉붾챸怨?蹂꾩묶 遺꾨━
+                    parts = table_part.split()
+                    if len(parts) >= 2:
+                        table_name = parts[0].strip()
+                        alias = parts[1].strip()
+                    else:
+                        table_name = parts[0].strip()
+                        alias = table_name
+
+                    # ?뱀닔臾몄옄 ?쒓굅
+                    table_name = re.sub(r'[^\w]', '', table_name).upper()
+                    alias = re.sub(r'[^\w]', '', alias).upper()
+
+                    if table_name and not self._is_oracle_keyword(table_name):
+                        tables_and_aliases[table_name] = alias
+
+            return tables_and_aliases
+
+        except Exception as e:
+            handle_error(e, f"?뚯씠釉?異붿텧 ?ㅽ뙣")
+            return {}
+
+    def _extract_joins_stage3(self, sql_content: str, tables_and_aliases: Dict[str, str]) -> List[Dict]:
+        """3?④퀎: 議곗씤愿怨?異붿텧"""
+        try:
+            join_relationships = []
+
+            # 議곗씤 遺꾩꽍 ?⑦꽩
+            join_patterns = [
+                # WHERE ???붿떆??議곗씤
+                (r'WHERE\s+.*?(\w+\.\w+)\s*=\s*(\w+\.\w+)', 'JOIN_IMPLICIT'),
+                # JOIN ... ON 紐낆떆??議곗씤
+                (r'JOIN\s+\w+\s+ON\s+(\w+\.\w+)\s*=\s*(\w+\.\w+)', 'JOIN_EXPLICIT'),
+                # MERGE ... ON 議곗씤
+                (r'MERGE\s+.*?ON\s+\(([^)]+)\)', 'JOIN_MERGEON'),
+            ]
+
+            for pattern, join_type in join_patterns:
+                matches = re.finditer(pattern, sql_content, re.IGNORECASE | re.DOTALL)
+                for match in matches:
+                    if join_type == 'JOIN_MERGEON':
+                        # MERGE ON ?덉쓽 蹂듭옟??議곌굔 泥섎━
+                        join_condition = match.group(1)
+                        join_parts = self._parse_merge_join_condition(join_condition)
+                    else:
+                        # ?쇰컲 議곗씤 議곌굔
+                        left_col = match.group(1)
+                        right_col = match.group(2)
+                        join_parts = [(left_col, right_col)]
+
+                    # 議곗씤 愿怨??앹꽦
+                    for left, right in join_parts:
+                        left_table, left_column = self._parse_column_reference(left, tables_and_aliases)
+                        right_table, right_column = self._parse_column_reference(right, tables_and_aliases)
+
+                        if left_table and right_table and left_column and right_column:
+                            # 而щ읆 而댄룷?뚰듃 ?깅줉
+                            left_col_id = self._register_column_component(left_table, left_column)
+                            right_col_id = self._register_column_component(right_table, right_column)
+
+                            if left_col_id and right_col_id:
+                                join_relationships.append({
+                                    'src_name': f"{left_table}.{left_column}",
+                                    'dst_name': f"{right_table}.{right_column}",
+                                    'relationship_type': join_type,
+                                    'src_type': 'COLUMN',
+                                    'dst_type': 'COLUMN'
+                                })
+
+            return join_relationships
+
+        except Exception as e:
+            handle_error(e, f"議곗씤愿怨?異붿텧 ?ㅽ뙣")
+            return []
+
+    def _parse_merge_join_condition(self, condition: str) -> List[Tuple[str, str]]:
+        """MERGE JOIN 議곌굔 ?뚯떛"""
+        try:
+            join_parts = []
+            # 媛꾨떒??= 議곌굔?ㅻ쭔 異붿텧
+            eq_conditions = re.findall(r'(\w+\.\w+)\s*=\s*(\w+\.\w+)', condition)
+            join_parts.extend(eq_conditions)
+            return join_parts
+        except Exception as e:
+            handle_error(e, f"MERGE JOIN 議곌굔 ?뚯떛 ?ㅽ뙣: {condition}")
+            return []
+
+    def _parse_column_reference(self, col_ref: str, aliases: Dict[str, str]) -> Tuple[str, str]:
+        """而щ읆 李몄“ ?뚯떛 (?뚯씠釉?而щ읆 ?먮뒗 蹂꾩묶.而щ읆)"""
+        try:
+            if '.' in col_ref:
+                parts = col_ref.split('.')
+                table_or_alias = parts[0].strip().upper()
+                column = parts[1].strip().upper()
+
+                # 蹂꾩묶???ㅼ젣 ?뚯씠釉붾챸?쇰줈 蹂??
+                actual_table = None
+                for table_name, alias in aliases.items():
+                    if alias == table_or_alias or table_name == table_or_alias:
+                        actual_table = table_name
+                        break
+
+                return actual_table, column
+
+            return None, None
+
+        except Exception as e:
+            handle_error(e, f"而щ읆 李몄“ ?뚯떛 ?ㅽ뙣: {col_ref}")
+            return None, None
+
+    # ========== ?곗씠?곕쿋?댁뒪 議곗옉 ==========
+
+    def _register_table_component(self, table_name: str, file_id: int) -> Optional[int]:
+        """?뚯씠釉?而댄룷?뚰듃 ?깅줉 (INFERRED)"""
+        try:
+            # 湲곗〈 ?뚯씠釉?議댁옱 ?뺤씤
+            existing = self.db_utils.execute_query(
+                "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
+                (table_name,),
+                conn=self.conn
+            )
+
+            if existing:
+                return existing[0]['component_id']
+
+            # INFERRED ?뚯씠釉??깅줉
+            component_id = self.db_utils.execute_query(
+                """INSERT INTO components
+                   (project_id, file_id, component_name, component_type, layer, hash_value)
+                   VALUES (1, ?, ?, 'TABLE', 'DATABASE', ?)""",
+                (file_id, table_name, 'INFERRED_TABLE'),
+                return_id=True,
+                conn=self.conn
+            )
+
+            debug(f"INFERRED ?뚯씠釉??깅줉: {table_name}")
+            return component_id
+
+        except Exception as e:
+            handle_error(e, f"?뚯씠釉?而댄룷?뚰듃 ?깅줉 ?ㅽ뙣: {table_name}")
+            return None
+
+    def _register_column_component(self, table_name: str, column_name: str) -> Optional[int]:
+        """而щ읆 而댄룷?뚰듃 ?깅줉 (INFERRED)"""
+        try:
+            # ?뚯씠釉?而댄룷?뚰듃 ID 李얘린
+            table_result = self.db_utils.execute_query(
+                "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
+                (table_name,),
+                conn=self.conn
+            )
+
+            if not table_result:
+                return None
+
+            table_id = table_result[0]['component_id']
+
+            # 湲곗〈 而щ읆 議댁옱 ?뺤씤
+            existing = self.db_utils.execute_query(
+                "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'COLUMN' AND parent_id = ?",
+                (column_name, table_id),
+                conn=self.conn
+            )
+
+            if existing:
+                return existing[0]['component_id']
+
+            # INFERRED 而щ읆 ?깅줉
+            component_id = self.db_utils.execute_query(
+                """INSERT INTO components
+                   (project_id, file_id, component_name, component_type, parent_id, layer, hash_value)
+                   VALUES (1, 1, ?, 'COLUMN', ?, 'DATABASE', ?)""",
+                (column_name, table_id, 'INFERRED_COLUMN'),
+                return_id=True,
+                conn=self.conn
+            )
+
+            debug(f"INFERRED 而щ읆 ?깅줉: {table_name}.{column_name}")
+            return component_id
+
+        except Exception as e:
+            handle_error(e, f"而щ읆 而댄룷?뚰듃 ?깅줉 ?ㅽ뙣: {table_name}.{column_name}")
+            return None
+
+    def get_query_analysis_results(self, query_info: Dict) -> Dict:
+        """荑쇰━ 遺꾩꽍 寃곌낵 諛섑솚 - ?곗씠?곕쿋?댁뒪 ??μ? ?몄텧?먯뿉??泥섎━"""
+        try:
+            # 2,3?④퀎 遺꾩꽍 ?ㅽ뻾
+            analysis_result = self.process_query_common_stages(query_info)
+
+            # 荑쇰━ ?뺣낫? 遺꾩꽍 寃곌낵瑜??⑹퀜??諛섑솚
+            result = {
+                'query_id': query_info['query_id'],
+                'method_name': query_info['method_name'],
+                'variable_name': query_info['variable_name'],
+                'sql_content': query_info['sql_content'],
+                'query_type': query_info['query_type'],
+                'hash_value': self._calculate_hash(query_info['sql_content']),
+                'tables': analysis_result['tables'],
+                'join_relationships': analysis_result['join_relationships'],
+                'use_table_relationships': analysis_result['use_table_relationships']
+            }
+
+            debug(f"荑쇰━ 遺꾩꽍 ?꾨즺: {query_info['query_id']}")
+            return result
+
+        except Exception as e:
+            handle_error(e, f"荑쇰━ 遺꾩꽍 ?ㅽ뙣: {query_info.get('query_id', 'UNKNOWN')}")
+            return {}
+
+    def save_relationships(self, relationships: List[Dict]) -> bool:
+        """愿怨??곗씠?????""
+        try:
+            for rel in relationships:
+                # 而댄룷?뚰듃 ID 李얘린
+                src_id = self._find_component_id(rel['src_name'], rel['src_type'])
+                dst_id = self._find_component_id(rel['dst_name'], rel['dst_type'])
+
+                if src_id and dst_id:
+                    # 愿怨?以묐났 ?뺤씤
+                    existing = self.db_utils.execute_query(
+                        "SELECT COUNT(*) as count FROM relationships WHERE src_id = ? AND dst_id = ? AND rel_type = ?",
+                        (src_id, dst_id, rel['relationship_type']),
+                        conn=self.conn
+                    )
+
+                    if existing[0]['count'] == 0:
+                        self.db_utils.execute_query(
+                            "INSERT INTO relationships (src_id, dst_id, rel_type, confidence) VALUES (?, ?, ?, 1.0)",
+                            (src_id, dst_id, rel['relationship_type']),
+                            conn=self.conn
+                        )
+                        debug(f"愿怨???? {rel['src_name']} -> {rel['dst_name']} ({rel['relationship_type']})")
+
+            return True
+
+        except Exception as e:
+            handle_error(e, "愿怨?????ㅽ뙣")
+            return False
+
+    def _find_component_id(self, component_name: str, component_type: str) -> Optional[int]:
+        """而댄룷?뚰듃 ID 李얘린"""
+        try:
+            result = self.db_utils.execute_query(
+                "SELECT component_id FROM components WHERE component_name = ? AND component_type = ? LIMIT 1",
+                (component_name, component_type),
+                conn=self.conn
+            )
+            return result[0]['component_id'] if result else None
+        except Exception as e:
+            handle_error(e, f"而댄룷?뚰듃 ID 李얘린 ?ㅽ뙣: {component_name} ({component_type})")
+            return None
+
+    def _is_oracle_keyword(self, word: str) -> bool:
+        """Oracle ?ㅼ썙???뺤씤"""
+        return self.oracle_keyword_manager.is_oracle_keyword(word)
+
+    def _calculate_hash(self, content: str) -> str:
+        """?댁떆 怨꾩궛 - USER RULES: 怨듯넻?⑥닔 ?ъ슜"""
+        return self.hash_utils.generate_content_hash(content)
+
+    # ========== 硫붿씤 遺꾩꽍 ?⑥닔 ==========
+
+    def analyze_file(self, file_path: str, file_type: str, file_id: int) -> Dict:
+        """?뚯씪 遺꾩꽍 - 3?④퀎 ?뚯씠?꾨씪???ㅽ뻾"""
+        try:
+            info(f"?뚯씪 遺꾩꽍 ?쒖옉: {file_path} ({file_type})")
+
+            results = {
+                'queries_processed': 0,
+                'tables_found': 0,
+                'relationships_created': 0
+            }
+
+            # 1?④퀎: ?뚯씪 ??낅퀎 荑쇰━ 異붿텧
+            if file_type.lower() == 'java':
+                query_results = self.analyze_java_file(file_path, file_id)
+                all_queries = query_results['java_queries'] + query_results['jpa_queries']
+            elif file_type.lower() == 'xml':
+                query_results = self.analyze_xml_file(file_path, file_id)
+                all_queries = query_results['xml_queries']
+            else:
+                info(f"吏?먰븯吏 ?딅뒗 ?뚯씪 ??? {file_type}")
+                return results
+
+            # 媛?荑쇰━蹂꾨줈 2,3?④퀎 怨듯넻 泥섎━
+            all_relationships = []
+
+            for query_info in all_queries:
+                # SqlContent??荑쇰━ ???
+                self.save_query_to_sqlcontent(query_info, file_id)
+
+                # 2,3?④퀎 怨듯넻 泥섎━
+                stage_results = self.process_query_common_stages(query_info, file_id)
+
+                # 愿怨??섏쭛
+                all_relationships.extend(stage_results['use_table_relationships'])
+                all_relationships.extend(stage_results['join_relationships'])
+
+                results['queries_processed'] += 1
+                results['tables_found'] += len(stage_results['tables'])
+
+            # 愿怨????
+            if all_relationships:
+                self.save_relationships(all_relationships)
+                results['relationships_created'] = len(all_relationships)
+
+            info(f"?뚯씪 遺꾩꽍 ?꾨즺: {file_path}, 荑쇰━={results['queries_processed']}, 愿怨?{results['relationships_created']}")
+            return results
+
+        except Exception as e:
+            handle_error(e, f"?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
+            return {'queries_processed': 0, 'tables_found': 0, 'relationships_created': 0}
+
+
+
+
