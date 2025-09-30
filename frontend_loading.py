@@ -17,6 +17,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 from util import (
     DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
+    build_api_identity_key, format_api_component_name,
     app_logger, info, error, debug, warning, handle_error,
     get_project_source_path, get_project_metadata_db_path
 )
@@ -173,25 +174,37 @@ class FrontendLoadingEngine:
             handle_error(e, "API 호출 관계 저장 실패")
 
     def _find_or_create_api_url_component(self, api_call: Dict[str, Any], project_id: int) -> Optional[int]:
-        """API_URL 컴포넌트 찾기 또는 생성"""
-        component_name = f"{api_call['api_url']}:{api_call['http_method']}"
-        
-        find_query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = 'API_URL' AND file_id = ? AND del_yn = 'N'"
-        existing = self.db_utils.execute_query(find_query, (project_id, component_name, self.current_file_id), conn=self.conn)
+        """Find or create the API_URL component using the new naming convention."""
+        api_url = (api_call.get('api_url') or '').strip()
+        http_method = api_call.get('http_method')
+        if not api_url:
+            return None
+
+        identity_key = build_api_identity_key(api_url, http_method)
+        identity_hash = self.hash_utils.generate_content_hash(identity_key)
+
+        existing = self.db_utils.get_component_by_hash(project_id, 'API_URL', identity_hash)
         if existing:
-            return existing[0]['component_id']
+            component_id = existing['component_id']
+            if existing.get('file_id') != self.current_file_id:
+                self.db_utils.update_component_file_id(component_id, self.current_file_id, conn=self.conn)
+            return component_id
+
+        component_name = format_api_component_name(http_method, api_call.get('method_name'), api_url)
+        if not component_name:
+            return None
 
         component_data = {
             'project_id': project_id, 'file_id': self.current_file_id,
             'component_name': component_name, 'component_type': 'API_URL',
             'layer': 'API_ENTRY', 'line_start': api_call.get('line_number', 1),
-            'line_end': api_call.get('line_number', 1), 'hash_value': '-',
+            'line_end': api_call.get('line_number', 1), 'hash_value': identity_hash,
             'del_yn': 'N', 'has_error': 'N', 'error_message': None, 'parent_id': None
         }
         try:
             return self.db_utils.insert_or_replace_with_id('components', component_data, conn=self.conn)
         except Exception as e:
-            handle_error(e, f"API_URL 컴포넌트 저장 실패: {component_data}")
+            handle_error(e, f"API_URL 컴포넌트 등록 실패: {component_data}")
             return None
 
     def _find_frontend_component_id(self, file_name: str, project_id: int) -> Optional[int]:

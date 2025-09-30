@@ -13,6 +13,7 @@ from util.logger import app_logger, handle_error
 from util.database_utils import DatabaseUtils
 from util.path_utils import PathUtils
 from util.hash_utils import HashUtils
+from util.api_naming import format_api_component_name, build_api_identity_key
 from util.cache_utils import get_global_cache
 from util.statistics_utils import get_global_collector
 from parser.entry_analyzer_factory import get_global_factory
@@ -185,8 +186,18 @@ class BackendEntryLoadingEngine:
         if not url_pattern or url_pattern == '/' or url_pattern.startswith(':') or not url_pattern.startswith('/') or url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE'] or ':' in url_pattern:
             return None
         
-        component_name = f"{url_pattern}:{entry.http_method}"
-        hash_value = self.hash_utils.generate_content_hash(f"{component_name}_{entry.file_path}_{entry.line_start}")
+        component_name = format_api_component_name(entry.http_method, entry.method_name, url_pattern) or url_pattern
+        identity_key = build_api_identity_key(url_pattern, entry.http_method)
+        hash_value = self.hash_utils.generate_content_hash(identity_key)
+
+        existing = self.db.get_component_by_hash(project_id, 'API_URL', hash_value)
+        if existing:
+            existing_id = existing['component_id']
+            if existing.get('component_name') != component_name:
+                self.db.update_component_name(existing_id, component_name, conn=self.conn)
+            if entry.file_id is not None and existing.get('file_id') != entry.file_id:
+                self.db.update_component_file_id(existing_id, entry.file_id, conn=self.conn)
+            return None
         return {
             'project_id': project_id, 'file_id': entry.file_id, 'component_name': component_name,
             'component_type': 'API_URL', 'layer': 'API_ENTRY', 'line_start': entry.line_start,
@@ -211,7 +222,7 @@ class BackendEntryLoadingEngine:
     def _create_api_relationships(self, entries: List[BackendEntryInfo], project_id: int, relationships_to_insert: List[Dict[str, Any]]):
         """API_URL → METHOD 관계 생성"""
         for entry in entries:
-            api_url_name = f"{entry.url_pattern}:{entry.http_method}"
+            api_url_name = format_api_component_name(entry.http_method, entry.method_name, entry.url_pattern) or entry.url_pattern
             api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
             method_id = self._find_existing_method(entry, project_id)
             if api_url_id and method_id:

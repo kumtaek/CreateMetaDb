@@ -1218,6 +1218,49 @@ class DatabaseUtils:
             handle_error(e, f"컴포넌트 ID 조회 실패: {component_name}")
             return None
     
+    def get_component_by_hash(self, project_id: int, component_type: str, identity_hash: str, conn: Optional[sqlite3.Connection] = None) -> Optional[Dict[str, Any]]:
+        """해시값으로 컴포넌트를 조회"""
+        try:
+            query = """
+                SELECT component_id, component_name, file_id
+                FROM components
+                WHERE project_id = ? AND component_type = ? AND hash_value = ? AND del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.execute_query(query, (project_id, component_type, identity_hash), conn=conn)
+            return results[0] if results else None
+        except Exception as e:
+            handle_error(e, f"컴포넌트 해시 조회 실패: project_id={project_id}, component_type={component_type}")
+            return None
+
+    def update_component_file_id(self, component_id: int, new_file_id: int, conn: Optional[sqlite3.Connection] = None) -> bool:
+        """컴포넌트가 속한 파일을 갱신"""
+        try:
+            query = """
+                UPDATE components
+                   SET file_id = ?, updated_at = datetime('now', '+9 hours')
+                 WHERE component_id = ?
+            """
+            affected = self.execute_update(query, (new_file_id, component_id), conn=conn, auto_commit=(conn is None))
+            return affected > 0
+        except Exception as e:
+            handle_error(e, f"컴포넌트 file_id 갱신 실패: component_id={component_id}")
+            return False
+
+    def update_component_name(self, component_id: int, new_name: str, conn: Optional[sqlite3.Connection] = None) -> bool:
+        """컴포넌트 표시 이름을 갱신"""
+        try:
+            query = """
+                UPDATE components
+                   SET component_name = ?, updated_at = datetime('now', '+9 hours')
+                 WHERE component_id = ?
+            """
+            affected = self.execute_update(query, (new_name, component_id), conn=conn, auto_commit=(conn is None))
+            return affected > 0
+        except Exception as e:
+            handle_error(e, f"컴포넌트 이름 갱신 실패: component_id={component_id}")
+            return False
+
     def find_method_by_api_pattern(self, project_id: int, api_url: str, http_method: str) -> Optional[int]:
         """
         API URL 패턴으로 매칭되는 METHOD 컴포넌트 찾기
