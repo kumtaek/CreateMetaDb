@@ -1,10 +1,10 @@
-"""
-심플 쿼리 분석기 - 3단계 파이프라인
-목표: 메소드→쿼리→테이블→조인조건 도출
+﻿"""
+?ы뵆 荑쇰━ 遺꾩꽍湲?- 3?④퀎 ?뚯씠?꾨씪??
+紐⑺몴: 硫붿냼?쒋넂荑쇰━?믫뀒?대툝?믪“?몄“嫄??꾩텧
 
-1단계: 쿼리 추출 (JAVA/XML/JPA) → 딕셔너리 생성
-2단계: 테이블 추출 (공통) → 테이블명과 별칭 딕셔너리
-3단계: 조인관계 추출 (공통) → relationships 테이블 저장
+1?④퀎: 荑쇰━ 異붿텧 (JAVA/XML/JPA) ???뺤뀛?덈━ ?앹꽦
+2?④퀎: ?뚯씠釉?異붿텧 (怨듯넻) ???뚯씠釉붾챸怨?蹂꾩묶 ?뺤뀛?덈━
+3?④퀎: 議곗씤愿怨?異붿텧 (怨듯넻) ??relationships ?뚯씠釉????
 """
 
 import re
@@ -21,36 +21,36 @@ from util.oracle_keyword_manager import get_oracle_keyword_manager
 
 
 class SimpleQueryAnalyzer:
-    """심플 쿼리 분석기 - 3단계 파이프라인 구현"""
+    """?ы뵆 荑쇰━ 遺꾩꽍湲?- 3?④퀎 ?뚯씠?꾨씪??援ы쁽"""
 
     def __init__(self, project_name: str, conn: sqlite3.Connection):
-        """초기화"""
+        """珥덇린??""
         try:
             self.project_name = project_name
             self.conn = conn
-            # db_path가 필요 없으므로 None으로 설정
+            # db_path媛 ?꾩슂 ?놁쑝誘濡?None?쇰줈 ?ㅼ젙
             self.db_utils = DatabaseUtils(None)
             self.config_utils = ConfigUtils()
             self.path_utils = PathUtils()
             self.hash_utils = HashUtils()
 
-            # Oracle 키워드 매니저 초기화 (싱글톤)
+            # Oracle ?ㅼ썙??留ㅻ땲? 珥덇린??(?깃???
             self.oracle_keyword_manager = get_oracle_keyword_manager()
             self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
 
-            # SQL 키워드 패턴 (대소문자 무관)
+            # SQL ?ㅼ썙???⑦꽩 (??뚮Ц??臾닿?)
             self.sql_start_patterns = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']
 
-            info("심플 쿼리 분석기 초기화 완료")
+            info("?ы뵆 荑쇰━ 遺꾩꽍湲?珥덇린???꾨즺")
 
         except Exception as e:
-            handle_error(e, "심플 쿼리 분석기 초기화 실패")
+            handle_error(e, "?ы뵆 荑쇰━ 遺꾩꽍湲?珥덇린???ㅽ뙣")
 
 
-    # ========== 1단계: 쿼리 추출 ==========
+    # ========== 1?④퀎: 荑쇰━ 異붿텧 ==========
 
     def analyze_java_file(self, file_path: str, file_id: int) -> Dict[str, List[Dict]]:
-        """Java 파일 분석 - 1단계 쿼리 추출"""
+        """Java ?뚯씪 遺꾩꽍 - 1?④퀎 荑쇰━ 異붿텧"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -61,35 +61,35 @@ class SimpleQueryAnalyzer:
                 'methods': []
             }
 
-            # 메소드 추출
+            # 硫붿냼??異붿텧
             methods = self._extract_java_methods(content)
             results['methods'] = methods
 
-            # 각 메소드별 쿼리 추출
+            # 媛?硫붿냼?쒕퀎 荑쇰━ 異붿텧
             for method in methods:
                 method_name = method['name']
                 method_content = method['content']
 
-                # 1-1. Java 동적 쿼리 추출
+                # 1-1. Java ?숈쟻 荑쇰━ 異붿텧
                 java_queries = self._extract_java_queries(method_content, method_name)
                 results['java_queries'].extend(java_queries)
 
-                # 1-2. JPA 쿼리 추출
+                # 1-2. JPA 荑쇰━ 異붿텧
                 jpa_queries = self._extract_jpa_queries(method_content, method_name)
                 results['jpa_queries'].extend(jpa_queries)
 
-            info(f"Java 분석 완료: {file_path}, 메소드={len(methods)}, Java쿼리={len(results['java_queries'])}, JPA쿼리={len(results['jpa_queries'])}")
+            info(f"Java 遺꾩꽍 ?꾨즺: {file_path}, 硫붿냼??{len(methods)}, Java荑쇰━={len(results['java_queries'])}, JPA荑쇰━={len(results['jpa_queries'])}")
             return results
 
         except Exception as e:
-            handle_error(e, f"Java 파일 분석 실패: {file_path}")
+            handle_error(e, f"Java ?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
             return {'java_queries': [], 'jpa_queries': [], 'methods': []}
 
     def _extract_java_methods(self, content: str) -> List[Dict]:
-        """Java 메소드 추출"""
+        """Java 硫붿냼??異붿텧"""
         try:
             methods = []
-            # 메소드 패턴: public/private/protected + 리턴타입 + 메소드명(파라미터) { ... }
+            # 硫붿냼???⑦꽩: public/private/protected + 由ы꽩???+ 硫붿냼?쒕챸(?뚮씪誘명꽣) { ... }
             pattern = r'(public|private|protected)\s+[^{]+?(\w+)\s*\([^)]*\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
 
             matches = re.finditer(pattern, content, re.DOTALL | re.IGNORECASE)
@@ -105,24 +105,24 @@ class SimpleQueryAnalyzer:
             return methods
 
         except Exception as e:
-            handle_error(e, f"Java 메소드 추출 실패")
+            handle_error(e, f"Java 硫붿냼??異붿텧 ?ㅽ뙣")
             return []
 
     def _extract_java_queries(self, method_content: str, method_name: str) -> List[Dict]:
-        """Java 동적 쿼리 추출 - 문자열 변수 concatenation 분석"""
+        """Java ?숈쟻 荑쇰━ 異붿텧 - 臾몄옄??蹂??concatenation 遺꾩꽍"""
         try:
             queries = []
 
-            # 문자열 변수 딕셔너리 구성
+            # 臾몄옄??蹂???뺤뀛?덈━ 援ъ꽦
             string_vars = {}
 
-            # 1. 문자열 상수 추출 (임의 변수명으로 저장)
-            string_constants = re.findall(r'"([^"]*)"', method_content)
+            # 1. 臾몄옄???곸닔 異붿텧 (?꾩쓽 蹂?섎챸?쇰줈 ???
+            string_constants = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', method_content, re.DOTALL)
             for i, const in enumerate(string_constants):
                 var_name = f"STRING_CONST_{i}"
                 string_vars[var_name] = const.strip()
 
-            # 2. 문자열 변수 할당 추출 (String var = "...";)
+            # 2. 臾몄옄??蹂???좊떦 異붿텧 (String var = "...";)
             var_pattern = r'String\s+(\w+)\s*=\s*"([^"]*)"'
             matches = re.finditer(var_pattern, method_content, re.IGNORECASE)
             for match in matches:
@@ -130,10 +130,10 @@ class SimpleQueryAnalyzer:
                 var_value = match.group(2).strip()
                 string_vars[var_name] = var_value
 
-            # 3. 문자열 concatenation 추출 (var += "..."; var = var + "...";)
+            # 3. 臾몄옄??concatenation 異붿텧 (var += "..."; var = var + "...";)
             concat_patterns = [
-                r'(\w+)\s*\+=\s*"([^"]*)"',  # var += "..."
-                r'(\w+)\s*=\s*\w+\s*\+\s*"([^"]*)"',  # var = var + "..."
+                r'(\w+)\s*\+=\s*"([^"\\]*(?:\\.[^"\\]*)*)"',  # var += "..."
+                r'(\w+)\s*=\s*\w+\s*\+\s*"([^"\\]*(?:\\.[^"\\]*)*)"',  # var = var + "..."
             ]
 
             for pattern in concat_patterns:
@@ -147,8 +147,8 @@ class SimpleQueryAnalyzer:
                     else:
                         string_vars[var_name] = append_value
 
-            # 4. StringBuilder 처리
-            sb_pattern = r'StringBuilder\s+(\w+).*?\.append\("([^"]*)"\)'
+            # 4. StringBuilder 泥섎━
+            sb_pattern = r'StringBuilder\s+(\w+).*?\.append\("([^"\\]*(?:\\.[^"\\]*)*)"\)'
             matches = re.finditer(sb_pattern, method_content, re.DOTALL | re.IGNORECASE)
             for match in matches:
                 var_name = match.group(1)
@@ -159,7 +159,7 @@ class SimpleQueryAnalyzer:
                 else:
                     string_vars[var_name] = append_value
 
-            # 5. 쿼리 변수만 필터링 (SQL 키워드로 시작하는 것들)
+            # 5. 荑쇰━ 蹂?섎쭔 ?꾪꽣留?(SQL ?ㅼ썙?쒕줈 ?쒖옉?섎뒗 寃껊뱾)
             for var_name, var_content in string_vars.items():
                 cleaned_content = var_content.strip()
                 if self._is_sql_query(cleaned_content):
@@ -173,39 +173,47 @@ class SimpleQueryAnalyzer:
                         'query_type': query_type
                     })
 
-            return queries
+                # 6. String.format ?⑦꽩 ?몄떇 諛?SQL ?쒗뵆由?異붿텧
+                try:
+                    from parser.string_format_extractor import extract_string_format_queries\n                        fmt_extracted = extract_string_format_queries(method_content, method_name)
+                    if fmt_extracted:
+                        queries.extend(fmt_extracted)
+                except Exception:
+                    pass
+
+                return queries
 
         except Exception as e:
-            handle_error(e, f"Java 쿼리 추출 실패: {method_name}")
+            handle_error(e, f"Java 荑쇰━ 異붿텧 ?ㅽ뙣: {method_name}")
             return []
 
     def _extract_jpa_queries(self, method_content: str, method_name: str) -> List[Dict]:
-        """JPA 쿼리 추출 - @Query(...) 괄호 안 쌍따옴표 문자열만 심플 추출"""
+        """JPA 荑쇰━ 異붿텧 - @Query(...) 愿꾪샇 ???띾뵲?댄몴 臾몄옄?대쭔 ?ы뵆 異붿텧"""
         try:
             queries = []
 
-            # @Query(...) 패턴 찾기 - 괄호 안 모든 내용 추출 (멀티라인 포함)
-            query_pattern = r'@Query\s*\(\s*([^)]+?)\s*\)'
+            # @Query(...) ?⑦꽩 李얘린 - 愿꾪샇 ??紐⑤뱺 ?댁슜 異붿텧 (硫?곕씪???ы븿)
+            query_pattern = r'@Query\s*\(\s*([\s\S]+?)\s*\)'
             matches = re.finditer(query_pattern, method_content, re.DOTALL | re.IGNORECASE)
 
             for match in matches:
                 query_annotation = match.group(1)
 
-                # 심플 로직: 쌍따옴표 안 문자열만 추출, 나머지는 모두 제거
-                string_parts = re.findall(r'"([^"]*)"', query_annotation, re.DOTALL)
+                # ?ы뵆 濡쒖쭅: ?띾뵲?댄몴 ??臾몄옄?대쭔 異붿텧, ?섎㉧吏??紐⑤몢 ?쒓굅
+                string_parts = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', query_annotation, re.DOTALL)
 
                 if string_parts:
-                    # 모든 쌍따옴표 문자열을 공백으로 연결 (+ 연산 시뮬레이션)
+                    # 紐⑤뱺 ?띾뵲?댄몴 臾몄옄?댁쓣 怨듬갚?쇰줈 ?곌껐 (+ ?곗궛 ?쒕??덉씠??
                     full_query = ' '.join(part.strip() for part in string_parts).strip()
 
-                    # 개행문자 정리
+                    # 媛쒗뻾臾몄옄 ?뺣━
                     full_query = re.sub(r'\s+', ' ', full_query)
 
                     if self._is_sql_query(full_query):
                         query_type = self._detect_query_type(full_query)
 
                         queries.append({
-                            'query_id': method_name,  # 더 심플하게 메소드명 그대로
+                            'query_id': method_name,  # ???ы뵆?섍쾶 硫붿냼?쒕챸 洹몃?濡?
                             'method_name': method_name,
                             'variable_name': method_name,
                             'sql_content': full_query,
@@ -215,18 +223,18 @@ class SimpleQueryAnalyzer:
             return queries
 
         except Exception as e:
-            handle_error(e, f"JPA 쿼리 추출 실패: {method_name}")
+            handle_error(e, f"JPA 荑쇰━ 異붿텧 ?ㅽ뙣: {method_name}")
             return []
 
     def analyze_xml_file(self, file_path: str, file_id: int) -> Dict[str, List[Dict]]:
-        """XML(MyBatis) 파일 분석 - 1단계 쿼리 추출"""
+        """XML(MyBatis) ?뚯씪 遺꾩꽍 - 1?④퀎 荑쇰━ 異붿텧"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
             queries = []
 
-            # MyBatis 쿼리 태그 패턴
+            # MyBatis 荑쇰━ ?쒓렇 ?⑦꽩
             tag_patterns = [
                 r'<select\s+id="([^"]+)"[^>]*>(.*?)</select>',
                 r'<insert\s+id="([^"]+)"[^>]*>(.*?)</insert>',
@@ -240,58 +248,58 @@ class SimpleQueryAnalyzer:
                     query_id = match.group(1)
                     raw_content = match.group(2)
 
-                    # 태그 제거 후 쿼리만 추출
+                    # ?쒓렇 ?쒓굅 ??荑쇰━留?異붿텧
                     sql_content = self._remove_mybatis_tags(raw_content)
 
                     if self._is_sql_query(sql_content):
                         query_type = self._detect_query_type(sql_content)
 
-                        # MERGE 처리: insert/update 태그도 MERGE 쿼리가 될 수 있음
+                        # MERGE 泥섎━: insert/update ?쒓렇??MERGE 荑쇰━媛 ?????덉쓬
                         if 'MERGE' in sql_content.upper():
                             query_type = 'SQL_MERGE'
 
                         queries.append({
                             'query_id': query_id,
-                            'method_name': query_id,  # XML에서는 query_id가 메소드명 역할
+                            'method_name': query_id,  # XML?먯꽌??query_id媛 硫붿냼?쒕챸 ??븷
                             'variable_name': query_id,
                             'sql_content': sql_content,
                             'query_type': query_type
                         })
 
-            info(f"XML 분석 완료: {file_path}, 쿼리={len(queries)}")
+            info(f"XML 遺꾩꽍 ?꾨즺: {file_path}, 荑쇰━={len(queries)}")
             return {'xml_queries': queries}
 
         except Exception as e:
-            handle_error(e, f"XML 파일 분석 실패: {file_path}")
+            handle_error(e, f"XML ?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
             return {'xml_queries': []}
 
     def _remove_mybatis_tags(self, content: str) -> str:
-        """MyBatis 태그 제거 - 심플한 방식"""
+        """MyBatis ?쒓렇 ?쒓굅 - ?ы뵆??諛⑹떇"""
         try:
-            # 모든 XML 태그 제거 (주석도 제거)
+            # 紐⑤뱺 XML ?쒓렇 ?쒓굅 (二쇱꽍???쒓굅)
             content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
             content = re.sub(r'<[^>]+>', ' ', content)
 
-            # 여러 공백을 하나로 정리
+            # ?щ윭 怨듬갚???섎굹濡??뺣━
             content = re.sub(r'\s+', ' ', content)
 
             return content.strip()
 
         except Exception as e:
-            handle_error(e, f"MyBatis 태그 제거 실패")
+            handle_error(e, f"MyBatis ?쒓렇 ?쒓굅 ?ㅽ뙣")
             return content
 
     def _is_sql_query(self, content: str) -> bool:
-        """SQL 쿼리인지 확인"""
+        """SQL 荑쇰━?몄? ?뺤씤"""
         try:
             cleaned = content.strip().upper()
             return any(cleaned.startswith(keyword) for keyword in self.sql_start_patterns)
         except Exception as e:
-            handle_error(e, f"SQL 쿼리 확인 실패: {content[:50]}...")
+            handle_error(e, f"SQL 荑쇰━ ?뺤씤 ?ㅽ뙣: {content[:50]}...")
             return False
 
     def _detect_query_type(self, content: str) -> str:
-        """쿼리 타입 감지"""
+        """荑쇰━ ???媛먯?"""
         try:
             cleaned = content.strip().upper()
 
@@ -306,16 +314,16 @@ class SimpleQueryAnalyzer:
             elif cleaned.startswith('MERGE'):
                 return 'SQL_MERGE'
             else:
-                return 'SQL_SELECT'  # 기본값
+                return 'SQL_SELECT'  # 湲곕낯媛?
 
         except Exception as e:
-            handle_error(e, f"쿼리 타입 감지 실패: {content[:50]}...")
+            handle_error(e, f"荑쇰━ ???媛먯? ?ㅽ뙣: {content[:50]}...")
             return 'SQL_SELECT'
 
-    # ========== 공통 2,3단계 처리 ==========
+    # ========== 怨듯넻 2,3?④퀎 泥섎━ ==========
 
     def process_query_common_stages(self, query_info: Dict, file_id: int) -> Dict:
-        """공통 2,3단계 처리: 테이블 추출 → 조인관계 분석"""
+        """怨듯넻 2,3?④퀎 泥섎━: ?뚯씠釉?異붿텧 ??議곗씤愿怨?遺꾩꽍"""
         try:
             result = {
                 'tables': [],
@@ -326,16 +334,16 @@ class SimpleQueryAnalyzer:
             sql_content = query_info['sql_content']
             query_id = query_info['query_id']
 
-            # 2단계: 테이블 추출
+            # 2?④퀎: ?뚯씠釉?異붿텧
             tables_and_aliases = self._extract_tables_stage2(sql_content)
 
-            # 테이블 컴포넌트 등록 및 USE_TABLE 관계 생성
+            # ?뚯씠釉?而댄룷?뚰듃 ?깅줉 諛?USE_TABLE 愿怨??앹꽦
             for table_name, alias in tables_and_aliases.items():
                 if not self._is_oracle_keyword(table_name):
-                    # 테이블 컴포넌트 등록
+                    # ?뚯씠釉?而댄룷?뚰듃 ?깅줉
                     table_id = self._register_table_component(table_name, file_id)
 
-                    # USE_TABLE 관계 생성 (쿼리 → 테이블)
+                    # USE_TABLE 愿怨??앹꽦 (荑쇰━ ???뚯씠釉?
                     result['use_table_relationships'].append({
                         'src_name': query_id,
                         'dst_name': table_name,
@@ -344,7 +352,7 @@ class SimpleQueryAnalyzer:
                         'dst_type': 'TABLE'
                     })
 
-            # 3단계: 조인관계 추출
+            # 3?④퀎: 議곗씤愿怨?異붿텧
             join_relations = self._extract_joins_stage3(sql_content, tables_and_aliases)
             result['join_relationships'] = join_relations
 
@@ -353,19 +361,19 @@ class SimpleQueryAnalyzer:
             return result
 
         except Exception as e:
-            handle_error(e, f"공통 2,3단계 처리 실패: {query_info.get('query_id', 'UNKNOWN')}")
+            handle_error(e, f"怨듯넻 2,3?④퀎 泥섎━ ?ㅽ뙣: {query_info.get('query_id', 'UNKNOWN')}")
             return {'tables': [], 'join_relationships': [], 'use_table_relationships': []}
 
     def _extract_tables_stage2(self, sql_content: str) -> Dict[str, str]:
-        """2단계: 테이블 추출 - 정규식 패턴 기반"""
+        """2?④퀎: ?뚯씠釉?異붿텧 - ?뺢퇋???⑦꽩 湲곕컲"""
         try:
             tables_and_aliases = {}
 
-            # 주석 제거
+            # 二쇱꽍 ?쒓굅
             sql_content = re.sub(r'/\*.*?\*/', '', sql_content, flags=re.DOTALL)
             sql_content = re.sub(r'--.*', '', sql_content)
 
-            # 테이블 추출 패턴들
+            # ?뚯씠釉?異붿텧 ?⑦꽩??
             patterns = [
                 r'FROM\s+([^,\s]+(?:\s+\w+)?)\s*(?:WHERE|GROUP|ORDER|UNION|HAVING|LIMIT|FETCH|FOR|INTERSECT|MINUS|EXCEPT|$)',
                 r'FROM\s+([^,\s]+(?:\s+\w+)?)\s*,',
@@ -382,7 +390,7 @@ class SimpleQueryAnalyzer:
                 for match in matches:
                     table_part = match.group(1).strip()
 
-                    # 테이블명과 별칭 분리
+                    # ?뚯씠釉붾챸怨?蹂꾩묶 遺꾨━
                     parts = table_part.split()
                     if len(parts) >= 2:
                         table_name = parts[0].strip()
@@ -391,7 +399,7 @@ class SimpleQueryAnalyzer:
                         table_name = parts[0].strip()
                         alias = table_name
 
-                    # 특수문자 제거
+                    # ?뱀닔臾몄옄 ?쒓굅
                     table_name = re.sub(r'[^\w]', '', table_name).upper()
                     alias = re.sub(r'[^\w]', '', alias).upper()
 
@@ -401,21 +409,21 @@ class SimpleQueryAnalyzer:
             return tables_and_aliases
 
         except Exception as e:
-            handle_error(e, f"테이블 추출 실패")
+            handle_error(e, f"?뚯씠釉?異붿텧 ?ㅽ뙣")
             return {}
 
     def _extract_joins_stage3(self, sql_content: str, tables_and_aliases: Dict[str, str]) -> List[Dict]:
-        """3단계: 조인관계 추출"""
+        """3?④퀎: 議곗씤愿怨?異붿텧"""
         try:
             join_relationships = []
 
-            # 조인 분석 패턴
+            # 議곗씤 遺꾩꽍 ?⑦꽩
             join_patterns = [
-                # WHERE 절 암시적 조인
+                # WHERE ???붿떆??議곗씤
                 (r'WHERE\s+.*?(\w+\.\w+)\s*=\s*(\w+\.\w+)', 'JOIN_IMPLICIT'),
-                # JOIN ... ON 명시적 조인
+                # JOIN ... ON 紐낆떆??議곗씤
                 (r'JOIN\s+\w+\s+ON\s+(\w+\.\w+)\s*=\s*(\w+\.\w+)', 'JOIN_EXPLICIT'),
-                # MERGE ... ON 조인
+                # MERGE ... ON 議곗씤
                 (r'MERGE\s+.*?ON\s+\(([^)]+)\)', 'JOIN_MERGEON'),
             ]
 
@@ -423,22 +431,22 @@ class SimpleQueryAnalyzer:
                 matches = re.finditer(pattern, sql_content, re.IGNORECASE | re.DOTALL)
                 for match in matches:
                     if join_type == 'JOIN_MERGEON':
-                        # MERGE ON 절의 복잡한 조건 처리
+                        # MERGE ON ?덉쓽 蹂듭옟??議곌굔 泥섎━
                         join_condition = match.group(1)
                         join_parts = self._parse_merge_join_condition(join_condition)
                     else:
-                        # 일반 조인 조건
+                        # ?쇰컲 議곗씤 議곌굔
                         left_col = match.group(1)
                         right_col = match.group(2)
                         join_parts = [(left_col, right_col)]
 
-                    # 조인 관계 생성
+                    # 議곗씤 愿怨??앹꽦
                     for left, right in join_parts:
                         left_table, left_column = self._parse_column_reference(left, tables_and_aliases)
                         right_table, right_column = self._parse_column_reference(right, tables_and_aliases)
 
                         if left_table and right_table and left_column and right_column:
-                            # 컬럼 컴포넌트 등록
+                            # 而щ읆 而댄룷?뚰듃 ?깅줉
                             left_col_id = self._register_column_component(left_table, left_column)
                             right_col_id = self._register_column_component(right_table, right_column)
 
@@ -454,30 +462,30 @@ class SimpleQueryAnalyzer:
             return join_relationships
 
         except Exception as e:
-            handle_error(e, f"조인관계 추출 실패")
+            handle_error(e, f"議곗씤愿怨?異붿텧 ?ㅽ뙣")
             return []
 
     def _parse_merge_join_condition(self, condition: str) -> List[Tuple[str, str]]:
-        """MERGE JOIN 조건 파싱"""
+        """MERGE JOIN 議곌굔 ?뚯떛"""
         try:
             join_parts = []
-            # 간단한 = 조건들만 추출
+            # 媛꾨떒??= 議곌굔?ㅻ쭔 異붿텧
             eq_conditions = re.findall(r'(\w+\.\w+)\s*=\s*(\w+\.\w+)', condition)
             join_parts.extend(eq_conditions)
             return join_parts
         except Exception as e:
-            handle_error(e, f"MERGE JOIN 조건 파싱 실패: {condition}")
+            handle_error(e, f"MERGE JOIN 議곌굔 ?뚯떛 ?ㅽ뙣: {condition}")
             return []
 
     def _parse_column_reference(self, col_ref: str, aliases: Dict[str, str]) -> Tuple[str, str]:
-        """컬럼 참조 파싱 (테이블.컬럼 또는 별칭.컬럼)"""
+        """而щ읆 李몄“ ?뚯떛 (?뚯씠釉?而щ읆 ?먮뒗 蹂꾩묶.而щ읆)"""
         try:
             if '.' in col_ref:
                 parts = col_ref.split('.')
                 table_or_alias = parts[0].strip().upper()
                 column = parts[1].strip().upper()
 
-                # 별칭을 실제 테이블명으로 변환
+                # 蹂꾩묶???ㅼ젣 ?뚯씠釉붾챸?쇰줈 蹂??
                 actual_table = None
                 for table_name, alias in aliases.items():
                     if alias == table_or_alias or table_name == table_or_alias:
@@ -489,15 +497,15 @@ class SimpleQueryAnalyzer:
             return None, None
 
         except Exception as e:
-            handle_error(e, f"컬럼 참조 파싱 실패: {col_ref}")
+            handle_error(e, f"而щ읆 李몄“ ?뚯떛 ?ㅽ뙣: {col_ref}")
             return None, None
 
-    # ========== 데이터베이스 조작 ==========
+    # ========== ?곗씠?곕쿋?댁뒪 議곗옉 ==========
 
     def _register_table_component(self, table_name: str, file_id: int) -> Optional[int]:
-        """테이블 컴포넌트 등록 (INFERRED)"""
+        """?뚯씠釉?而댄룷?뚰듃 ?깅줉 (INFERRED)"""
         try:
-            # 기존 테이블 존재 확인
+            # 湲곗〈 ?뚯씠釉?議댁옱 ?뺤씤
             existing = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
                 (table_name,),
@@ -507,7 +515,7 @@ class SimpleQueryAnalyzer:
             if existing:
                 return existing[0]['component_id']
 
-            # INFERRED 테이블 등록
+            # INFERRED ?뚯씠釉??깅줉
             component_id = self.db_utils.execute_query(
                 """INSERT INTO components
                    (project_id, file_id, component_name, component_type, layer, hash_value)
@@ -517,17 +525,17 @@ class SimpleQueryAnalyzer:
                 conn=self.conn
             )
 
-            debug(f"INFERRED 테이블 등록: {table_name}")
+            debug(f"INFERRED ?뚯씠釉??깅줉: {table_name}")
             return component_id
 
         except Exception as e:
-            handle_error(e, f"테이블 컴포넌트 등록 실패: {table_name}")
+            handle_error(e, f"?뚯씠釉?而댄룷?뚰듃 ?깅줉 ?ㅽ뙣: {table_name}")
             return None
 
     def _register_column_component(self, table_name: str, column_name: str) -> Optional[int]:
-        """컬럼 컴포넌트 등록 (INFERRED)"""
+        """而щ읆 而댄룷?뚰듃 ?깅줉 (INFERRED)"""
         try:
-            # 테이블 컴포넌트 ID 찾기
+            # ?뚯씠釉?而댄룷?뚰듃 ID 李얘린
             table_result = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
                 (table_name,),
@@ -539,7 +547,7 @@ class SimpleQueryAnalyzer:
 
             table_id = table_result[0]['component_id']
 
-            # 기존 컬럼 존재 확인
+            # 湲곗〈 而щ읆 議댁옱 ?뺤씤
             existing = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'COLUMN' AND parent_id = ?",
                 (column_name, table_id),
@@ -549,7 +557,7 @@ class SimpleQueryAnalyzer:
             if existing:
                 return existing[0]['component_id']
 
-            # INFERRED 컬럼 등록
+            # INFERRED 而щ읆 ?깅줉
             component_id = self.db_utils.execute_query(
                 """INSERT INTO components
                    (project_id, file_id, component_name, component_type, parent_id, layer, hash_value)
@@ -559,20 +567,20 @@ class SimpleQueryAnalyzer:
                 conn=self.conn
             )
 
-            debug(f"INFERRED 컬럼 등록: {table_name}.{column_name}")
+            debug(f"INFERRED 而щ읆 ?깅줉: {table_name}.{column_name}")
             return component_id
 
         except Exception as e:
-            handle_error(e, f"컬럼 컴포넌트 등록 실패: {table_name}.{column_name}")
+            handle_error(e, f"而щ읆 而댄룷?뚰듃 ?깅줉 ?ㅽ뙣: {table_name}.{column_name}")
             return None
 
     def get_query_analysis_results(self, query_info: Dict) -> Dict:
-        """쿼리 분석 결과 반환 - 데이터베이스 저장은 호출자에서 처리"""
+        """荑쇰━ 遺꾩꽍 寃곌낵 諛섑솚 - ?곗씠?곕쿋?댁뒪 ??μ? ?몄텧?먯뿉??泥섎━"""
         try:
-            # 2,3단계 분석 실행
+            # 2,3?④퀎 遺꾩꽍 ?ㅽ뻾
             analysis_result = self.process_query_common_stages(query_info)
 
-            # 쿼리 정보와 분석 결과를 합쳐서 반환
+            # 荑쇰━ ?뺣낫? 遺꾩꽍 寃곌낵瑜??⑹퀜??諛섑솚
             result = {
                 'query_id': query_info['query_id'],
                 'method_name': query_info['method_name'],
@@ -585,23 +593,23 @@ class SimpleQueryAnalyzer:
                 'use_table_relationships': analysis_result['use_table_relationships']
             }
 
-            debug(f"쿼리 분석 완료: {query_info['query_id']}")
+            debug(f"荑쇰━ 遺꾩꽍 ?꾨즺: {query_info['query_id']}")
             return result
 
         except Exception as e:
-            handle_error(e, f"쿼리 분석 실패: {query_info.get('query_id', 'UNKNOWN')}")
+            handle_error(e, f"荑쇰━ 遺꾩꽍 ?ㅽ뙣: {query_info.get('query_id', 'UNKNOWN')}")
             return {}
 
     def save_relationships(self, relationships: List[Dict]) -> bool:
-        """관계 데이터 저장"""
+        """愿怨??곗씠?????""
         try:
             for rel in relationships:
-                # 컴포넌트 ID 찾기
+                # 而댄룷?뚰듃 ID 李얘린
                 src_id = self._find_component_id(rel['src_name'], rel['src_type'])
                 dst_id = self._find_component_id(rel['dst_name'], rel['dst_type'])
 
                 if src_id and dst_id:
-                    # 관계 중복 확인
+                    # 愿怨?以묐났 ?뺤씤
                     existing = self.db_utils.execute_query(
                         "SELECT COUNT(*) as count FROM relationships WHERE src_id = ? AND dst_id = ? AND rel_type = ?",
                         (src_id, dst_id, rel['relationship_type']),
@@ -614,16 +622,16 @@ class SimpleQueryAnalyzer:
                             (src_id, dst_id, rel['relationship_type']),
                             conn=self.conn
                         )
-                        debug(f"관계 저장: {rel['src_name']} -> {rel['dst_name']} ({rel['relationship_type']})")
+                        debug(f"愿怨???? {rel['src_name']} -> {rel['dst_name']} ({rel['relationship_type']})")
 
             return True
 
         except Exception as e:
-            handle_error(e, "관계 저장 실패")
+            handle_error(e, "愿怨?????ㅽ뙣")
             return False
 
     def _find_component_id(self, component_name: str, component_type: str) -> Optional[int]:
-        """컴포넌트 ID 찾기"""
+        """而댄룷?뚰듃 ID 李얘린"""
         try:
             result = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = ? LIMIT 1",
@@ -632,23 +640,23 @@ class SimpleQueryAnalyzer:
             )
             return result[0]['component_id'] if result else None
         except Exception as e:
-            handle_error(e, f"컴포넌트 ID 찾기 실패: {component_name} ({component_type})")
+            handle_error(e, f"而댄룷?뚰듃 ID 李얘린 ?ㅽ뙣: {component_name} ({component_type})")
             return None
 
     def _is_oracle_keyword(self, word: str) -> bool:
-        """Oracle 키워드 확인"""
+        """Oracle ?ㅼ썙???뺤씤"""
         return self.oracle_keyword_manager.is_oracle_keyword(word)
 
     def _calculate_hash(self, content: str) -> str:
-        """해시 계산 - USER RULES: 공통함수 사용"""
+        """?댁떆 怨꾩궛 - USER RULES: 怨듯넻?⑥닔 ?ъ슜"""
         return self.hash_utils.generate_content_hash(content)
 
-    # ========== 메인 분석 함수 ==========
+    # ========== 硫붿씤 遺꾩꽍 ?⑥닔 ==========
 
     def analyze_file(self, file_path: str, file_type: str, file_id: int) -> Dict:
-        """파일 분석 - 3단계 파이프라인 실행"""
+        """?뚯씪 遺꾩꽍 - 3?④퀎 ?뚯씠?꾨씪???ㅽ뻾"""
         try:
-            info(f"파일 분석 시작: {file_path} ({file_type})")
+            info(f"?뚯씪 遺꾩꽍 ?쒖옉: {file_path} ({file_type})")
 
             results = {
                 'queries_processed': 0,
@@ -656,7 +664,7 @@ class SimpleQueryAnalyzer:
                 'relationships_created': 0
             }
 
-            # 1단계: 파일 타입별 쿼리 추출
+            # 1?④퀎: ?뚯씪 ??낅퀎 荑쇰━ 異붿텧
             if file_type.lower() == 'java':
                 query_results = self.analyze_java_file(file_path, file_id)
                 all_queries = query_results['java_queries'] + query_results['jpa_queries']
@@ -664,34 +672,35 @@ class SimpleQueryAnalyzer:
                 query_results = self.analyze_xml_file(file_path, file_id)
                 all_queries = query_results['xml_queries']
             else:
-                info(f"지원하지 않는 파일 타입: {file_type}")
+                info(f"吏?먰븯吏 ?딅뒗 ?뚯씪 ??? {file_type}")
                 return results
 
-            # 각 쿼리별로 2,3단계 공통 처리
+            # 媛?荑쇰━蹂꾨줈 2,3?④퀎 怨듯넻 泥섎━
             all_relationships = []
 
             for query_info in all_queries:
-                # SqlContent에 쿼리 저장
+                # SqlContent??荑쇰━ ???
                 self.save_query_to_sqlcontent(query_info, file_id)
 
-                # 2,3단계 공통 처리
+                # 2,3?④퀎 怨듯넻 泥섎━
                 stage_results = self.process_query_common_stages(query_info, file_id)
 
-                # 관계 수집
+                # 愿怨??섏쭛
                 all_relationships.extend(stage_results['use_table_relationships'])
                 all_relationships.extend(stage_results['join_relationships'])
 
                 results['queries_processed'] += 1
                 results['tables_found'] += len(stage_results['tables'])
 
-            # 관계 저장
+            # 愿怨????
             if all_relationships:
                 self.save_relationships(all_relationships)
                 results['relationships_created'] = len(all_relationships)
 
-            info(f"파일 분석 완료: {file_path}, 쿼리={results['queries_processed']}, 관계={results['relationships_created']}")
+            info(f"?뚯씪 遺꾩꽍 ?꾨즺: {file_path}, 荑쇰━={results['queries_processed']}, 愿怨?{results['relationships_created']}")
             return results
 
         except Exception as e:
-            handle_error(e, f"파일 분석 실패: {file_path}")
+            handle_error(e, f"?뚯씪 遺꾩꽍 ?ㅽ뙣: {file_path}")
             return {'queries_processed': 0, 'tables_found': 0, 'relationships_created': 0}
+

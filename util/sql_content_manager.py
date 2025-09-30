@@ -104,6 +104,39 @@ class SqlContentManager:
             
             # 2. gzip 압축
             compressed_content = self._compress_content(sql_content)
+            # 공통부: SQL → TABLE 즉시 처리(USE_TABLE)
+            try:
+                from parser.sql_parser import SqlParser
+                parser = SqlParser()
+                table_names = parser.extract_table_names(sql_content) or set()
+                if table_names:
+                    metadata_db_path = f'projects/{self.project_name}/metadata.db'
+                    metadata_db_utils = DatabaseUtils(metadata_db_path)
+                    meta_conn = conn if conn is not None else metadata_db_utils.get_persistent_connection()
+                    for table_name in table_names:
+                        try:
+                            rows = metadata_db_utils.execute_query(
+                                "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                                (table_name,),
+                                conn=meta_conn,
+                            )
+                            if not rows:
+                                continue
+                            table_component_id = rows[0]['component_id']
+                            rel_data = {
+                                'src_id': component_id,
+                                'dst_id': table_component_id,
+                                'rel_type': 'USE_TABLE',
+                                'confidence': 1.0,
+                                'has_error': 'N',
+                                'error_message': None,
+                                'del_yn': 'N'
+                            }
+                            metadata_db_utils.insert_or_replace_with_id('relationships', rel_data, conn=meta_conn)
+                        except Exception as e:
+                            handle_error(e, f"USE_TABLE 관계 생성 실패: component_id={component_id}, table={table_name}")
+            except Exception as e:
+                handle_error(e, "USE_TABLE 즉시 생성 처리 실패")
             
             # 3. SQL Content 저장 (SqlContent.db)
             sql_content_data = {

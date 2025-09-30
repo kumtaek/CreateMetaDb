@@ -175,10 +175,10 @@ class PathUtils:
             
             # 첫 번째 경로가 절대경로인 경우
             if os.path.isabs(valid_paths[0]):
-                return os.path.normpath(os.path.join(*valid_paths))
+                return os.path.normpath(os.path.join(*valid_paths)).replace('\\', '/')
             
             # 상대경로인 경우 프로젝트 루트 기준으로 결합
-            return os.path.normpath(os.path.join(self.project_root, *valid_paths))
+            return os.path.normpath(os.path.join(self.project_root, *valid_paths)).replace('\\', '/')
             
         except Exception as e:
             handle_error(e, f"경로 결합 실패: {paths}")
@@ -225,15 +225,19 @@ class PathUtils:
         try:
             path_obj = Path(self.normalize_path(path))
             
+            # Ensure forward slashes for cross-platform consistency
+            def _f(s: str) -> str:
+                return s.replace('\\', '/')
+
             return {
-                'absolute_path': str(path_obj.absolute()),
-                'relative_path': self.get_project_relative_path(path),
-                'directory': str(path_obj.parent),
+                'absolute_path': _f(str(path_obj.absolute())),
+                'relative_path': _f(self.get_project_relative_path(path)),
+                'directory': _f(str(path_obj.parent)),
                 'filename': path_obj.name,
                 'stem': path_obj.stem,
                 'suffix': path_obj.suffix,
-                'root': str(path_obj.anchor),
-                'parts': list(path_obj.parts)
+                'root': _f(str(path_obj.anchor)),
+                'parts': [p.replace('\\', '/') for p in list(path_obj.parts)]
             }
             
         except Exception as e:

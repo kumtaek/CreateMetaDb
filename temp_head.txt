@@ -1,0 +1,6 @@
+﻿"""
+            try:
+                from util.mapper_indexer import index_mappers
+                index_mappers(self.project_name, self.conn)
+            except Exception:
+                warnin

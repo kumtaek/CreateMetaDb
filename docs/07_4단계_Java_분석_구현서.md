@@ -699,6 +699,25 @@ Java 클래스 및 메서드 컴포넌트 정보를 저장하는 테이블
 - `error_message`: 오류 메시지
 - `del_yn`: 삭제 여부 ('N'/'Y')
 
+### controller_api_map 테이블 (v4.2 신규)
+
+컨트롤러 어노테이션 정보를 저장하여 API_URL↔METHOD 정밀 매칭을 위한 보조 테이블
+
+**주요 컬럼**:
+
+- `map_id`: 매핑 고유 ID (Primary Key)
+- `project_id`: 프로젝트 ID (Foreign Key)
+- `file_id`: 파일 ID (Java 컨트롤러 파일)
+- `class_name`: 클래스명 (예: UserController)
+- `method_name`: 메서드명 (예: selectUser)
+- `http_method`: HTTP 메서드 (예: GET, POST)
+- `url`: URL 패턴 (예: /api/users)
+- `identity_hash`: 식별 해시 (HTTP+URL 조합)
+- `created_at`: 생성일시
+- `del_yn`: 삭제 여부 ('N'/'Y')
+
+**용도**: 5단계 API 매핑에서 정밀 매칭을 위한 컨트롤러 어노테이션 정보 저장
+
 ### relationships 테이블
 
 Java 컴포넌트 간 관계 정보를 저장하는 테이블
@@ -927,6 +946,7 @@ Java 파서에 SQL 쿼리 추출 및 처리 기능이 대폭 강화되었습니�
 - `@RequestMapping`, `@GetMapping` 등 어노테이션 분석
 - API URL 패턴 추출 및 정규화
 - 동적 URL 매개변수 처리 (`/api/users/{id}`)
+- **controller_api_map 저장**: 컨트롤러 어노테이션 정보를 controller_api_map 테이블에 저장 (v4.2 신규)
 
 ```mermaid
 sequenceDiagram
@@ -964,6 +984,7 @@ sequenceDiagram
     JQA->>DB: METHOD → QUERY 관계 저장
     JQA->>DB: JPA ENTITY → TABLE 매핑 저장
     JQA->>DB: API_URL → METHOD 연결 저장
+    JQA->>DB: controller_api_map 저장 (v4.2 신규)
 ```
 
 ### 주요 개선 사항
@@ -1012,6 +1033,7 @@ sequenceDiagram
    - `@RequestMapping`, `@GetMapping` 등 어노테이션 분석
    - API URL 패턴 추출 및 정규화
    - 동적 URL 매개변수 처리
+   - **controller_api_map 저장**: 컨트롤러 어노테이션 정보를 보조 테이블에 저장 (v4.2 신규)
 
 ### 상세 구현 내용
 

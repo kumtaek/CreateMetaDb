@@ -270,6 +270,25 @@ class BackendEntryLoadingEngine:
             if api_url_id and method_id:
                 relationships_to_insert.append({'src_id': api_url_id, 'dst_id': method_id, 'rel_type': 'CALL_METHOD', 'del_yn': 'N', 'has_error': 'N', 'error_message': None})
 
+            # Controller 어노테이션 매핑 저장 (정밀 매칭용)
+            try:
+                identity_key = build_api_identity_key(entry.url_pattern, entry.http_method)
+                identity_hash = self.hash_utils.generate_content_hash(identity_key)
+                map_data = {
+                    'project_id': project_id,
+                    'file_id': entry.file_id,
+                    'class_name': entry.class_name,
+                    'method_name': entry.method_name,
+                    'http_method': (entry.http_method or ''),
+                    'url': entry.url_pattern,
+                    'identity_hash': identity_hash,
+                    'del_yn': 'N'
+                }
+                # controller_api_map upsert
+                self.db.insert_or_replace_with_id('controller_api_map', map_data, conn=self.conn)
+            except Exception as e:
+                handle_error(e, f"controller_api_map 저장 실패: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
+
     def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
         """컴포넌트명과 타입으로 컴포넌트 ID 조회"""
         query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'"

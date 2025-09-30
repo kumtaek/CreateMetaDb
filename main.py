@@ -173,7 +173,7 @@ def main():
         stats = frontend_engine.stats
         info(f"  => 성공: API 호출 {stats.get('api_calls_found', 0)}개, 관계 {stats.get('relationships_created', 0)}개")
 
-        from relationship_builder import RelationshipBuilder
+        from relationship_builder import RelationshipBuilder, execute_db_relationship_backfill
         relationship_builder = RelationshipBuilder(project_name, project_id, conn)
         relationship_stats = relationship_builder.build_all_relationships()
         info("6-2단계 연관관계 구축 완료")
@@ -181,6 +181,10 @@ def main():
 
         # 7단계 실행: 일관성 검증
         info("\n--- 7단계: 일관성 검증 ---")
+        # 6-3단계: DB 기반 필수 관계 보강 (CALL_API, CALL_METHOD)
+        backfill_stats = execute_db_relationship_backfill(project_name, conn)
+        info(f"6-3단계 DB 기반 관계 보강: CALL_API={backfill_stats.get('CALL_API',0)}, CALL_METHOD={backfill_stats.get('CALL_METHOD',0)}")
+
         from consistency_validator import execute_consistency_validation
         validation_success = execute_consistency_validation(project_name, conn)
         if validation_success:

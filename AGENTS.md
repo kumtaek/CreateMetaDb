@@ -1,19 +1,44 @@
-﻿# Repository Guidelines
+# Repository Guidelines
 
 ## Project Structure & Module Organization
-The analyzer core lives in parser/, with dedicated analyzers for JSP, Spring, SQL, and XML sources that feed metadata into the database layer. Shared helpers (configuration loaders, path utilities, logging, relationship analysers) sit in util/. Inspect database/ for generated SQLite artifacts and migrations, and projects/SampleSrc for the canonical sample project used in tests. Reference material and solution playbooks are under docs/, while interim logs and cached inspection output land in logs/ and 	emp/.
+- Source loaders: `file_loading.py`, `java_loading.py`, `xml_loading.py`, `frontend_loading.py`
+- Parsers: `parser/` (SQL, Spring, JSP, front-end)
+- Utilities: `util/` (DB, paths, hashing, API naming, logging)
+- Relationship builder: `relationship_builder.py`
+- Reports: `reports/` (ERD, call chain, sequence)
+- Database DDL: `database/` (metadata and SQL content DB scripts)
+- Sample project: `projects/SampleSrc`
 
 ## Build, Test, and Development Commands
-Run python create_report.py --project-name SampleSrc --report-type erd to materialize ERD and call-chain reports from the sample dataset. Validate schema integrity with python consistency_validator.py SampleSrc (fails fast on uniqueness and linkage issues). Execute the full automated suite via python -m pytest -q, which targets the repository-level 	est_*.py modules. For ad-hoc DB sanity checks, python check_test_files.py prints currently registered test assets from the metadata store.
+- Run analyzer: `python main.py --project-name SampleSrc --force`
+- Generate reports: `python create_report.py --project-name SampleSrc`
+- Run tests (pytest): `pytest -q`
+- Clean DBs: delete `projects/SampleSrc/metadata.db` and `projects/SampleSrc/SqlContent.db`
 
 ## Coding Style & Naming Conventions
-Use 4-space indentation and keep modules, functions, and files in snake_case.py. Classes and dataclasses should remain PascalCase (BackendEntryInfo, ConsistencyValidator). Prefer explicit type hints and targeted imports from 	yping, mirroring existing analyzers. Preserve Korean-language docstrings and comments in UTF-8; when adding English context, keep it concise and developer-focused.
+- Python 3.11+: 4‑space indentation, UTF‑8 (no BOM), type hints when helpful.
+- API_URL names: `GET:selectUser` format via `util/api_naming.py`.
+- Files table: `file_path` stores directory only; `file_name` stores the basename.
+- Use `util.safe_logger` wrappers (`info`, `warning`, `error`, `debug`).
+- Keep functions small; avoid unrelated refactors in a single change.
 
 ## Testing Guidelines
-Add new tests alongside the existing root-level files (	est_jsp_main_integration.py, 	est_frontend_relationship.py, etc.), naming them 	est_<feature>_<scenario>.py. Structure fixtures to reuse projects/SampleSrc assets, or document any additional sample data under projects/. Every parser enhancement must assert both positive extraction results and failure modes. Run python -m pytest -q before submitting and capture any new golden outputs in the relevant fixtures.
+- Unit tests live at repo root as `test_*.py` (pytest).
+- Prefer deterministic fixtures under `projects/SampleSrc`.
+- For SQL parsing, add edge cases to `parser/sql_parser.py` tests and validate table extraction.
+- Target coverage for modified modules: add at least one focused test per change.
 
 ## Commit & Pull Request Guidelines
-Recent history favors brief, imperative Korean subjects (조인개선3, 중복제거전5). Follow that pattern: a single descriptive chunk, no trailing punctuation, optional numeric suffix when iterating. Pull requests should include: a short summary of the analyzer or utility touched, linked issue IDs or TODO references where applicable, validation notes (tests, scripts, report generation), and screenshots or attached reports whenever UI or documentation artefacts change.
+- Commits: imperative mood, scoped prefix when possible (e.g., `analyzer:`, `parser:`, `util:`).
+- PRs: include purpose, key changes, testing notes, and screenshots/paths to generated reports when relevant.
+- Link issues and describe migration notes (e.g., schema changes, file_path semantics).
 
-## Configuration & Data Safety
-Local credentials and environment paths belong in config/config.yaml; keep overrides untracked or checked into config/parser/ templates with anonymized values. Review logging.yaml before enabling verbose modes—the default channels write to logs/ and can grow quickly. Sensitive project dumps should remain outside the repository unless scrubbed; share sanitized extracts via the projects/ directory and document provenance in accompanying README snippets.
+## Security & Configuration Tips
+- Avoid executing untrusted project code during parsing; treat sources as data.
+- Validate paths using `util.path_utils` to prevent traversal issues.
+- Large runs: enable `--force` cautiously; re-create DBs after schema changes.
+
+## Agent-Specific Instructions
+- Respect API naming helpers in `util/api_naming.py` across loaders.
+- When reading files, reconstruct full path: project root + `file_path` + `file_name`.
+- Relationship building should load from DB when input isn’t pre-populated.
