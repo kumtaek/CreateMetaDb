@@ -1,0 +1,44 @@
+﻿    def _parse_web_xml(self) -> Dict[str, str]:
+        """������Ʈ�� web.xml ���ϵ��� �Ľ��Ͽ� ����� Ŭ������ URL ���� ���� ����"""
+        try:
+            query = "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
+            results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
+            if not results:
+                app_logger.debug("web.xml ������ ã�� �� �����ϴ�")
+                return {}
+            
+            url_map = {}
+            for row in results:
+                try:
+                    # file_path�� ���� ��������� ���� ������ ������Ʈ ���丮 ���� ����
+                    # file_path���� ������Ʈ ��Ʈ�� �����ϰ� ������Ʈ �ҽ� ��ο� ����
+                    file_path = row['file_path']
+                    if file_path.startswith('D:/Analyzer/CreateMetaDb/'):
+                        relative_path = file_path.replace('D:/Analyzer/CreateMetaDb/', '')
+                        web_xml_path = self.path_utils.join_path(self.path_utils.get_project_source_path(self.project_name), relative_path, row['file_name'])
+                    else:
+                        web_xml_path = self.path_utils.join_path(row['file_path'], row['file_name'])
+                    
+                    # ũ�ν��÷��� ȣȯ���� ���� ��� ��� �����ڸ� /�� ����
+                    web_xml_path = web_xml_path.replace('\\', '/')
+                    web_xml_content = self._read_file_content(web_xml_path)
+                    if not web_xml_content: 
+                        handle_error(Exception(f"web.xml ������ ���� �� ����: {web_xml_path}"), "web.xml ���� �б� ����")
+                        continue
+
+                    root = ET.fromstring(web_xml_content)
+                    servlet_mappings = {elem.find('servlet-name').text: elem.find('url-pattern').text for elem in root.findall('servlet-mapping') if elem.find('servlet-name') is not None and elem.find('url-pattern') is not None}
+                    servlet_classes = {elem.find('servlet-name').text: elem.find('servlet-class').text for elem in root.findall('servlet') if elem.find('servlet-name') is not None and elem.find('servlet-class') is not None}
+                    
+                    for name, url in servlet_mappings.items():
+                        if name in servlet_classes:
+                            url_map[servlet_classes[name]] = url
+                except Exception as e:
+                    handle_error(e, f"web.xml �Ľ� ����: {row['file_path']}")
+                    continue
+            return url_map
+        except Exception as e:
+            handle_error(e, "web.xml �Ľ� �� ���� �߻�")
+            return {}
+
+

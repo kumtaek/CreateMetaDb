@@ -166,9 +166,15 @@ class JavaLoadingEngine:
             # 상대 경로로 변환
             relative_path = os.path.relpath(file_path, self.project_source_path)
             relative_path = relative_path.replace('\\', '/')  # Windows 경로 처리
+            file_dir = os.path.dirname(relative_path) if relative_path else ''
+            if file_dir in ('', '.'):
+                file_dir = ''
+            else:
+                file_dir = file_dir.replace('\\', '/')
+            file_name = os.path.basename(relative_path)
 
-            query = "SELECT file_id FROM files WHERE file_path = ?"
-            result = self.db_utils.execute_query(query, (relative_path,))
+            query = "SELECT file_id FROM files WHERE file_path = ? AND file_name = ?"
+            result = self.db_utils.execute_query(query, (file_dir, file_name))
 
             if result:
                 return result[0]['file_id']

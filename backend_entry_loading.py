@@ -6,6 +6,7 @@ SourceAnalyzer 5단계 - 백엔드 진입점 분석 메인 엔진
 - 캐싱 및 통계 수집
 """
 
+import os
 import sqlite3
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
@@ -40,6 +41,7 @@ class BackendEntryLoadingEngine:
         self.factory = get_global_factory()
         
         self.db = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
+        self.project_source_path = self.path_utils.get_project_source_path(project_name)
         
         self.servlet_url_map = self._parse_web_xml()
         self.analyzers = self._load_analyzers()
@@ -56,34 +58,58 @@ class BackendEntryLoadingEngine:
             handle_error(e, f"분석기 로드 실패: {self.project_name}")
             return []
     
+    def _build_project_file_path(self, dir_path: Optional[str], file_name: str) -> str:
+        parts = ['projects', self.project_name]
+        if dir_path:
+            parts.append(dir_path)
+        parts.append(file_name)
+        return self.path_utils.join_path(*parts)
+
+    def _compose_relative_file_path(self, dir_path: Optional[str], file_name: str) -> str:
+        if dir_path:
+            combined = os.path.join(dir_path, file_name)
+        else:
+            combined = file_name
+        return self.path_utils.normalize_path_separator(combined, 'unix')
+
     def _parse_web_xml(self) -> Dict[str, str]:
-        """프로젝트의 web.xml 파일들을 파싱하여 서블릿 클래스와 URL 패턴 맵을 생성"""
+        """Parse web.xml files and build servlet URL mappings."""
         try:
-            query = "SELECT f.file_path FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
+            query = "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
             results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
             if not results:
-                app_logger.debug("web.xml 파일을 찾을 수 없습니다")
+                app_logger.debug("web.xml file not found")
                 return {}
-            
+
             url_map = {}
             for row in results:
                 try:
-                    web_xml_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
+                    relative_label = self._compose_relative_file_path(row['file_path'], row['file_name'])
+                    web_xml_path = self._build_project_file_path(row['file_path'], row['file_name'])
                     web_xml_content = self._read_file_content(web_xml_path)
-                    if not web_xml_content: continue
+                    if not web_xml_content:
+                        continue
 
                     root = ET.fromstring(web_xml_content)
-                    servlet_mappings = {elem.find('servlet-name').text: elem.find('url-pattern').text for elem in root.findall('servlet-mapping') if elem.find('servlet-name') is not None and elem.find('url-pattern') is not None}
-                    servlet_classes = {elem.find('servlet-name').text: elem.find('servlet-class').text for elem in root.findall('servlet') if elem.find('servlet-name') is not None and elem.find('servlet-class') is not None}
-                    
+                    servlet_mappings = {
+                        elem.find('servlet-name').text: elem.find('url-pattern').text
+                        for elem in root.findall('servlet-mapping')
+                        if elem.find('servlet-name') is not None and elem.find('url-pattern') is not None
+                    }
+                    servlet_classes = {
+                        elem.find('servlet-name').text: elem.find('servlet-class').text
+                        for elem in root.findall('servlet')
+                        if elem.find('servlet-name') is not None and elem.find('servlet-class') is not None
+                    }
+
                     for name, url in servlet_mappings.items():
                         if name in servlet_classes:
                             url_map[servlet_classes[name]] = url
                 except Exception as e:
-                    handle_error(e, f"web.xml 파싱 실패: {row['file_path']}")
+                    handle_error(e, f"web.xml parsing failed: {relative_label}")
             return url_map
         except Exception as e:
-            handle_error(e, "web.xml 파싱 중 오류 발생")
+            handle_error(e, "web.xml parsing encountered an error")
             return {}
 
     def execute_backend_entry_loading(self) -> bool:
@@ -94,7 +120,7 @@ class BackendEntryLoadingEngine:
 
             java_files = self._get_java_files()
             if not java_files:
-                warning("분석할 Java 파일이 없습니다.")
+                handle_error(Exception("분석할 Java 파일이 없습니다."), "백엔드 진입점 분석 실패")
                 return True
 
             all_backend_entries = self._analyze_backend_entries(java_files)
@@ -113,16 +139,27 @@ class BackendEntryLoadingEngine:
             self.stats.end_analysis()
 
     def _get_java_files(self) -> List[FileInfo]:
-        """분석 대상 Java 파일 수집"""
+        """Collect Java files to analyze."""
         query = "SELECT f.file_id, f.file_path, f.file_name, f.file_type, f.hash_value FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND UPPER(f.file_type) = 'JAVA' AND f.del_yn = 'N'"
         results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
-        
+
         java_files = []
         for row in results or []:
-            full_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
+            relative_path = self._compose_relative_file_path(row['file_path'], row['file_name'])
+            full_path = self._build_project_file_path(row['file_path'], row['file_name'])
             content = self._read_file_content(full_path)
             if content:
-                java_files.append(FileInfo(file_id=row['file_id'], file_path=row['file_path'], file_name=row['file_name'], file_type=row['file_type'], content=content, hash_value=row['hash_value'], line_count=len(content.split('\n'))))
+                java_files.append(
+                    FileInfo(
+                        file_id=row['file_id'],
+                        file_path=relative_path,
+                        file_name=row['file_name'],
+                        file_type=row['file_type'],
+                        content=content,
+                        hash_value=row['hash_value'],
+                        line_count=len(content.splitlines()),
+                    )
+                )
         return java_files
 
     def _read_file_content(self, file_path: str) -> Optional[str]:
@@ -131,7 +168,12 @@ class BackendEntryLoadingEngine:
             normalized_path = self.path_utils.normalize_path(file_path)
             with open(normalized_path, 'r', encoding='utf-8') as file:
                 return file.read()
+        except FileNotFoundError:
+            # 파일이 없는 경우 경고만 출력하고 None 반환 (프로그램 종료하지 않음)
+            handle_error(Exception(f"파일을 찾을 수 없음: {file_path}"), "파일 읽기 실패")
+            return None
         except Exception as e:
+            # 기타 예외는 handle_error로 처리
             handle_error(e, f"파일 읽기 실패: {file_path}")
             return None
 

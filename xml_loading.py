@@ -88,9 +88,15 @@ class XmlLoadingEngine:
                     path_utils = PathUtils()
                     relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
                     unix_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
+                    file_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
+                    if file_dir in ('', '.'):
+                        file_dir = ''
+                    else:
+                        file_dir = path_utils.normalize_path_separator(file_dir, 'unix')
+                    file_name = os.path.basename(unix_relative_path)
 
-                    file_query = "SELECT file_id FROM files WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?) AND file_path = ? AND del_yn = 'N'"
-                    file_results = self.db_utils.execute_query(file_query, (self.project_name, unix_relative_path), self.conn)
+                    file_query = "SELECT file_id FROM files WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?) AND file_path = ? AND file_name = ? AND del_yn = 'N'"
+                    file_results = self.db_utils.execute_query(file_query, (self.project_name, file_dir, file_name), self.conn)
                     
                     if not file_results:
                         warning(f"DB에 파일 정보가 없습니다. 건너뜁니다: {unix_relative_path}")

@@ -34,9 +34,15 @@ def test_simple_parser():
         print(f"상대 경로: {relative_path}")
 
         # SQL 쿼리 직접 실행해보기
-        query = "SELECT file_id FROM files WHERE file_path = ?"
-        result = loader.db_utils.execute_query(query, (relative_path,))
-        print(f"SQL 쿼리 결과: {result}")
+        file_dir = os.path.dirname(relative_path) if relative_path else ''
+        if file_dir in ('', '.'):
+            file_dir = ''
+        else:
+            file_dir = file_dir.replace('\\', '/')
+        file_name = os.path.basename(relative_path)
+        query = "SELECT file_id FROM files WHERE file_path = ? AND file_name = ?"
+        result = loader.db_utils.execute_query(query, (file_dir, file_name))
+        print(f"SQL 경로 결과: {result}")
 
         file_id = loader._get_file_id(test_file)
         print(f"파일 ID: {file_id}")

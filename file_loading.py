@@ -119,27 +119,28 @@ class FileLoadingEngine:
             handle_error(e, "프로젝트 파일 스캔 실패")
             return []
     
+
+
     def _get_file_info(self, file_path: str) -> Optional[Dict[str, Any]]:
-        """
-        개별 파일 정보 수집
-        
-        Args:
-            file_path: 파일 경로
-            
-        Returns:
-            파일 정보 딕셔너리 또는 None
-        """
+        """수집 대상 파일의 메타데이터를 생성한다."""
         try:
-            # 파일 기본 정보
             file_info = FileUtils.get_file_info(file_path)
+
+            relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
+            unix_relative_path = self.path_utils.normalize_path_separator(relative_path, 'unix')
+            relative_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
+            if relative_dir in ('', '.'):
+                relative_dir = ''
+            else:
+                relative_dir = self.path_utils.normalize_path_separator(relative_dir, 'unix')
+
+            components = self.path_utils.get_path_components(file_path)
+            file_name = file_info.get('file_name') or components.get('filename') or components.get('file_name') or os.path.basename(file_path)
+
             if not file_info.get('exists', False):
-                # 파일이 존재하지 않는 경우 오류로 처리
-                relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-                file_name = self.path_utils.get_path_components(file_path)['file_name']
-                # 파일명에서 확장자 추출
                 file_type = FileUtils.get_file_type(file_path).upper()
                 return {
-                    'file_path': relative_path,  # 전체 상대경로
+                    'file_path': relative_dir,
                     'file_name': file_name,
                     'file_type': file_type,
                     'hash_value': '-',
@@ -148,45 +149,43 @@ class FileLoadingEngine:
                     'error_message': '파일이 존재하지 않습니다',
                     'del_yn': 'N'
                 }
-            
-            # 프로젝트 기준 상대경로 및 Unix 스타일로 정규화
-            relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-            unix_relative_path = self.path_utils.normalize_path_separator(relative_path, 'unix')
 
-            # 파일 정보 구성 (file_path는 전체 상대경로)
             return {
-                'file_path': unix_relative_path,  # Unix 스타일 경로로 저장
-                'file_name': file_info['file_name'],
-                'file_type': file_info['file_type'].upper(),  # 대문자로 변경
+                'file_path': relative_dir,
+                'file_name': file_name,
+                'file_type': file_info['file_type'].upper(),
                 'hash_value': file_info['hash_value'],
                 'line_count': file_info['line_count'],
                 'has_error': 'N',
                 'error_message': None,
                 'del_yn': 'N'
             }
-            
+
         except Exception as e:
-            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
-            # 파일 정보 수집 실패 시 오류로 처리
             handle_error(e, f"파일 정보 수집 실패: {file_path}")
             try:
                 relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
-                file_name = self.path_utils.get_path_components(file_path)['file_name']
-                # 파일명에서 확장자 추출
+                unix_relative_path = self.path_utils.normalize_path_separator(relative_path, 'unix')
+                relative_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
+                if relative_dir in ('', '.'):
+                    relative_dir = ''
+                else:
+                    relative_dir = self.path_utils.normalize_path_separator(relative_dir, 'unix')
+                components = self.path_utils.get_path_components(file_path)
+                file_name = components.get('filename') or components.get('file_name') or os.path.basename(file_path)
                 file_type = FileUtils.get_file_type(file_path).upper()
                 return {
-                    'file_path': relative_path,  # 전체 상대경로
+                    'file_path': relative_dir,
                     'file_name': file_name,
                     'file_type': file_type,
                     'hash_value': '-',
                     'line_count': 0,
                     'has_error': 'Y',
-                    'error_message': f'파일 정보 수집 실패: {str(e)}',
+                    'error_message': f"파일 정보 수집 실패: {str(e)}",
                     'del_yn': 'N'
                 }
-            except:
+            except Exception:
                 return None
-    
     def _should_include_file(self, relative_path: str) -> bool:
         """
         파일 포함 여부 확인 (대상 파일인지 확인)

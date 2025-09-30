@@ -154,8 +154,14 @@ class SimpleJavaLoader:
         """파일 경로로 file_id 조회"""
         try:
             relative_path = os.path.relpath(file_path, self.project_source_path).replace('\\', '/')
-            query = "SELECT file_id FROM files WHERE file_path = ? AND project_id = (SELECT project_id FROM projects WHERE project_name = ?)"
-            result = self.db_utils.execute_query(query, (relative_path, self.project_name), conn=self.conn)
+            file_dir = os.path.dirname(relative_path) if relative_path else ''
+            if file_dir in ('', '.'):
+                file_dir = ''
+            else:
+                file_dir = file_dir.replace('\\', '/')
+            file_name = os.path.basename(relative_path)
+            query = "SELECT file_id FROM files WHERE file_path = ? AND file_name = ? AND project_id = (SELECT project_id FROM projects WHERE project_name = ?)"
+            result = self.db_utils.execute_query(query, (file_dir, file_name, self.project_name), conn=self.conn)
             return result[0]['file_id'] if result else None
         except Exception as e:
             handle_error(e, f"파일 ID 조회 실패: {file_path}")

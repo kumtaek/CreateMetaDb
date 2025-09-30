@@ -73,7 +73,7 @@ class FrontendLoadingEngine:
                     self.stats['processed_files'] += 1
                 except Exception as e:
                     self.stats['error_files'] += 1
-                    handle_error(e, f"프론트엔드 파일 처리 실패: {file_info['file_path']}")
+                    handle_error(e, f"프론트엔드 파일 처리 실패: {full_file_path}")
 
             self._print_statistics()
             info("=== 프론트엔드 파일 로딩 완료 ===")
@@ -99,7 +99,11 @@ class FrontendLoadingEngine:
     def _process_frontend_file(self, file_info: Dict[str, Any], project_id: int):
         """개별 프론트엔드 파일 처리"""
         self.current_file_id = file_info['file_id']
-        full_file_path = os.path.join(self.project_source_path, file_info['file_path'])
+        path_parts = [self.project_source_path]
+        if file_info.get('file_path'):
+            path_parts.append(file_info['file_path'])
+        path_parts.append(file_info['file_name'])
+        full_file_path = os.path.join(*path_parts)
         if not os.path.exists(full_file_path):
             warning(f"파일이 존재하지 않음: {full_file_path}")
             return
