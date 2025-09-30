@@ -1,0 +1,495 @@
+﻿projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:      동적 쿼리를 사용하여 사용자를 검색하는 SELECT 문입니다.
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findUsers" parameterType="com.example.dynamicquery.UserSearchDto" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:      동적 쿼리를 사용하여 사용자를 검색하는 SELECT 문입니다.
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findUsersWithAnsiJoin" parameterType="com.example.dynamicquery.UserSearchDto" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findUsersWithAliasOmission" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findUsersWithMixedJoins" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findComplexJoins" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findUsersWithScatteredConditions" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findOrdersWithScatteredJoins" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    <select id="findComplexScatteredJoins" resultType="java.util.Map">
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:            u.USER_ID IN (SELECT USER_ID FROM USER_ACTIVITY_LOG WHERE ACTIVITY_DATE >= '2024-01-01')  -- 서브쿼리
+projects\SampleSrc\src\com\example\dynamicquery\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\java\com\example\controller\ErrorController.java:        String sql = "SELECT * FROM users WHERE name = " + name;  // SQL Injection 위험
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * SELECT: + 연산자로 테이블명과 JOIN 절 동적 구성
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public List<Map<String, Object>> selectWithPlusOperatorJoin(String mainTable, List<String> joinTables, Map<String, Object> conditions) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 기본 SELECT 절 (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String selectClause = "SELECT " + mainTable.substring(0, 1) + ".* ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", " + alias + ".* ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = selectClause + fromClause + joinClause + whereClause + "ORDER BY " + mainTable.substring(0, 1) + ".created_date DESC";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Plus Operator JOIN SELECT: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("+ 연산자 JOIN SELECT 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("+ 연산자 JOIN SELECT 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * SELECT: String.format으로 동적 테이블명과 JOIN 구성
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public List<Map<String, Object>> selectWithStringFormat(String tablePrefix, String environment, List<String> joinTypes, Map<String, Object> filters) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String selectQuery = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "SELECT u.user_id, u.username, u.email, p.product_name, o.order_date " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectQuery = selectQuery + paymentJoin;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = selectQuery + whereClause + "ORDER BY o.order_date DESC";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("String.format SELECT: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("String.format SELECT 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("String.format SELECT 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public List<Map<String, Object>> selectWithConditionalJoin(String baseTable, Map<String, Boolean> joinOptions, Map<String, Object> filters) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String selectClause = "SELECT b.* ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", u.username, u.email ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", p.product_name, p.price ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", o.order_date, o.total_amount ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", c.category_name ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                selectClause = selectClause + ", pm.payment_method, pm.payment_status ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = selectClause + fromClause + joinClause + whereClause + "ORDER BY b.created_date DESC";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Conditional JOIN SELECT: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("조건부 JOIN SELECT 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("조건부 JOIN SELECT 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        String.format("SELECT t.transaction_date, t.user_id, t.product_id, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        String.format("SELECT dt.transaction_date, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        "SELECT " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        String.format("SELECT u.user_id, u.user_type, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        String.format("SELECT cb.user_id, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        "SELECT " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String dwQuery = "SELECT " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                           String.format("SELECT TO_CHAR(o.order_date, 'YYYY-MM-DD') as date_key, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                           String.format("(SELECT u.user_id, u.username, u.user_type, u.status, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                           String.format("(SELECT pr.product_id, pr.product_name, pr.price, ") +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                           String.format("(SELECT c.category_id, c.category_name, c.parent_category_id ") +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "SELECT u.user_id, COUNT(o.order_id), SUM(o.total_amount), MAX(o.order_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "    SELECT 'X' FROM orders o " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "    SELECT 'X' FROM user_activities ua " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "SELECT u.user_id, p.product_id, " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "    SELECT 'X' FROM categories c, brands b " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "    SELECT 'X' FROM orders o, users u " +
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MicroserviceDao.java:    Map<String, Object> selectUserProfile(@Param("userId") Long userId);
+projects\SampleSrc\src\main\java\com\example\dao\MicroserviceDao.java:    Map<String, Object> selectOrderDetails(@Param("orderId") Long orderId);
+projects\SampleSrc\src\main\java\com\example\dao\MicroserviceDao.java:    Map<String, Object> selectDashboardData();
+projects\SampleSrc\src\main\java\com\example\dao\MicroserviceDao.java:    Map<String, Object> selectGlobalSearch(@Param("query") String query);
+projects\SampleSrc\src\main\java\com\example\dao\ProxyDao.java:    Map<String, Object> selectUsersFromV1();
+projects\SampleSrc\src\main\java\com\example\dao\ProxyDao.java:    Map<String, Object> selectProductsFromInternalService();
+projects\SampleSrc\src\main\java\com\example\dao\ProxyDao.java:    Map<String, Object> selectOrdersFromInternalService();
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:            String baseQuery = "SELECT u.user_id, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                "SELECT %s, COUNT(*) as record_count, " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                "SELECT " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                "(SELECT COUNT(*) FROM %s_%s WHERE created_date >= '%s') as total_records, " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                "(SELECT AVG(amount) FROM %s_%s WHERE amount > 0 AND created_date >= '%s') as avg_amount, " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                "(SELECT MAX(created_date) FROM %s_%s) as latest_record",
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:            String trendBase = String.format("SELECT DATE(%s) as date_key, COUNT(*) as daily_count ", "created_date");
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:            String complexQuery = "SELECT ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = "SELECT u.user_id, u.username, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = complexSubquerySQL + "(SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) as order_count, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = complexSubquerySQL + "(SELECT COALESCE(SUM(o.total_amount), 0) FROM orders o WHERE o.user_id = u.user_id) as total_spent, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                        "(SELECT CASE " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                        "WHEN (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id AND o.total_amount > %d) > 5 THEN 'VIP' " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                        "WHEN (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) > 10 THEN 'LOYAL' " +
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = "SELECT p.product_id, p.product_name, p.price, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    String salesSubquery = "(SELECT COUNT(*) FROM order_items oi ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    String revenueSubquery = "(SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = "SELECT u.user_id, u.username, ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                    complexSubquerySQL = complexSubquerySQL + "(SELECT COUNT(*) FROM user_activities ua WHERE ua.user_id = u.user_id) as activity_count ";
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // return sqlSession.selectList(USER_MAPPER_NAMESPACE + ".findUsersByCondition", params);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // return sqlSession.selectList(USER_MAPPER_NAMESPACE + ".findUsersByAdvancedCondition", params);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // return sqlSession.selectList(USER_MAPPER_NAMESPACE + ".findUsersByType", userType);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // return sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".findUserById", userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".existsByUsername", username);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".existsByEmail", email);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Boolean verified = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".isEmailVerified", userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Boolean verified = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".isPhoneVerified", userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".getTotalUserCount");
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".getActiveUserCount");
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".getNewUsersTodayCount");
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // Integer count = sqlSession.selectOne(USER_MAPPER_NAMESPACE + ".getPremiumUserCount");
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            query.append("SELECT u.user_id, u.username, u.full_name, u.email, u.phone, ");
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    List<Map<String, Object>> selectUsers();
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    Map<String, Object> selectUserById(@Param("userId") Long userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    Map<String, Object> selectUserStatistics();
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectUsersV1();
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectUsersV2();
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectProductsV1();
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectProductsV2(@Param("page") int page, @Param("size") int size);
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectOrdersV1();
+projects\SampleSrc\src\main\java\com\example\dao\VersionedDao.java:    Map<String, Object> selectOrdersV2(@Param("status") String status, 
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "SELECT u.user_id, COUNT(o.order_id), SUM(o.total_amount), MAX(o.order_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "    SELECT 'X' FROM orders o " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "    SELECT 'X' FROM user_activities ua " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "SELECT u.user_id, p.product_id, " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "    SELECT 'X' FROM categories c, brands b " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "    SELECT 'X' FROM orders o, users u " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:           "SELECT u.userId, COUNT(o.orderId), SUM(o.totalAmount) " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:           "    SELECT 1 FROM Order o " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:           "    SELECT 1 FROM UserActivity ua " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.products WHERE c.categoryId = :categoryId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.subCategories WHERE c.parentCategory IS NULL")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE c.parentCategory.categoryId = :parentId AND c.isActive = true")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE c.parentCategory.categoryId = :parentId ORDER BY c.displayOrder")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE c.categoryId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:           "(SELECT sc.categoryId FROM Category sc WHERE sc.parentCategory.categoryId = :categoryId)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT DISTINCT c FROM Category c JOIN c.products p WHERE p.status = 'ACTIVE'")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE SIZE(c.products) > 0")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE SIZE(c.products) = 0")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c.categoryName, COUNT(p) FROM Category c LEFT JOIN c.products p GROUP BY c.categoryId, c.categoryName")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c, SIZE(c.products) FROM Category c WHERE c.isActive = true")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query(value = "SELECT * FROM CATEGORIES c WHERE c.IS_ACTIVE = true ORDER BY c.DISPLAY_ORDER", 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\CategoryRepository.java:    @Query("SELECT c FROM Category c WHERE c.parentCategory IS NULL OR c.parentCategory.categoryId = :rootId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        SELECT 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        SELECT 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        SELECT 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            SELECT 'X' 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    SELECT " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    SELECT " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    SELECT " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    SELECT " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    SELECT " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.orderStatus = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o JOIN FETCH o.orderItems WHERE o.orderId = :orderId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.orderItems WHERE o.orderNumber = :orderNumber")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.orderStatus = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.userId = :userId AND o.orderStatus = 'COMPLETED'")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT AVG(o.totalAmount) FROM Order o WHERE o.orderStatus = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o.orderStatus, COUNT(o) FROM Order o GROUP BY o.orderStatus")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT DATE(o.orderDate), COUNT(o) FROM Order o WHERE o.orderDate >= :fromDate GROUP BY DATE(o.orderDate)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o.user.username, COUNT(o), SUM(o.totalAmount) FROM Order o " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query(value = "SELECT * FROM ORDERS o WHERE o.ORDER_STATUS = ?1 AND o.TOTAL_AMOUNT > ?2 " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query(value = "SELECT o.*, u.USERNAME FROM ORDERS o " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE o.user.userId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:           "(SELECT u.userId FROM User u WHERE u.userType = 'PREMIUM')")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE o.orderId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:           "(SELECT oi.order.orderId FROM OrderItem oi WHERE oi.product.category.categoryName = :categoryName)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT DISTINCT o FROM Order o JOIN o.orderItems oi " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE SIZE(o.orderItems) > :minItemCount")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o JOIN o.orderItems oi " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT new com.example.jpa.dto.OrderSummaryDto(o.orderId, o.orderNumber, o.orderDate, o.orderStatus, o.totalAmount, o.user.username) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE o.user.userId = :userId ORDER BY o.orderDate DESC")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("SELECT o FROM Order o WHERE o.orderDate >= :fromDate AND o.orderStatus IN :statuses")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.minStockLevel")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.stockQuantity = 0 OR p.stockQuantity IS NULL")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p JOIN FETCH p.category WHERE p.status = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.category.categoryName = :categoryName")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.price >= :minPrice AND p.stockQuantity > :minStock")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT AVG(p.price) FROM Product p WHERE p.status = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT MAX(p.price) FROM Product p WHERE p.category.categoryId = :categoryId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT SUM(p.stockQuantity) FROM Product p WHERE p.status = 'ACTIVE'")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p.category.categoryName, COUNT(p) FROM Product p GROUP BY p.category.categoryName")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p.status, AVG(p.price) FROM Product p GROUP BY p.status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query(value = "SELECT * FROM PRODUCTS p WHERE p.PRODUCT_NAME LIKE %?1% AND p.PRICE > ?2", 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query(value = "SELECT p.*, c.CATEGORY_NAME FROM PRODUCTS p " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.productId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:           "(SELECT oi.product.productId FROM OrderItem oi WHERE oi.order.orderDate >= :fromDate)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE p.category.categoryId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:           "(SELECT c.categoryId FROM Category c WHERE c.isActive = true)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p WHERE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p JOIN p.orderItems oi " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT p FROM Product p LEFT JOIN p.orderItems oi " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("SELECT new com.example.jpa.dto.ProductSummaryDto(p.productId, p.productName, p.price, p.stockQuantity, p.status) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u WHERE u.status = :status AND u.createdAt >= :fromDate")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u WHERE u.email LIKE %:domain%")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u LEFT JOIN FETCH u.orders WHERE u.userId = :userId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u LEFT JOIN FETCH u.userProfile WHERE u.status = :status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query(value = "SELECT * FROM USERS u WHERE u.USER_TYPE = ?1 AND u.CREATED_AT > ?2", 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query(value = "SELECT COUNT(*) FROM USERS WHERE STATUS = :status", nativeQuery = true)
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u.userType, COUNT(u) FROM User u GROUP BY u.userType")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u.status, COUNT(u) FROM User u WHERE u.createdAt >= :fromDate GROUP BY u.status")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u WHERE u.userId IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:           "(SELECT o.user.userId FROM Order o WHERE o.orderDate >= :fromDate)")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u WHERE u.userId NOT IN " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:           "(SELECT o.user.userId FROM Order o WHERE o.orderStatus = 'COMPLETED')")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u WHERE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT u FROM User u JOIN u.orders o WHERE o.totalAmount > :minAmount")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT DISTINCT u FROM User u LEFT JOIN u.userProfile p WHERE p.city = :city OR p.city IS NULL")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("SELECT new com.example.jpa.dto.UserSummaryDto(u.userId, u.username, u.email, u.status) " +
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:import org.apache.ibatis.annotations.Select;
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT id, name, price, description, create_date FROM products WHERE id = #{id}")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    Product selectById(Long id);
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT id, name, price, description, create_date FROM products")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    List<Product> selectAll();
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT id, name, price, description, create_date FROM products WHERE name LIKE CONCAT('%', #{name}, '%')")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    List<Product> selectByName(String name);
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT id, name, price, description, create_date FROM products WHERE price BETWEEN #{minPrice} AND #{maxPrice}")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    List<Product> selectByPriceRange(Double minPrice, Double maxPrice);
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT COUNT(*) FROM products")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Select("SELECT id, name, price, description, create_date FROM products ORDER BY create_date DESC LIMIT #{limit}")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    List<Product> selectRecentProducts(int limit);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    List<Product> selectProductsByCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    List<Product> selectProductsByAdvancedCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    List<Product> selectProductsByCategory(@Param("categoryId") String categoryId);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    Product selectProductById(@Param("productId") String productId);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    List<User> selectUsersByCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    List<User> selectUsersByAdvancedCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    List<User> selectUsersByType(@Param("type") String type);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    User selectUserById(@Param("id") Long id);
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        queryBuilder.append("SELECT u.user_id, u.username, u.email, u.status, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            // SELECT 절에 상품 정보 추가
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        // 기본 SELECT 절
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        StringBuilder selectBuilder = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("SELECT c.customer_id, c.company_name, c.industry, c.credit_rating, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("       u.user_id, u.username, u.user_type, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("       COUNT(DISTINCT o.order_id) as total_orders, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("       SUM(o.total_amount) as total_spent ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append(", COUNT(DISTINCT p.payment_id) as payment_count, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append("SUM(p.amount) as total_payments, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append("AVG(p.amount) as avg_payment_amount ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append(", COUNT(DISTINCT s.shipment_id) as shipment_count, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append("AVG(DATEDIFF(s.delivered_date, s.ship_date)) as avg_delivery_days ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append(", COUNT(DISTINCT p.payment_id) as payment_count, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append("COUNT(DISTINCT s.shipment_id) as shipment_count, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                selectBuilder.append("SUM(p.amount) as total_payments ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        String finalQuery = selectBuilder.toString() + " " + joinBuilder.toString() + " " + 
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                "SELECT p.product_id, p.product_name, p.category_id, " +
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                // SELECT 절에 판매 데이터 추가
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        // 동적 SELECT 절 구성
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        StringBuilder selectBuilder = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("SELECT d.dept_id, d.dept_name, d.manager_id, ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        selectBuilder.append("       COUNT(DISTINCT u.user_id) as employee_count ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                    selectBuilder.append(", COUNT(DISTINCT pr.project_id) as project_count ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                    selectBuilder.append(", AVG(up.completion_rate) as avg_completion_rate ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                    selectBuilder.append(", AVG(up.quality_score) as avg_quality_score ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                    selectBuilder.append(", AVG(up.efficiency_rating) as avg_efficiency_rating ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        String finalQuery = selectBuilder.toString() + " " + joinBuilder.toString() + " " + 
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            "SELECT d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id, " +
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            "SELECT d.dept_id, d.dept_name, d.parent_dept_id, d.manager_id, " +
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            "SELECT dh.*, " +
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:        trendsQuery.append("SELECT ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        "SELECT u.user_id, u.username, u.email, u.status, u.created_date, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        "SELECT o.order_id, o.order_date, o.total_amount, o.status, o.payment_method, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        queryBuilder.append("SELECT u.user_id, u.username, u.email, u.status, ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        StringBuilder selectClause = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        selectClause.append("SELECT o.order_id, o.order_date, o.total_amount, ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        selectClause.append("       u.user_id, u.username, u.user_type, ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        selectClause.append("       c.customer_id, c.company_name, c.industry ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            selectClause.append(", c.credit_rating, c.registration_date ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            selectClause.append(", p.product_name, p.category_id, cat.category_name ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            selectClause.append(", pay.payment_method, pay.payment_date, pay.currency ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        String finalQuery = selectClause.toString() + " " + joinClause.toString() + " " + whereClause.toString() +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        eventQuery.append("SELECT e.event_id, e.event_type, e.event_data, e.timestamp, ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:                "SELECT u.user_type, u.status, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            productQuery.append("SELECT p.product_id, p.product_name, p.category_id, ");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:                "SELECT d.dept_id, d.dept_name, d.manager_id, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        query.append("SELECT * FROM ").append(tableName).append("_").append(environment);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT u.user_type, u.status, COUNT(*) as count " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT DATE(o.order_date) as order_date, COUNT(*) as daily_orders, SUM(o.total_amount) as daily_revenue " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT p.product_id, p.product_name, c.category_name, b.brand_name " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT c.customer_id, c.company_name, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT p.product_id, p.product_name, p.stock_quantity, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT DATE_FORMAT(p.payment_date, '%%Y-%%m') as payment_month, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT s.carrier, s.shipping_method, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT u.user_id, u.username, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT DATE(m.metric_date) as metric_date, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT 'users' as table_name, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT 'products' as table_name, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT 'orders' as table_name, " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("UPDATE user_statistics_%s SET total_orders = (SELECT COUNT(*) FROM orders_%s o WHERE o.user_id = user_statistics_%s.user_id)", environment, environment, environment),
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("UPDATE product_statistics_%s SET total_sales = (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items_%s oi WHERE oi.product_id = product_statistics_%s.product_id)", environment, environment, environment)
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT 'orphaned_orders' as issue_type, COUNT(*) as issue_count " +
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "SELECT 'orphaned_order_items' as issue_type, COUNT(*) as issue_count " +
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:        return userMapper.selectById(id);
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:        List<User> users = userMapper.selectAll();
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:        List<User> users = userMapper.selectAll();
+projects\SampleSrc\src\main\java\com\example\service\MicroserviceService.java:        return microserviceDao.selectUserProfile(userId);
+projects\SampleSrc\src\main\java\com\example\service\MicroserviceService.java:        return microserviceDao.selectOrderDetails(orderId);
+projects\SampleSrc\src\main\java\com\example\service\MicroserviceService.java:        return microserviceDao.selectDashboardData();
+projects\SampleSrc\src\main\java\com\example\service\MicroserviceService.java:        return microserviceDao.selectGlobalSearch(query);
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:        return userMapper.selectAll();
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:        return userMapper.selectById(id);
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:        User existingUser = userMapper.selectById(user.getId());
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:        User existingUser = userMapper.selectById(id);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        List<Product> products = productMapper.selectProductsByCondition(validatedParams);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        List<Product> products = productMapper.selectProductsByAdvancedCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        List<Product> products = productMapper.selectProductsByCategory(categoryId);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        Product product = productMapper.selectProductById(productId);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        Product product = productMapper.selectProductById(productId);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:            List<Product> relatedProducts = productMapper.selectProductsByCategory(product.getCategoryId());
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        List<Product> existingProducts = productMapper.selectProductsByCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\ProxyService.java:        return proxyDao.selectUsersFromV1();
+projects\SampleSrc\src\main\java\com\example\service\ProxyService.java:        return proxyDao.selectProductsFromInternalService();
+projects\SampleSrc\src\main\java\com\example\service\ProxyService.java:        return proxyDao.selectOrdersFromInternalService();
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.selectUsers();
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.selectUserById(userId);
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.selectUserStatistics();
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        List<User> users = userMapper.selectUsersByCondition(validatedParams);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        List<User> users = userMapper.selectUsersByAdvancedCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        List<User> users = userMapper.selectUsersByType(type);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        User user = userMapper.selectUserById(id);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        List<User> existingUsers = userMapper.selectUsersByCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        List<User> existingUsers = userMapper.selectUsersByCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectUsersV1();
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectUsersV2();
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectProductsV1();
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectProductsV2(page, size);
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectOrdersV1();
+projects\SampleSrc\src\main\java\com\example\service\VersionedService.java:        return versionedDao.selectOrdersV2(status, dateFrom, dateTo);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        query.append("SELECT u.user_id, u.username, u.full_name, u.email, u.phone, ");
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        query.append("SELECT o.order_id, o.user_id, u.username, u.full_name, ");
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        query.append("SELECT p.product_id, p.product_name, p.category, p.price, ");
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        query.append("SELECT u.user_id, u.username, u.full_name, u.email, ");
+projects\SampleSrc\src\main\java\com\example\servlet\ExtensionMappingServlet.java:                out.println("<p>결제 방법: <select name='method'>");
+projects\SampleSrc\src\main\java\com\example\servlet\ExtensionMappingServlet.java:                out.println("</select></p>");
+projects\SampleSrc\src\main\java\com\example\servlet\ExtensionMappingServlet.java:                out.println("<p>데이터 타입: <select name='type'>");
+projects\SampleSrc\src\main\java\com\example\servlet\ExtensionMappingServlet.java:                out.println("</select></p>");
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        sql.append("SELECT u.user_id, u.username, o.order_date ");
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:            "SELECT u.user_id, u.username, p.product_name, o.order_date " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "SELECT * FROM " + baseTable + " u ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        return "SELECT u.user_id, u.username FROM users u ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "SELECT u.user_id, u.username ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "SELECT u.user_id, u.username ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "SELECT u.user_id, u.username, o.order_date, p.product_name, c.category_name " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:                    "USING (SELECT user_id, COUNT(*) as order_count " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String notSQL1 = "Please SELECT your preferred option FROM the dropdown menu";
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "SELECT ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username, u.email ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username, u.email ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        // 조건부 SELECT 절 확장
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "USING (SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id) o ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "SELECT u.user_id, u.username, ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "(SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) as order_count, ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "(SELECT COUNT(DISTINCT p.category_id) ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String simpleSQL = "SELECT u.user_id, u.username FROM users u WHERE u.status = 'ACTIVE'";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String complexSQL = "SELECT u.user_id, u.username, up.full_name " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:                         "USING (SELECT user_id FROM users WHERE status = 'ACTIVE') u " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String notSQL1 = "This is just a regular string with SELECT word";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String falsePositive1 = "SELECT your option FROM the menu";
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    <select id="selectUsersWithOrders" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:        SELECT u.user_id, u.username, o.order_id, o.total_amount
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    <select id="selectUsersWithOrderDetails" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:        SELECT u.user_id, u.username, o.order_id, oi.product_id, p.product_name
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    <select id="selectUsersWithActiveOrders" parameterType="string" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:        SELECT u.user_id, u.username, u.email
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:            SELECT 1 FROM orders o 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    <select id="selectUsersWithRecentOrders" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:        SELECT u.user_id, u.username, u.email
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:            SELECT o.user_id 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    <select id="selectUsersWithOrderStatistics" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:        SELECT u.user_id, u.username, 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ImplicitJoinMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeUserStatistics" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeProductInventory" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeOrderSummary" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeUserActivityLog" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeCategoryStatistics" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectProductById" parameterType="string" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT * FROM products WHERE product_id = #{productId}
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectProductsByCondition" parameterType="map" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT * FROM products
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectProductsByAdvancedCondition" parameterType="map" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT p.*, c.category_name, b.brand_name
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectProductsByCategory" parameterType="string" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT * FROM products 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectProductsByBrand" parameterType="string" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT p.*, b.brand_name, b.country
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="selectLowStockProducts" parameterType="int" resultType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT p.*, 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="getProductStatsByCategory" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT c.category_name,
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="analyzeProductSalesPerformance" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT p.product_id, p.product_name, p.price,
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:                AND (SELECT SUM(oi2.quantity * oi2.unit_price) 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>UPDATE products
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <select id="countProductsByCondition" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <select id="selectUsers" parameterType="map" resultType="com.example.model.User">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        SELECT u.user_id, u.username, u.email, u.status, u.created_at
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <select id="selectUserById" parameterType="long" resultType="com.example.model.User">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        SELECT u.*, up.first_name, up.last_name, up.phone
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <select id="selectUserStatistics" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUsersByCondition" parameterType="map" resultMap="UserResultMap">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUsersByAdvancedCondition" parameterType="map" resultMap="UserResultMap">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUsersByType" parameterType="string" resultMap="UserResultMap">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUserById" parameterType="string" resultMap="UserResultMap">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="existsByUsername" parameterType="string" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="existsByEmail" parameterType="string" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="isEmailVerified" parameterType="string" resultType="boolean">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT email_verified
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="isPhoneVerified" parameterType="string" resultType="boolean">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT phone_verified
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getTotalUserCount" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getActiveUserCount" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getNewUsersTodayCount" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getPremiumUserCount" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT COUNT(*)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getUserStatisticsByStatus" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getUserStatisticsByType" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="getMonthlyRegistrationStats" parameterType="int" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUsersWithOrderInfo" parameterType="map" resultType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <select id="findUsersByComplexSearch" parameterType="map" resultMap="UserResultMap">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:                SELECT 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </select>

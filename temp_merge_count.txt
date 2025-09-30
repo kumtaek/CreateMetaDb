@@ -1,0 +1,216 @@
+﻿projects\SampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java:                statistics.merge(category, 1, Integer::sum);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * MERGE: + 연산자로 테이블 간 MERGE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int mergeWithPlusOperator(String targetTable, String sourceTable, String joinCondition, Map<String, String> updateColumns, Map<String, String> insertColumns) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // MERGE 기본 구조 (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String mergeQuery = "MERGE INTO " + targetTable + " t ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 최종 MERGE 쿼리 (+ 연산자로 테이블들 연결)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = mergeQuery + usingClause + whenMatched + whenNotMatched;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Plus Operator MERGE: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("+ 연산자 MERGE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("+ 연산자 MERGE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * MERGE: String.format으로 환경 간 데이터 MERGE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int mergeWithStringFormat(String entityType, String sourceEnv, String targetEnv, Map<String, Object> options) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // String.format으로 환경 간 MERGE 구성
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String mergeQuery = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "MERGE INTO %s_%s t " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalMerge = mergeQuery + whenMatched + whenNotMatched;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 관련 테이블도 MERGE (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            if (options.get("mergeAudit") != null) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                String auditMerge = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "MERGE INTO %s_audit_%s t " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "VALUES (s.entity_id, 'MERGE', SYSDATE)",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                finalMerge = finalMerge + "; " + auditMerge;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("String.format MERGE: " + finalMerge);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("String.format MERGE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("String.format MERGE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:public class MergeQueryDao {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * MERGE 쿼리 - 사용자 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * Java StringBuilder를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:    public void mergeUserStatistics(Date fromDate) {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        StringBuilder mergeQuery = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("MERGE INTO user_statistics us ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("USING ( ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        u.user_id, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        COUNT(o.order_id) as total_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        SUM(o.total_amount) as total_amount, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        MAX(o.order_date) as last_order_date ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    FROM users u ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    LEFT JOIN orders o ON u.user_id = o.user_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    WHERE u.status = 'ACTIVE' ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    AND o.order_status = 'COMPLETED' ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    GROUP BY u.user_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append(") src ON us.user_id = src.user_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        us.total_orders = src.total_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        us.total_amount = src.total_amount, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        us.last_order_date = src.last_order_date, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        us.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN NOT MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    VALUES (src.user_id, src.total_orders, src.total_amount, src.last_order_date, SYSDATE, SYSDATE)");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        System.out.println("Executing mergeUserStatistics: " + mergeQuery.toString());
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * MERGE 쿼리 - 상품 재고 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * Java StringBuilder를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:    public void mergeProductInventory() {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        StringBuilder mergeQuery = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("MERGE INTO product_inventory pi ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("USING ( ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        p.product_id, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        p.product_name, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        p.stock_quantity, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        p.price, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        c.category_name, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        b.brand_name ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    FROM products p ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    LEFT JOIN categories c ON p.category_id = c.category_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    LEFT JOIN brands b ON p.brand_id = b.brand_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    WHERE p.status = 'ACTIVE' ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append(") src ON pi.product_id = src.product_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.current_stock = src.stock_quantity, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.current_price = src.price, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.category_name = src.category_name, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.brand_name = src.brand_name, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN NOT MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    VALUES (src.product_id, src.product_name, src.stock_quantity, src.price, src.category_name, src.brand_name, SYSDATE, SYSDATE)");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        System.out.println("Executing mergeProductInventory: " + mergeQuery.toString());
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * MERGE 쿼리 - 주문 요약 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * Java StringBuilder를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:    public void mergeOrderSummary(Date fromDate) {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        StringBuilder mergeQuery = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("MERGE INTO order_summary os ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("USING ( ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        o.user_id, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        DATE(o.order_date) as order_date, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        COUNT(o.order_id) as daily_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        SUM(o.total_amount) as daily_amount, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        AVG(o.total_amount) as avg_order_amount ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    FROM orders o ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    WHERE o.order_status = 'COMPLETED' ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    AND o.order_date >= ? ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    GROUP BY o.user_id, DATE(o.order_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append(") src ON os.user_id = src.user_id AND os.order_date = src.order_date ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        os.daily_orders = src.daily_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        os.daily_amount = src.daily_amount, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        os.avg_order_amount = src.avg_order_amount, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        os.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN NOT MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    VALUES (src.user_id, src.order_date, src.daily_orders, src.daily_amount, src.avg_order_amount, SYSDATE, SYSDATE)");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        System.out.println("Executing mergeOrderSummary: " + mergeQuery.toString());
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * MERGE 쿼리 - 사용자 활동 로그 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * Java StringBuilder를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:    public void mergeUserActivityLog() {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        StringBuilder mergeQuery = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("MERGE INTO user_activity_log ual ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("USING ( ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        u.user_id, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        u.username, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        u.email, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        u.last_login_date, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        COUNT(o.order_id) as recent_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        SUM(o.total_amount) as recent_spending ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    FROM users u ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    LEFT JOIN orders o ON u.user_id = o.user_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        AND o.order_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    WHERE u.status = 'ACTIVE' ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    GROUP BY u.user_id, u.username, u.email, u.last_login_date ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append(") src ON ual.user_id = src.user_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.username = src.username, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.email = src.email, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.last_login_date = src.last_login_date, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.recent_orders = src.recent_orders, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.recent_spending = src.recent_spending, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN NOT MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    VALUES (src.user_id, src.username, src.email, src.last_login_date, src.recent_orders, src.recent_spending, SYSDATE, SYSDATE)");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        System.out.println("Executing mergeUserActivityLog: " + mergeQuery.toString());
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * MERGE 쿼리 - 상품 카테고리 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:     * Java StringBuilder를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:    public void mergeCategoryStatistics() {
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        StringBuilder mergeQuery = new StringBuilder();
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("MERGE INTO category_statistics cs ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("USING ( ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    SELECT ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        c.category_id, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        c.category_name, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        COUNT(p.product_id) as product_count, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        AVG(p.price) as avg_price, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        SUM(p.stock_quantity) as total_stock, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        COUNT(CASE WHEN p.status = 'ACTIVE' THEN 1 END) as active_products ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    FROM categories c ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    LEFT JOIN products p ON c.category_id = p.category_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    WHERE c.is_active = 1 ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    GROUP BY c.category_id, c.category_name ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append(") src ON cs.category_id = src.category_id ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.product_count = src.product_count, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.avg_price = src.avg_price, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.total_stock = src.total_stock, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.active_products = src.active_products, ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("WHEN NOT MATCHED THEN ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    VALUES (src.category_id, src.category_name, src.product_count, src.avg_price, src.total_stock, src.active_products, SYSDATE, SYSDATE)");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        System.out.println("Executing mergeCategoryStatistics: " + mergeQuery.toString());
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:public interface MergeQueryRepository extends JpaRepository<Object, Long> {
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * MERGE 쿼리 - 사용자 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * JPA @Query를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    @Query(value = "MERGE INTO user_statistics us " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    void mergeUserStatisticsWithJpa();
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * MERGE 쿼리 - 상품 재고 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * JPA @Query를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    @Query(value = "MERGE INTO product_inventory pi " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    void mergeProductInventoryWithJpa();
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * MERGE 쿼리 - 주문 요약 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * JPA @Query를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    @Query(value = "MERGE INTO order_summary os " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    void mergeOrderSummaryWithJpa(@Param("fromDate") Date fromDate);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * MERGE 쿼리 - 사용자 활동 로그 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * JPA @Query를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    @Query(value = "MERGE INTO user_activity_log ual " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    void mergeUserActivityLogWithJpa();
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * MERGE 쿼리 - 상품 카테고리 통계 업데이트/삽입
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:     * JPA @Query를 사용한 MERGE 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    @Query(value = "MERGE INTO category_statistics cs " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:    void mergeCategoryStatisticsWithJpa();
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:     * 테스트 8: MERGE 문자열 리터럴 (Enhanced 지원 목표)
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:    public int testMergeStringLiteral() {
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String sql = "MERGE INTO user_statistics us " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        System.out.println("MERGE String Literal SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 7: MERGE + 연산자 패턴  
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testMergeConcatenation(String tablePrefix) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "MERGE INTO user_statistics us ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Merge Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        // MERGE 문자열 리터럴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String mergeSQL = "MERGE INTO user_statistics us " +
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:<mapper namespace="com.example.mapper.MergeQueryMapper">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <!-- MERGE 쿼리 - 사용자 통계 업데이트/삽입 -->
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeUserStatistics" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:        MERGE INTO user_statistics us
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <!-- MERGE 쿼리 - 상품 재고 업데이트/삽입 -->
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeProductInventory" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:        MERGE INTO product_inventory pi
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <!-- MERGE 쿼리 - 주문 요약 통계 업데이트/삽입 -->
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeOrderSummary" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:        MERGE INTO order_summary os
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <!-- MERGE 쿼리 - 사용자 활동 로그 업데이트/삽입 -->
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeUserActivityLog" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:        MERGE INTO user_activity_log ual
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <!-- MERGE 쿼리 - 상품 카테고리 통계 업데이트/삽입 -->
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:    <select id="mergeCategoryStatistics" parameterType="map" resultType="int">
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:        MERGE INTO category_statistics cs

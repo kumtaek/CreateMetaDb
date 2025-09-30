@@ -1,0 +1,174 @@
+﻿projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:    @RequestMapping(value = "/user/{id}", method = RequestMethod.DELETE)
+projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:    public String deleteUser(@RequestParam Long id) {
+projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:            userService.deleteUser(id);
+projects\SampleSrc\src\main\java\com\example\controller\UserManagementController.java:     * FRONTEND_API: UserManagementPage -> API_ENTRY: DELETE /api/user-management/users/{id}
+projects\SampleSrc\src\main\java\com\example\controller\UserManagementController.java:    @DeleteMapping("/users/{id}")
+projects\SampleSrc\src\main\java\com\example\controller\UserManagementController.java:    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * DELETE: + 연산자로 다중 테이블 DELETE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int deleteWithPlusOperatorMultiTable(String mainTable, List<String> relatedTables, String keyColumn, String keyValue) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String deleteQuery = "";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 관련 테이블들 순서대로 DELETE (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                deleteQuery = deleteQuery + "DELETE FROM " + relatedTable + " WHERE " + keyColumn + " = '" + keyValue + "'; ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 메인 테이블 DELETE (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            deleteQuery = deleteQuery + "DELETE FROM " + mainTable + " WHERE " + keyColumn + " = '" + keyValue + "'";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Plus Operator Multi-table DELETE: " + deleteQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("+ 연산자 다중 테이블 DELETE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("+ 연산자 다중 테이블 DELETE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * DELETE: String.format으로 환경별 CASCADE DELETE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int deleteWithStringFormat(String entityType, String environment, String entityId, boolean cascadeDelete) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String deleteQuery = "";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            if (cascadeDelete) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                // 관련 테이블들 CASCADE DELETE (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    String cascadeDelete1 = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        "DELETE FROM %s_%s_%s WHERE entity_id = '%s'",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    if (!deleteQuery.isEmpty()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                        deleteQuery = deleteQuery + "; ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    deleteQuery = deleteQuery + cascadeDelete1;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 메인 테이블 DELETE (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String mainDelete = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "DELETE FROM %s_%s WHERE id = '%s'",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            if (!deleteQuery.isEmpty()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                deleteQuery = deleteQuery + "; ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            deleteQuery = deleteQuery + mainDelete;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("String.format CASCADE DELETE: " + deleteQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("String.format DELETE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("String.format DELETE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java: * 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * DELETE with JOIN condition - 역할과 조인하여 비활성 사용자 삭제
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int deleteInactiveUsersWithRoles(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * DELETE with JOIN condition - 주문과 조인하여 고객 삭제
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int deleteCustomerWithOrders(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * DELETE with JOIN condition - 상품과 카테고리 조인하여 상품 삭제
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int deleteProductWithCategory(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * DELETE with EXISTS subquery
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Delete users who have no recent activity
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void deleteInactiveUsersWithNoActivity(Date cutoffDate) {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String deleteQuery = "DELETE FROM users u " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing deleteInactiveUsersWithNoActivity: " + deleteQuery);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Complex DELETE with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Delete old order items that are no longer needed
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void deleteOldOrderItems(Date cutoffDate) {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String deleteQuery = "DELETE FROM order_items oi " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing deleteOldOrderItems: " + deleteQuery);
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:            caseClause = caseClause + "ELSE u.status != 'DELETED' END ";
+projects\SampleSrc\src\main\java\com\example\dao\UnsupportedPatternDao.java:                trendBase = trendBase + "AND status != 'DELETED' ";
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:    public boolean deleteUser(String userId) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // int result = sqlSession.delete(USER_MAPPER_NAMESPACE + ".deleteUser", userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    int deleteUser(@Param("userId") Long userId);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:     * FRONTEND_API: DELETE /api/jpa/orders/{id} -> API_ENTRY: deleteOrder() -> JPA: OrderRepository.deleteById() -> TABLE: ORDERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:    @DeleteMapping("/{id}")
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:            jpaOrderService.deleteOrder(id);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:     * FRONTEND_API: DELETE /api/jpa/products/{id} -> API_ENTRY: deleteProduct() -> JPA: ProductRepository.deleteById() -> TABLE: PRODUCTS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:    @DeleteMapping("/{id}")
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:            jpaProductService.deleteProduct(id);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:     * FRONTEND_API: DELETE /api/jpa/users/{id} -> API_ENTRY: deleteUser() -> JPA: UserRepository.deleteById() -> TABLE: USERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:    @DeleteMapping("/{id}")
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:            jpaUserService.deleteUser(id);
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserStatus.java:    DELETED("삭제됨"),
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * DELETE with EXISTS subquery
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Delete users who have no recent activity
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "DELETE FROM users u " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void deleteInactiveUsersWithExists(@Param("cutoffDate") Date cutoffDate);
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Complex DELETE with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Delete old order items that are no longer needed
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "DELETE FROM order_items oi " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void deleteOldOrderItemsWithJoin(@Param("cutoffDate") Date cutoffDate);
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * JPQL DELETE with JOIN condition
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Delete inactive users using JPQL
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query("DELETE FROM User u " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void deleteInactiveUsersWithJpql(@Param("cutoffDate") Date cutoffDate);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java: * JPA 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * DELETE with JOIN condition - 역할과 조인하여 비활성 사용자 삭제
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        DELETE FROM USERS u
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int deleteInactiveUsersWithRoles(@Param("roleName") String roleName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * DELETE with JOIN condition - 주문과 조인하여 고객 삭제
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        DELETE FROM CUSTOMERS c
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int deleteCustomerWithOrders(@Param("customerName") String customerName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * DELETE with JOIN condition - 상품과 카테고리 조인하여 상품 삭제
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        DELETE FROM PRODUCTS p
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int deleteProductWithCategory(@Param("categoryName") String categoryName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    // 7. Delete 쿼리
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    void deleteByStatus(UserStatus status);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    long deleteByCreatedAtBefore(LocalDateTime date);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:    public void deleteOrder(Long orderId) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:        orderRepository.deleteById(orderId);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public void deleteProduct(Long productId) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:        productRepository.deleteById(productId);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public void deleteUser(Long userId) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:        userRepository.deleteById(userId);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public void deleteInactiveUsers() {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:        userRepository.deleteByStatus(UserStatus.INACTIVE);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public long deleteOldUsers(LocalDateTime beforeDate) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:        return userRepository.deleteByCreatedAtBefore(beforeDate);
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:import org.apache.ibatis.annotations.Delete;
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Delete("DELETE FROM products WHERE id = #{id}")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    int delete(Long id);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    int deleteProductsByCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    int deleteUsersByCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\model\Product.java:    public boolean isDeleted() {
+projects\SampleSrc\src\main\java\com\example\model\Product.java:        return isActive() && isInStock() && !isDeleted();
+projects\SampleSrc\src\main\java\com\example\model\User.java:            case "DELETED": return "삭제됨";
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("DELETE FROM user_activities_%s WHERE activity_date < DATE_SUB(NOW(), INTERVAL 90 DAY)", environment),
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("DELETE FROM system_logs_%s WHERE log_date < DATE_SUB(NOW(), INTERVAL 30 DAY)", environment),
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("DELETE FROM temp_processing_data_%s WHERE created_date < DATE_SUB(NOW(), INTERVAL 1 DAY)", environment)
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:    public void deleteUser(Long id) {
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:            userMapper.delete(id);
+projects\SampleSrc\src\main\java\com\example\service\ProductService.java:    int deleteProductsByCondition(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    public int deleteProductsByCondition(Map<String, Object> params) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        validateDeleteProductConditions(params);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        logBulkProductDelete(params, productCount);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        int result = productMapper.deleteProductsByCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    private void validateDeleteProductConditions(Map<String, Object> params) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    private void logBulkProductDelete(Map<String, Object> params, int productCount) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        System.out.println("Bulk product delete initiated: " + params + ", Count: " + productCount);
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:    public int deleteUser(Long userId) {
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.deleteUser(userId);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    public int deleteUsersByCondition(Map<String, Object> params) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        validateDeleteConditions(params);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        logBulkDelete(params, userCount);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        int result = userMapper.deleteUsersByCondition(params);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:                .filter(user -> !"DELETED".equals(user.getStatus()))
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    private void validateDeleteConditions(Map<String, Object> params) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    private void logBulkDelete(Map<String, Object> params, int userCount) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        System.out.println("Bulk delete initiated: " + params + ", Count: " + userCount);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        return Arrays.asList("ACTIVE", "INACTIVE", "SUSPENDED", "DELETED").contains(status.toUpperCase());
+projects\SampleSrc\src\main\java\com\example\servlet\AdvancedReportServlet.java:    protected void doDelete(HttpServletRequest request, HttpServletResponse response) 
+projects\SampleSrc\src\main\java\com\example\servlet\AdvancedReportServlet.java:        result.put("method", "DELETE");
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                case "delete":
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result = deleteDataDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result.put("availableActions", Arrays.asList("insert", "update", "delete", "batch"));
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> deleteDataDirectly(HttpServletRequest request) {
+projects\SampleSrc\src\main\java\com\example\servlet\LegacyPaymentServlet.java:    protected void doDelete(HttpServletRequest request, HttpServletResponse response) 
+projects\SampleSrc\src\main\java\com\example\servlet\LegacyPaymentServlet.java:        result.put("method", "DELETE");
+projects\SampleSrc\src\main\java\com\example\servlet\LegacyPaymentServlet.java:        out.println("<li><strong>DELETE</strong> ?paymentId=xxx - 결제 기록 삭제</li>");
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:                case "DELETE":
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:                    handleDeleteRequest(request, response, out);
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:    private void handleDeleteRequest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) 
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:        result.put("method", "DELETE");
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:        result.put("allowedMethods", new String[]{"GET", "POST", "PUT", "DELETE", "OPTIONS"});
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:        } else if ("delete".equals(action)) {
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:            deleteProduct(request, out);
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:    protected void doDelete(HttpServletRequest request, HttpServletResponse response) 
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:        out.println("  \"method\": \"DELETE\",");
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:    private void deleteProduct(HttpServletRequest request, PrintWriter out) {
+projects\SampleSrc\src\main\java\com\example\servlet\UserManagementServlet.java:    protected void doDelete(HttpServletRequest request, HttpServletResponse response) 
+projects\SampleSrc\src\main\java\com\example\servlet\UserManagementServlet.java:        result.put("method", "DELETE");
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String notSQL4 = "Configuration: DELETE_BATCH_SIZE = 1000";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 6: DELETE + 연산자 패턴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testDeleteConcatenation(String userId, String sessionType) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "DELETE FROM user_sessions ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Delete Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        // DELETE 문자열 리터럴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String deleteSQL = "DELETE FROM user_sessions " +
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <update id="deleteProduct" parameterType="string">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <delete id="deleteProductsByCondition" parameterType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </delete>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <delete id="deleteInactiveUsers" parameterType="string">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        DELETE FROM users 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </delete>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <update id="deleteUser" parameterType="string">
+projects\SampleSrc\src\main\webapp\WEB-INF\web.xml:            <http-method>DELETE</http-method>

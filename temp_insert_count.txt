@@ -1,0 +1,145 @@
+﻿projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * INSERT: + 연산자로 동적 테이블명 구성
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int insertWithPlusOperatorTable(String baseTable, String tableSuffix, Map<String, Object> data) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // INSERT 쿼리 구성 (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String insertQuery = "INSERT INTO " + targetTable + " ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 최종 INSERT 쿼리 (+ 연산자로 테이블명 포함)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = insertQuery + columnClause + " " + valueClause;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Plus Operator INSERT: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("+ 연산자 INSERT 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("+ 연산자 INSERT 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int mergeWithPlusOperator(String targetTable, String sourceTable, String joinCondition, Map<String, String> updateColumns, Map<String, String> insertColumns) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            if (!insertColumns.isEmpty()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                whenNotMatched = whenNotMatched + "WHEN NOT MATCHED THEN INSERT (";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                for (Map.Entry<String, String> entry : insertColumns.entrySet()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * INSERT: String.format으로 환경별 테이블 INSERT
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int insertWithStringFormat(String entityType, String environment, Map<String, Object> data) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String insertQuery = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "INSERT INTO %s_%s (id, name, status, created_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 관련 테이블에도 INSERT (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                String auditInsert = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "INSERT INTO %s_audit_%s (entity_id, action, created_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "VALUES ('%s', 'INSERT', SYSDATE)",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                insertQuery = insertQuery + "; " + auditInsert;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("String.format INSERT: " + insertQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("String.format INSERT 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("String.format INSERT 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "INSERT (id, name, status, created_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "WHEN NOT MATCHED THEN INSERT (entity_id, action, created_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java: * 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * INSERT with JOIN condition - 사용자 타입과 조인하여 프로필 생성
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int insertUserProfileWithUserType(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * INSERT with JOIN condition - 카테고리와 조인하여 상품 등록
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int insertProductWithCategory(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * INSERT with JOIN condition - 상품과 주문 조인하여 주문 아이템 생성
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int insertOrderItemWithProduct(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * INSERT with JOIN condition
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Insert user statistics by joining users and orders tables
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void insertUserOrderStatistics(Date fromDate) {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String insertQuery = "INSERT INTO user_order_statistics (user_id, total_orders, total_amount, last_order_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing insertUserOrderStatistics: " + insertQuery);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Complex INSERT with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Insert product recommendations based on user purchase history
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void insertProductRecommendations() {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String insertQuery = "INSERT INTO product_recommendations (user_id, product_id, recommendation_score, created_date) " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing insertProductRecommendations: " + insertQuery);
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MicroserviceDao.java:    Map<String, Object> insertNotification(@Param("notificationData") Map<String, Object> notificationData);
+projects\SampleSrc\src\main\java\com\example\dao\ProxyDao.java:    int insertUserToV1(@Param("userData") Map<String, Object> userData);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // int result = sqlSession.insert(USER_MAPPER_NAMESPACE + ".createUser", userData);
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    int insertUser(@Param("userData") Map<String, Object> userData);
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * INSERT with JOIN condition
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Insert user order statistics by joining users and orders
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "INSERT INTO user_order_statistics (user_id, total_orders, total_amount, last_order_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void insertUserOrderStatisticsWithJoin(@Param("fromDate") Date fromDate);
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Complex INSERT with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Insert product recommendations based on user purchase history
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "INSERT INTO product_recommendations (user_id, product_id, recommendation_score, created_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void insertProductRecommendationsWithJoin();
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * JPQL INSERT with JOIN condition
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Insert user statistics using JPQL
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query("INSERT INTO UserStatistics u (u.userId, u.totalOrders, u.totalAmount) " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void insertUserStatisticsWithJpql();
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java: * JPA 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * INSERT with JOIN condition - 사용자 타입과 조인하여 프로필 생성
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        INSERT INTO USER_PROFILES (PROFILE_ID, USER_ID, FIRST_NAME, LAST_NAME, PHONE, ADDRESS)
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int insertUserProfileWithUserType(@Param("username") String username, 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * INSERT with JOIN condition - 카테고리와 조인하여 상품 등록
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        INSERT INTO PRODUCTS (PRODUCT_ID, PRODUCT_NAME, CATEGORY_ID, PRICE, STOCK_QUANTITY, DESCRIPTION)
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int insertProductWithCategory(@Param("productName") String productName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * INSERT with JOIN condition - 상품과 주문 조인하여 주문 아이템 생성
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        INSERT INTO ORDER_ITEMS (ITEM_ID, ORDER_ID, PRODUCT_ID, QUANTITY, UNIT_PRICE)
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int insertOrderItemWithProduct(@Param("productName") String productName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:import org.apache.ibatis.annotations.Insert;
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Insert("INSERT INTO products (name, price, description, create_date) VALUES (#{name}, #{price}, #{description}, #{createDate})")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    int insert(Product product);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    // 동적 INSERT 쿼리
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    int insertProductDynamic(Product product);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    // 동적 INSERT 쿼리
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    int insertUserDynamic(User user);
+projects\SampleSrc\src\main\java\com\example\modern\OrderEntity.java:    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            queryBuilder.insert(queryBuilder.indexOf("FROM") - 1, 
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:            queryBuilder.insert(queryBuilder.indexOf("FROM") - 1, ", c.category_name ");
+projects\SampleSrc\src\main\java\com\example\performance\HybridSqlPatternDao.java:                inventoryQuery.insert(inventoryQuery.indexOf("FROM") - 1,
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:                String insertQuery = buildInsertQuery(baseTableName, targetEnv, syncOptions);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:                boolean tableSync = executeBatchInsert(insertQuery, sourceData);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:    private String buildInsertQuery(String tableName, String environment, Map<String, Object> options) {
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        return String.format("INSERT INTO %s_%s (...) VALUES (...)", tableName, environment);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:    private boolean executeBatchInsert(String query, List<Map<String, Object>> data) {
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        System.out.println("Batch inserting " + data.size() + " records: " + query);
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:            userMapper.insert(user);
+projects\SampleSrc\src\main\java\com\example\service\MicroserviceService.java:        return microserviceDao.insertNotification(notificationData);
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:            userMapper.insert(user);
+projects\SampleSrc\src\main\java\com\example\service\ProxyService.java:        return proxyDao.insertUserToV1(userData);
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.insertUser(userData);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                case "insert":
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result = insertDataDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result.put("availableActions", Arrays.asList("insert", "update", "delete", "batch"));
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:     * 직접 INSERT 쿼리 실행
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> insertDataDirectly(HttpServletRequest request) throws SQLException {
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                result = insertUserDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                result = insertOrderDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                result = insertProductDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> insertUserDirectly(HttpServletRequest request) throws SQLException {
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        query.append("INSERT INTO users (username, full_name, email, phone, password, status, user_type, created_date) ");
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        System.out.println("생성된 INSERT 쿼리: " + query.toString());
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        // 실제로는 데이터베이스에 INSERT 실행
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> insertOrderDirectly(HttpServletRequest request) {
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> insertProductDirectly(HttpServletRequest request) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:                    "INSERT (user_id, total_orders, last_updated) " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String notSQL3 = "Error: INSERT failed due to constraint violation";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 4: INSERT + 연산자 패턴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testInsertConcatenation(String userId, String action) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "INSERT INTO user_audit_logs ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Insert Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 4: INSERT + 연산자 패턴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testInsertConcatenation(String userId, String action) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "INSERT INTO user_audit_logs ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Insert Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "INSERT (user_id, total_orders, last_updated) ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        // INSERT 문자열 리터럴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String insertSQL = "INSERT INTO user_audit_logs (user_id, action_type, created_date) " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String notSQL4 = "Error: INSERT operation failed";
+projects\SampleSrc\src\main\resources\META-INF\persistence.xml:            <property name="hibernate.order_inserts" value="true"/>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <insert id="insertProductDynamic" parameterType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        INSERT INTO products (
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </insert>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <insert id="insertUser" parameterType="com.example.model.User">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        INSERT INTO users (username, email, password, status, created_at)
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </insert>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <insert id="createUser" parameterType="map" useGeneratedKeys="true" keyProperty="userId">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        INSERT INTO users (
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </insert>

@@ -1,0 +1,442 @@
+﻿projects\SampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java:        updateProcessingQueue(dataType);
+projects\SampleSrc\src\main\java\com\example\complex\LargeBusinessClass.java:    private void updateProcessingQueue(String dataType) {
+projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:    public String updateUser(@RequestParam Long id, @RequestParam String name) {
+projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:        existingUser.setUpdateDate(new Date());  // Date import 누락으로 컴파일 오류
+projects\SampleSrc\src\main\java\com\example\controller\MixedErrorController.java:            userService.updateUser(existingUser);
+projects\SampleSrc\src\main\java\com\example\controller\ProductController.java:    @PostMapping("/updateStock")
+projects\SampleSrc\src\main\java\com\example\controller\ProductController.java:    public String updateProductStock(@RequestParam String productId, 
+projects\SampleSrc\src\main\java\com\example\controller\ProductController.java:        int result = productService.updateProductStock(productId, quantity);
+projects\SampleSrc\src\main\java\com\example\controller\ProductController.java:        return "product/updateResult";
+projects\SampleSrc\src\main\java\com\example\controller\UserManagementController.java:    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> userData) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * UPDATE: + 연산자로 JOIN을 포함한 UPDATE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int updateWithPlusOperatorJoin(String mainTable, String joinTable, String joinCondition, Map<String, Object> updateData, Map<String, Object> whereConditions) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // UPDATE with JOIN 구성 (+ 연산자)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String updateClause = "UPDATE " + mainTable + " m ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            for (Map.Entry<String, Object> entry : updateData.entrySet()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 최종 UPDATE 쿼리 (+ 연산자로 테이블들 연결)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String finalQuery = updateClause + joinClause + setClause + " " + whereClause;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("Plus Operator JOIN UPDATE: " + finalQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("+ 연산자 JOIN UPDATE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("+ 연산자 JOIN UPDATE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int mergeWithPlusOperator(String targetTable, String sourceTable, String joinCondition, Map<String, String> updateColumns, Map<String, String> insertColumns) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            if (!updateColumns.isEmpty()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                whenMatched = whenMatched + "WHEN MATCHED THEN UPDATE SET ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                for (Map.Entry<String, String> entry : updateColumns.entrySet()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:     * UPDATE: String.format으로 다중 환경 테이블 UPDATE
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:    public int updateWithStringFormat(String entityType, List<String> environments, String entityId, Map<String, Object> updateData) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            String updateQuery = "";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            // 여러 환경의 테이블 동시 UPDATE (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                String envUpdate = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "UPDATE %s_%s SET name = '%s', status = '%s', updated_date = SYSDATE WHERE id = '%s'",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    updateData.get("name"),
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    updateData.get("status"),
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                if (!updateQuery.isEmpty()) {
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    updateQuery = updateQuery + "; ";
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                updateQuery = updateQuery + envUpdate;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                // 관련 통계 테이블도 UPDATE (String.format)
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                String statsUpdate = String.format(
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                    "UPDATE %s_stats_%s SET updated_count = updated_count + 1, last_updated = SYSDATE WHERE entity_type = '%s'",
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                updateQuery = updateQuery + "; " + statsUpdate;
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.out.println("String.format Multi-env UPDATE: " + updateQuery);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            System.err.println("String.format UPDATE 오류: " + e.getMessage());
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:            throw new RuntimeException("String.format UPDATE 실패", e);
+projects\SampleSrc\src\main\java\com\example\dao\CoreSqlPatternDao.java:                "UPDATE SET t.name = s.name, t.status = s.status, t.updated_date = SYSDATE "
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java: * 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * UPDATE with JOIN condition - 고객과 주문 아이템 조인하여 주문 상태 업데이트
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int updateOrderStatusWithCustomer(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * UPDATE with JOIN condition - 부서와 조인하여 사용자 정보 업데이트
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int updateUserWithDepartment(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:     * UPDATE with JOIN condition - 사용자 프로필과 조인하여 사용자 정보 업데이트
+projects\SampleSrc\src\main\java\com\example\dao\JoinConditionDao.java:    int updateUserWithProfile(Map<String, Object> params);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * UPDATE with EXISTS subquery
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Update user status based on order history
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void updateUserStatusBasedOnOrders(Date cutoffDate) {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String updateQuery = "UPDATE users u " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "SET u.status = 'INACTIVE', u.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing updateUserStatusBasedOnOrders: " + updateQuery);
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Complex UPDATE with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:     * Update product prices based on category and brand analysis
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:    public void updateProductPricesBasedOnAnalysis() {
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        String updateQuery = "UPDATE products p " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:                           "SET p.price = p.price * 1.1, p.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\dao\JoinQueryDao.java:        System.out.println("Executing updateProductPricesBasedOnAnalysis: " + updateQuery);
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        us.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        pi.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        os.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        ual.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    UPDATE SET ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("        cs.updated_date = SYSDATE ");
+projects\SampleSrc\src\main\java\com\example\dao\MergeQueryDao.java:        mergeQuery.append("    INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date) ");
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:    public User updateUser(String userId, Map<String, Object> updateData) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // updateData.put("userId", userId);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            // int result = sqlSession.update(USER_MAPPER_NAMESPACE + ".updateUser", updateData);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            return generateUpdatedUser(userId, updateData);
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:    private User generateUpdatedUser(String userId, Map<String, Object> updateData) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            if (updateData.get("fullName") != null) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:                user.setFullName((String) updateData.get("fullName"));
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            if (updateData.get("email") != null) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:                user.setEmail((String) updateData.get("email"));
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:            if (updateData.get("phone") != null) {
+projects\SampleSrc\src\main\java\com\example\dao\UserDao.java:                user.setPhone((String) updateData.get("phone"));
+projects\SampleSrc\src\main\java\com\example\dao\UserManagementDao.java:    int updateUser(@Param("userId") Long userId, @Param("userData") Map<String, Object> userData);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:     * FRONTEND_API: PUT /api/jpa/orders/{id} -> API_ENTRY: updateOrder() -> JPA: OrderRepository.save() -> TABLE: ORDERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:    public ResponseEntity<Order> updateOrder(@PathVariable Long id, @RequestBody Order order) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:            Order updatedOrder = jpaOrderService.updateOrder(order);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:            return ResponseEntity.ok(updatedOrder);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:        int updated = jpaOrderService.cancelOrder(id);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:        return ResponseEntity.ok(updated);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:     * FRONTEND_API: PUT /api/jpa/orders/{id}/shipping-address -> API_ENTRY: updateShippingAddress() -> JPA: OrderRepository.updateShippingAddress() -> TABLE: ORDERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:    public ResponseEntity<Integer> updateShippingAddress(@PathVariable Long id, @RequestParam String address) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:        int updated = jpaOrderService.updateShippingAddress(id, address);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:        return ResponseEntity.ok(updated);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:     * FRONTEND_API: PUT /api/jpa/orders/{id}/total -> API_ENTRY: updateOrderTotal() -> JPA: OrderRepository.save() -> TABLE: ORDERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:    public ResponseEntity<Void> updateOrderTotal(@PathVariable Long id, @RequestParam BigDecimal total) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaOrderController.java:            jpaOrderService.updateOrderTotal(id, total);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:     * FRONTEND_API: PUT /api/jpa/products/{id} -> API_ENTRY: updateProduct() -> JPA: ProductRepository.save() -> TABLE: PRODUCTS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:            Product updatedProduct = jpaProductService.updateProduct(product);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:            return ResponseEntity.ok(updatedProduct);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:        int updated = jpaProductService.addStock(id, quantity);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:        return ResponseEntity.ok(updated);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:        int updated = jpaProductService.reduceStock(id, quantity);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:        return ResponseEntity.ok(updated);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:     * FRONTEND_API: PUT /api/jpa/products/{id}/stock -> API_ENTRY: updateProductStock() -> JPA: ProductRepository.save() -> TABLE: PRODUCTS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:    public ResponseEntity<Void> updateProductStock(@PathVariable Long id, @RequestParam Integer stock) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:            jpaProductService.updateProductStock(id, stock);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:     * FRONTEND_API: PUT /api/jpa/products/{id}/price -> API_ENTRY: updateProductPrice() -> JPA: ProductRepository.save() -> TABLE: PRODUCTS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:    public ResponseEntity<Void> updateProductPrice(@PathVariable Long id, @RequestParam BigDecimal price) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaProductController.java:            jpaProductService.updateProductPrice(id, price);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:     * FRONTEND_API: PUT /api/jpa/users/{id} -> API_ENTRY: updateUser() -> JPA: UserRepository.save() -> TABLE: USERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:            User updatedUser = jpaUserService.updateUser(user);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:            return ResponseEntity.ok(updatedUser);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:     * FRONTEND_API: PUT /api/jpa/users/{id}/login -> API_ENTRY: updateLastLoginTime() -> JPA: UserRepository.updateLastLoginTime() -> TABLE: USERS
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:    public ResponseEntity<Integer> updateLastLoginTime(@PathVariable Long id) {
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:        int updated = jpaUserService.updateLastLoginTime(id);
+projects\SampleSrc\src\main\java\com\example\jpa\controller\JpaUserController.java:        return ResponseEntity.ok(updated);
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Category.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Order.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\OrderItem.java:    public void updateQuantity(Integer newQuantity) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\Product.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\User.java:    public void updateLastLogin() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    @Column(name = "UPDATED_AT")
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    private LocalDateTime updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:        this.updatedAt = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    public LocalDateTime getUpdatedAt() {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:        return updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:    public void setUpdatedAt(LocalDateTime updatedAt) {
+projects\SampleSrc\src\main\java\com\example\jpa\entity\UserProfile.java:        this.updatedAt = updatedAt;
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * UPDATE with EXISTS subquery
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Update user status based on order history
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "UPDATE users u " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "SET u.status = 'INACTIVE', u.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void updateUserStatusWithExists(@Param("cutoffDate") Date cutoffDate);
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Complex UPDATE with multiple JOIN conditions
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Update product prices based on category and brand analysis
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query(value = "UPDATE products p " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:                  "SET p.price = p.price * 1.1, p.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void updateProductPricesWithJoin();
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * JPQL UPDATE with JOIN condition
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:     * Update user status using JPQL
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    @Query("UPDATE User u SET u.status = 'INACTIVE' " +
+projects\SampleSrc\src\main\java\com\example\jpa\JoinQueryRepository.java:    void updateUserStatusWithJpql(@Param("cutoffDate") Date cutoffDate);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java: * JPA 조인 조건이 포함된 INSERT, UPDATE, DELETE 쿼리 샘플
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * UPDATE with JOIN condition - 고객과 주문 아이템 조인하여 주문 상태 업데이트
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        UPDATE ORDERS o
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            o.UPDATED_AT = CURRENT_TIMESTAMP
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int updateOrderStatusWithCustomer(@Param("customerName") String customerName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * UPDATE with JOIN condition - 부서와 조인하여 사용자 정보 업데이트
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        UPDATE USERS u
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            u.UPDATED_AT = CURRENT_TIMESTAMP
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int updateUserWithDepartment(@Param("departmentName") String departmentName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:     * UPDATE with JOIN condition - 사용자 프로필과 조인하여 사용자 정보 업데이트
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:        UPDATE USERS u
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:            u.UPDATED_AT = CURRENT_TIMESTAMP
+projects\SampleSrc\src\main\java\com\example\jpa\repository\JoinConditionRepository.java:    int updateUserWithProfile(@Param("firstName") String firstName,
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    UPDATE SET " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "        us.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    UPDATE SET " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "        pi.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    UPDATE SET " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "        os.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    UPDATE SET " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "        ual.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    UPDATE SET " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "        cs.updated_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\MergeQueryRepository.java:                  "    INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date) " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("UPDATE Order o SET o.orderStatus = :newStatus WHERE o.orderStatus = :oldStatus AND o.orderDate < :beforeDate")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    int updateOrderStatusByDateAndStatus(@Param("newStatus") OrderStatus newStatus, 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("UPDATE Order o SET o.orderStatus = 'CANCELLED' WHERE o.orderId = :orderId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    @Query("UPDATE Order o SET o.shippingAddress = :address WHERE o.orderId = :orderId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\OrderRepository.java:    int updateShippingAddress(@Param("orderId") Long orderId, @Param("address") String address);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity + :quantity WHERE p.productId = :productId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :quantity " +
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("UPDATE Product p SET p.status = :newStatus WHERE p.status = :oldStatus")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    int updateProductStatus(@Param("newStatus") ProductStatus newStatus, 
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    @Query("UPDATE Product p SET p.status = 'OUT_OF_STOCK' WHERE p.stockQuantity = 0")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\ProductRepository.java:    int updateOutOfStockProducts();
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("UPDATE User u SET u.lastLoginAt = :loginTime WHERE u.userId = :userId")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    int updateLastLoginTime(@Param("userId") Long userId, @Param("loginTime") LocalDateTime loginTime);
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    @Query("UPDATE User u SET u.status = :newStatus WHERE u.status = :oldStatus AND u.createdAt < :beforeDate")
+projects\SampleSrc\src\main\java\com\example\jpa\repository\UserRepository.java:    int updateUserStatusByDateAndStatus(@Param("newStatus") UserStatus newStatus, 
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:    public Order updateOrder(Order order) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:    public int updateOrderStatusByDateAndStatus(OrderStatus newStatus, OrderStatus oldStatus, LocalDateTime beforeDate) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:        return orderRepository.updateOrderStatusByDateAndStatus(newStatus, oldStatus, beforeDate);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:    public int updateShippingAddress(Long orderId, String address) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:        return orderRepository.updateShippingAddress(orderId, address);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaOrderService.java:    public void updateOrderTotal(Long orderId, BigDecimal newTotal) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public Product updateProduct(Product product) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public int updateOutOfStockProducts() {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:        return productRepository.updateOutOfStockProducts();
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public int updateProductStatus(ProductStatus newStatus, ProductStatus oldStatus) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:        return productRepository.updateProductStatus(newStatus, oldStatus);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public void updateProductStock(Long productId, Integer newStock) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaProductService.java:    public void updateProductPrice(Long productId, BigDecimal newPrice) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public User updateUser(User user) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public int updateLastLoginTime(Long userId) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:        return userRepository.updateLastLoginTime(userId, LocalDateTime.now());
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public int updateUserStatusByDateAndStatus(UserStatus newStatus, UserStatus oldStatus, LocalDateTime beforeDate) {
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:        return userRepository.updateUserStatusByDateAndStatus(newStatus, oldStatus, beforeDate);
+projects\SampleSrc\src\main\java\com\example\jpa\service\JpaUserService.java:    public boolean isUsernameAvailableForUpdate(String username, Long userId) {
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:import org.apache.ibatis.annotations.Update;
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    @Update("UPDATE products SET name = #{name}, price = #{price}, description = #{description} WHERE id = #{id}")
+projects\SampleSrc\src\main\java\com\example\mapper\BrokenMapper.java:    int update(Product product);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    int updateProductStock(@Param("productId") String productId, @Param("quantity") int quantity);
+projects\SampleSrc\src\main\java\com\example\mapper\ProductMapper.java:    int updateProductDynamic(Product product);
+projects\SampleSrc\src\main\java\com\example\mapper\UserMapper.java:    int updateUserDynamic(User user);
+projects\SampleSrc\src\main\java\com\example\model\Product.java:    private Date updatedDate;
+projects\SampleSrc\src\main\java\com\example\model\Product.java:    public Date getUpdatedDate() { return updatedDate; }
+projects\SampleSrc\src\main\java\com\example\model\Product.java:    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
+projects\SampleSrc\src\main\java\com\example\model\User.java:    private Date updatedDate;
+projects\SampleSrc\src\main\java\com\example\model\User.java:    public Date getUpdatedDate() { return updatedDate; }
+projects\SampleSrc\src\main\java\com\example\model\User.java:    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
+projects\SampleSrc\src\main\java\com\example\model\User.java:    public String getLastUpdateInfo() {
+projects\SampleSrc\src\main\java\com\example\model\User.java:        if (this.updatedDate == null) {
+projects\SampleSrc\src\main\java\com\example\model\User.java:        long diffInHours = (new java.util.Date().getTime() - this.updatedDate.getTime()) / (1000 * 60 * 60);
+projects\SampleSrc\src\main\java\com\example\modern\OrderEntityService.java:    public OrderEntity updateOrderStatus(Long orderId, String newStatus) {
+projects\SampleSrc\src\main\java\com\example\modern\OrderEntityService.java:        order.setUpdatedDate(LocalDateTime.now());
+projects\SampleSrc\src\main\java\com\example\modern\UserDto.java:class UpdateUserRequestDto {
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    @Column(name = "updated_date")
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    private LocalDateTime updatedDate;
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    @PreUpdate
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    protected void onUpdate() {
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:        updatedDate = LocalDateTime.now();
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    public LocalDateTime getUpdatedDate() { return updatedDate; }
+projects\SampleSrc\src\main\java\com\example\modern\UserEntity.java:    public void setUpdatedDate(LocalDateTime updatedDate) { this.updatedDate = updatedDate; }
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:    public UserEntity updateUserWithRelations(UserEntity userEntity, UpdateUserRequestDto request) {
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:        UserEntity updatedUser = saveUser(userEntity);
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:            updateUserDepartment(updatedUser.getId(), request.getDepartmentId());
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:            updateUserProfile(updatedUser.getId(), request.getProfileData());
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:        return updatedUser;
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:            userEntity.setUpdatedDate(LocalDateTime.now());
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:    private void updateUserDepartment(Long userId, Long departmentId) {
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:    private void updateUserProfile(Long userId, Map<String, Object> profileData) {
+projects\SampleSrc\src\main\java\com\example\modern\UserEntityService.java:        System.out.println("Profile updates: " + profileData);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            query.append(" WHERE updated_date >= ?");
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        String updateQuery = String.format(
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            "UPDATE real_time_events_%s SET processed = 'Y', processed_date = ? WHERE event_id IN (...)",
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        System.out.println("Marking events as processed: " + updateQuery);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:        updateStatistics(environment);
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:    private void updateStatistics(String environment) {
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("UPDATE user_statistics_%s SET total_orders = (SELECT COUNT(*) FROM orders_%s o WHERE o.user_id = user_statistics_%s.user_id)", environment, environment, environment),
+projects\SampleSrc\src\main\java\com\example\performance\LargeDataProcessor.java:            String.format("UPDATE product_statistics_%s SET total_sales = (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items_%s oi WHERE oi.product_id = product_statistics_%s.product_id)", environment, environment, environment)
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:            @Valid @RequestBody UpdateUserRequestDto request) {
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:            UserEntity userToUpdate = existingUser.get();
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:            updateUserFields(userToUpdate, request);
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:            UserEntity updatedUser = userEntityService.updateUserWithRelations(userToUpdate, request);
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:            UserResponseDto responseDto = convertToUserResponseDto(updatedUser);
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:    private void updateUserFields(UserEntity user, UpdateUserRequestDto request) {
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:        user.setUpdatedDate(LocalDateTime.now());
+projects\SampleSrc\src\main\java\com\example\performance\ModernRestController.java:class UpdateUserRequestDto {
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:    public void updateUser(User user) {
+projects\SampleSrc\src\main\java\com\example\service\LogicErrorService.java:            userMapper.update(user);
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:    public void updateUser(User user) {
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:        user.setUpdateDate(new Date());  // Date import 누락
+projects\SampleSrc\src\main\java\com\example\service\MixedErrorService.java:            userMapper.update(user);
+projects\SampleSrc\src\main\java\com\example\service\ProductService.java:    int updateProductStock(String productId, int quantity);
+projects\SampleSrc\src\main\java\com\example\service\ProductService.java:    int updateProductDynamic(Product product);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    public int updateProductStock(String productId, int quantity) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        logStockUpdate(productId, currentStock, newStock, quantity);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        int result = productMapper.updateProductStock(productId, quantity);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    public int updateProductDynamic(Product product) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        logProductUpdate(product);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        int result = productMapper.updateProductDynamic(product);
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        product.setUpdatedDate(new Date());
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    private void logStockUpdate(String productId, int currentStock, int newStock, int quantity) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        System.out.println("Stock updated: Product=" + productId + 
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:    private void logProductUpdate(Product product) {
+projects\SampleSrc\src\main\java\com\example\service\ProductServiceImpl.java:        System.out.println("Product updated: ID=" + product.getProductId() + 
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:    public int updateUser(Long userId, Map<String, Object> userData) {
+projects\SampleSrc\src\main\java\com\example\service\UserManagementService.java:        return userManagementDao.updateUser(userId, userData);
+projects\SampleSrc\src\main\java\com\example\service\UserService.java:                    user.setLastUpdateInfo(hoursSinceLogin + "시간 전 로그인");
+projects\SampleSrc\src\main\java\com\example\service\UserService.java:                    user.setLastUpdateInfo((hoursSinceLogin / 24) + "일 전 로그인");
+projects\SampleSrc\src\main\java\com\example\service\UserService.java:                user.setLastUpdateInfo("로그인 기록 없음");
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        updateLastAccessTime(user);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    public int updateUserDynamic(User user) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        logUserUpdate(user);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        int result = userMapper.updateUserDynamic(user);
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:            maskedUser.setUpdatedDate(user.getUpdatedDate());
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    private void updateLastAccessTime(User user) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        user.setUpdatedDate(new Date());
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:    private void logUserUpdate(User user) {
+projects\SampleSrc\src\main\java\com\example\service\UserServiceImpl.java:        System.out.println("User updated: ID=" + user.getId() + ", Time=" + new Date());
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                case "update":
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result = updateDataDirectly(request);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:                    result.put("availableActions", Arrays.asList("insert", "update", "delete", "batch"));
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:        // int rowsAffected = executeUpdate(query.toString(), parameters);
+projects\SampleSrc\src\main\java\com\example\servlet\DirectQueryServlet.java:    private Map<String, Object> updateDataDirectly(HttpServletRequest request) {
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:            case "update":
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:                String updateOrderId = request.getParameter("orderId");
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:                result.put("orderId", updateOrderId);
+projects\SampleSrc\src\main\java\com\example\servlet\OrderManagementServlet.java:                result.put("message", "사용 가능한 액션: update, status");
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:        } else if ("update".equals(action)) {
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:            updateProduct(request, out);
+projects\SampleSrc\src\main\java\com\example\servlet\ProductCatalogServlet.java:    private void updateProduct(HttpServletRequest request, PrintWriter out) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:                    "UPDATE SET us.total_orders = o.order_count, us.last_updated = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:                    "INSERT (user_id, total_orders, last_updated) " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestComplexJavaPatternDao.java:        String notSQL2 = "Log message: UPDATE operation completed successfully";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 5: UPDATE + 연산자 패턴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testUpdateConcatenation(String userId, Map<String, Object> updates) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "UPDATE users SET ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        for (String key : updates.keySet()) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:            sql = sql + key + " = '" + updates.get(key) + "'";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Update Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:     * 테스트 5: UPDATE + 연산자 패턴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:    public int testUpdateConcatenation(String userId, Map<String, Object> updateFields) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String sql = "UPDATE users ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        if (updateFields.containsKey("email")) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:            sql = sql + ", email = '" + updateFields.get("email") + "' ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        if (updateFields.containsKey("status")) {
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:            sql = sql + ", status = '" + updateFields.get("status") + "' ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        System.out.println("Update Concat SQL: " + sql);
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "UPDATE SET us.total_orders = o.order_count, us.last_updated = SYSDATE ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        sql = sql + "INSERT (user_id, total_orders, last_updated) ";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        // UPDATE 문자열 리터럴
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String updateSQL = "UPDATE users SET last_login_date = SYSDATE " +
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:                         "WHEN MATCHED THEN UPDATE SET last_updated = SYSDATE";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String notSQL3 = "Configuration: UPDATE_INTERVAL = 5000";
+projects\SampleSrc\src\main\java\com\example\testcase\TestEnhancedSqlDao.java:        String falsePositive2 = "Please UPDATE your profile information";
+projects\SampleSrc\src\main\resources\META-INF\persistence.xml:            <property name="hibernate.order_updates" value="true"/>
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            UPDATE SET 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:                us.updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, total_orders, total_amount, last_order_date, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            UPDATE SET 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:                pi.updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (product_id, product_name, current_stock, current_price, category_name, brand_name, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            UPDATE SET 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:                os.updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, order_date, daily_orders, daily_amount, avg_order_amount, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            UPDATE SET 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:                ual.updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (user_id, username, email, last_login_date, recent_orders, recent_spending, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            UPDATE SET 
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:                cs.updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\MergeQueryMapper.xml:            INSERT (category_id, category_name, product_count, avg_price, total_stock, active_products, created_date, updated_date)
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <update id="updateProductStock">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        UPDATE products 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:            updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <update id="updateProductDynamic" parameterType="com.example.model.Product">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        UPDATE products 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:            updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    <update id="deleteProduct" parameterType="string">
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        UPDATE products 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:            updated_date = SYSDATE 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </select>UPDATE products
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:            updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:                updated_date,
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        UPDATE products 
+projects\SampleSrc\src\main\resources\mybatis\mapper\ProductMapper.xml:        SET del_yn = 'Y', updated_date = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    <update id="updateUserStatus" parameterType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        UPDATE users 
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:        SET status = #{newStatus}, updated_at = SYSDATE
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserManagementMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        <result property="updatedDate" column="updated_date"/>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            u.updated_date,
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            u.updated_date,
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            u.updated_date,
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            u.updated_date,
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <update id="updateUser" parameterType="map">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        UPDATE users SET
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            updated_date = #{updatedDate}
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <update id="deleteUser" parameterType="string">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        UPDATE users SET
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            updated_date = NOW()
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </update>
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    <update id="updateLastLogin" parameterType="string">
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:        UPDATE users SET
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:            updated_date = NOW()
+projects\SampleSrc\src\main\resources\mybatis\mapper\UserMapper.xml:    </update>
