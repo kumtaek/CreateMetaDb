@@ -102,9 +102,9 @@ class SimpleJavaLoader:
             parent_class_id = class_id_map.get(method['class'])
             method_comp = {
                 'project_id': project_id, 'file_id': file_id,
-                'component_name': f"{method['class']}.{method['name']}",
+                'component_name': method['name'],  # 메소드명만 저장
                 'component_type': 'METHOD', 'parent_id': parent_class_id,
-                'hash_value': HashUtils().generate_content_hash(f"{method['class']}.{method['name']}")
+                'hash_value': HashUtils().generate_content_hash(method['name'])
             }
             if self._upsert_component(method_comp):
                 self.stats['methods_extracted'] += 1

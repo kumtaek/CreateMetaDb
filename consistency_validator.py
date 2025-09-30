@@ -495,6 +495,58 @@ class ConsistencyValidator:
             warning(f"같은 파일에서 중복된 SQL 쿼리: {len(sql_file_duplicates)}개 (파일 내 실제 중복)")
             for dup in sql_file_duplicates[:3]:
                 warning(f"  - {dup['component_name']} ({dup['component_type']}) in {dup['file_name']}: {dup['count']}개")
+        
+        # 6. 불필요한 getter/setter 메소드 정리
+        self._cleanup_unnecessary_getter_setter_methods()
+    
+    def _cleanup_unnecessary_getter_setter_methods(self):
+        """불필요한 getter/setter 메소드 정리 (relationships에 연결고리가 없는 것들)"""
+        
+        # getter/setter 메소드 중 relationships에 src_id, dst_id 둘 다 연결고리가 없는 것들 조회
+        unnecessary_methods = self.db_utils.execute_query("""
+            SELECT 
+                c.component_id,
+                c.component_name,
+                c.component_type,
+                f.file_name,
+                f.file_path
+            FROM components c
+            JOIN files f ON c.file_id = f.file_id
+            WHERE c.component_type = 'METHOD' 
+              AND c.del_yn = 'N'
+              AND f.del_yn = 'N'
+              AND f.project_id = ?
+              AND (c.component_name LIKE 'get%' OR c.component_name LIKE 'set%')
+              AND NOT EXISTS (
+                  SELECT 1 FROM relationships r 
+                  WHERE (r.src_id = c.component_id OR r.dst_id = c.component_id) 
+                    AND r.del_yn = 'N'
+              )
+            ORDER BY c.component_name
+        """, (self.project_id,))
+        
+        if unnecessary_methods:
+            info(f"불필요한 getter/setter 메소드 발견: {len(unnecessary_methods)}개")
+            
+            # 각 메소드를 del_yn='Y'로 업데이트
+            cleanup_count = 0
+            for method in unnecessary_methods:
+                try:
+                    # components 테이블에서 del_yn='Y'로 업데이트
+                    self.db_utils.execute_query("""
+                        UPDATE components 
+                        SET del_yn = 'Y', updated_at = CURRENT_TIMESTAMP
+                        WHERE component_id = ?
+                    """, (method['component_id'],))
+                    
+                    cleanup_count += 1
+                    
+                except Exception as e:
+                    warning(f"  정리 실패: {method['component_name']} - {e}")
+            
+            info(f"불필요한 getter/setter 메소드 정리 완료: {cleanup_count}개 처리됨")
+        else:
+            info("불필요한 getter/setter 메소드 없음")
 
 
 def validate_files_table(project_id: int, db_utils: DatabaseUtils, conn: sqlite3.Connection) -> dict:
@@ -614,6 +666,15 @@ def execute_consistency_validation(project_name: str, conn: sqlite3.Connection) 
 
         # 5. columns 테이블 검증
         validation_results.append(validate_columns_table(project_id, db_utils, conn))
+
+        # 6. 불필요한 getter/setter 메소드 정리
+        try:
+            validator = ConsistencyValidator(project_name)
+            validator._cleanup_unnecessary_getter_setter_methods()
+            validator.close()
+            info("불필요한 getter/setter 메소드 정리 완료")
+        except Exception as e:
+            warning(f"getter/setter 메소드 정리 중 오류: {e}")
 
         # 모든 검증 결과 취합
         all_passed = all(result['passed'] for result in validation_results)
