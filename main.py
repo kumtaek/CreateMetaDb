@@ -147,12 +147,25 @@ def main():
 
         # 4단계 실행: Java 소스코드 분석
         info("\n--- 4단계: Java 분석 ---")
-        from java_loading import load_java_files_simple
-        success, java_stats = load_java_files_simple(project_name, project_id, conn)
+        from java_loading import JavaLoader
+        java_loader = JavaLoader(project_name, conn)
+        success = java_loader.execute_java_loading(project_id)
         if not success:
             raise Exception("4단계 Java 분석 실패")
         info("4단계 완료")
-        info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 관계 {java_stats.get('relationships_created', 0)}개")
+        java_stats = java_loader.get_statistics()
+        info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 클래스 {java_stats.get('classes_extracted', 0)}개, 메서드 {java_stats.get('methods_extracted', 0)}개")
+
+        # 4.5단계 실행: 통합 쿼리 분석
+        info("\n--- 4.5단계: 통합 쿼리 분석 ---")
+        from parser.integrated_query_analyzer import IntegratedQueryAnalyzer
+        query_analyzer = IntegratedQueryAnalyzer(project_name, conn)
+        result = query_analyzer.analyze_all_queries()
+        if not result['success']:
+            raise Exception("4.5단계 통합 쿼리 분석 실패")
+        info("4.5단계 완료")
+        query_stats = query_analyzer.get_statistics()
+        info(f"  => 성공: Java 파일 {query_stats.get('java_files_processed', 0)}개, XML 파일 {query_stats.get('xml_files_processed', 0)}개, 쿼리 {query_stats.get('queries_extracted', 0)}개")
 
         # 5단계 실행: Spring API 진입점 분석
         info("\n--- 5단계: API 진입점 분석 ---")
