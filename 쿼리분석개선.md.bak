@@ -14,33 +14,41 @@ method components.parent_id = class_id로 클래스와 연결되지.
 쿼리분석기는 크게 3단계로 실행되고 아래와 같이 개발했어.
 위에 설계문서보다는 아래 내용이 우선이야.  개발이 잘 되었는지 main.py --project-name SampleSrc로 테스트를 진행해줘. 
 
-# 1단계 - 쿼리 추출 및 쿼리 저장(SqlContent.db)
+# 쿼리 추출 및 쿼리 저장(SqlContent.db)
 JAVA, XML(MyBatis), JPA 세가지 파일 분석해서 쿼리만 추출해냄.
+
+- XML
+tag를 제거하고 남은 쿼리에 대해서
+file_id와 query_id, 쿼리변수(쿼리만 추출된)를 다음 단계로 넘긴다.
+참고로 MERGE문은 insert, update tag가 가능하다.
 
 - JAVA
 쿼리가 아닌 java문법을 제거함.  각 문자형 변수에 +, +=, StringBuferr.append 등으로
 변수에 concaternation 누적 문자열을 추출함.  딕셔너리변수에 각 문자열변수별로 저장해 놓음.
 문자열변수에서 또는 문자열상수 일수도 있음.  문자열 상수도 임의 변수명으로 저장해 놓음.
 각 문자열에 시작에 공백, 탭, 주석 등을 제거하고 SELECT, INSERT, UPDATE, DELETE, MERGE로
-시작하는지 체크하여 쿼리를 담고 있는 변수만 추출.(이하 쿼리변수라 하자)
-쿼리변수들을 SqlContent에 압축해서 저장.  하나의 메소드에 여러 쿼리가 저장될 수 있다.
-쿼리변수명으로 components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록.
-각 쿼리변수에 대해 공통화된 아래 2,3단계 처리를 한다.
-(상기 처리에서 SELECT, INSERT, UPDATE, DELETE, MERGE가 구분되므로 2,3단계에 필요하면
-쿼리종류도 넘긴닫)
-
-- XML
-tag를 제거하고 남은 쿼리에 대해서
-components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록하고
-공통화된 아래 2,3단계 처리를 한다.
-참고로 MERGE문은 insert, update tag가 가능하다.
+시작하는지 체크하여 쿼리를 담고 있는 변수만(이하 쿼리변수라 하자) 추출 후
+file_id와 query_id, 쿼리변수(쿼리만 추출된)를 다음 단계로 넘긴다.
 
 - JPA
 상기와 같은 방식으로 쿼리를 제외한 부분을 제거하여 쿼리추출 후
-components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록하고
-공통화된 아래 2,3단계 처리를 한다.
+file_id와 query_id, 쿼리변수(쿼리만 추출된)를 다음 단계로 넘긴다.
 
-# 2단계 - 테이블 추출
+※ java파일에는 하나의 메소드에 여러 쿼리가 도출될 수도 있다. {no}를 순번으로
+java 소스내 쿼리가 조합되다 보니 query_id(component_name)은 class명_method명_QRY_{no}
+형식으로 query_id를 만들어서 뒤 단계로 넘긴다.
+
+# [공통부] 1단계 - 쿼리저장 및 components 등록
+상기 개별부에서 넘겨 받은 file_id와 query_id(component_name), 쿼리변수(쿼리만 추출된)를 이용해
+components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록한다.
+쿼리변수들을 SqlContent에 압축해서 저장.  하나의 메소드에 여러 쿼리가 저장될 수 있다.
+쿼리변수명(component_id)으로 components와 sqlcontent(압축해서 쿼리도 함께 저장)에 등록.
+각 쿼리변수에 대해 공통화된 아래 2,3단계 처리를 한다.
+상기 처리에서 SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_MERGE가 구분되므로 
+2,3단계에 필요하면 쿼리종류도 넘긴다.
+
+
+# [공통부] 2단계 - 테이블 추출
 먼저 1단계로부터 넘겨받은 쿼리에서 주석을 제거한 후 2,3단계를 처리한다.
 테이블 추출.  정밀하고 복잡한 파서가 목표가 아니다.  쿼리에서 테이블이 도출되는 부분에만 집중한다.
 FROM절 뒤.  INSERT INTO 뒤.  UPDATE-SET 사이, DELETE FROM 뒤. MERGE INTO 뒤. JOIN-ON 사이
@@ -80,7 +88,7 @@ INFERRED테이블의 table_owner는 'UNKNOWN'으로 한다.
   JOIN <tables> ON
   USING <tables> ON
 
-# 3단계 - 조인관계 추출
+# [공통부] 3단계 - 조인관계 추출
 조인조건 필드들을 추출해서 relationships 테이블에 조인관계를 저장한다.
 1:N 관계에서 columns를 참조하여 PK쪽을 1쪽으로 해서 1쪽 컬럼의 compoennt_id를 src_id에 저장.
 반대편 N쪽 컬럼을 dst_id에 저장한다.  방향을 인지할 수 없는 관계는 중복제거를 위해 작은 component_id를

@@ -6,139 +6,53 @@ RelationshipBuilder - Parser-Builder 패턴 구현
 """
 
 from typing import List, Dict, Any, Set, Optional
+import sqlite3
 from util import (
     DatabaseUtils, PathUtils, app_logger, info, error, debug, warning, handle_error
 )
 from util.oracle_keyword_manager import get_oracle_keyword_manager
 from util.simple_relationship_analyzer import SimpleRelationshipAnalyzer
-# JavaQueryAnalyzer는 삭제됨 (중복 기능)
 from util.frontend_api_analyzer import FrontendApiAnalyzer
 
 
 class RelationshipBuilder:
     """연관관계 빌더 - 모든 파서 결과를 종합하여 최종 관계 설정"""
 
-    def __init__(self, project_name: str, project_id: int):
+    def __init__(self, project_name: str, project_id: int, conn: sqlite3.Connection):
         """
         RelationshipBuilder 초기화
 
         Args:
             project_name: 프로젝트명
             project_id: 프로젝트 ID
+            conn: 외부에서 주입된 데이터베이스 연결 객체
         """
         self.project_name = project_name
         self.project_id = project_id
+        self.conn = conn
 
-        # 공통 유틸리티 초기화
         self.path_utils = PathUtils()
-        self.db_path = self.path_utils.get_metadata_db_path(project_name)
-        self.db_utils = DatabaseUtils(self.db_path)
-        self.sql_analyzer = SimpleRelationshipAnalyzer()
-        # JavaQueryAnalyzer는 삭제됨 (중복 기능)
-        # self.java_analyzer = JavaQueryAnalyzer()
-        self.frontend_analyzer = FrontendApiAnalyzer()
+        self.db_utils = DatabaseUtils(None)  # 연결은 외부에서 주입받으므로 경로는 None
+        self.sql_analyzer = SimpleRelationshipAnalyzer() # 이 클래스도 conn을 받도록 수정 필요
+        self.frontend_analyzer = FrontendApiAnalyzer() # 이 클래스도 conn을 받도록 수정 필요
 
-        # Oracle 키워드 매니저 초기화 (싱글톤)
         self.oracle_keyword_manager = get_oracle_keyword_manager()
-
-        # 수집된 단서들
-        self.collected_data = {
-            'xml_queries': [],        # XML에서 추출한 쿼리 정보
-            'java_methods': [],       # Java에서 추출한 메서드 정보
-            'jpa_entities': [],       # JPA Entity 정보
-            'api_calls': [],          # 프론트엔드 API 호출
-            'api_implementations': [], # Controller API 구현
-            'frontend_files': [],     # 프론트엔드 파일 정보
-            'controller_apis': []     # Spring Controller API 정보
-        }
-
-        # 통계
-        self.stats = {
-            'method_query_relationships': 0,
-            'query_table_relationships': 0,
-            'table_join_relationships': 0,
-            'entity_table_relationships': 0,
-            'frontend_api_relationships': 0,
-            'api_method_relationships': 0,
-            'total_relationships': 0
-        }
-
-    def add_xml_analysis_result(self, xml_result: Dict[str, Any]) -> None:
-        """XML 분석 결과 추가"""
-        try:
-            if not xml_result or xml_result.get('has_error') == 'Y':
-                debug(f"XML 분석 결과 스킵 (에러): {xml_result.get('file_path', 'unknown')}")
-                return
-
-            sql_queries = xml_result.get('sql_queries', [])
-            for query in sql_queries:
-                self.collected_data['xml_queries'].append({
-                    'file_path': xml_result.get('file_path'),
-                    'query_id': query.get('query_id'),
-                    'sql_content': query.get('sql_content'),
-                    'query_type': query.get('query_type'),
-                    'namespace': self._extract_namespace_from_xml(xml_result.get('file_path', ''))
-                })
-
-            info(f"XML 분석 결과 추가: {len(sql_queries)}개 쿼리")
-
-        except Exception as e:
-            handle_error(e, f"XML 분석 결과 추가 실패: {xml_result}")
-
-    def add_java_analysis_result(self, java_result: Dict[str, Any]) -> None:
-        """Java 분석 결과 추가"""
-        try:
-            if not java_result or java_result.get('error'):
-                debug(f"Java 분석 결과 스킵 (에러): {java_result.get('file_path', 'unknown')}")
-                return
-
-            file_type = java_result.get('file_type')
-
-            if file_type == 'MYBATIS_MAPPER':
-                self._add_mybatis_mapper_result(java_result)
-            elif file_type == 'JPA_REPOSITORY':
-                self._add_jpa_repository_result(java_result)
-            elif file_type == 'JPA_ENTITY':
-                self._add_jpa_entity_result(java_result)
-
-            info(f"Java 분석 결과 추가: {file_type}, {java_result.get('file_path')}")
-
-        except Exception as e:
-            handle_error(e, f"Java 분석 결과 추가 실패: {java_result}")
+        self.collected_data = {k: [] for k in ['xml_queries', 'java_methods', 'jpa_entities', 'api_calls', 'api_implementations', 'frontend_files', 'controller_apis']}
+        self.stats = {k: 0 for k in ['method_query_relationships', 'query_table_relationships', 'table_join_relationships', 'entity_table_relationships', 'frontend_api_relationships', 'api_method_relationships', 'total_relationships']}
 
     def build_all_relationships(self) -> Dict[str, int]:
-        """모든 연관관계 구축"""
+        """모든 연관관계 구축 (외부 트랜잭션 내에서 실행)"""
         try:
             info("연관관계 구축 시작")
 
-            # 1. MyBatis METHOD → QUERY 관계
             self._build_mybatis_method_query_relationships()
-
-            # 2. JPA METHOD → ENTITY/TABLE 관계
             self._build_jpa_method_entity_relationships()
-
-            # 3. QUERY → TABLE 관계
             self._build_query_table_relationships()
-
-            # 4. TABLE JOIN 관계
             self._build_table_join_relationships()
-
-            # 5. JPA ENTITY → TABLE 관계
             self._build_entity_table_relationships()
-
-            # 6. 프론트엔드 → API → METHOD 관계
             self._build_frontend_api_relationships()
 
-            # 통계 계산
-            self.stats['total_relationships'] = sum([
-                self.stats['method_query_relationships'],
-                self.stats['query_table_relationships'],
-                self.stats['table_join_relationships'],
-                self.stats['entity_table_relationships'],
-                self.stats['frontend_api_relationships'],
-                self.stats['api_method_relationships']
-            ])
-
+            self.stats['total_relationships'] = sum(self.stats.values())
             info(f"연관관계 구축 완료: 총 {self.stats['total_relationships']}개 관계 생성")
             return self.stats
 
@@ -285,8 +199,7 @@ class RelationshipBuilder:
                     debug(f"QUERY 컴포넌트를 찾을 수 없음: {query_data['query_id']}")
                     continue
 
-                # 2. 이미 분석된 JOIN 관계에서 테이블 추출
-                # (sql_join_analyzer에서 이미 테이블 추출 및 인퍼드 등록 완료)
+                # 2. 테이블 추출
                 from parser.sql_parser import SqlParser
                 sql_parser = SqlParser()
                 tables = sql_parser.extract_table_names(sql_content)
@@ -307,19 +220,16 @@ class RelationshipBuilder:
                 if not query_sql or query_sql.startswith('--'):
                     continue
 
-                # METHOD 컴포넌트 찾기
                 method_full_name = f"{method_data['class_name']}.{method_data['method_name']}"
                 method_id = self._find_component_id(method_full_name, 'METHOD')
 
                 if not method_id:
                     continue
 
-                # SQL에서 테이블 추출 (동일한 SQL 파서 사용)
                 from parser.sql_parser import SqlParser
                 sql_parser = SqlParser()
                 tables = sql_parser.extract_table_names(query_sql)
 
-                # METHOD → TABLE 관계 생성 (JPA는 직접 연결)
                 for table_name in tables:
                     table_id = self._find_or_create_table_component(table_name)
                     if table_id:
@@ -343,17 +253,12 @@ class RelationshipBuilder:
                 if not sql_content:
                     continue
 
-                # 테이블 추출
                 tables = self.sql_analyzer.extract_tables_from_sql(sql_content)
-
-                # 조인 관계 추출
                 join_relationships = self.sql_analyzer.extract_join_relationships(sql_content, tables)
 
-                # TABLE → TABLE 조인 관계 생성
                 for join_rel in join_relationships:
                     source_table = join_rel.get('source_table')
                     target_table = join_rel.get('target_table')
-                    join_type = join_rel.get('join_type', 'UNKNOWN_JOIN')
 
                     if source_table and target_table:
                         source_id = self._find_or_create_table_component(source_table)
@@ -437,7 +342,7 @@ class RelationshipBuilder:
                 WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
                 LIMIT 1
             """
-            result = self.db_utils.execute_query(query, (self.project_id, component_name, component_type))
+            result = self.db_utils.execute_query(query, (self.project_id, component_name, component_type), conn=self.conn)
             return result[0]['component_id'] if result else None
 
         except Exception as e:
@@ -455,8 +360,7 @@ class RelationshipBuilder:
                 return component_id
 
             # 2. query_id만으로 찾기
-            component_id = self._find_component_id(query_id, 'QUERY')
-            return component_id
+            return self._find_component_id(query_id, 'QUERY')
 
         except Exception as e:
             handle_error(e, f"QUERY 컴포넌트 ID 찾기 실패: {query_id}")
@@ -615,21 +519,12 @@ class RelationshipBuilder:
                 debug(f"관계 저장 건너뜀 - ID 없음: src={src_id}, dst={dst_id}")
                 return
 
-            relationship_data = {
-                'src_id': src_id,
-                'dst_id': dst_id,
-                'rel_type': rel_type,
-                'confidence': 1.0,
-                'has_error': 'N',
-                'del_yn': 'N'
-            }
-
             # INSERT OR IGNORE로 중복 방지
             sql = """
                 INSERT OR IGNORE INTO relationships (src_id, dst_id, rel_type, confidence, has_error, del_yn)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, 1.0, 'N', 'N')
             """
-            self.db_utils.execute_update(sql, (src_id, dst_id, rel_type, 1.0, 'N', 'N'))
+            self.db_utils.execute_update(sql, (src_id, dst_id, rel_type), conn=self.conn)
 
         except Exception as e:
             handle_error(e, f"관계 저장 실패: {src_id} → {dst_id} ({rel_type})")
@@ -715,8 +610,8 @@ class RelationshipBuilder:
         except Exception as e:
             handle_error(e, f"Controller 분석 결과 추가 실패: {controller_result}")
 
-    def _build_frontend_api_relationships(self) -> None:
-        """프론트엔드 → API → METHOD 관계 구축"""
+    def _build_frontend_api_relationships(self, conn=None) -> None:
+        """프론트엔드 → API → METHOD 관계 구축 (단일 연결 지원)"""
         try:
             frontend_api_count = 0
             api_method_count = 0

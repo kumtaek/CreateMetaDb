@@ -92,17 +92,21 @@ class DatabaseUtils:
             self.connection = sqlite3.connect(
                 self.db_path,
                 check_same_thread=False,
-                timeout=30.0
+                timeout=60.0
             )
             
             # 외래키 제약조건 활성화
             self.connection.execute("PRAGMA foreign_keys = ON")
             
-            # 성능 최적화 설정
-            self.connection.execute("PRAGMA journal_mode = WAL")
+            # 성능 최적화 설정 (Auto Commit 모드 설정 전에 실행)
+            self.connection.execute("PRAGMA journal_mode = WAL")  # WAL 모드로 변경하여 락 문제 해결
             self.connection.execute("PRAGMA synchronous = NORMAL")
             self.connection.execute("PRAGMA cache_size = 10000")
             self.connection.execute("PRAGMA temp_store = MEMORY")
+            self.connection.execute("PRAGMA busy_timeout = 30000")
+            
+            # Auto commit 모드 활성화 (PRAGMA 설정 후)
+            self.connection.isolation_level = None
             
             app_logger.debug(f"데이터베이스 연결 성공: {self.db_path}")
             return True
@@ -127,7 +131,7 @@ class DatabaseUtils:
     @contextmanager
     def get_connection(self):
         """
-        데이터베이스 연결 컨텍스트 매니저
+        데이터베이스 연결 컨텍스트 매니저 (Auto Commit 모드)
         
         Yields:
             sqlite3.Connection: 데이터베이스 연결 객체
@@ -146,35 +150,51 @@ class DatabaseUtils:
             # 연결은 클래스 레벨에서 관리하므로 여기서는 닫지 않음
             pass
     
-    def execute_query(self, query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
+    def get_persistent_connection(self):
         """
-        SELECT 쿼리 실행
+        지속적인 단일 연결 반환 (Auto Commit 모드)
+        
+        Returns:
+            sqlite3.Connection: 데이터베이스 연결 객체
+        """
+        if not self.connection:
+            if not self.connect():
+                raise Exception("데이터베이스 연결 실패")
+        return self.connection
+    
+    def execute_query(self, query: str, params: Optional[tuple] = None, conn: sqlite3.Connection = None) -> List[Dict[str, Any]]:
+        """
+        SELECT 쿼리 실행 (단일 연결 지원)
         
         Args:
             query: 실행할 SQL 쿼리
             params: 쿼리 파라미터
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             쿼리 결과 리스트
         """
         try:
-            with self.get_connection() as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                app_logger.debug(f"execute_query 시작: {query[:100]}...")
-                if params:
-                    app_logger.debug(f"execute_query 파라미터: {params}")
-                    cursor.execute(query, params)
-                else:
-                    cursor.execute(query)
-                
-                results = []
-                for row in cursor.fetchall():
-                    results.append(dict(row))
-                
-                app_logger.debug(f"execute_query 성공: {len(results)}개 결과")
-                return results
+            if conn is None:
+                with self.get_connection() as connection:
+                    return self.execute_query(query, params, connection)
+            
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            app_logger.debug(f"execute_query 시작: {query[:100]}...")
+            if params:
+                app_logger.debug(f"execute_query 파라미터: {params}")
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append(dict(row))
+            
+            app_logger.debug(f"execute_query 성공: {len(results)}개 결과")
+            return results
                 
         except Exception as e:
             # 에러 발생 시에만 쿼리 로그를 error 레벨로 출력
@@ -188,31 +208,38 @@ class DatabaseUtils:
             app_logger.error(f"=== 상세 로그 출력 완료, Exception 재발생 ===")
             raise e
     
-    def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
+    def execute_update(self, query: str, params: Optional[tuple] = None, conn: sqlite3.Connection = None, auto_commit: bool = True) -> int:
         """
-        INSERT, UPDATE, DELETE 쿼리 실행
+        INSERT, UPDATE, DELETE 쿼리 실행 (단일 연결 지원)
         
         Args:
             query: 실행할 SQL 쿼리
             params: 쿼리 파라미터
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
+            auto_commit: 자동 커밋 여부 (트랜잭션 범위에서는 False)
             
         Returns:
             영향받은 행 수
         """
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                
-                if params:
-                    cursor.execute(query, params)
-                else:
-                    cursor.execute(query)
-                
+            if conn is None:
+                with self.get_connection() as connection:
+                    return self.execute_update(query, params, connection, auto_commit)
+            
+            cursor = conn.cursor()
+            
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            
+            if auto_commit:
                 conn.commit()
-                affected_rows = cursor.rowcount
-                
-                app_logger.debug(f"업데이트 쿼리 실행 성공: 영향받은 행: {affected_rows}")
-                return affected_rows
+            
+            affected_rows = cursor.rowcount
+            
+            app_logger.debug(f"업데이트 쿼리 실행 성공: 영향받은 행: {affected_rows}")
+            return affected_rows
                 
         except Exception as e:
             # 에러 발생 시에만 쿼리 로그를 error 레벨로 출력
@@ -451,7 +478,7 @@ class DatabaseUtils:
                             # 다른 에러는 그대로 발생시킴
                             raise stmt_error
                 
-                conn.commit()
+                # Auto commit 모드에서는 commit이 불필요
                 app_logger.debug(f"SQL 스크립트 실행 성공: {script_path}")
                 return True
                 
@@ -515,14 +542,15 @@ class DatabaseUtils:
         results = self.execute_query(query)
         return results[0]['count'] if results else 0
     
-    def upsert(self, table_name: str, data: Dict[str, Any], unique_columns: List[str]) -> bool:
+    def upsert(self, table_name: str, data: Dict[str, Any], unique_columns: List[str], conn: sqlite3.Connection = None) -> bool:
         """
-        UPSERT 실행 (기존 레코드가 있으면 UPDATE, 없으면 INSERT)
+        UPSERT 실행 (기존 레코드가 있으면 UPDATE, 없으면 INSERT, 단일 연결 지원)
         
         Args:
             table_name: 테이블명
             data: 삽입/업데이트할 데이터 딕셔너리
             unique_columns: 유니크 키 컬럼 리스트 (중복 확인용)
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             성공 여부 (True/False)
@@ -541,34 +569,35 @@ class DatabaseUtils:
                 WHERE {' AND '.join(where_clauses)}
                 """
                 
-                results = self.execute_query(check_query, where_values)
+                results = self.execute_query(check_query, where_values, conn)
                 existing_count = results[0]['count'] if results else 0
                 
                 if existing_count > 0:
                     # 기존 레코드가 있으면 UPDATE
                     update_data = {k: v for k, v in data.items() if k not in unique_columns}
                     if update_data:
-                        return self.update_record(table_name, update_data, where_conditions)
+                        return self.update_record(table_name, update_data, where_conditions, conn)
                     else:
                         return True  # 업데이트할 데이터가 없으면 성공으로 처리
                 else:
                     # 기존 레코드가 없으면 INSERT
-                    return self.insert_record(table_name, data)
+                    return self.insert_record(table_name, data, conn)
             else:
                 # 유니크 키가 없으면 그냥 INSERT
-                return self.insert_record(table_name, data)
+                return self.insert_record(table_name, data, conn)
                 
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"UPSERT 실패: {table_name}")
     
-    def insert_record(self, table_name: str, data: Dict[str, Any]) -> bool:
+    def insert_record(self, table_name: str, data: Dict[str, Any], conn: sqlite3.Connection = None) -> bool:
         """
-        단순 INSERT 실행
+        단순 INSERT 실행 (단일 연결 지원)
         
         Args:
             table_name: 테이블명
             data: 삽입할 데이터 딕셔너리
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             성공 여부 (True/False)
@@ -583,7 +612,7 @@ class DatabaseUtils:
             VALUES ({placeholders})
             """
             
-            affected_rows = self.execute_update(query, values)
+            affected_rows = self.execute_update(query, values, conn)
             return affected_rows > 0
             
         except Exception as e:
@@ -624,6 +653,8 @@ class DatabaseUtils:
                 unique_columns = ['table_id', 'column_name']
             elif table_name == 'relationships':
                 unique_columns = ['src_id', 'dst_id', 'rel_type']
+            elif table_name == 'sql_contents':
+                unique_columns = ['component_name', 'file_id', 'project_id']
             else:
                 unique_columns = ['project_id']  # 기본값
             
@@ -633,13 +664,14 @@ class DatabaseUtils:
         except Exception as e:
             handle_error(e, f"UPSERT 실패: {table_name}")
     
-    def batch_insert_or_replace(self, table_name: str, data_list: List[Dict[str, Any]]) -> int:
+    def batch_insert_or_replace(self, table_name: str, data_list: List[Dict[str, Any]], conn: sqlite3.Connection = None) -> int:
         """
-        배치 UPSERT 실행 (데이터베이스 호환성)
+        배치 UPSERT 실행 (데이터베이스 호환성, 단일 연결 지원)
         
         Args:
             table_name: 테이블명
             data_list: 삽입할 데이터 리스트
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             처리된 행 수
@@ -674,7 +706,7 @@ class DatabaseUtils:
             
             processed_count = 0
             for data in data_list:
-                result = self.upsert(table_name, data, unique_columns)
+                result = self.upsert(table_name, data, unique_columns, conn)
                 if result:
                     processed_count += 1
             
@@ -684,14 +716,15 @@ class DatabaseUtils:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"배치 UPSERT 실패: {table_name}")
     
-    def update_record(self, table_name: str, update_data: Dict[str, Any], where_conditions: Dict[str, Any]) -> bool:
+    def update_record(self, table_name: str, update_data: Dict[str, Any], where_conditions: Dict[str, Any], conn: sqlite3.Connection = None) -> bool:
         """
-        레코드 업데이트
+        레코드 업데이트 (단일 연결 지원)
         
         Args:
             table_name: 테이블명
             update_data: 업데이트할 데이터 딕셔너리
             where_conditions: WHERE 조건 딕셔너리
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             성공 여부 (True/False)
@@ -721,7 +754,7 @@ class DatabaseUtils:
             WHERE {' AND '.join(where_clauses)}
             """
             
-            affected_rows = self.execute_update(query, tuple(values))
+            affected_rows = self.execute_update(query, tuple(values), conn)
             return affected_rows > 0
             
         except Exception as e:
@@ -744,13 +777,14 @@ class DatabaseUtils:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"마지막 삽입 ID 조회 실패")
     
-    def insert_or_replace_with_id(self, table_name: str, data: Dict[str, Any]) -> int:
+    def insert_or_replace_with_id(self, table_name: str, data: Dict[str, Any], conn: sqlite3.Connection = None) -> int:
         """
-        Upsert 실행 후 삽입된 ID 반환 (직접 구현)
+        Upsert 실행 후 삽입된 ID 반환 (직접 구현, 단일 연결 지원)
         
         Args:
             table_name: 테이블명
             data: 삽입할 데이터 딕셔너리
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             삽입된 레코드의 ID (실패시 0)
@@ -772,197 +806,237 @@ class DatabaseUtils:
             app_logger.debug(f"Upsert 실행: {table_name}")
             app_logger.debug(f"데이터: {data}")
             
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+            if conn is None:
+                # 단일 연결을 사용하도록 수정
+                conn = self.get_persistent_connection()
+            
+            cursor = conn.cursor()
+            
+            if table_name == 'components':
+                # components 테이블용 upsert 구현
+                # UNIQUE INDEX: (component_name, file_id, project_id)
                 
-                if table_name == 'components':
-                    # components 테이블용 upsert 구현
-                    # UNIQUE INDEX: (component_name, file_id, project_id)
+                app_logger.debug(f"Components upsert 시작: {data.get('component_name')} ({data.get('component_type')})")
+                
+                # 1. 기존 레코드 존재 여부 확인
+                select_query = """
+                SELECT component_id FROM components 
+                WHERE project_id = ? AND component_name = ? AND file_id = ?
+                """
+                select_params = (data.get('project_id'), data.get('component_name'), data.get('file_id'))
+                
+                app_logger.debug(f"기존 레코드 확인 쿼리: {select_query}")
+                app_logger.debug(f"쿼리 파라미터: {select_params}")
+                
+                cursor.execute(select_query, select_params)
+                existing = cursor.fetchone()
+                
+                app_logger.debug(f"기존 레코드 조회 결과: {existing}")
+                
+                if existing:
+                    # 2. 기존 레코드가 있으면 UPDATE
+                    component_id = existing[0]
+                    update_columns = [col for col in data.keys() if col not in ['project_id', 'component_name', 'file_id']]
+                    update_set = ', '.join([f"{col} = ?" for col in update_columns])
+                    update_values = [data[col] for col in update_columns] + [component_id]
                     
-                    app_logger.debug(f"Components upsert 시작: {data.get('component_name')} ({data.get('component_type')})")
-                    
-                    # 1. 기존 레코드 존재 여부 확인
-                    select_query = """
-                    SELECT component_id FROM components 
-                    WHERE project_id = ? AND component_name = ? AND file_id = ?
+                    update_query = f"""
+                    UPDATE components SET {update_set}
+                    WHERE component_id = ?
                     """
-                    select_params = (data.get('project_id'), data.get('component_name'), data.get('file_id'))
                     
-                    app_logger.debug(f"기존 레코드 확인 쿼리: {select_query}")
-                    app_logger.debug(f"쿼리 파라미터: {select_params}")
+                    app_logger.debug(f"UPDATE 쿼리: {update_query}")
+                    app_logger.debug(f"UPDATE 파라미터: {update_values}")
                     
-                    cursor.execute(select_query, select_params)
-                    existing = cursor.fetchone()
+                    cursor.execute(update_query, update_values)
                     
-                    app_logger.debug(f"기존 레코드 조회 결과: {existing}")
-                    
-                    if existing:
-                        # 2. 기존 레코드가 있으면 UPDATE
-                        component_id = existing[0]
-                        update_columns = [col for col in data.keys() if col not in ['project_id', 'component_name', 'file_id']]
-                        update_set = ', '.join([f"{col} = ?" for col in update_columns])
-                        update_values = [data[col] for col in update_columns] + [component_id]
-                        
-                        update_query = f"""
-                        UPDATE components SET {update_set}
-                        WHERE component_id = ?
-                        """
-                        
-                        app_logger.debug(f"UPDATE 쿼리: {update_query}")
-                        app_logger.debug(f"UPDATE 파라미터: {update_values}")
-                        
-                        cursor.execute(update_query, update_values)
-                        
-                        app_logger.debug(f"UPDATE 실행 완료: component_id = {component_id}")
-                        return component_id
-                    else:
-                        # 3. 기존 레코드가 없으면 INSERT
-                        columns = list(data.keys())
-                        placeholders = ', '.join(['?' for _ in columns])
-                        values = tuple(data.values())
-                        
-                        insert_query = f"""
-                        INSERT INTO {table_name} ({', '.join(columns)})
-                        VALUES ({placeholders})
-                        """
-                        
-                        app_logger.debug(f"INSERT 쿼리: {insert_query}")
-                        app_logger.debug(f"INSERT 파라미터: {values}")
-                        
-                        cursor.execute(insert_query, values)
-                        component_id = cursor.lastrowid
-                        
-                        app_logger.debug(f"INSERT 실행 완료: component_id = {component_id}")
-                        return component_id
-                        
-                elif table_name == 'classes':
-                    # classes 테이블용 upsert 구현
-                    # UNIQUE INDEX: (class_name, file_id, project_id)
-                    
-                    app_logger.debug(f"Classes upsert 시작: {data.get('class_name')}")
-                    
-                    # 1. 기존 레코드 존재 여부 확인
-                    select_query = """
-                    SELECT class_id FROM classes 
-                    WHERE project_id = ? AND class_name = ? AND file_id = ?
-                    """
-                    select_params = (data.get('project_id'), data.get('class_name'), data.get('file_id'))
-                    
-                    app_logger.debug(f"기존 레코드 확인 쿼리: {select_query}")
-                    app_logger.debug(f"쿼리 파라미터: {select_params}")
-                    
-                    cursor.execute(select_query, select_params)
-                    existing = cursor.fetchone()
-                    
-                    app_logger.debug(f"기존 레코드 조회 결과: {existing}")
-                    
-                    if existing:
-                        # 2. 기존 레코드가 있으면 UPDATE
-                        class_id = existing[0]
-                        update_columns = [col for col in data.keys() if col not in ['project_id', 'class_name', 'file_id']]
-                        update_set = ', '.join([f"{col} = ?" for col in update_columns])
-                        update_values = [data[col] for col in update_columns] + [class_id]
-                        
-                        update_query = f"""
-                        UPDATE classes SET {update_set}
-                        WHERE class_id = ?
-                        """
-                        
-                        app_logger.debug(f"UPDATE 쿼리: {update_query}")
-                        app_logger.debug(f"UPDATE 파라미터: {update_values}")
-                        
-                        cursor.execute(update_query, update_values)
-                        
-                        app_logger.debug(f"UPDATE 실행 완료: class_id = {class_id}")
-                        return class_id
-                    else:
-                        # 3. 기존 레코드가 없으면 INSERT
-                        columns = list(data.keys())
-                        placeholders = ', '.join(['?' for _ in columns])
-                        values = tuple(data.values())
-                        
-                        insert_query = f"""
-                        INSERT INTO {table_name} ({', '.join(columns)})
-                        VALUES ({placeholders})
-                        """
-                        
-                        app_logger.debug(f"INSERT 쿼리: {insert_query}")
-                        app_logger.debug(f"INSERT 파라미터: {values}")
-                        
-                        cursor.execute(insert_query, values)
-                        class_id = cursor.lastrowid
-                        
-                        app_logger.debug(f"INSERT 실행 완료: class_id = {class_id}")
-                        return class_id
+                    app_logger.debug(f"UPDATE 실행 완료: component_id = {component_id}")
+                    return component_id
                 else:
-                    # 다른 테이블용 기본 구현
+                    # 3. 기존 레코드가 없으면 INSERT
                     columns = list(data.keys())
                     placeholders = ', '.join(['?' for _ in columns])
                     values = tuple(data.values())
                     
-                    # upsert 로직 사용 (데이터베이스 호환성)
-                    # 테이블별 unique_columns 설정
-                    if table_name == 'components':
-                        unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
-                    elif table_name == 'tables':
-                        unique_columns = ['project_id', 'table_name', 'table_owner']
-                    elif table_name == 'columns':
-                        unique_columns = ['table_id', 'column_name']
-                    elif table_name == 'relationships':
-                        unique_columns = ['src_id', 'dst_id', 'rel_type']
-                    else:
-                        unique_columns = ['project_id']  # 기본값
+                    insert_query = f"""
+                    INSERT INTO {table_name} ({', '.join(columns)})
+                    VALUES ({placeholders})
+                    """
                     
-                    result = self.upsert(table_name, data, unique_columns)
-                    return result if result else 0
+                    app_logger.debug(f"INSERT 쿼리: {insert_query}")
+                    app_logger.debug(f"INSERT 파라미터: {values}")
+                    
+                    cursor.execute(insert_query, values)
+                    component_id = cursor.lastrowid
+                    
+                    app_logger.debug(f"INSERT 실행 완료: component_id = {component_id}")
+                    return component_id
+            
+            elif table_name == 'classes':
+                # classes 테이블용 upsert 구현
+                # UNIQUE INDEX: (class_name, file_id, project_id)
+                
+                app_logger.debug(f"Classes upsert 시작: {data.get('class_name')}")
+                
+                # 1. 기존 레코드 존재 여부 확인
+                select_query = """
+                SELECT class_id FROM classes 
+                WHERE project_id = ? AND class_name = ? AND file_id = ?
+                """
+                select_params = (data.get('project_id'), data.get('class_name'), data.get('file_id'))
+                
+                app_logger.debug(f"기존 레코드 확인 쿼리: {select_query}")
+                app_logger.debug(f"쿼리 파라미터: {select_params}")
+                
+                cursor.execute(select_query, select_params)
+                existing = cursor.fetchone()
+                
+                app_logger.debug(f"기존 레코드 조회 결과: {existing}")
+                
+                if existing:
+                    # 2. 기존 레코드가 있으면 UPDATE
+                    class_id = existing[0]
+                    update_columns = [col for col in data.keys() if col not in ['project_id', 'class_name', 'file_id']]
+                    update_set = ', '.join([f"{col} = ?" for col in update_columns])
+                    update_values = [data[col] for col in update_columns] + [class_id]
+                    
+                    update_query = f"""
+                    UPDATE classes SET {update_set}
+                    WHERE class_id = ?
+                    """
+                    
+                    app_logger.debug(f"UPDATE 쿼리: {update_query}")
+                    app_logger.debug(f"UPDATE 파라미터: {update_values}")
+                    
+                    cursor.execute(update_query, update_values)
+                    
+                    app_logger.debug(f"UPDATE 실행 완료: class_id = {class_id}")
+                    return class_id
+                else:
+                    # 3. 기존 레코드가 없으면 INSERT
+                    columns = list(data.keys())
+                    placeholders = ', '.join(['?' for _ in columns])
+                    values = tuple(data.values())
+                    
+                    insert_query = f"""
+                    INSERT INTO {table_name} ({', '.join(columns)})
+                    VALUES ({placeholders})
+                    """
+                    
+                    app_logger.debug(f"INSERT 쿼리: {insert_query}")
+                    app_logger.debug(f"INSERT 파라미터: {values}")
+                    
+                    cursor.execute(insert_query, values)
+                    class_id = cursor.lastrowid
+                    
+                    app_logger.debug(f"INSERT 실행 완료: class_id = {class_id}")
+                    return class_id
+            
+            else:
+                # 다른 테이블용 기본 구현
+                columns = list(data.keys())
+                placeholders = ', '.join(['?' for _ in columns])
+                values = tuple(data.values())
+                
+                # upsert 로직 사용 (데이터베이스 호환성)
+                # 테이블별 unique_columns 설정
+                if table_name == 'components':
+                    unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+                elif table_name == 'tables':
+                    unique_columns = ['project_id', 'table_name', 'table_owner']
+                elif table_name == 'columns':
+                    unique_columns = ['table_id', 'column_name']
+                elif table_name == 'relationships':
+                    unique_columns = ['src_id', 'dst_id', 'rel_type']
+                else:
+                    unique_columns = ['project_id']  # 기본값
+                
+                result = self.upsert(table_name, data, unique_columns)
+                return result if result else 0
                 
         except Exception as e:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"Upsert 실패: {table_name}")
     
     def begin_transaction(self):
-        """트랜잭션 시작"""
-        try:
-            with self.get_connection() as conn:
-                conn.execute("BEGIN TRANSACTION")
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"트랜잭션 시작 실패")
-    
+        """
+        [Deprecated] 트랜잭션 시작. Auto Commit 모드에서는 불필요합니다.
+        Auto Commit 모드에서는 모든 쿼리가 즉시 커밋됩니다.
+        """
+        app_logger.warning("`begin_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 트랜잭션이 불필요합니다.")
+        # Auto Commit 모드에서는 트랜잭션이 불필요합니다.
+        pass
+
     def commit_transaction(self):
-        """트랜잭션 커밋"""
-        try:
-            with self.get_connection() as conn:
-                conn.commit()
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"트랜잭션 커밋 실패")
-    
+        """
+        [Deprecated] 트랜잭션 커밋. Auto Commit 모드에서는 불필요합니다.
+        """
+        app_logger.warning("`commit_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 자동으로 커밋됩니다.")
+        # Auto Commit 모드에서는 자동으로 커밋됩니다.
+        pass
+
     def rollback_transaction(self):
-        """트랜잭션 롤백"""
-        try:
-            with self.get_connection() as conn:
-                conn.rollback()
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"트랜잭션 롤백 실패")
-    
+        """
+        [Deprecated] 트랜잭션 롤백. Auto Commit 모드에서는 불필요합니다.
+        """
+        app_logger.warning("`rollback_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 롤백이 불필요합니다.")
+        # Auto Commit 모드에서는 롤백이 불필요합니다.
+        pass
+
     @contextmanager
     def transaction(self):
         """
-        트랜잭션 컨텍스트 매니저
-        
+        Auto Commit 모드 컨텍스트 매니저.
+        각 연결마다 새로운 독립적인 연결을 생성하여 사용하고,
+        모든 쿼리가 즉시 커밋됩니다.
+        이를 통해 데이터베이스 락 발생을 최소화합니다.
+
+        사용 예시:
+        db_utils = DatabaseUtils('path/to/db')
+        with db_utils.transaction() as conn:
+            # 이 블록 안에서 conn을 사용하여 모든 DB 작업을 수행합니다.
+            db_utils.execute_update(query, params, conn=conn)
+            db_utils.execute_query(query, conn=conn)
+
         Yields:
-            DatabaseUtils: 자기 자신
+            sqlite3.Connection: Auto Commit 모드에서 사용할 수 있는 데이터베이스 연결 객체
         """
+        conn = None
         try:
-            self.begin_transaction()
-            yield self
-            self.commit_transaction()
+            # 새 연결 생성
+            conn = sqlite3.connect(
+                self.db_path,
+                check_same_thread=True,  # 독립된 연결이므로 True로 설정하여 안전성 강화
+                timeout=60.0  # 타임아웃 증가
+            )
+            # Auto commit 모드 활성화 (가장 먼저 설정)
+            conn.isolation_level = None
+            
+            # 외래키 제약조건 활성화
+            conn.execute("PRAGMA foreign_keys = ON")
+            
+            # 성능 최적화 설정
+            conn.execute("PRAGMA journal_mode = DELETE")
+            conn.execute("PRAGMA synchronous = NORMAL")
+            conn.execute("PRAGMA busy_timeout = 30000")
+            
+            app_logger.debug("새로운 Auto Commit 컨텍스트 시작")
+            yield conn
+            
+            app_logger.debug("Auto Commit 컨텍스트 완료")
+            
         except Exception as e:
-            self.rollback_transaction()
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"트랜잭션 오류")
+            # Auto commit 모드에서는 롤백이 필요 없음
+            if conn:
+                app_logger.error(f"Auto Commit 모드에서 오류 발생: {e}")
+            # 에러를 다시 발생시켜 상위에서 인지하도록 함
+            raise e
+            
+        finally:
+            # 연결 종료
+            if conn:
+                conn.close()
+                app_logger.debug("트랜잭션 컨텍스트 종료 및 연결 해제")
     
     def vacuum(self):
         """데이터베이스 최적화 (VACUUM)"""
@@ -984,12 +1058,13 @@ class DatabaseUtils:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"통계 정보 업데이트 실패")
     
-    def get_project_id(self, project_name: str) -> Optional[int]:
+    def get_project_id(self, project_name: str, conn: sqlite3.Connection = None) -> Optional[int]:
         """
-        프로젝트 ID 조회 (캐싱 적용)
+        프로젝트 ID 조회 (캐싱 적용, 단일 연결 지원)
         
         Args:
             project_name: 프로젝트명
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
             
         Returns:
             프로젝트 ID 또는 None
@@ -1001,10 +1076,10 @@ class DatabaseUtils:
         if cached_id is not None:
             return cached_id
         
-        # 캐시에 없으면 DB에서 조회
+        # 캐시에 없으면 DB에서 조회 (단일 연결 사용)
         try:
             query = "SELECT project_id FROM projects WHERE project_name = ?"
-            results = self.execute_query(query, (project_name,))
+            results = self.execute_query(query, (project_name,), conn)
             
             if results:
                 project_id = results[0]['project_id']

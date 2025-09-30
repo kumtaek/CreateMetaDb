@@ -11,9 +11,9 @@ class SimpleJavaParser:
     """심플한 Java 파서 - public/protected만 추출"""
     
     def __init__(self):
-        # 클래스 추출 패턴
+        # 클래스 및 인터페이스 추출 패턴 (어노테이션 무시)
         self.class_pattern = re.compile(
-            r'(?:public|protected|private)?\s*(?:static\s+)?(?:final\s+)?(?:abstract\s+)?class\s+(\w+)',
+            r'(?:public|protected|private)?\s*(?:static\s+)?(?:final\s+)?(?:abstract\s+)?(?:class|interface)\s+(\w+)',
             re.MULTILINE | re.IGNORECASE
         )
         

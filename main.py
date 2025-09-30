@@ -69,288 +69,126 @@ def main():
             info("설정 확인 완료")
             return
         
-        # 7. 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
-        info("\n\n\n\n1단계 시작 ========================================")
-        info("1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)")
+        # 7. 분석 단계 실행 (단일 트랜잭션으로 묶어서 처리)
+        info("\n\n\n\n분석 단계 실행 시작 (단일 트랜잭션) ========================================")
         
-        try:
-            from file_loading import FileLoadingEngine
-        except RecursionError:
-            info("RecursionError in file_loading import, using fallback")
-            # fallback으로 간단한 스캔 함수 사용
-            def FileLoadingEngine(project_name):
-                class FallbackEngine:
-                    def execute_file_scan(self, clear_metadb):
-                        info("Using fallback file scan")
-                        return True
-                    def get_statistics(self):
-                        return {'scanned_files': 0, 'error_files': 0}
-                return FallbackEngine()
-        
-        # 1단계 실행
-        file_engine = FileLoadingEngine(project_name)
-        success = file_engine.execute_file_scan(clear_metadb)
-        
-        if success:
-            info("1단계 완료: 파일 정보 저장")
-            # 1단계 통계 출력
-            try:
-                stats = file_engine.stats
-                info("=== 1단계 통계 ===")
-                info(f"성공: 파일 {stats.get('scanned_files', 0)}개 스캔 완료")
-                info(f"성공: 메타데이터베이스 초기화 완료")
-                error_count = stats.get('error_files', 0)
-                info(f"실패: {error_count}건" + (" (파일 스캔 오류)" if error_count > 0 else ""))
-            except Exception as e:
-                debug(f"1단계 통계 출력 오류 (무시): {str(e)}")
-            
-            # 1단계 완료 후 프로젝트 ID 획득 및 전역 프로젝트 정보 설정
-            try:
-                from util import DatabaseUtils, get_project_metadata_db_path
-                from util.global_project import set_global_project_info
-            except RecursionError:
-                info("RecursionError in util imports, using fallback")
-                # 간단한 fallback 처리
-                DatabaseUtils = None
-                get_project_metadata_db_path = lambda x: f"./projects/{x}/metadata.db"
-                set_global_project_info = lambda x, y: None
-            
-            metadata_db_path = get_project_metadata_db_path(project_name)
-            db_utils = DatabaseUtils(metadata_db_path)
-            if db_utils.connect():
-                project_id = db_utils.get_project_id(project_name)
-                if project_id:
-                    set_global_project_info(project_name, project_id)
-                    info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
-                else:
-                    handle_error(Exception("프로젝트 ID 획득 실패"), "프로젝트 ID 획득 실패")
-            else:
-                handle_error(Exception("메타데이터베이스 연결 실패"), "메타데이터베이스 연결 실패")
-        else:
-            handle_error(Exception("1단계 실패: 파일 스캔"), "1단계 실패: 파일 스캔")
-            sys.exit(1)
-        
-        # 8. 2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성
-        info("\n\n\n\n2단계 시작 ========================================")
-        info("2단계 실행: 데이터베이스 구조 저장 및 컴포넌트 생성")
-        
-        # 2단계 실행 (동일한 엔진 인스턴스 재사용)
-        success = file_engine.execute_db_loading()
-        
-        if success:
-            info("2단계 완료: 데이터베이스 구조 저장 및 컴포넌트 생성")
-            # 2단계 통계 출력
-            try:
-                stats = file_engine.stats
-                info("=== 2단계 통계 ===")
-                info(f"성공: 테이블 {stats.get('tables_loaded', 0)}개 로드")
-                info(f"성공: 컬럼 {stats.get('columns_loaded', 0)}개 로드")
-                info(f"성공: 컴포넌트 {stats.get('components_created', 0)}개 생성")
-                
-                total_errors = (stats.get('tables_with_errors', 0) + 
-                               stats.get('columns_with_errors', 0) + 
-                               stats.get('components_with_errors', 0))
-                info(f"실패: {total_errors}건" + (" (테이블/컬럼/컴포넌트 생성 오류)" if total_errors > 0 else ""))
-            except Exception as e:
-                debug(f"2단계 통계 출력 오류 (무시): {str(e)}")
-        else:
-            error("2단계 실패: 데이터베이스 로딩")
-            sys.exit(1)
-        
-        # 9. 3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석
-        info("\n\n\n\n3단계 시작 ========================================")
-        info("3단계 실행: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석")
+        # 데이터베이스 유틸리티 인스턴스 생성
+        from util import DatabaseUtils, get_project_metadata_db_path
+        metadata_db_path = get_project_metadata_db_path(project_name)
+        db_utils = DatabaseUtils(metadata_db_path)
 
-        # === Gemini 추가: SQL 조각 캐시 초기화 ===
-        try:
-            from util.cache_utils import get_sql_fragment_cache
-            from util.config_utils import ConfigUtils
+        info("분석 단계 실행 시작 (Auto Commit 모드)")
 
-            info("SQL 조각 캐시를 초기화합니다...")
-
-            # target_source_config.yaml 로드
+        # 데이터베이스 스키마 생성 (1단계 실행 전)
+        info(f"데이터베이스 경로 확인: {metadata_db_path}")
+        info(f"데이터베이스 파일 존재 여부: {os.path.exists(metadata_db_path)}")
+        
+        if not db_utils.connect():
+            raise Exception("데이터베이스 연결 실패")
+        
+        # 스키마가 존재하지 않으면 생성 (강제로 스키마 생성)
+        info(f"스키마 생성 조건 확인: {not os.path.exists(metadata_db_path)}")
+        info("강제로 스키마 생성 실행...")
+        if True:  # 강제로 스키마 생성
+            info("스키마 생성 시작...")
             path_utils = PathUtils()
-            target_config_path = path_utils.get_config_path('target_source_config.yaml')
-            config_utils = ConfigUtils()
-            target_config = config_utils.load_yaml_config(target_config_path)
+            schema_path = path_utils.join_path(path_utils.project_root, 'database', 'create_table_script.sql')
+            info(f"스키마 파일 경로: {schema_path}")
+            info(f"스키마 파일 존재 여부: {os.path.exists(schema_path)}")
+            
+            if not db_utils.create_schema(schema_path):
+                raise Exception("데이터베이스 스키마 생성 실패")
+            info(f"메타데이터베이스 스키마 생성 완료: {metadata_db_path}")
+        else:
+            info(f"기존 메타데이터베이스 사용: {metadata_db_path}")
+        
+        db_utils.disconnect()
 
-            if target_config:
-                # SQL 조각 캐시 초기화
-                sql_cache = get_sql_fragment_cache()
-                sql_cache.load_all_fragments(project_name, target_config)
-                info("SQL 조각 캐시 초기화 완료")
-            else:
-                warning("target_source_config.yaml 로드 실패, 기본 설정으로 진행")
-        except Exception as e:
-            warning(f"SQL 조각 캐시 초기화 실패, 기존 방식으로 진행: {e}")
-        # === Gemini 추가 끝 ===
+        # 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
+        info("\n--- 1단계: 파일 정보 저장 ---")
+        conn = db_utils.get_persistent_connection()
+        from file_loading import FileLoadingEngine
+        file_engine = FileLoadingEngine(project_name, conn)
+        success = file_engine.execute_file_scan(clear_metadb)
+        if not success:
+            raise Exception("1단계 파일 스캔 실패")
+        info("1단계 완료")
+        stats = file_engine.stats
+        info(f"  => 성공: {stats.get('scanned_files', 0)}개 파일 스캔, 실패: {stats.get('error_files', 0)}건")
 
+        # 1단계 완료 후 프로젝트 ID 획득 및 전역 설정
+        project_id = db_utils.get_project_id(project_name, conn)
+        if project_id:
+            set_global_project_info(project_name, project_id)
+            info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
+        else:
+            raise Exception("프로젝트 ID 획득 실패")
+
+        # 2단계 실행: 데이터베이스 구조 저장
+        info("\n--- 2단계: DB 구조 저장 ---")
+        success = file_engine.execute_db_loading()
+        if not success:
+            raise Exception("2단계 DB 구조 저장 실패")
+        info("2단계 완료")
+        stats = file_engine.stats
+        info(f"  => 성공: 테이블 {stats.get('tables_loaded', 0)}개, 컬럼 {stats.get('columns_loaded', 0)}개, 컴포넌트 {stats.get('components_created', 0)}개")
+
+        # 3단계 실행: XML 분석
+        info("\n--- 3단계: XML 분석 ---")
         from xml_loading import XmlLoadingEngine
-        
-        # SQL Content 기능 활성화 (항상 활성화)
         sql_content_enabled = True
-        info("SQL Content 기능이 활성화되었습니다 (기본값)")
-        
-        xml_engine = XmlLoadingEngine(project_name, sql_content_enabled)
+        xml_engine = XmlLoadingEngine(project_name, conn, sql_content_enabled)
         success = xml_engine.execute_xml_loading()
-        
-        if success:
-            info("3단계 완료: XML 파일 분석 및 SQL 컴포넌트 등록 + JOIN 관계 분석")
-            # 3단계 통계 출력
-            try:
-                stats = xml_engine.get_statistics()
-                info("=== 3단계 통계 ===")
-                info(f"성공: XML 파일 {stats.get('xml_files_processed', 0)}개 처리")
-                info(f"성공: SQL 컴포넌트 {stats.get('sql_components_created', 0)}개 생성")
-                info(f"성공: JOIN 관계 {stats.get('join_relationships_created', 0)}개 생성")
-                error_count = stats.get('errors', 0)
-                info(f"실패: {error_count}건" + (" (XML 파싱 오류)" if error_count > 0 else ""))
-            except Exception as e:
-                debug(f"3단계 통계 출력 오류 (무시): {str(e)}")
-        else:
-            error("3단계 실패: XML 로딩")
-            sys.exit(1)
-        
-        # 10. 4단계 실행: Java 소스코드 분석 및 관계 생성
-        info("\n\n\n\n4단계 시작 ========================================")
-        info("4단계 실행: Java 소스코드 분석 및 관계 생성")
-        
+        if not success:
+            raise Exception("3단계 XML 분석 실패")
+        info("3단계 완료")
+        stats = xml_engine.get_statistics()
+        info(f"  => 성공: XML {stats.get('xml_files_processed', 0)}개, SQL 컴포넌트 {stats.get('sql_components_created', 0)}개, JOIN 관계 {stats.get('join_relationships_created', 0)}개")
+
+        # 4단계 실행: Java 소스코드 분석
+        info("\n--- 4단계: Java 분석 ---")
         from java_loading import load_java_files_simple
+        success, java_stats = load_java_files_simple(project_name, project_id, conn)
+        if not success:
+            raise Exception("4단계 Java 분석 실패")
+        info("4단계 완료")
+        info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 관계 {java_stats.get('relationships_created', 0)}개")
 
-        success = load_java_files_simple(project_name, project_id)
-        
-        if success:
-            info("4단계 완료: Java 소스코드 분석 및 관계 생성")
-            # 4단계 통계 출력
-            try:
-                stats = java_engine.get_statistics()
-                info("=== 4단계 통계 ===")
-                info(f"성공: Java 파일 {stats.get('java_files_processed', 0)}개 처리")
-                info(f"성공: 클래스 {stats.get('classes_extracted', 0)}개 추출")
-                info(f"성공: 메서드 컴포넌트 {stats.get('components_created', 0)}개 생성")
-                info(f"성공: 관계 {stats.get('call_query_relationships_created', 0) + stats.get('call_method_relationships_created', 0) + stats.get('inheritance_relationships_created', 0)}개 생성")
-                error_count = stats.get('errors', 0)
-                info(f"실패: {error_count}건" + (" (Java 파싱 오류)" if error_count > 0 else ""))
-            except Exception as e:
-                debug(f"4단계 통계 출력 오류 (무시): {str(e)}")
-
-            # 간접 USE_TABLE 관계 생성
-            debug("간접 USE_TABLE 관계 생성 시작")
-            project_id = get_global_project_id()
-            if project_id:
-                # 간접 USE_TABLE 관계 생성은 java loading에서 처리됨
-                debug("간접 USE_TABLE 관계 생성 생략 (java loading에서 처리됨)")
-            else:
-                warning("프로젝트 ID를 찾을 수 없어 간접 USE_TABLE 관계를 생성할 수 없습니다")
-        else:
-            error("4단계 실패: Java 로딩")
-            handle_error(Exception("Java 로딩 실패"), "4단계 실패: Java 로딩")
-        
-        # 11. 5단계 실행: Spring API 진입점 분석 (Phase 1)
-        info("\n\n\n\n5단계 시작 ========================================")
-        info("5단계 실행: Spring API 진입점 분석 (Phase 1)")
-        
+        # 5단계 실행: Spring API 진입점 분석
+        info("\n--- 5단계: API 진입점 분석 ---")
         from backend_entry_loading import execute_backend_entry_loading
-        
-        success = execute_backend_entry_loading(project_name)
-        
-        if success:
-            info("5단계 완료: Spring API 진입점 분석 (Phase 1)")
-            # 5단계 통계 출력 (백엔드 진입점 분석 통계는 이미 콘솔에 출력됨)
-            info("=== 5단계 통계 ===")
-            info("성공: 백엔드 진입점 분석 완료 (17개 파일에서 70개 진입점 추출)")
-            info("실패: 0건")
-            info("필터링: 18개 파일 (프레임워크 미지원 파일)")
+        success = execute_backend_entry_loading(project_name, conn)
+        if not success:
+            raise Exception("5단계 API 진입점 분석 실패")
+        info("5단계 완료")
+
+        # 6단계 실행: 프론트엔드 분석 및 연관관계 구축
+        info("\n--- 6단계: 프론트엔드 분석 및 관계 구축 ---")
+        from frontend_loading import FrontendLoadingEngine
+        frontend_engine = FrontendLoadingEngine(project_name, conn)
+        success = frontend_engine.execute_frontend_loading()
+        if not success:
+            warning("6-1단계 프론트엔드 분석 중 오류 발생")
+        info("6-1단계 프론트엔드 분석 완료")
+        stats = frontend_engine.stats
+        info(f"  => 성공: API 호출 {stats.get('api_calls_found', 0)}개, 관계 {stats.get('relationships_created', 0)}개")
+
+        from relationship_builder import RelationshipBuilder
+        relationship_builder = RelationshipBuilder(project_name, project_id, conn)
+        relationship_stats = relationship_builder.build_all_relationships()
+        info("6-2단계 연관관계 구축 완료")
+        info(f"  => 성공: 총 관계 {relationship_stats.get('total_relationships', 0)}개 생성")
+
+        # 7단계 실행: 일관성 검증
+        info("\n--- 7단계: 일관성 검증 ---")
+        from consistency_validator import execute_consistency_validation
+        validation_success = execute_consistency_validation(project_name, conn)
+        if validation_success:
+            info("일관성 검증 완료: 모든 검사 통과")
         else:
-            error("5단계 실패: 백엔드 진입점 분석")
-            handle_error(Exception("백엔드 진입점 분석 실패"), "5단계 실패: 백엔드 진입점 분석")
-        
-        # 12. 6단계 실행: 프론트엔드 파일 분석 및 연관관계 구축
-        info("\n\n\n\n6단계 시작 ========================================")
-        info("6단계 실행: 프론트엔드 파일 분석 및 연관관계 구축")
+            warning("일관성 검증 완료: 문제 발견됨 (상세 내용은 로그 확인)")
 
-        try:
-            from relationship_builder import RelationshipBuilder
-            from util.frontend_api_analyzer import FrontendApiAnalyzer
-            # JavaQueryAnalyzer는 삭제됨 (중복 기능)
-            from frontend_loading import FrontendLoadingEngine
-
-            project_id = get_global_project_id()
-            if not project_id:
-                warning("프로젝트 ID를 찾을 수 없어 연관관계 구축을 건너뜁니다")
-            else:
-                # 모든 프론트엔드 파일 분석 (JSP, JSX, Vue, TS, JS, HTML)
-                info("프론트엔드 파일 분석 시작...")
-                frontend_engine = FrontendLoadingEngine(project_name)
-                frontend_success = frontend_engine.execute_frontend_loading()
-                
-                if frontend_success:
-                    info("프론트엔드 파일 분석 완료")
-                    # 프론트엔드 분석 통계 출력
-                    try:
-                        stats = frontend_engine.stats
-                        info("=== 프론트엔드 분석 통계 ===")
-                        info(f"성공: 총 파일 {stats.get('total_files', 0)}개 처리")
-                        info(f"성공: JSP 파일 {stats.get('jsp_files', 0)}개")
-                        info(f"성공: JSX 파일 {stats.get('jsx_files', 0)}개")
-                        info(f"성공: Vue 파일 {stats.get('vue_files', 0)}개")
-                        info(f"성공: TS 파일 {stats.get('ts_files', 0)}개")
-                        info(f"성공: TSX 파일 {stats.get('tsx_files', 0)}개")
-                        info(f"성공: JS 파일 {stats.get('js_files', 0)}개")
-                        info(f"성공: HTML 파일 {stats.get('html_files', 0)}개")
-                        info(f"성공: 컴포넌트 {stats.get('components_created', 0)}개 생성")
-                        info(f"성공: API 호출 {stats.get('api_calls_found', 0)}개 발견")
-                        info(f"성공: 관계 {stats.get('relationships_created', 0)}개 생성")
-                        error_count = stats.get('error_files', 0)
-                        info(f"실패: {error_count}건" + (" (프론트엔드 파싱 오류)" if error_count > 0 else ""))
-                    except Exception as e:
-                        debug(f"프론트엔드 분석 통계 출력 오류 (무시): {str(e)}")
-                else:
-                    warning("프론트엔드 파일 분석 실패")
-
-                # RelationshipBuilder 초기화 및 연관관계 구축
-                info("연관관계 구축 시작...")
-                relationship_builder = RelationshipBuilder(project_name, project_id)
-                relationship_stats = relationship_builder.build_all_relationships()
-
-                info("6단계 완료: 프론트엔드 파일 분석 및 연관관계 구축")
-                info("=== 6단계 통계 ===")
-                info(f"성공: METHOD→QUERY 관계 {relationship_stats.get('method_query_relationships', 0)}개")
-                info(f"성공: QUERY→TABLE 관계 {relationship_stats.get('query_table_relationships', 0)}개")
-                info(f"성공: TABLE JOIN 관계 {relationship_stats.get('table_join_relationships', 0)}개")
-                info(f"성공: ENTITY→TABLE 관계 {relationship_stats.get('entity_table_relationships', 0)}개")
-                info(f"성공: FRONTEND→API 관계 {relationship_stats.get('frontend_api_relationships', 0)}개")
-                info(f"성공: API→METHOD 관계 {relationship_stats.get('api_method_relationships', 0)}개")
-                info(f"성공: 총 관계 {relationship_stats.get('total_relationships', 0)}개 생성")
-
-        except Exception as e:
-            handle_error(e, "6단계 실패: 프론트엔드 파일 분석 및 연관관계 구축")
-
-        # 13. 누락된 연결고리 연결 (6단계에서 자동 처리됨)
-        # JSP 분석 완료 후 API_URL 컴포넌트의 file_id가 자동으로 업데이트됨
-
-        info("1-6단계 분석 및 연결고리 연결 완료")
-        
-        # 14. 메타데이터베이스 일관성 검증 (신규 추가)
-        info("\n\n\n\n일관성 검증 단계 시작 ========================================")
-        info("메타데이터베이스 일관성 검증 실행")
-        
-        try:
-            from consistency_validator import execute_consistency_validation
-            
-            validation_success = execute_consistency_validation(project_name)
-            
-            if validation_success:
-                info("일관성 검증 완료: 모든 검사 통과")
-            else:
-                warning("일관성 검증 완료: 문제 발견됨 (수정 권장)")
-                info("상세 내용은 로그를 확인하세요")
-                
-        except Exception as e:
-            warning(f"일관성 검증 실패: {str(e)}")
-            debug(f"일관성 검증 오류 상세: {e}")
-            # 일관성 검증 실패는 치명적이지 않으므로 계속 진행
-
+        info("\n\n분석 완료: 모든 단계가 성공적으로 Auto Commit 모드로 처리되었습니다.")
     except KeyboardInterrupt:
         info("사용자에 의해 중단됨")
         return

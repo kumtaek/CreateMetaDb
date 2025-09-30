@@ -321,19 +321,45 @@ class CommonSqlAnalyzer:
             from util.logger import handle_error
             handle_error(e, f"테이블 저장 실패: {table_name}")
     
+    def _save_table_with_db_utils(self, db_utils, table_name: str):
+        """DatabaseUtils를 사용한 테이블 정보 저장"""
+        try:
+            # 테이블 존재 여부 확인
+            check_query = """
+                SELECT table_id FROM tables 
+                WHERE table_name = ? AND project_id = (SELECT project_id FROM projects WHERE project_name = ?)
+            """
+            existing = db_utils.execute_query(check_query, (table_name, self.project_name))
+            
+            if not existing:
+                # INFERRED 테이블 생성
+                hash_value = hashlib.md5(f"{self.project_name}_{table_name}".encode()).hexdigest()
+                insert_data = {
+                    'project_id': f"(SELECT project_id FROM projects WHERE project_name = '{self.project_name}')",
+                    'table_name': table_name,
+                    'table_owner': 'UNKNOWN',
+                    'hash_value': hash_value,
+                    'del_yn': 'N'
+                }
+                db_utils.insert_record('tables', insert_data)
+                
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, f"테이블 저장 실패: {table_name}")
+    
     def _save_tables_batch_to_metadata(self, tables: List[str]) -> None:
         """테이블들을 metadata.db에 배치 저장"""
         try:
-            # metadata.db 연결
+            # 기존 연결을 사용하여 처리 (별도 연결 생성하지 않음)
+            from util.database_utils import DatabaseUtils
             metadata_db_path = f"projects/{self.project_name}/metadata.db"
-            conn = sqlite3.connect(metadata_db_path)
-            cursor = conn.cursor()
             
-            for table_name in tables:
-                self._save_table(cursor, table_name)
-            
-            conn.commit()
-            conn.close()
+            # 기존 연결이 있는지 확인하고 사용
+            with DatabaseUtils(metadata_db_path).get_connection() as conn:
+                cursor = conn.cursor()
+                for table_name in tables:
+                    self._save_table(cursor, table_name)
+                conn.commit()
             
         except Exception as e:
             from util.logger import handle_error
@@ -342,16 +368,16 @@ class CommonSqlAnalyzer:
     def _save_joins_batch_to_metadata(self, joins: List[JoinCondition]) -> None:
         """조인 관계들을 metadata.db에 배치 저장"""
         try:
-            # metadata.db 연결
+            # 기존 연결을 사용하여 처리 (별도 연결 생성하지 않음)
+            from util.database_utils import DatabaseUtils
             metadata_db_path = f"projects/{self.project_name}/metadata.db"
-            conn = sqlite3.connect(metadata_db_path)
-            cursor = conn.cursor()
             
-            for join in joins:
-                self._save_join_relationship(cursor, join)
-            
-            conn.commit()
-            conn.close()
+            # 기존 연결이 있는지 확인하고 사용
+            with DatabaseUtils(metadata_db_path).get_connection() as conn:
+                cursor = conn.cursor()
+                for join in joins:
+                    self._save_join_relationship(cursor, join)
+                conn.commit()
             
         except Exception as e:
             from util.logger import handle_error
@@ -388,6 +414,47 @@ class CommonSqlAnalyzer:
                         INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn)
                         VALUES (?, ?, ?, ?, 'N')
                     """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}", 0.8))
+                
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, f"조인 관계 저장 실패: {join.left_table} -> {join.right_table}")
+    
+    def _save_join_relationship_with_db_utils(self, db_utils, join: JoinCondition):
+        """DatabaseUtils를 사용한 조인 관계 저장"""
+        try:
+            # 소스와 대상 테이블 ID 찾기
+            left_query = """
+                SELECT t.table_id FROM tables t
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ? AND p.project_name = ?
+            """
+            left_result = db_utils.execute_query(left_query, (join.left_table, self.project_name))
+            
+            right_query = """
+                SELECT t.table_id FROM tables t
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ? AND p.project_name = ?
+            """
+            right_result = db_utils.execute_query(right_query, (join.right_table, self.project_name))
+            
+            if left_result and right_result:
+                # 중복 체크
+                check_query = """
+                    SELECT COUNT(*) FROM relationships 
+                    WHERE src_id = ? AND dst_id = ? AND rel_type = ?
+                """
+                count_result = db_utils.execute_query(check_query, (left_result[0]['table_id'], right_result[0]['table_id'], f"JOIN_{join.join_type}"))
+                
+                if count_result[0]['COUNT(*)'] == 0:
+                    # 조인 관계 저장
+                    relationship_data = {
+                        'src_id': left_result[0]['table_id'],
+                        'dst_id': right_result[0]['table_id'],
+                        'rel_type': f"JOIN_{join.join_type}",
+                        'confidence': 0.8,
+                        'del_yn': 'N'
+                    }
+                    db_utils.insert_record('relationships', relationship_data)
                 
         except Exception as e:
             from util.logger import handle_error

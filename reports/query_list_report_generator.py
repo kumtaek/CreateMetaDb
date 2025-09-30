@@ -175,69 +175,65 @@ class QueryListReportGenerator:
             }
     
     def _get_query_list_data(self, project_id: int) -> List[Dict[str, Any]]:
-        """쿼리 리스트 데이터 조회"""
+        """쿼리 리스트 데이터 조회 - SqlContent.db에서 직접 조회"""
         try:
-            # 쿼리 리스트 조회 (Java, XML 파일에서 도출된 쿼리)
+            import sqlite3
+            
+            # SqlContent.db에서 직접 쿼리 정보 가져오기
+            sqlcontent_conn = sqlite3.connect(f'projects/{self.project_name}/SqlContent.db')
+            sqlcontent_cursor = sqlcontent_conn.cursor()
+            
             query = """
             SELECT 
-                c.component_id,
-                c.component_name as query_id,
-                c.component_type,
-                f.file_path,
-                f.file_name,
-                f.file_type,
-                c.line_start,
-                c.line_end,
-                GROUP_CONCAT(DISTINCT t.table_name) as related_tables
-            FROM components c
-            JOIN files f ON c.file_id = f.file_id
-            LEFT JOIN relationships r ON c.component_id = r.src_id AND r.rel_type = 'USE_TABLE' AND r.del_yn = 'N'
-            LEFT JOIN components tc ON r.dst_id = tc.component_id AND tc.component_type = 'TABLE' AND tc.del_yn = 'N'
-            LEFT JOIN tables t ON tc.component_id = t.component_id AND t.del_yn = 'N'
-            WHERE c.project_id = ? 
-            AND c.component_type LIKE 'SQL_%' 
-            AND f.file_type IN ('JAVA', 'XML')
-            AND c.del_yn = 'N'
-            GROUP BY c.component_id, c.component_name, c.component_type, 
-                     f.file_path, f.file_name, f.file_type, c.line_start, c.line_end
-            ORDER BY f.file_type, f.file_name, c.component_name
+                component_name,
+                file_path,
+                sql_content_compressed,
+                hash_value,
+                created_at
+            FROM sql_contents 
+            WHERE del_yn = 'N'
+            ORDER BY file_path, component_name
             """
             
-            results = self.db_utils.execute_query(query, (project_id,))
+            sqlcontent_cursor.execute(query)
+            results = sqlcontent_cursor.fetchall()
             
             query_data = []
             for row in results:
-                component_id = row['component_id']
-                query_id = row['query_id']
-                component_type = row['component_type']
-                file_path = row['file_path']
-                file_name = row['file_name']
-                file_type = row['file_type']
-                line_start = row['line_start']
-                line_end = row['line_end']
-                related_tables = row['related_tables']
+                component_name = row[0]
+                file_path = row[1]
+                sql_content_compressed = row[2]
+                hash_value = row[3]
+                created_at = row[4]
                 
-                # SqlContent에서 실제 SQL 내용 조회
-                sql_content = self._get_sql_content(component_id)
+                # SQL 내용 압축 해제
+                sql_content = self._decompress_sql_content(sql_content_compressed)
                 
-                # SQL 내용에서 직접 테이블명 추출 (관계가 없는 경우 대비)
-                if not related_tables and sql_content:
-                    extracted_tables = self._extract_tables_from_sql(sql_content)
-                    related_tables = ', '.join(extracted_tables) if extracted_tables else related_tables
+                # 파일 타입 결정
+                file_type = 'XML' if file_path.endswith('.xml') else 'JAVA'
+                
+                # SQL 내용에서 테이블명 추출
+                extracted_tables = self._extract_tables_from_sql(sql_content)
+                related_tables = ', '.join(extracted_tables) if extracted_tables else 'N/A'
+                
+                # 쿼리 타입 결정
+                query_type = self._determine_query_type(sql_content)
                 
                 query_info = {
-                    'component_id': component_id,
-                    'query_id': query_id,
-                    'component_type': component_type,
+                    'component_id': 0,  # SqlContent에는 component_id가 없음
+                    'query_id': component_name,
+                    'component_type': query_type,
                     'file_path': file_path,
-                    'file_name': file_name,
-                    'file_type': file_type.upper(),
-                    'line_start': line_start,
-                    'line_end': line_end,
+                    'file_name': os.path.basename(file_path) if file_path else 'Unknown',
+                    'file_type': file_type,
+                    'line_start': 0,  # SqlContent에는 라인 정보가 없음
+                    'line_end': 0,
                     'sql_content': sql_content,
-                    'related_tables': related_tables or 'N/A'
+                    'related_tables': related_tables
                 }
                 query_data.append(query_info)
+            
+            sqlcontent_conn.close()
             
             app_logger.info(f"쿼리 리스트 데이터 조회 완료: {len(query_data)}개")
             return query_data

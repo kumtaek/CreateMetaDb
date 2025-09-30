@@ -139,10 +139,4 @@ CREATE TABLE IF NOT EXISTS relationships (
     FOREIGN KEY (dst_id) REFERENCES components(component_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
- 
--- 데이터베이스 최적화 설정
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA cache_size = 10000;
-PRAGMA temp_store = MEMORY;
-PRAGMA foreign_keys = ON;
+  

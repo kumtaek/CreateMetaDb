@@ -11,6 +11,7 @@ import re
 import os
 import zlib
 import json
+import sqlite3
 from typing import Dict, List, Set, Tuple, Any, Optional
 from util import (
     info, error, warning, debug, handle_error,
@@ -22,11 +23,13 @@ from util.oracle_keyword_manager import get_oracle_keyword_manager
 class SimpleQueryAnalyzer:
     """심플 쿼리 분석기 - 3단계 파이프라인 구현"""
 
-    def __init__(self, project_name: str, db_path: str):
+    def __init__(self, project_name: str, conn: sqlite3.Connection):
         """초기화"""
         try:
             self.project_name = project_name
-            self.db_utils = DatabaseUtils(db_path)
+            self.conn = conn
+            # db_path가 필요 없으므로 None으로 설정
+            self.db_utils = DatabaseUtils(None)
             self.config_utils = ConfigUtils()
             self.path_utils = PathUtils()
             self.hash_utils = HashUtils()
@@ -283,7 +286,8 @@ class SimpleQueryAnalyzer:
         try:
             cleaned = content.strip().upper()
             return any(cleaned.startswith(keyword) for keyword in self.sql_start_patterns)
-        except:
+        except Exception as e:
+            handle_error(e, f"SQL 쿼리 확인 실패: {content[:50]}...")
             return False
 
     def _detect_query_type(self, content: str) -> str:
@@ -304,7 +308,8 @@ class SimpleQueryAnalyzer:
             else:
                 return 'SQL_SELECT'  # 기본값
 
-        except:
+        except Exception as e:
+            handle_error(e, f"쿼리 타입 감지 실패: {content[:50]}...")
             return 'SQL_SELECT'
 
     # ========== 공통 2,3단계 처리 ==========
@@ -460,7 +465,8 @@ class SimpleQueryAnalyzer:
             eq_conditions = re.findall(r'(\w+\.\w+)\s*=\s*(\w+\.\w+)', condition)
             join_parts.extend(eq_conditions)
             return join_parts
-        except:
+        except Exception as e:
+            handle_error(e, f"MERGE JOIN 조건 파싱 실패: {condition}")
             return []
 
     def _parse_column_reference(self, col_ref: str, aliases: Dict[str, str]) -> Tuple[str, str]:
@@ -482,7 +488,8 @@ class SimpleQueryAnalyzer:
 
             return None, None
 
-        except:
+        except Exception as e:
+            handle_error(e, f"컬럼 참조 파싱 실패: {col_ref}")
             return None, None
 
     # ========== 데이터베이스 조작 ==========
@@ -493,7 +500,8 @@ class SimpleQueryAnalyzer:
             # 기존 테이블 존재 확인
             existing = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
-                (table_name,)
+                (table_name,),
+                conn=self.conn
             )
 
             if existing:
@@ -505,7 +513,8 @@ class SimpleQueryAnalyzer:
                    (project_id, file_id, component_name, component_type, layer, hash_value)
                    VALUES (1, ?, ?, 'TABLE', 'DATABASE', ?)""",
                 (file_id, table_name, 'INFERRED_TABLE'),
-                return_id=True
+                return_id=True,
+                conn=self.conn
             )
 
             debug(f"INFERRED 테이블 등록: {table_name}")
@@ -521,7 +530,8 @@ class SimpleQueryAnalyzer:
             # 테이블 컴포넌트 ID 찾기
             table_result = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'TABLE'",
-                (table_name,)
+                (table_name,),
+                conn=self.conn
             )
 
             if not table_result:
@@ -532,7 +542,8 @@ class SimpleQueryAnalyzer:
             # 기존 컬럼 존재 확인
             existing = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = 'COLUMN' AND parent_id = ?",
-                (column_name, table_id)
+                (column_name, table_id),
+                conn=self.conn
             )
 
             if existing:
@@ -544,7 +555,8 @@ class SimpleQueryAnalyzer:
                    (project_id, file_id, component_name, component_type, parent_id, layer, hash_value)
                    VALUES (1, 1, ?, 'COLUMN', ?, 'DATABASE', ?)""",
                 (column_name, table_id, 'INFERRED_COLUMN'),
-                return_id=True
+                return_id=True,
+                conn=self.conn
             )
 
             debug(f"INFERRED 컬럼 등록: {table_name}.{column_name}")
@@ -592,13 +604,15 @@ class SimpleQueryAnalyzer:
                     # 관계 중복 확인
                     existing = self.db_utils.execute_query(
                         "SELECT COUNT(*) as count FROM relationships WHERE src_id = ? AND dst_id = ? AND rel_type = ?",
-                        (src_id, dst_id, rel['relationship_type'])
+                        (src_id, dst_id, rel['relationship_type']),
+                        conn=self.conn
                     )
 
                     if existing[0]['count'] == 0:
                         self.db_utils.execute_query(
                             "INSERT INTO relationships (src_id, dst_id, rel_type, confidence) VALUES (?, ?, ?, 1.0)",
-                            (src_id, dst_id, rel['relationship_type'])
+                            (src_id, dst_id, rel['relationship_type']),
+                            conn=self.conn
                         )
                         debug(f"관계 저장: {rel['src_name']} -> {rel['dst_name']} ({rel['relationship_type']})")
 
@@ -613,10 +627,12 @@ class SimpleQueryAnalyzer:
         try:
             result = self.db_utils.execute_query(
                 "SELECT component_id FROM components WHERE component_name = ? AND component_type = ? LIMIT 1",
-                (component_name, component_type)
+                (component_name, component_type),
+                conn=self.conn
             )
             return result[0]['component_id'] if result else None
-        except:
+        except Exception as e:
+            handle_error(e, f"컴포넌트 ID 찾기 실패: {component_name} ({component_type})")
             return None
 
     def _is_oracle_keyword(self, word: str) -> bool:

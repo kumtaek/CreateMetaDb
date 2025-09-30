@@ -70,14 +70,15 @@ class SqlContentManager:
             handle_error(e, "SQL Content 데이터베이스 초기화 실패")
             return False
     
-    def save_sql_content(self, sql_content: str, project_id: int, **kwargs) -> bool:
+    def save_sql_content(self, sql_content: str, project_id: int, conn=None, **kwargs) -> bool:
         """
-        정제된 SQL 내용 저장
+        정제된 SQL 내용 저장 및 Component 등록 (공통부, 단일 연결 지원)
         
         Args:
             sql_content: 정제된 SQL 내용
             project_id: 프로젝트 ID
-            **kwargs: 추가 메타데이터
+            conn: 사용할 연결 객체 (None이면 새 연결 생성)
+            **kwargs: 추가 메타데이터 (query_id, file_id, file_path 등)
             
         Returns:
             저장 성공 여부
@@ -86,17 +87,32 @@ class SqlContentManager:
             # 프로젝트 정보 먼저 저장 (외래키 제약조건 대비)
             self._ensure_project_exists(project_id, kwargs.get('file_path', ''))
             
-            # gzip 압축
+            # 1. Component 등록 (metadata.db, 단일 연결 사용)
+            component_id = self._register_sql_component(
+                sql_content=sql_content,
+                project_id=project_id,
+                file_id=kwargs.get('file_id'),
+                query_id=kwargs.get('query_id', kwargs.get('component_name', '')),
+                file_path=kwargs.get('file_path', ''),
+                query_type=kwargs.get('query_type', 'SQL_QUERY'),
+                conn=conn
+            )
+            
+            if not component_id:
+                app_logger.error(f"SQL Component 등록 실패: {kwargs.get('query_id', 'unknown')}")
+                return False
+            
+            # 2. gzip 압축
             compressed_content = self._compress_content(sql_content)
             
-            # 데이터베이스에 저장
+            # 3. SQL Content 저장 (SqlContent.db)
             sql_content_data = {
                 'project_id': project_id,
                 'file_id': kwargs.get('file_id'),
-                'component_id': kwargs.get('component_id'),
+                'component_id': component_id,  # 등록된 component_id 사용
                 'sql_content_compressed': compressed_content,
                 'file_path': kwargs.get('file_path'),
-                'component_name': kwargs.get('component_name'),
+                'component_name': kwargs.get('query_id', kwargs.get('component_name', '')),
                 'file_name': kwargs.get('file_name'),
                 'hash_value': kwargs.get('hash_value'),
                 'del_yn': 'N'
@@ -106,12 +122,134 @@ class SqlContentManager:
             success = self._upsert_sql_content(sql_content_data)
             
             if success:
-                app_logger.debug(f"SQL 내용 저장 완료: {kwargs.get('component_name', 'unknown')} - {kwargs.get('file_path', 'unknown')}")
+                app_logger.debug(f"SQL Content + Component 저장 완료: {kwargs.get('query_id', 'unknown')} (component_id: {component_id})")
             
             return success
             
         except Exception as e:
             handle_error(e, "SQL 내용 저장 실패")
+    
+    def _register_sql_component(self, sql_content: str, project_id: int, file_id: int, 
+                               query_id: str, file_path: str, query_type: str, conn=None) -> Optional[int]:
+        """
+        SQL Component를 metadata.db의 components 테이블에 등록 (공통부)
+        
+        Args:
+            sql_content: SQL 내용
+            project_id: 프로젝트 ID
+            file_id: 파일 ID
+            query_id: 쿼리 ID
+            file_path: 파일 경로
+            query_type: 쿼리 타입 (SQL_SELECT, SQL_INSERT 등)
+            
+        Returns:
+            등록된 component_id 또는 None
+        """
+        try:
+            if not query_id:
+                app_logger.error("query_id가 비어있음")
+                return None
+            
+            # SQL 내용 기반으로 쿼리 타입 결정
+            if query_type == 'SQL_QUERY':
+                query_type = self._determine_sql_component_type(sql_content)
+            
+            # metadata.db에 연결하여 Component 등록
+            metadata_db_path = f'projects/{self.project_name}/metadata.db'
+            if not os.path.exists(metadata_db_path):
+                app_logger.error(f"metadata.db 파일이 존재하지 않음: {metadata_db_path}")
+                return None
+            
+            from .database_utils import DatabaseUtils
+            from .hash_utils import HashUtils
+            
+            # 전달받은 연결 사용 (단일 연결 보장)
+            metadata_db_utils = DatabaseUtils(metadata_db_path)
+            if conn is None:
+                conn = metadata_db_utils.get_persistent_connection()
+            
+            # 데이터베이스 연결 설정은 트랜잭션 외부에서 이미 완료됨
+            # 트랜잭션 내부에서는 PRAGMA 설정 변경 불가
+            
+            # file_id 유효성 검증 (개별부에서 전달받은 file_id 사용)
+            try:
+                if file_id:
+                    file_check_query = "SELECT file_id FROM files WHERE file_id = ? AND project_id = ?"
+                    file_exists = metadata_db_utils.execute_query(file_check_query, (file_id, project_id), conn)
+                    if not file_exists:
+                        app_logger.warning(f"file_id {file_id}가 존재하지 않음. 기본값 1 사용")
+                        file_id = 1  # 기본값 사용
+                    else:
+                        app_logger.debug(f"file_id {file_id} 유효성 검증 통과")
+                else:
+                    app_logger.warning("file_id가 전달되지 않음. 기본값 1 사용")
+                    file_id = 1  # 기본값 사용
+            except Exception as e:
+                handle_error(e, f"file_id 유효성 검증 실패: {query_id}")
+                return None
+            
+            # Component 데이터 구성
+            component_data = {
+                'project_id': project_id,
+                'file_id': file_id,
+                'component_type': query_type,
+                'component_name': query_id,
+                'parent_id': None,
+                'layer': 'QUERY',  # SQL 컴포넌트는 QUERY layer
+                'line_start': 1,  # SQL에서는 정확한 라인 번호 추출이 어려움
+                'line_end': 1,
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': HashUtils.generate_md5(sql_content),
+                'del_yn': 'N'
+            }
+            
+            # components 테이블에 저장 (재시도 로직)
+            max_retries = 3
+            component_id = None
+            
+            for attempt in range(max_retries):
+                try:
+                    # 단일 연결을 사용하여 컴포넌트 등록
+                    component_id = metadata_db_utils.insert_or_replace_with_id('components', component_data, conn)
+                    break
+                except Exception as e:
+                    if "database is locked" in str(e) and attempt < max_retries - 1:
+                        app_logger.warning(f"데이터베이스 락 발생, 재시도 {attempt + 1}/{max_retries}: {e}")
+                        import time
+                        time.sleep(2)  # 2초 대기
+                        continue
+                    else:
+                        handle_error(e, f"SQL Component 등록 실패 (재시도 {attempt + 1}/{max_retries}): {query_id}")
+                        return None
+            
+            if component_id:
+                app_logger.debug(f"SQL Component 등록 성공: {query_id} (ID: {component_id}, type: {query_type})")
+            else:
+                app_logger.error(f"SQL Component 등록 실패: {query_id}")
+            
+            return component_id
+            
+        except Exception as e:
+            handle_error(e, f"SQL Component 등록 실패: {query_id}")
+            return None
+    
+    def _determine_sql_component_type(self, sql_content: str) -> str:
+        """SQL 내용을 기반으로 컴포넌트 타입 결정"""
+        sql_upper = sql_content.upper().strip()
+        
+        if sql_upper.startswith('SELECT'):
+            return 'SQL_SELECT'
+        elif sql_upper.startswith('INSERT'):
+            return 'SQL_INSERT'
+        elif sql_upper.startswith('UPDATE'):
+            return 'SQL_UPDATE'
+        elif sql_upper.startswith('DELETE'):
+            return 'SQL_DELETE'
+        elif sql_upper.startswith('MERGE'):
+            return 'SQL_MERGE'
+        else:
+            return 'SQL_QUERY'
     
     def _upsert_sql_content(self, sql_content_data: Dict[str, Any]) -> bool:
         """
@@ -130,7 +268,7 @@ class SqlContentManager:
             
             # 기존 데이터 조회 (hash_value로 중복 체크)
             check_query = """
-                SELECT content_id, hash_value, del_yn 
+                SELECT project_id, file_id, component_id, hash_value, del_yn 
                 FROM sql_contents 
                 WHERE hash_value = ?
             """
@@ -141,15 +279,16 @@ class SqlContentManager:
                 app_logger.debug(f"SQL Content 중복 (스킵): {sql_content_data.get('component_name', 'unknown')} (hash_value: {hash_value})")
                 return True
             else:
-                # 기존 데이터가 없으면 INSERT
-                success = self.db_utils.insert_record('sql_contents', sql_content_data)
+                # 기존 데이터가 없으면 UPSERT 사용 (UNIQUE 제약조건 처리)
+                unique_columns = ['component_name', 'file_id', 'project_id']
+                success = self.db_utils.upsert('sql_contents', sql_content_data, unique_columns)
                 
                 if success:
                     app_logger.debug(f"SQL Content UPSERT 성공 (신규): {sql_content_data.get('component_name', 'unknown')}")
                 else:
-                    app_logger.error(f"SQL Content 삽입 실패: {sql_content_data.get('component_name', 'unknown')}")
+                    app_logger.error(f"SQL Content UPSERT 실패: {sql_content_data.get('component_name', 'unknown')}")
                 
-                return success
+                return success is not None
                 
         except Exception as e:
             handle_error(e, "SQL Content UPSERT 실패")
@@ -172,7 +311,7 @@ class SqlContentManager:
             # 삭제할 SQL Content 조회 (현재 component_id에 없는 것들)
             placeholders = ', '.join(['?' for _ in current_component_ids])
             select_query = f"""
-                SELECT content_id, component_name 
+                SELECT project_id, file_id, component_id, component_name 
                 FROM sql_contents 
                 WHERE project_id = ? AND component_id NOT IN ({placeholders}) AND del_yn = 'N'
             """
@@ -196,8 +335,8 @@ class SqlContentManager:
                     app_logger.info(f"삭제된 SQL Content 정리 완료: {deleted_count}개")
                     
                     # 삭제된 SQL Content 목록 로그
-                    for content_id, component_name in deleted_contents:
-                        app_logger.debug(f"삭제된 SQL Content: {component_name} (ID: {content_id})")
+                    for project_id, file_id, component_id, component_name in deleted_contents:
+                        app_logger.debug(f"삭제된 SQL Content: {component_name} (project_id: {project_id}, file_id: {file_id}, component_id: {component_id})")
                     
                     return deleted_count
                 else:
@@ -272,7 +411,7 @@ class SqlContentManager:
         try:
             query = """
             SELECT 
-                content_id, file_path, component_name,
+                project_id, file_id, component_id, file_path, component_name,
                 hash_value, created_at, sql_content_compressed
             FROM sql_contents 
             WHERE project_id = ? AND del_yn = 'N'
@@ -286,12 +425,14 @@ class SqlContentManager:
             sql_contents = []
             for row in results:
                 content_data = {
-                    'content_id': row[0],
-                    'file_path': row[1],
-                    'component_name': row[2],
-                    'hash_value': row[4],
-                    'created_at': row[5],
-                    'sql_content': self._decompress_content(row[6])
+                    'project_id': row[0],
+                    'file_id': row[1],
+                    'component_id': row[2],
+                    'file_path': row[3],
+                    'component_name': row[4],
+                    'hash_value': row[5],
+                    'created_at': row[6],
+                    'sql_content': self._decompress_content(row[7])
                 }
                 sql_contents.append(content_data)
             
