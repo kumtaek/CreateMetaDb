@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pathlib import Path
-from .logger import app_logger, handle_error
+from .logger import app_logger, handle_error, warning
 from .database_utils import DatabaseUtils
 from .path_utils import PathUtils
 
@@ -171,19 +171,33 @@ class SqlContentManager:
             # 데이터베이스 연결 설정은 트랜잭션 외부에서 이미 완료됨
             # 트랜잭션 내부에서는 PRAGMA 설정 변경 불가
             
-            # file_id 유효성 검증 (개별부에서 전달받은 file_id 사용)
+            # file_id 유효성 검증 및 적절한 file_id 찾기
             try:
                 if file_id:
                     file_check_query = "SELECT file_id FROM files WHERE file_id = ? AND project_id = ?"
                     file_exists = metadata_db_utils.execute_query(file_check_query, (file_id, project_id), conn)
                     if not file_exists:
-                        app_logger.warning(f"file_id {file_id}가 존재하지 않음. 기본값 1 사용")
-                        file_id = 1  # 기본값 사용
+                        warning(f"file_id {file_id}가 존재하지 않음. 적절한 file_id를 찾는 중...")
+                        # 적절한 file_id 찾기
+                        inferred_file_id = metadata_db_utils._get_inferred_file_id_for_component(project_id)
+                        if inferred_file_id:
+                            file_id = inferred_file_id
+                            app_logger.info(f"적절한 file_id 찾음: {file_id}")
+                        else:
+                            handle_error(Exception(f"유효한 file_id를 찾을 수 없음: {query_id}"), "file_id 찾기 실패")
+                            return None
                     else:
                         app_logger.debug(f"file_id {file_id} 유효성 검증 통과")
                 else:
-                    app_logger.warning("file_id가 전달되지 않음. 기본값 1 사용")
-                    file_id = 1  # 기본값 사용
+                    warning(f"file_id가 전달되지 않음. 적절한 file_id를 찾는 중...")
+                    # 적절한 file_id 찾기
+                    inferred_file_id = metadata_db_utils._get_inferred_file_id_for_component(project_id)
+                    if inferred_file_id:
+                        file_id = inferred_file_id
+                        app_logger.info(f"적절한 file_id 찾음: {file_id}")
+                    else:
+                        handle_error(Exception(f"유효한 file_id를 찾을 수 없음: {query_id}"), "file_id 찾기 실패")
+                        return None
             except Exception as e:
                 handle_error(e, f"file_id 유효성 검증 실패: {query_id}")
                 return None
@@ -215,7 +229,7 @@ class SqlContentManager:
                     break
                 except Exception as e:
                     if "database is locked" in str(e) and attempt < max_retries - 1:
-                        app_logger.warning(f"데이터베이스 락 발생, 재시도 {attempt + 1}/{max_retries}: {e}")
+                        handle_error(e, f"데이터베이스 락 발생, 재시도 {attempt + 1}/{max_retries}")
                         import time
                         time.sleep(2)  # 2초 대기
                         continue

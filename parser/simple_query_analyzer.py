@@ -75,8 +75,22 @@ class SimpleQueryAnalyzer:
                 results['java_queries'].extend(java_queries)
 
                 # 1-2. JPA 쿼리 추출
-                jpa_queries = self._extract_jpa_queries(method_content, method_name)
-                results['jpa_queries'].extend(jpa_queries)
+                if method.get('has_query', False) and method.get('query_sql'):
+                    # @Query가 있는 메서드의 경우 직접 SQL 추출
+                    query_sql = method['query_sql']
+                    if self._is_sql_query(query_sql):
+                        query_type = self._detect_query_type(query_sql)
+                        results['jpa_queries'].append({
+                            'query_id': method_name,
+                            'method_name': method_name,
+                            'variable_name': method_name,
+                            'sql_content': query_sql,
+                            'query_type': query_type
+                        })
+                else:
+                    # 일반 메서드의 경우 기존 로직 사용
+                    jpa_queries = self._extract_jpa_queries(method_content, method_name)
+                    results['jpa_queries'].extend(jpa_queries)
 
             info(f"Java 분석 완료: {file_path}, 메소드={len(methods)}, Java쿼리={len(results['java_queries'])}, JPA쿼리={len(results['jpa_queries'])}")
             return results
@@ -86,20 +100,45 @@ class SimpleQueryAnalyzer:
             return {'java_queries': [], 'jpa_queries': [], 'methods': []}
 
     def _extract_java_methods(self, content: str) -> List[Dict]:
-        """Java 메소드 추출"""
+        """Java 메소드 추출 - 인터페이스와 클래스 메서드 모두 지원"""
         try:
             methods = []
-            # 메소드 패턴: public/private/protected + 리턴타입 + 메소드명(파라미터) { ... }
-            pattern = r'(public|private|protected)\s+[^{]+?(\w+)\s*\([^)]*\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
-
-            matches = re.finditer(pattern, content, re.DOTALL | re.IGNORECASE)
-            for match in matches:
-                method_name = match.group(2)
-                method_content = match.group(3)
-
+            
+            # 1단계: @Query가 있는 메서드 추출 (멀티라인 고려)
+            # 더 정확한 패턴: @Query 다음에 오는 메서드 시그니처 (여러 줄 포함)
+            query_pattern = r'@Query[^@]*?(\w+)\s*\([^)]*\)\s*;'
+            query_matches = re.finditer(query_pattern, content, re.DOTALL | re.IGNORECASE)
+            
+            for match in query_matches:
+                method_name = match.group(1)
+                full_match = match.group(0)
+                
+                # @Query 어노테이션에서 SQL 추출
+                query_sql = self._extract_sql_from_query_annotation(full_match)
+                
                 methods.append({
                     'name': method_name,
-                    'content': method_content
+                    'content': full_match,  # @Query 포함한 전체 내용
+                    'full_signature': full_match,
+                    'has_query': True,
+                    'query_sql': query_sql
+                })
+            
+            # 2단계: 일반 메서드 추출 (클래스 메서드)
+            class_pattern = r'(public|private|protected)\s+[^{]+?(\w+)\s*\([^)]*\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
+            class_matches = re.finditer(class_pattern, content, re.DOTALL | re.IGNORECASE)
+            
+            for match in class_matches:
+                method_name = match.group(2)
+                method_content = match.group(3)
+                full_match = match.group(0)
+                
+                methods.append({
+                    'name': method_name,
+                    'content': method_content,
+                    'full_signature': full_match,
+                    'has_query': False,
+                    'query_sql': None
                 })
 
             return methods
@@ -107,6 +146,25 @@ class SimpleQueryAnalyzer:
         except Exception as e:
             handle_error(e, f"Java 메소드 추출 실패")
             return []
+    
+    def _extract_sql_from_query_annotation(self, query_annotation: str) -> str:
+        """@Query 어노테이션에서 SQL 추출"""
+        try:
+            # @Query(...) 패턴에서 괄호 안 내용 추출
+            query_pattern = r'@Query\s*\(\s*([^)]+?)\s*\)'
+            match = re.search(query_pattern, query_annotation, re.DOTALL | re.IGNORECASE)
+            
+            if match:
+                query_content = match.group(1)
+                # 쌍따옴표 안 문자열만 추출
+                string_parts = re.findall(r'"([^"]*)"', query_content, re.DOTALL)
+                if string_parts:
+                    return ' '.join(part.strip() for part in string_parts).strip()
+            
+            return ""
+        except Exception as e:
+            debug(f"SQL 추출 실패: {e}")
+            return ""
 
     def _extract_java_queries(self, method_content: str, method_name: str) -> List[Dict]:
         """Java 동적 쿼리 추출 - 문자열 변수 concatenation 분석"""

@@ -963,7 +963,7 @@ class DatabaseUtils:
         [Deprecated] 트랜잭션 시작. Auto Commit 모드에서는 불필요합니다.
         Auto Commit 모드에서는 모든 쿼리가 즉시 커밋됩니다.
         """
-        app_logger.warning("`begin_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 트랜잭션이 불필요합니다.")
+        handle_error(Exception("`begin_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 트랜잭션이 불필요합니다."), "Deprecated 메서드 호출")
         # Auto Commit 모드에서는 트랜잭션이 불필요합니다.
         pass
 
@@ -971,7 +971,7 @@ class DatabaseUtils:
         """
         [Deprecated] 트랜잭션 커밋. Auto Commit 모드에서는 불필요합니다.
         """
-        app_logger.warning("`commit_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 자동으로 커밋됩니다.")
+        handle_error(Exception("`commit_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 자동으로 커밋됩니다."), "Deprecated 메서드 호출")
         # Auto Commit 모드에서는 자동으로 커밋됩니다.
         pass
 
@@ -979,7 +979,7 @@ class DatabaseUtils:
         """
         [Deprecated] 트랜잭션 롤백. Auto Commit 모드에서는 불필요합니다.
         """
-        app_logger.warning("`rollback_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 롤백이 불필요합니다.")
+        handle_error(Exception("`rollback_transaction`은 Deprecated 되었습니다. Auto Commit 모드에서는 롤백이 불필요합니다."), "Deprecated 메서드 호출")
         # Auto Commit 모드에서는 롤백이 불필요합니다.
         pass
 
@@ -1361,7 +1361,7 @@ class DatabaseUtils:
         """
         try:
             if not src_id or not dst_id:
-                app_logger.warning(f"소스(src) 또는 대상(dst) ID가 없어 관계 저장을 건너뜁니다: {rel_type}")
+                handle_error(Exception(f"소스(src) 또는 대상(dst) ID가 없어 관계 저장을 건너뜁니다: {rel_type}"), "관계 저장 실패")
                 return False
 
             sql = """

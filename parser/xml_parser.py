@@ -77,7 +77,7 @@ class XmlParser:
             for root, dirs, files in os.walk(project_path):
                 for file in files:
                     if file.endswith('.xml'):
-                        file_path = self.path_utils.normalize_path(os.path.join(root, file))
+                        file_path = self.path_utils.join_path(root, file)
                         if self._is_mybatis_xml_file(file_path):
                             xml_files.append(file_path)
             

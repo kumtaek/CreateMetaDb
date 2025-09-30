@@ -6,6 +6,7 @@ SourceAnalyzer 5단계 - 백엔드 진입점 분석 메인 엔진
 - 캐싱 및 통계 수집
 """
 
+import os
 import sqlite3
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
@@ -39,6 +40,7 @@ class BackendEntryLoadingEngine:
         self.factory = get_global_factory()
         
         self.db = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
+        self.project_source_path = self.path_utils.get_project_source_path(project_name)
         
         self.servlet_url_map = self._parse_web_xml()
         self.analyzers = self._load_analyzers()
@@ -58,7 +60,7 @@ class BackendEntryLoadingEngine:
     def _parse_web_xml(self) -> Dict[str, str]:
         """프로젝트의 web.xml 파일들을 파싱하여 서블릿 클래스와 URL 패턴 맵을 생성"""
         try:
-            query = "SELECT f.file_path FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
+            query = "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
             results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
             if not results:
                 app_logger.debug("web.xml 파일을 찾을 수 없습니다")
@@ -67,9 +69,21 @@ class BackendEntryLoadingEngine:
             url_map = {}
             for row in results:
                 try:
-                    web_xml_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
+                    # file_path는 절대 경로이지만 실제 파일은 프로젝트 디렉토리 내에 있음
+                    # file_path에서 프로젝트 루트를 제거하고 프로젝트 소스 경로와 결합
+                    file_path = row['file_path']
+                    if file_path.startswith('D:/Analyzer/CreateMetaDb/'):
+                        relative_path = file_path.replace('D:/Analyzer/CreateMetaDb/', '')
+                        web_xml_path = self.path_utils.join_path(self.path_utils.get_project_source_path(self.project_name), relative_path, row['file_name'])
+                    else:
+                        web_xml_path = self.path_utils.join_path(row['file_path'], row['file_name'])
+                    
+                    # 크로스플랫폼 호환성을 위해 모든 경로 구분자를 /로 통일
+                    web_xml_path = web_xml_path.replace('\\', '/')
                     web_xml_content = self._read_file_content(web_xml_path)
-                    if not web_xml_content: continue
+                    if not web_xml_content: 
+                        handle_error(Exception(f"web.xml 파일을 읽을 수 없음: {web_xml_path}"), "web.xml 파일 읽기 실패")
+                        continue
 
                     root = ET.fromstring(web_xml_content)
                     servlet_mappings = {elem.find('servlet-name').text: elem.find('url-pattern').text for elem in root.findall('servlet-mapping') if elem.find('servlet-name') is not None and elem.find('url-pattern') is not None}
@@ -80,6 +94,7 @@ class BackendEntryLoadingEngine:
                             url_map[servlet_classes[name]] = url
                 except Exception as e:
                     handle_error(e, f"web.xml 파싱 실패: {row['file_path']}")
+                    continue
             return url_map
         except Exception as e:
             handle_error(e, "web.xml 파싱 중 오류 발생")
@@ -93,7 +108,7 @@ class BackendEntryLoadingEngine:
 
             java_files = self._get_java_files()
             if not java_files:
-                warning("분석할 Java 파일이 없습니다.")
+                handle_error(Exception("분석할 Java 파일이 없습니다."), "백엔드 진입점 분석 실패")
                 return True
 
             all_backend_entries = self._analyze_backend_entries(java_files)
@@ -118,7 +133,17 @@ class BackendEntryLoadingEngine:
         
         java_files = []
         for row in results or []:
-            full_path = self.path_utils.join_path("projects", self.project_name, row['file_path'])
+            # file_path는 절대 경로이지만 실제 파일은 프로젝트 디렉토리 내에 있음
+            # file_path에서 프로젝트 루트를 제거하고 프로젝트 소스 경로와 결합
+            file_path = row['file_path']
+            if file_path.startswith('D:/Analyzer/CreateMetaDb/'):
+                relative_path = file_path.replace('D:/Analyzer/CreateMetaDb/', '')
+                full_path = self.path_utils.join_path(self.project_source_path, relative_path, row['file_name'])
+            else:
+                full_path = self.path_utils.join_path(file_path, row['file_name'])
+            
+            # 크로스플랫폼 호환성을 위해 모든 경로 구분자를 /로 통일
+            full_path = full_path.replace('\\', '/')
             content = self._read_file_content(full_path)
             if content:
                 java_files.append(FileInfo(file_id=row['file_id'], file_path=row['file_path'], file_name=row['file_name'], file_type=row['file_type'], content=content, hash_value=row['hash_value'], line_count=len(content.split('\n'))))
@@ -130,7 +155,12 @@ class BackendEntryLoadingEngine:
             normalized_path = self.path_utils.normalize_path(file_path)
             with open(normalized_path, 'r', encoding='utf-8') as file:
                 return file.read()
+        except FileNotFoundError:
+            # 파일이 없는 경우 경고만 출력하고 None 반환 (프로그램 종료하지 않음)
+            handle_error(Exception(f"파일을 찾을 수 없음: {file_path}"), "파일 읽기 실패")
+            return None
         except Exception as e:
+            # 기타 예외는 handle_error로 처리
             handle_error(e, f"파일 읽기 실패: {file_path}")
             return None
 

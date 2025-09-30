@@ -45,12 +45,19 @@ class RelationshipBuilder:
         try:
             info("연관관계 구축 시작")
 
+            # 데이터베이스에서 직접 데이터 수집
+            self._collect_xml_queries_from_db()
+            self._collect_java_methods_from_db()
+            self._collect_jpa_entities_from_db()
+            self._collect_api_calls_from_db()
+
             self._build_mybatis_method_query_relationships()
             self._build_jpa_method_entity_relationships()
             self._build_query_table_relationships()
             self._build_table_join_relationships()
             self._build_entity_table_relationships()
             self._build_frontend_api_relationships()
+            self._build_call_method_relationships()
 
             self.stats['total_relationships'] = sum(self.stats.values())
             info(f"연관관계 구축 완료: 총 {self.stats['total_relationships']}개 관계 생성")
@@ -59,6 +66,187 @@ class RelationshipBuilder:
         except Exception as e:
             handle_error(e, "연관관계 구축 실패")
             return self.stats
+
+    def _collect_xml_queries_from_db(self) -> None:
+        """데이터베이스에서 XML 쿼리 데이터 수집"""
+        try:
+            # SQL 컴포넌트에서 XML 쿼리 정보 수집 (sql_contents 테이블 없이)
+            query = """
+                SELECT c.component_id, c.component_name, c.component_type, c.file_id,
+                       f.file_path
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND c.component_type IN ('SQL_SELECT', 'SQL_INSERT', 'SQL_UPDATE', 'SQL_DELETE', 'SQL_MERGE')
+                  AND c.del_yn = 'N'
+                  AND f.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
+            
+            for row in results:
+                # SqlContent.db에서 SQL 내용 조회 시도
+                sql_content = self._get_sql_content_from_sqlcontent_db(row['component_id'])
+                
+                self.collected_data['xml_queries'].append({
+                    'component_id': row['component_id'],
+                    'component_name': row['component_name'],
+                    'component_type': row['component_type'],
+                    'file_id': row['file_id'],
+                    'file_path': row['file_path'],
+                    'sql_content': sql_content or ''
+                })
+            
+            info(f"XML 쿼리 데이터 수집 완료: {len(self.collected_data['xml_queries'])}개")
+            
+        except Exception as e:
+            handle_error(e, "XML 쿼리 데이터 수집 실패")
+
+    def _collect_java_methods_from_db(self) -> None:
+        """데이터베이스에서 Java 메서드 데이터 수집"""
+        try:
+            # METHOD 컴포넌트에서 Java 메서드 정보 수집
+            query = """
+                SELECT c.component_id, c.component_name, c.component_type, c.file_id,
+                       f.file_path, f.file_name
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND c.component_type = 'METHOD'
+                  AND c.del_yn = 'N'
+                  AND f.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
+            
+            for row in results:
+                # 클래스명과 메서드명 분리
+                full_name = row['component_name']
+                if '.' in full_name:
+                    class_name, method_name = full_name.rsplit('.', 1)
+                else:
+                    class_name = 'Unknown'
+                    method_name = full_name
+                
+                self.collected_data['java_methods'].append({
+                    'component_id': row['component_id'],
+                    'component_name': row['component_name'],
+                    'class_name': class_name,
+                    'method_name': method_name,
+                    'file_id': row['file_id'],
+                    'file_path': row['file_path'],
+                    'file_name': row['file_name']
+                })
+            
+            info(f"Java 메서드 데이터 수집 완료: {len(self.collected_data['java_methods'])}개")
+            
+        except Exception as e:
+            handle_error(e, "Java 메서드 데이터 수집 실패")
+
+    def _collect_jpa_entities_from_db(self) -> None:
+        """데이터베이스에서 JPA 엔티티 데이터 수집"""
+        try:
+            # JPA 관련 컴포넌트 수집
+            query = """
+                SELECT c.component_id, c.component_name, c.component_type, c.file_id,
+                       f.file_path, f.file_name
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND c.component_type IN ('ENTITY', 'REPOSITORY', 'SERVICE')
+                  AND c.del_yn = 'N'
+                  AND f.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
+            
+            for row in results:
+                self.collected_data['jpa_entities'].append({
+                    'component_id': row['component_id'],
+                    'component_name': row['component_name'],
+                    'component_type': row['component_type'],
+                    'file_id': row['file_id'],
+                    'file_path': row['file_path'],
+                    'file_name': row['file_name']
+                })
+            
+            info(f"JPA 엔티티 데이터 수집 완료: {len(self.collected_data['jpa_entities'])}개")
+            
+        except Exception as e:
+            handle_error(e, "JPA 엔티티 데이터 수집 실패")
+
+    def _collect_api_calls_from_db(self) -> None:
+        """데이터베이스에서 API 호출 데이터 수집"""
+        try:
+            # API_URL 컴포넌트 수집
+            query = """
+                SELECT c.component_id, c.component_name, c.component_type, c.file_id,
+                       f.file_path, f.file_name
+                FROM components c
+                JOIN files f ON c.file_id = f.file_id
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND c.component_type = 'API_URL'
+                  AND c.del_yn = 'N'
+                  AND f.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
+            
+            for row in results:
+                self.collected_data['api_calls'].append({
+                    'component_id': row['component_id'],
+                    'component_name': row['component_name'],
+                    'file_id': row['file_id'],
+                    'file_path': row['file_path'],
+                    'file_name': row['file_name']
+                })
+            
+            info(f"API 호출 데이터 수집 완료: {len(self.collected_data['api_calls'])}개")
+            
+        except Exception as e:
+            handle_error(e, "API 호출 데이터 수집 실패")
+
+    def _get_sql_content_from_sqlcontent_db(self, component_id: int) -> Optional[str]:
+        """SqlContent.db에서 SQL 내용 조회"""
+        try:
+            import os
+            sqlcontent_db_path = os.path.join('projects', self.project_name, 'SqlContent.db')
+            
+            if not os.path.exists(sqlcontent_db_path):
+                debug(f"SqlContent.db 파일이 없습니다: {sqlcontent_db_path}")
+                return None
+            
+            # SqlContent.db 연결
+            import sqlite3
+            sqlcontent_conn = sqlite3.connect(sqlcontent_db_path)
+            sqlcontent_conn.row_factory = sqlite3.Row
+            
+            # sql_contents 테이블에서 SQL 내용 조회
+            query = """
+                SELECT sql_content_compressed, file_path, file_name
+                FROM sql_contents 
+                WHERE component_id = ? AND del_yn = 'N'
+            """
+            cursor = sqlcontent_conn.cursor()
+            cursor.execute(query, (component_id,))
+            result = cursor.fetchone()
+            
+            if result and result['sql_content_compressed']:
+                # gzip 압축 해제
+                import gzip
+                try:
+                    decompressed_content = gzip.decompress(result['sql_content_compressed']).decode('utf-8')
+                    return decompressed_content
+                except Exception as e:
+                    debug(f"SQL 내용 압축 해제 실패: {e}")
+                    return None
+            
+            sqlcontent_conn.close()
+            return None
+            
+        except Exception as e:
+            debug(f"SqlContent.db에서 SQL 내용 조회 실패: {e}")
+            return None
 
     def _add_mybatis_mapper_result(self, java_result: Dict[str, Any]) -> None:
         """MyBatis Mapper 결과 추가"""
@@ -189,26 +377,42 @@ class RelationshipBuilder:
                 if not sql_content:
                     continue
 
-                # 1. QUERY 컴포넌트 찾기
-                query_id = self._find_query_component_id(
-                    query_data['query_id'],
-                    query_data.get('namespace', '')
-                )
-
+                # 1. QUERY 컴포넌트 ID 사용
+                query_id = query_data.get('component_id')
                 if not query_id:
-                    debug(f"QUERY 컴포넌트를 찾을 수 없음: {query_data['query_id']}")
+                    debug(f"QUERY 컴포넌트 ID를 찾을 수 없음: {query_data.get('component_name', 'Unknown')}")
                     continue
 
-                # 2. 테이블 추출
-                from parser.sql_parser import SqlParser
-                sql_parser = SqlParser()
-                tables = sql_parser.extract_table_names(sql_content)
+                # 2. SQL에서 테이블 추출
+                tables = self._extract_tables_from_sql(sql_content)
+                if not tables:
+                    continue
 
                 # 3. QUERY → TABLE 관계 생성
                 for table_name in tables:
-                    table_id = self._find_or_create_table_component(table_name)
-                    if table_id:
+                    table_id = self._find_table_component_id(table_name)
+                    if table_id and query_id != table_id:
                         self._insert_relationship(query_id, table_id, 'USE_TABLE')
+                        count += 1
+
+            # Java 메서드에서 SQL 쿼리 분석
+            for method_data in self.collected_data['java_methods']:
+                # SQL 쿼리가 포함된 메서드 찾기
+                if 'sql_content' in method_data:
+                    sql_content = method_data['sql_content']
+                    if not sql_content:
+                        continue
+                    
+                    method_id = method_data.get('component_id')
+                    if not method_id:
+                        continue
+                    
+                    tables = self._extract_tables_from_sql(sql_content)
+                    for table_name in tables:
+                        table_id = self._find_table_component_id(table_name)
+                        if table_id and method_id != table_id:
+                            self._insert_relationship(method_id, table_id, 'USE_TABLE')
+                            count += 1
                         count += 1
 
             # JPA 쿼리 분석
@@ -253,50 +457,151 @@ class RelationshipBuilder:
                 if not sql_content:
                     continue
 
-                tables = self.sql_analyzer.extract_tables_from_sql(sql_content)
-                join_relationships = self.sql_analyzer.extract_join_relationships(sql_content, tables)
-
-                for join_rel in join_relationships:
-                    source_table = join_rel.get('source_table')
-                    target_table = join_rel.get('target_table')
-
-                    if source_table and target_table:
-                        source_id = self._find_or_create_table_component(source_table)
-                        target_id = self._find_or_create_table_component(target_table)
-
-                        if source_id and target_id and source_id != target_id:
-                            self._insert_relationship(source_id, target_id, 'JOINS_WITH')
-                            count += 1
-
-            # JPA 쿼리에서도 조인 관계 추출
-            for method_data in self.collected_data['java_methods']:
-                if method_data.get('mapping_type') != 'JPA_METHOD':
+                # SQL에서 테이블 추출
+                tables = self._extract_tables_from_sql(sql_content)
+                if len(tables) < 2:
                     continue
 
-                query_sql = method_data.get('query_sql', '')
-                if not query_sql or query_sql.startswith('--'):
-                    continue
+                # 테이블 간 조인 관계 생성
+                for i, source_table in enumerate(tables):
+                    for target_table in tables[i+1:]:
+                        if source_table != target_table:
+                            source_id = self._find_table_component_id(source_table)
+                            target_id = self._find_table_component_id(target_table)
+                            
+                            if source_id and target_id:
+                                # 명시적 조인 확인
+                                if self._has_explicit_join(sql_content, source_table, target_table):
+                                    self._insert_relationship(source_id, target_id, 'JOIN_EXPLICIT')
+                                    count += 1
+                                else:
+                                    self._insert_relationship(source_id, target_id, 'JOIN_IMPLICIT')
+                                    count += 1
 
-                tables = self.sql_analyzer.extract_tables_from_sql(query_sql)
-                join_relationships = self.sql_analyzer.extract_join_relationships(query_sql, tables)
-
-                for join_rel in join_relationships:
-                    source_table = join_rel.get('source_table')
-                    target_table = join_rel.get('target_table')
-
-                    if source_table and target_table:
-                        source_id = self._find_or_create_table_component(source_table)
-                        target_id = self._find_or_create_table_component(target_table)
-
-                        if source_id and target_id and source_id != target_id:
-                            self._insert_relationship(source_id, target_id, 'JOINS_WITH')
-                            count += 1
-
+            # 기존 relationships에서 조인 관계 확인
+            existing_joins = self._get_existing_join_relationships()
+            count += len(existing_joins)
+            
             self.stats['table_join_relationships'] = count
             info(f"TABLE JOIN 관계 구축 완료: {count}개")
 
         except Exception as e:
             handle_error(e, "TABLE JOIN 관계 구축 실패")
+
+    def _extract_tables_from_sql(self, sql_content: str) -> List[str]:
+        """SQL에서 테이블명 추출"""
+        try:
+            import re
+            tables = []
+            
+            # FROM 절에서 테이블 추출
+            from_pattern = r'FROM\s+(\w+)'
+            from_matches = re.findall(from_pattern, sql_content, re.IGNORECASE)
+            tables.extend(from_matches)
+            
+            # JOIN 절에서 테이블 추출
+            join_pattern = r'JOIN\s+(\w+)'
+            join_matches = re.findall(join_pattern, sql_content, re.IGNORECASE)
+            tables.extend(join_matches)
+            
+            # 중복 제거 및 정리
+            unique_tables = list(set([t.upper() for t in tables if t]))
+            return unique_tables
+            
+        except Exception as e:
+            debug(f"테이블 추출 실패: {e}")
+            return []
+
+    def _find_table_component_id(self, table_name: str) -> Optional[int]:
+        """테이블 컴포넌트 ID 찾기"""
+        try:
+            query = """
+                SELECT c.component_id 
+                FROM components c
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? 
+                  AND c.component_name = ?
+                  AND c.component_type = 'TABLE'
+                  AND c.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name, table_name), conn=self.conn)
+            return results[0]['component_id'] if results else None
+            
+        except Exception as e:
+            debug(f"테이블 컴포넌트 ID 찾기 실패: {table_name} - {e}")
+            return None
+
+    def _has_explicit_join(self, sql_content: str, table1: str, table2: str) -> bool:
+        """명시적 조인 여부 확인"""
+        try:
+            import re
+            # JOIN 키워드가 있는지 확인
+            join_pattern = r'JOIN\s+\w+'
+            return bool(re.search(join_pattern, sql_content, re.IGNORECASE))
+        except:
+            return False
+
+    def _get_existing_join_relationships(self) -> List[Dict]:
+        """기존 조인 관계 조회"""
+        try:
+            query = """
+                SELECT r.src_id, r.dst_id, r.rel_type
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id
+                JOIN components dst ON r.dst_id = dst.component_id
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
+            return results
+        except Exception as e:
+            debug(f"기존 조인 관계 조회 실패: {e}")
+            return []
+
+    def _build_call_method_relationships(self) -> None:
+        """CALL_METHOD 관계 구축 - 실제 호출 관계만 생성"""
+        try:
+            count = 0
+
+            # API_URL → METHOD 관계 생성 (실제 매핑된 메서드만)
+            for api_data in self.collected_data['api_calls']:
+                api_id = api_data.get('component_id')
+                if not api_id:
+                    continue
+                
+                # API_URL에 실제 매핑된 METHOD 찾기 (Spring @RequestMapping 등)
+                # 현재는 간단히 같은 파일의 첫 번째 METHOD만 매핑
+                file_id = api_data.get('file_id')
+                if not file_id:
+                    continue
+                
+                # 같은 파일의 첫 번째 METHOD 컴포넌트만 조회
+                query = """
+                    SELECT c.component_id, c.component_name
+                    FROM components c
+                    WHERE c.file_id = ? AND c.component_type = 'METHOD' AND c.del_yn = 'N'
+                    ORDER BY c.component_id
+                    LIMIT 1
+                """
+                methods = self.db_utils.execute_query(query, (file_id,), conn=self.conn)
+                
+                for method in methods:
+                    method_id = method['component_id']
+                    if method_id != api_id:
+                        self._insert_relationship(api_id, method_id, 'CALL_METHOD')
+                        count += 1
+
+            # METHOD → METHOD 관계 생성 (실제 호출 관계만)
+            # 현재는 실제 호출 분석이 없으므로 관계 생성하지 않음
+            # TODO: 실제 메서드 호출 분석 로직 구현 필요
+
+            self.stats['api_method_relationships'] = count
+            info(f"CALL_METHOD 관계 구축 완료: {count}개")
+
+        except Exception as e:
+            handle_error(e, "CALL_METHOD 관계 구축 실패")
 
     def _build_entity_table_relationships(self) -> None:
         """JPA ENTITY → TABLE 관계 구축"""
@@ -337,16 +642,42 @@ class RelationshipBuilder:
     def _find_component_id(self, component_name: str, component_type: str) -> Optional[int]:
         """컴포넌트 ID 찾기"""
         try:
+            # 1. 정확한 매칭 시도
             query = """
-                SELECT component_id FROM components
-                WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
+                SELECT c.component_id FROM components c
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? AND c.component_name = ? AND c.component_type = ? AND c.del_yn = 'N'
                 LIMIT 1
             """
-            result = self.db_utils.execute_query(query, (self.project_id, component_name, component_type), conn=self.conn)
+            result = self.db_utils.execute_query(query, (self.project_name, component_name, component_type), conn=self.conn)
+            if result:
+                return result[0]['component_id']
+            
+            # 2. 부분 매칭 시도 (클래스명만으로)
+            if '.' in component_name:
+                class_name = component_name.split('.')[0]
+                query = """
+                    SELECT c.component_id FROM components c
+                    JOIN projects p ON c.project_id = p.project_id
+                    WHERE p.project_name = ? AND c.component_name LIKE ? AND c.component_type = ? AND c.del_yn = 'N'
+                    LIMIT 1
+                """
+                result = self.db_utils.execute_query(query, (self.project_name, f"{class_name}.%", component_type), conn=self.conn)
+                if result:
+                    return result[0]['component_id']
+            
+            # 3. 대소문자 무시 매칭
+            query = """
+                SELECT c.component_id FROM components c
+                JOIN projects p ON c.project_id = p.project_id
+                WHERE p.project_name = ? AND UPPER(c.component_name) = UPPER(?) AND c.component_type = ? AND c.del_yn = 'N'
+                LIMIT 1
+            """
+            result = self.db_utils.execute_query(query, (self.project_name, component_name, component_type), conn=self.conn)
             return result[0]['component_id'] if result else None
 
         except Exception as e:
-            handle_error(e, f"컴포넌트 ID 찾기 실패: {component_name}")
+            debug(f"컴포넌트 ID 찾기 실패: {component_name} ({component_type}) - {e}")
             return None
 
     def _find_query_component_id(self, query_id: str, namespace: str) -> Optional[int]:

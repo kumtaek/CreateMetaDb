@@ -152,10 +152,13 @@ class FileLoadingEngine:
             # 프로젝트 기준 상대경로 및 Unix 스타일로 정규화
             relative_path = self.path_utils.get_relative_path(file_path, self.project_source_path)
             unix_relative_path = self.path_utils.normalize_path_separator(relative_path, 'unix')
+            
+            # file_path에서 파일명 제거 (디렉토리 경로만 저장)
+            directory_path = self.path_utils.get_directory_path(unix_relative_path)
 
-            # 파일 정보 구성 (file_path는 전체 상대경로)
+            # 파일 정보 구성 (file_path는 디렉토리 경로만)
             return {
-                'file_path': unix_relative_path,  # Unix 스타일 경로로 저장
+                'file_path': directory_path,  # 디렉토리 경로만 저장
                 'file_name': file_info['file_name'],
                 'file_type': file_info['file_type'].upper(),  # 대문자로 변경
                 'hash_value': file_info['hash_value'],

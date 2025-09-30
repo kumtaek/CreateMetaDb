@@ -8,7 +8,7 @@ import os
 import sqlite3
 from typing import List, Dict, Any, Optional
 from util import (
-    DatabaseUtils, info, warning, debug, handle_error,
+    DatabaseUtils, PathUtils, info, warning, debug, handle_error,
     get_project_source_path, get_project_metadata_db_path, HashUtils
 )
 from parser.simple_java_parser import SimpleJavaParser
@@ -24,6 +24,7 @@ class SimpleJavaLoader:
         self.conn = conn
         self.project_source_path = get_project_source_path(project_name)
         
+        self.path_utils = PathUtils()
         self.db_utils = DatabaseUtils(get_project_metadata_db_path(project_name))
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.conn)
@@ -48,7 +49,7 @@ class SimpleJavaLoader:
             for root, _, files in os.walk(self.project_source_path):
                 for file in files:
                     if file.endswith('.java'):
-                        java_files.append(os.path.join(root, file))
+                        java_files.append(self.path_utils.join_path(root, file))
 
             if not java_files:
                 warning("분석할 Java 파일이 없습니다.")
@@ -153,9 +154,24 @@ class SimpleJavaLoader:
     def _get_file_id(self, file_path: str) -> Optional[int]:
         """파일 경로로 file_id 조회"""
         try:
-            relative_path = os.path.relpath(file_path, self.project_source_path).replace('\\', '/')
-            query = "SELECT file_id FROM files WHERE file_path = ? AND project_id = (SELECT project_id FROM projects WHERE project_name = ?)"
-            result = self.db_utils.execute_query(query, (relative_path, self.project_name), conn=self.conn)
+            # 파일 경로를 디렉토리와 파일명으로 분리
+            file_dir = os.path.dirname(file_path)
+            file_name = os.path.basename(file_path)
+            
+            # 프로젝트 루트 기준으로 상대 경로 계산
+            # file_path에서 project_source_path를 제거하여 상대 경로 생성
+            relative_dir = os.path.relpath(file_dir, self.project_source_path)
+            
+            # 프로젝트 루트의 상위 디렉토리 기준 절대 경로 생성
+            project_root_parent = os.path.dirname(os.path.dirname(self.project_source_path))  # projects/SampleSrc -> D:/Analyzer/CreateMetaDb
+            absolute_dir = os.path.join(project_root_parent, relative_dir)
+            
+            # 크로스플랫폼 호환성을 위해 모든 경로 구분자를 /로 통일
+            absolute_dir = absolute_dir.replace('\\', '/')
+            
+            # 절대 경로와 파일명으로 조회
+            query = "SELECT file_id FROM files WHERE file_path = ? AND file_name = ? AND project_id = (SELECT project_id FROM projects WHERE project_name = ?)"
+            result = self.db_utils.execute_query(query, (absolute_dir, file_name, self.project_name), conn=self.conn)
             return result[0]['file_id'] if result else None
         except Exception as e:
             handle_error(e, f"파일 ID 조회 실패: {file_path}")

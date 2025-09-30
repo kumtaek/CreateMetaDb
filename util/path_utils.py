@@ -159,13 +159,13 @@ class PathUtils:
     
     def join_path(self, *paths: str) -> str:
         """
-        경로 결합 (프로젝트 루트 기준)
+        경로 결합 (프로젝트 루트 기준, unix 스타일로 정규화)
         
         Args:
             *paths: 결합할 경로들
             
         Returns:
-            결합된 경로
+            결합된 경로 (unix 스타일)
         """
         try:
             # 빈 경로 제거
@@ -175,10 +175,13 @@ class PathUtils:
             
             # 첫 번째 경로가 절대경로인 경우
             if os.path.isabs(valid_paths[0]):
-                return os.path.normpath(os.path.join(*valid_paths))
+                joined_path = os.path.normpath(os.path.join(*valid_paths))
+            else:
+                # 상대경로인 경우 프로젝트 루트 기준으로 결합
+                joined_path = os.path.normpath(os.path.join(self.project_root, *valid_paths))
             
-            # 상대경로인 경우 프로젝트 루트 기준으로 결합
-            return os.path.normpath(os.path.join(self.project_root, *valid_paths))
+            # unix 스타일로 정규화
+            return self.normalize_path_separator(joined_path, 'unix')
             
         except Exception as e:
             handle_error(e, f"경로 결합 실패: {paths}")
@@ -286,9 +289,9 @@ class PathUtils:
         """
         return path.replace('/', '\\')
     
-    def normalize_path_separator(self, path: str, target_platform: str = 'auto') -> str:
+    def normalize_path_separator(self, path: str, target_platform: str = 'unix') -> str:
         """
-        경로 구분자를 플랫폼에 맞게 정규화
+        경로 구분자를 플랫폼에 맞게 정규화 (기본값: unix 스타일)
         
         Args:
             path: 정규화할 경로
@@ -308,7 +311,7 @@ class PathUtils:
                 # Windows 스타일로 변환
                 return path.replace('/', '\\')
             elif target_platform == 'unix':
-                # Unix 스타일로 변환
+                # Unix 스타일로 변환 (기본값)
                 return path.replace('\\', '/')
             else:
                 return path
@@ -988,7 +991,7 @@ def normalize_path(path: str, project_root: str = None) -> str:
 
 
 def normalize_path_separator(path: str, target_platform: str = 'unix', project_root: str = None) -> str:
-    """경로 구분자 정규화 편의 함수"""
+    """경로 구분자 정규화 편의 함수 (기본값: unix 스타일)"""
     path_utils = PathUtils(project_root)
     return path_utils.normalize_path_separator(path, target_platform)
 

@@ -37,6 +37,7 @@ class FrontendLoadingEngine:
         self.project_name = project_name
         self.conn = conn
         self.project_source_path = get_project_source_path(project_name)
+        self.path_utils = PathUtils()
         self.db_utils = DatabaseUtils(get_project_metadata_db_path(project_name))
         self.frontend_parser = FrontendParser(project_name=project_name)
         self.hash_utils = HashUtils()
@@ -98,7 +99,8 @@ class FrontendLoadingEngine:
     def _process_frontend_file(self, file_info: Dict[str, Any], project_id: int):
         """개별 프론트엔드 파일 처리"""
         self.current_file_id = file_info['file_id']
-        full_file_path = os.path.join(self.project_source_path, file_info['file_path'])
+        # file_path는 디렉토리 경로이므로 file_name과 결합하여 전체 경로 생성 (unix 스타일로 정규화)
+        full_file_path = self.path_utils.join_path(self.project_source_path, file_info['file_path'], file_info['file_name'])
         if not os.path.exists(full_file_path):
             warning(f"파일이 존재하지 않음: {full_file_path}")
             return
