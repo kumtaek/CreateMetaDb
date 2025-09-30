@@ -18,7 +18,7 @@ const ProxyServiceManagement = () => {
     const fetchUsers = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/users');
+            const response = await axios.get('/api/internal/users');
             setUsers(response.data);
         } catch (error) {
             console.error('사용자 조회 실패:', error);
@@ -32,7 +32,7 @@ const ProxyServiceManagement = () => {
     const createUser = async (userData) => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.post('/api/users', userData);
+            const response = await axios.post('/api/internal/users', userData);
             console.log('사용자 생성 성공:', response.data);
             fetchUsers(); // 목록 새로고침
         } catch (error) {
@@ -47,7 +47,7 @@ const ProxyServiceManagement = () => {
     const fetchProducts = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/products');
+            const response = await axios.get('/api/internal/products');
             setProducts(response.data);
         } catch (error) {
             console.error('제품 조회 실패:', error);
@@ -61,7 +61,7 @@ const ProxyServiceManagement = () => {
     const fetchOrders = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/orders');
+            const response = await axios.get('/api/internal/orders');
             setOrders(response.data);
         } catch (error) {
             console.error('주문 조회 실패:', error);

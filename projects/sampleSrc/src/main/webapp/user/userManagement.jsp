@@ -59,7 +59,7 @@
         // Load all users
         function loadUsers() {
             $.ajax({
-                url: '/api/users',
+                url: '/api/legacy/users',
                 method: 'GET',
                 success: function(data) {
                     displayUsers(data);
@@ -108,7 +108,7 @@
         // Load orders
         function loadOrders() {
             $.ajax({
-                url: '/api/orders',
+                url: '/api/legacy/orders',
                 method: 'GET',
                 success: function(data) {
                     displayOrders(data);
@@ -136,7 +136,7 @@
         // Load products
         function loadProducts() {
             $.ajax({
-                url: '/api/products',
+                url: '/api/legacy/products',
                 method: 'GET',
                 success: function(data) {
                     displayProducts(data);

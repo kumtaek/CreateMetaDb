@@ -18,7 +18,7 @@ const VersionedUserManagement = () => {
     const fetchUsers = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/users', {
+            const response = await axios.get('/api/v2/users', {
                 params: { version: version }
             });
             setUsers(response.data);
@@ -34,7 +34,7 @@ const VersionedUserManagement = () => {
     const fetchProducts = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/products', {
+            const response = await axios.get('/api/v2/products', {
                 params: { 
                     version: version,
                     page: 0,
@@ -54,7 +54,7 @@ const VersionedUserManagement = () => {
     const fetchOrders = async () => {
         try {
             // 프론트엔드에서는 단순한 경로 사용
-            const response = await axios.get('/api/orders', {
+            const response = await axios.get('/api/v2/orders', {
                 params: { 
                     version: version,
                     status: 'ACTIVE',

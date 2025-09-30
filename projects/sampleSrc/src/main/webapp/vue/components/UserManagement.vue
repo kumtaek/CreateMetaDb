@@ -143,7 +143,7 @@ export default {
     async loadUsers() {
       this.loading = true;
       try {
-        const response = await axios.get('/api/users');
+        const response = await axios.get('/api/microservice/users');
         this.users = response.data;
       } catch (error) {
         console.error('Error loading users:', error);
@@ -184,7 +184,7 @@ export default {
     async loadOrders() {
       this.loading = true;
       try {
-        const response = await axios.get('/api/orders');
+        const response = await axios.get('/api/microservice/orders');
         this.orders = response.data;
       } catch (error) {
         console.error('Error loading orders:', error);
@@ -210,7 +210,7 @@ export default {
     async loadProducts() {
       this.loading = true;
       try {
-        const response = await axios.get('/api/products');
+        const response = await axios.get('/api/microservice/products');
         this.products = response.data;
       } catch (error) {
         console.error('Error loading products:', error);

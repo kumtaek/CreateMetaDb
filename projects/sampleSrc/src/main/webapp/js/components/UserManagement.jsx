@@ -12,7 +12,7 @@ const UserManagement = () => {
     const loadUsers = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/users');
+            const response = await axios.get('/api/v1/users');
             setUsers(response.data);
         } catch (error) {
             console.error('Error loading users:', error);
@@ -53,7 +53,7 @@ const UserManagement = () => {
     const loadOrders = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/orders');
+            const response = await axios.get('/api/v1/orders');
             setOrders(response.data);
         } catch (error) {
             console.error('Error loading orders:', error);
@@ -79,7 +79,7 @@ const UserManagement = () => {
     const loadProducts = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/products');
+            const response = await axios.get('/api/v1/products');
             setProducts(response.data);
         } catch (error) {
             console.error('Error loading products:', error);
