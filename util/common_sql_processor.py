@@ -98,7 +98,7 @@ class CommonSqlAnalyzer:
                     if joins:
                         self._save_table_joins_components(joins)
                     # 컬럼 추출 및 즉시 저장 (COLUMN components 있는 경우에만)
-                    columns = self._extract_columns(clean_sql)
+                    columns = self._extract_columns(clean_sql, table_result['alias_map'])
                     if columns:
                         self._save_use_column_relationships(component_id, columns)
                     
@@ -184,8 +184,8 @@ class CommonSqlAnalyzer:
             from util.logger import handle_error
             handle_error(e, "JOIN 관계 저장 실패(components 기반)")
 
-    def _extract_columns(self, sql: str) -> List[str]:
-        """SELECT/WHERE/ON에서 alias.col 패턴을 단순 추출"""
+    def _extract_columns(self, sql: str, alias_map: Dict[str, str]) -> List[Tuple[str, str]]:
+        """SELECT/WHERE/ON에서 alias.col 패턴을 추출하고 alias를 테이블로 해석"""
         try:
             cols = set()
             m = re.search(r"\bSELECT\b(.*?)\bFROM\b", sql, flags=re.IGNORECASE | re.DOTALL)
@@ -195,22 +195,35 @@ class CommonSqlAnalyzer:
             for kw in ("WHERE", "ON"):
                 for seg in re.findall(rf"\b{kw}\b(.*?)(?=\bGROUP\b|\bORDER\b|\bHAVING\b|\bUNION\b|$)", sql, flags=re.IGNORECASE | re.DOTALL):
                     cols.update(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b", seg))
-            return [f"{a.upper()}.{c.upper()}" for a, c in cols]
+            resolved = []
+            for a, c in cols:
+                alias = a.upper()
+                table = alias_map.get(alias, alias)
+                resolved.append((table.upper(), c.upper()))
+            return resolved
         except Exception:
             return []
 
-    def _save_use_column_relationships(self, sql_component_id: int, columns: List[str]) -> None:
-        """COLUMN(component) 존재 시 SQL(component) -> COLUMN(component) USE_COLUMN 생성"""
+    def _save_use_column_relationships(self, sql_component_id: int, columns: List[Tuple[str, str]]) -> None:
+        """COLUMN(component) 존재 시 SQL(component) -> COLUMN(component) USE_COLUMN 생성
+        columns: [(table_name, column_name)]
+        """
         try:
             if not columns:
                 return
             from util.database_utils import DatabaseUtils
             db = DatabaseUtils(f"projects/{self.project_name}/metadata.db")
             conn = db.get_persistent_connection()
-            for col in columns:
+            for table_name, col_name in columns:
+                # 테이블 컴포넌트 조회
+                tbl = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (table_name,), conn=conn)
+                if not tbl:
+                    continue
                 row = db.execute_query(
-                    "SELECT component_id FROM components WHERE component_type='COLUMN' AND component_name=? AND del_yn='N' LIMIT 1",
-                    (col,), conn=conn)
+                    "SELECT component_id FROM components WHERE component_type='COLUMN' AND component_name=? AND parent_id=? AND del_yn='N' LIMIT 1",
+                    (col_name, tbl[0]['component_id']), conn=conn)
                 if not row:
                     continue
                 rel = {
@@ -282,7 +295,7 @@ class CommonSqlAnalyzer:
         explicit_joins = self._extract_explicit_joins(sql, alias_map)
         joins.extend(explicit_joins)
         
-        # ③ MERGE ... USING ... ON (<조인조건>) --> JOIN_MERGEON
+        # ③ MERGE ... USING ... ON (<조인조건>) --> JOIN_MERGE
         merge_joins = self._extract_merge_joins(sql, alias_map)
         joins.extend(merge_joins)
         
@@ -376,7 +389,7 @@ class CommonSqlAnalyzer:
                     right_table=right_table,
                     left_column=left_col.upper(),
                     right_column=right_col.upper(),
-                    join_type='MERGEON'
+                    join_type='MERGE'
                 ))
         
         return joins

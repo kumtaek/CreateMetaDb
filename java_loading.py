@@ -152,7 +152,7 @@ class SimpleJavaLoader:
                             analyzer._save_table_joins_components(joins)
                         # 而щ읆 ?ъ슜 愿怨꾨뒗 SQL component_id媛 ?꾩슂?섏뿬 ??λ맂 component?????common_sql_processor媛 泥섎━
                         # ?ш린?쒕뒗 而щ읆紐낅쭔 異붿텧?섏뿬 愿怨?????쒕룄
-                        columns = analyzer._extract_columns(clean_sql)
+                        columns = analyzer._extract_columns(clean_sql, alias_map)
                         if columns:
                             # component_id??諛⑷툑 ??λ맂 component_name???ㅻ줈 議고쉶
                             comp_name = query_data.get('query_id') or query_data.get('component_name')

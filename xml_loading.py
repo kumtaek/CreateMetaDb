@@ -210,7 +210,7 @@ class XmlLoadingEngine:
                                         joins.extend(analyzer._extract_merge_joins(clean_sql, alias_map))
                                         if joins:
                                             analyzer._save_table_joins_components(joins)
-                                        columns = analyzer._extract_columns(clean_sql)
+                                        columns = analyzer._extract_columns(clean_sql, alias_map)
                                         if columns:
                                             comp_row = self.db_utils.execute_query(
                                                 "SELECT component_id FROM components WHERE project_id=(SELECT project_id FROM projects WHERE project_name=?) AND component_name=? AND component_type LIKE 'SQL_%' AND del_yn='N' ORDER BY component_id DESC LIMIT 1",
