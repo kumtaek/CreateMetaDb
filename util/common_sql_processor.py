@@ -393,7 +393,112 @@ class CommonSqlAnalyzer:
                 ))
         
         return joins
-    
+
+    # Override with enhanced MERGE USING subselect handling (placed later in class to take precedence)
+    def _extract_merge_joins(self, sql: str, alias_map: Dict[str, str]) -> List[JoinCondition]:
+        """
+        Extract JOINs from MERGE statements.
+        Heuristics:
+        - USING (subselect ...): create JOIN_MERGE between MERGE target and all tables in subselect FROM/JOIN.
+        - Keep ON equality alias-based joins as well.
+        """
+        joins: List[JoinCondition] = []
+
+        def _upper(s: str) -> str:
+            return s.upper() if isinstance(s, str) else s
+
+        try:
+            # MERGE target table
+            m_target = re.search(r"MERGE\s+INTO\s+([A-Za-z_][A-Za-z0-9_$.]*)", sql, flags=re.IGNORECASE)
+            target_table = _upper(m_target.group(1)) if m_target else None
+
+            # Find USING ... ON with simple parentheses-aware scan
+            using_match = re.search(r"\bUSING\b", sql, flags=re.IGNORECASE)
+            on_pos = None
+            if using_match:
+                i = using_match.end()
+                level = 0
+                while i < len(sql):
+                    ch = sql[i]
+                    if ch == '(':
+                        level += 1
+                    elif ch == ')':
+                        level = max(0, level - 1)
+                    if level == 0 and re.match(r"\s*ON\b", sql[i:], flags=re.IGNORECASE):
+                        on_pos = i + re.match(r"\s*ON\b", sql[i:], flags=re.IGNORECASE).start()
+                        break
+                    i += 1
+
+            using_segment = None
+            if using_match and on_pos:
+                using_segment = sql[using_match.end():on_pos].strip()
+
+            if target_table and using_segment:
+                tables_in_using: List[str] = []
+                seg = using_segment.strip()
+                if seg.startswith('('):
+                    # inner subselect
+                    level = 0
+                    start = 0
+                    end = len(seg)
+                    for idx, ch in enumerate(seg):
+                        if ch == '(':
+                            if level == 0:
+                                start = idx + 1
+                            level += 1
+                        elif ch == ')':
+                            level -= 1
+                            if level == 0:
+                                end = idx
+                                break
+                    inner = seg[start:end]
+                    for pat in (
+                        r"\bFROM\s+([A-Za-z_][A-Za-z0-9_$.]*)",
+                        r"\bJOIN\s+([A-Za-z_][A-Za-z0-9_$.]*)",
+                    ):
+                        for t in re.findall(pat, inner, flags=re.IGNORECASE):
+                            t_up = _upper(t)
+                            if t_up and t_up not in self.oracle_keywords:
+                                tables_in_using.append(t_up)
+                else:
+                    m_tbl = re.match(r"([A-Za-z_][A-Za-z0-9_$.]*)", seg, flags=re.IGNORECASE)
+                    if m_tbl:
+                        t_up = _upper(m_tbl.group(1))
+                        if t_up and t_up not in self.oracle_keywords:
+                            tables_in_using.append(t_up)
+
+                for t in dict.fromkeys(tables_in_using):
+                    if t != target_table and target_table not in self.oracle_keywords:
+                        joins.append(JoinCondition(
+                            left_table=target_table,
+                            right_table=t,
+                            left_column='',
+                            right_column='',
+                            join_type='MERGE'
+                        ))
+
+            # Alias-based equality in ON clause
+            merge_join_pattern = (
+                r'MERGE\s+INTO\s+\w+(?:\s+\w+)?\s+USING\s+\w+(?:\s+\w+)?\s+ON\s+.*?'
+                r'(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
+            )
+            for left_alias, left_col, right_alias, right_col in re.findall(merge_join_pattern, sql, re.IGNORECASE | re.DOTALL):
+                lt = alias_map.get(_upper(left_alias), _upper(left_alias))
+                rt = alias_map.get(_upper(right_alias), _upper(right_alias))
+                if (lt not in self.oracle_keywords and rt not in self.oracle_keywords
+                        and _upper(left_col) not in self.oracle_keywords and _upper(right_col) not in self.oracle_keywords):
+                    joins.append(JoinCondition(
+                        left_table=lt,
+                        right_table=rt,
+                        left_column=_upper(left_col),
+                        right_column=_upper(right_col),
+                        join_type='MERGE'
+                    ))
+
+            return joins
+        except Exception:
+            return []
+
     def save_analysis_results(self, results: Dict[str, Any]) -> bool:
         """분석 결과를 데이터베이스에 저장"""
         try:

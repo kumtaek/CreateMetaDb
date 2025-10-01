@@ -32,7 +32,8 @@ file_id와 query_id, 쿼리변수(쿼리만 추출된)를 다음 단계로 넘�
 
 - JPA
 상기와 같은 방식으로 쿼리를 제외한 부분을 제거하여 쿼리추출 후
-file_id와 query_id, 쿼리변수(쿼리만 추출된)를 다음 단계로 넘긴다.
+file_id와 query_id(component_name), 쿼리변수(쿼리만 추출된)를 다음 단계로 넘긴다.
+project_id, file_id, component_name로 중복등록 스킵처리.
 
 ※ java파일에는 하나의 메소드에 여러 쿼리가 도출될 수도 있다. {no}를 순번으로
 java 소스내 쿼리가 조합되다 보니 query_id(component_name)은 class명_method명_QRY_{no}
