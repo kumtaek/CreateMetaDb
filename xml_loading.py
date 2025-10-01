@@ -194,6 +194,33 @@ class XmlLoadingEngine:
                                 query_type=query.get('query_type', 'SQL_QUERY'),
                                 conn=conn
                             )
+                            # 저장 직후 즉시 JOIN/컬럼 관계 생성 (보완 저장)
+                            try:
+                                if success:
+                                    sql_text = query.get('sql_content', '')
+                                    if sql_text:
+                                        from util.common_sql_processor import CommonSqlAnalyzer
+                                        analyzer = CommonSqlAnalyzer(self.project_name)
+                                        clean_sql = analyzer._remove_comments(sql_text)
+                                        table_info = analyzer._extract_tables(clean_sql)
+                                        alias_map = table_info.get('alias_map', {})
+                                        joins = []
+                                        joins.extend(analyzer._extract_explicit_joins(clean_sql, alias_map))
+                                        joins.extend(analyzer._extract_implicit_joins(clean_sql, alias_map))
+                                        joins.extend(analyzer._extract_merge_joins(clean_sql, alias_map))
+                                        if joins:
+                                            analyzer._save_table_joins_components(joins)
+                                        columns = analyzer._extract_columns(clean_sql)
+                                        if columns:
+                                            comp_row = self.db_utils.execute_query(
+                                                "SELECT component_id FROM components WHERE project_id=(SELECT project_id FROM projects WHERE project_name=?) AND component_name=? AND component_type LIKE 'SQL_%' AND del_yn='N' ORDER BY component_id DESC LIMIT 1",
+                                                (self.project_name, query_id),
+                                                self.conn,
+                                            )
+                                            if comp_row:
+                                                analyzer._save_use_column_relationships(comp_row[0]['component_id'], columns)
+                            except Exception as ee:
+                                handle_error(ee, "즉시 SQL 보완 분석 실패(XML)")
                             if success:
                                 debug(f"SQL Content + Component 저장 성공: {query_id}")
                             else:

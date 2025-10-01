@@ -1,6 +1,6 @@
-"""Relationship Builder
+﻿"""Relationship Builder
 
-Clean, cross‑platform safe relationship builder used by the pipeline.
+Clean, cross?몆latform safe relationship builder used by the pipeline.
 Creates precise relationships first (controller_api_map, mapper_map), then
 optionally runs lightweight fallbacks. Kept concise for reliability.
 """
@@ -51,12 +51,19 @@ class RelationshipBuilder:
             self._build_api_method_from_controller_map()
             self._build_method_query_relationships_from_mapper_map()
 
-            # 2) Placeholders for existing fallback builders (kept no‑op here
-            #    to avoid breaking callers; detailed fallbacks live elsewhere).
-            # self._build_query_table_relationships()
-            # self._build_table_join_relationships()
-            # self._build_entity_table_relationships()
-            # self._build_frontend_api_relationships()
+            # 2) Conservative fallbacks
+            self._build_frontend_api_relationships()
+            self._build_method_query_by_name_fallback()
+
+            # 3) Analyze SQL contents for tables/joins (SqlContent.db)
+            try:
+                from util.common_sql_processor import CommonSqlAnalyzer
+                CommonSqlAnalyzer(self.project_name).analyze_all_queries()
+            except Exception:
+                warning("CommonSqlAnalyzer analyze_all_queries warning: continue")
+
+
+
 
             self.stats['total_relationships'] = sum(
                 v for k, v in self.stats.items() if k != 'total_relationships'
@@ -70,7 +77,7 @@ class RelationshipBuilder:
     # ===== Precise builders =====
 
     def _build_api_method_from_controller_map(self) -> None:
-        """Create API_URL → METHOD (CALL_METHOD) using controller_api_map."""
+        """Create API_URL ??METHOD (CALL_METHOD) using controller_api_map."""
         try:
             cur = self.conn.cursor()
             rows = cur.execute(
@@ -101,12 +108,14 @@ class RelationshipBuilder:
                 created += 1
 
             self.stats['api_method_relationships'] += created
-            info(f"API_URL→METHOD via controller_api_map: {created}")
+            info(f"API_URL?묺ETHOD via controller_api_map: {created}")
         except Exception as e:
-            handle_error(e, "controller_api_map based API→METHOD failed")
+            handle_error(e, "controller_api_map based API?묺ETHOD failed")
 
     def _build_method_query_relationships_from_mapper_map(self) -> None:
-        """Create METHOD → SQL_* (CALL_QUERY) using mapper_map (namespace+id)."""
+        """Create METHOD → SQL_* (CALL_QUERY) using mapper_map (namespace+id).
+        Adds a fuzzy fallback when strict class_name match fails.
+        """
         try:
             cur = self.conn.cursor()
             rows = cur.execute(
@@ -123,8 +132,10 @@ class RelationshipBuilder:
 
             created = 0
             for namespace, query_id, sql_comp_id in rows:
-                class_name = namespace.split('.')[-1]
+                base_class = namespace.split('.')[-1]
                 method_name = query_id
+
+                # 1) strict match: class == namespace tail, method == id
                 m = cur.execute(
                     """
                     SELECT c.component_id
@@ -136,18 +147,99 @@ class RelationshipBuilder:
                        AND c.del_yn='N'
                      LIMIT 1
                     """,
-                    (method_name, class_name),
+                    (method_name, base_class),
                 ).fetchone()
+
+                # 2) fuzzy class: allow class names ending with base_class (e.g., UserMapperImpl)
+                if not m:
+                    m = cur.execute(
+                        """
+                        SELECT c.component_id
+                          FROM components c
+                     LEFT JOIN classes cl ON cl.class_id = c.parent_id
+                         WHERE c.project_id = ?
+                           AND c.component_type='METHOD'
+                           AND c.component_name = ?
+                           AND cl.class_name LIKE '%' || ?
+                           AND c.del_yn='N'
+                      ORDER BY CASE WHEN cl.class_name LIKE '%Repository%' THEN 0
+                                    WHEN cl.class_name LIKE '%Dao%' THEN 1
+                                    WHEN cl.class_name LIKE '%Mapper%' THEN 2
+                                    ELSE 3 END,
+                               c.component_id ASC
+                         LIMIT 1
+                        """,
+                        (self.project_id, method_name, base_class),
+                    ).fetchone()
+
                 if not m:
                     continue
-                method_id = m[0]
-                self._insert_relationship(method_id, sql_comp_id, 'CALL_QUERY')
+                self._insert_relationship(m[0], sql_comp_id, 'CALL_QUERY')
                 created += 1
 
             self.stats['method_query_relationships'] += created
-            info(f"MyBatis namespace METHOD→SQL: {created}")
+            info(f"MyBatis namespace METHOD?뭆QL: {created}")
         except Exception as e:
-            handle_error(e, "mapper_map based METHOD→SQL failed")
+            handle_error(e, "mapper_map based METHOD?뭆QL failed")
+
+    # ===== Fallback builders =====
+
+    def _build_frontend_api_relationships(self) -> None:
+        """Map API_URL→METHOD via conservative heuristics.
+        - Only accept "HTTP:methodName" (skip URL:HTTP names).
+        - Prefer classes with 'Controller' in name.
+        """
+        try:
+            cur = self.conn.cursor()
+            rows = cur.execute(
+                """
+                SELECT component_id, component_name
+                  FROM components
+                 WHERE project_id = ?
+                   AND component_type = 'API_URL'
+                   AND del_yn = 'N'
+                """,
+                (self.project_id,),
+            ).fetchall()
+
+            created = 0
+            verbs = {'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'}
+            for api_id, comp_name in rows:
+                if ':' not in comp_name:
+                    continue
+                left, right = comp_name.split(':', 1)
+                # Only consider HTTP:methodName pattern
+                if left.upper() not in verbs:
+                    continue
+                method = right.strip()
+                # basic sanity for method identifier (exclude likely URL parts or all-caps tokens)
+                if not method or '/' in method or method.strip() == method.upper():
+                    continue
+
+                m = cur.execute(
+                    """
+                    SELECT c.component_id
+                      FROM components c
+                 LEFT JOIN classes cl ON cl.class_id = c.parent_id
+                     WHERE c.project_id = ?
+                       AND c.component_type='METHOD'
+                       AND c.component_name = ?
+                       AND c.del_yn='N'
+                  ORDER BY CASE WHEN cl.class_name LIKE '%Controller%' THEN 0 ELSE 1 END,
+                           c.component_id ASC
+                     LIMIT 1
+                    """,
+                    (self.project_id, method),
+                ).fetchone()
+                if not m:
+                    continue
+                self._insert_relationship(api_id, m[0], 'CALL_METHOD')
+                created += 1
+
+            self.stats['frontend_api_relationships'] += created
+            info(f"Frontend API fallback CALL_METHOD: {created}")
+        except Exception as e:
+            handle_error(e, "frontend API fallback failed")
 
     # ===== DB helpers =====
 
@@ -163,6 +255,47 @@ class RelationshipBuilder:
         )
         self.conn.commit()
 
+    def _build_method_query_by_name_fallback(self) -> None:
+        """Map METHOD to SQL_* by exact name match (safe heuristic).
+        Uses common MyBatis id == method_name convention.
+        """
+        try:
+            cur = self.conn.cursor()
+            rows = cur.execute(
+                """
+                SELECT component_id, component_name
+                  FROM components
+                 WHERE project_id = ?
+                   AND component_type = 'METHOD'
+                   AND del_yn='N'
+                """,
+                (self.project_id,),
+            ).fetchall()
+
+            created = 0
+            for method_id, method_name in rows:
+                sc = cur.execute(
+                    """
+                    SELECT component_id
+                      FROM components
+                     WHERE project_id = ?
+                       AND component_type LIKE 'SQL_%'
+                       AND component_name = ?
+                       AND del_yn='N'
+                     LIMIT 1
+                    """,
+                    (self.project_id, method_name),
+                ).fetchone()
+                if not sc:
+                    continue
+                self._insert_relationship(method_id, sc[0], 'CALL_QUERY')
+                created += 1
+
+            self.stats['method_query_relationships'] += created
+            info(f"Method→SQL name fallback CALL_QUERY: {created}")
+        except Exception as e:
+            handle_error(e, "method→SQL name fallback failed")
+
 
 # ===== Backfill entry (kept for callers) =====
 
@@ -175,4 +308,3 @@ def execute_db_relationship_backfill(project_name: str, conn: sqlite3.Connection
     except Exception as e:
         handle_error(e, "DB relationship backfill failed")
         return stats
-

@@ -1,44 +1,39 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Source loaders: `file_loading.py`, `java_loading.py`, `xml_loading.py`, `frontend_loading.py`
-- Parsers: `parser/` (SQL, Spring, JSP, front-end)
-- Utilities: `util/` (DB, paths, hashing, API naming, logging)
-- Relationship builder: `relationship_builder.py`
-- Reports: `reports/` (ERD, call chain, sequence)
-- Database DDL: `database/` (metadata and SQL content DB scripts)
-- Sample project: `projects/SampleSrc`
+- Loaders: `file_loading.py`, `java_loading.py`, `xml_loading.py`, `frontend_loading.py` (ingest sources → components)
+- Parsers: `parser/` (SQL, Spring annotations, JSP/front, String.format SQL)
+- Relationships: `relationship_builder.py` (Frontend→Method→Query→Table builders)
+- Utilities: `util/` (DB, path, hashing, API naming, mapper indexer, logging)
+- Reports: `reports/` (ERD, call-chain, architecture)
+- Database DDL: `database/` (metadata and SqlContent schemas)
 
 ## Build, Test, and Development Commands
-- Run analyzer: `python main.py --project-name SampleSrc --force`
+- Run analyzer: `python main.py --project-name SampleSrc --force` (rebuild metadata + SqlContent)
 - Generate reports: `python create_report.py --project-name SampleSrc`
-- Run tests (pytest): `pytest -q`
+- Run tests: `pytest -q`
 - Clean DBs: delete `projects/SampleSrc/metadata.db` and `projects/SampleSrc/SqlContent.db`
 
 ## Coding Style & Naming Conventions
-- Python 3.11+: 4‑space indentation, UTF‑8 (no BOM), type hints when helpful.
-- API_URL names: `GET:selectUser` format via `util/api_naming.py`.
-- Files table: `file_path` stores directory only; `file_name` stores the basename.
-- Use `util.safe_logger` wrappers (`info`, `warning`, `error`, `debug`).
-- Keep functions small; avoid unrelated refactors in a single change.
+- Python 3.11+, 4 spaces, UTF-8 (no BOM)
+- API_URL naming: `GET:selectUser` via `util/api_naming.py` (front/back unified)
+- Files table: directory in `files.file_path`, basename in `files.file_name`
+- Paths: use `util/path_utils.py`; normalize to forward slashes (`/`)
+- Keep changes minimal and focused per module/PR
 
 ## Testing Guidelines
-- Unit tests live at repo root as `test_*.py` (pytest).
-- Prefer deterministic fixtures under `projects/SampleSrc`.
-- For SQL parsing, add edge cases to `parser/sql_parser.py` tests and validate table extraction.
-- Target coverage for modified modules: add at least one focused test per change.
+- Tests: `test_*.py` at repo root (pytest)
+- Fixtures: use `projects/SampleSrc` for reproducible inputs
+- Validate main flow counts: API_URL→METHOD, METHOD→SQL, SQL→TABLE
+- Add SQL edge cases in `parser/sql_parser.py` and assert extracted tables
 
 ## Commit & Pull Request Guidelines
-- Commits: imperative mood, scoped prefix when possible (e.g., `analyzer:`, `parser:`, `util:`).
-- PRs: include purpose, key changes, testing notes, and screenshots/paths to generated reports when relevant.
-- Link issues and describe migration notes (e.g., schema changes, file_path semantics).
-
-## Security & Configuration Tips
-- Avoid executing untrusted project code during parsing; treat sources as data.
-- Validate paths using `util.path_utils` to prevent traversal issues.
-- Large runs: enable `--force` cautiously; re-create DBs after schema changes.
+- Commits: imperative with scope (e.g., `parser:`, `util:`, `loader:`)
+- PRs: purpose, key changes, reproduction steps, and sample report paths/screenshots
+- Call out schema changes or resets required (e.g., file_path semantics)
 
 ## Agent-Specific Instructions
-- Respect API naming helpers in `util/api_naming.py` across loaders.
-- When reading files, reconstruct full path: project root + `file_path` + `file_name`.
-- Relationship building should load from DB when input isn’t pre-populated.
+- Always use `util/api_naming.py` for API_URL names and identity hashes
+- Reconstruct full paths as: project root + `files.file_path` + `files.file_name`
+- Relationship building: prefer precise sources (`controller_api_map`, `mapper_map`) before fallbacks; use INSERT OR IGNORE for idempotency
+

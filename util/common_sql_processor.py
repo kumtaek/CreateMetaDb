@@ -62,7 +62,7 @@ class CommonSqlAnalyzer:
             
             # SqlContent.db에서 모든 쿼리 가져오기
             cursor.execute("""
-                SELECT component_name, sql_content_compressed, file_path
+                SELECT component_id, component_name, sql_content_compressed, file_path
                 FROM sql_contents 
                 WHERE del_yn = 'N'
             """)
@@ -73,7 +73,7 @@ class CommonSqlAnalyzer:
             all_tables = set()
             all_joins = []
             
-            for component_name, compressed_sql, file_path in queries:
+            for component_id, component_name, compressed_sql, file_path in queries:
                 try:
                     # 압축된 SQL 해제
                     if compressed_sql:
@@ -87,10 +87,20 @@ class CommonSqlAnalyzer:
                     # 테이블 추출 (2단계)
                     table_result = self._extract_tables(clean_sql)
                     all_tables.update(table_result['tables'])
+                    # 메타데이터에 SQL(component) → TABLE 관계 저장
+                    if table_result['tables']:
+                        self._save_use_table_relationships(component_id, table_result['tables'])
                     
                     # 조인 관계 추출 (3단계) - alias_map 전달
                     joins = self._extract_join_relationships(clean_sql, table_result['alias_map'])
                     all_joins.extend(joins)
+                    # 즉시 JOIN 관계 저장 (TABLE components 기준)
+                    if joins:
+                        self._save_table_joins_components(joins)
+                    # 컬럼 추출 및 즉시 저장 (COLUMN components 있는 경우에만)
+                    columns = self._extract_columns(clean_sql)
+                    if columns:
+                        self._save_use_column_relationships(component_id, columns)
                     
                 except Exception as e:
                     from util.logger import handle_error
@@ -117,6 +127,103 @@ class CommonSqlAnalyzer:
             handle_error(e, "analyze_all_queries 실행 실패")
             
         return results
+
+    def _save_use_table_relationships(self, sql_component_id: int, tables: List[str]) -> None:
+        """metadata.db의 components(표 TABLE)와 relationships를 이용해 USE_TABLE 생성"""
+        try:
+            from util.database_utils import DatabaseUtils
+            metadata_db_path = f"projects/{self.project_name}/metadata.db"
+            db = DatabaseUtils(metadata_db_path)
+            conn = db.get_persistent_connection()
+            for table_name in tables:
+                rows = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (table_name,), conn=conn)
+                if not rows:
+                    continue
+                table_component_id = rows[0]['component_id']
+                rel_data = {
+                    'src_id': sql_component_id,
+                    'dst_id': table_component_id,
+                    'rel_type': 'USE_TABLE',
+                    'confidence': 1.0,
+                    'has_error': 'N',
+                    'error_message': None,
+                    'del_yn': 'N'
+                }
+                db.insert_or_replace_with_id('relationships', rel_data, conn=conn)
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, f"USE_TABLE 관계 저장 실패: sql_component_id={sql_component_id}")
+
+    def _save_table_joins_components(self, joins: List[JoinCondition]) -> None:
+        """TABLE(component) 간 JOIN_* 관계 생성"""
+        try:
+            from util.database_utils import DatabaseUtils
+            metadata_db_path = f"projects/{self.project_name}/metadata.db"
+            db = DatabaseUtils(metadata_db_path)
+            conn = db.get_persistent_connection()
+            for join in joins:
+                left_rows = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (join.left_table,), conn=conn)
+                right_rows = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (join.right_table,), conn=conn)
+                if not left_rows or not right_rows:
+                    continue
+                rel = {
+                    'src_id': left_rows[0]['component_id'],
+                    'dst_id': right_rows[0]['component_id'],
+                    'rel_type': f"JOIN_{join.join_type}",
+                    'confidence': 0.8,
+                    'del_yn': 'N'
+                }
+                db.insert_or_replace_with_id('relationships', rel, conn=conn)
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, "JOIN 관계 저장 실패(components 기반)")
+
+    def _extract_columns(self, sql: str) -> List[str]:
+        """SELECT/WHERE/ON에서 alias.col 패턴을 단순 추출"""
+        try:
+            cols = set()
+            m = re.search(r"\bSELECT\b(.*?)\bFROM\b", sql, flags=re.IGNORECASE | re.DOTALL)
+            if m:
+                segment = m.group(1)
+                cols.update(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b", segment))
+            for kw in ("WHERE", "ON"):
+                for seg in re.findall(rf"\b{kw}\b(.*?)(?=\bGROUP\b|\bORDER\b|\bHAVING\b|\bUNION\b|$)", sql, flags=re.IGNORECASE | re.DOTALL):
+                    cols.update(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b", seg))
+            return [f"{a.upper()}.{c.upper()}" for a, c in cols]
+        except Exception:
+            return []
+
+    def _save_use_column_relationships(self, sql_component_id: int, columns: List[str]) -> None:
+        """COLUMN(component) 존재 시 SQL(component) -> COLUMN(component) USE_COLUMN 생성"""
+        try:
+            if not columns:
+                return
+            from util.database_utils import DatabaseUtils
+            db = DatabaseUtils(f"projects/{self.project_name}/metadata.db")
+            conn = db.get_persistent_connection()
+            for col in columns:
+                row = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='COLUMN' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (col,), conn=conn)
+                if not row:
+                    continue
+                rel = {
+                    'src_id': sql_component_id,
+                    'dst_id': row[0]['component_id'],
+                    'rel_type': 'USE_COLUMN',
+                    'confidence': 0.7,
+                    'del_yn': 'N'
+                }
+                db.insert_or_replace_with_id('relationships', rel, conn=conn)
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, "USE_COLUMN 관계 저장 실패")
     
     def _remove_comments(self, sql: str) -> str:
         """SQL 주석 제거"""

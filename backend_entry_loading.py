@@ -1,10 +1,4 @@
-"""
-SourceAnalyzer 5단계 - 백엔드 진입점 분석 메인 엔진
-- Spring Framework 기반 API 진입점 분석
-- API_URL 컴포넌트 생성
-- CALL_API_F2B 관계 생성
-- 캐싱 및 통계 수집
-"""
+﻿"""Backend entry loading engine (UTF-8)"""
 
 import os
 import sqlite3
@@ -22,15 +16,15 @@ from parser.base_entry_analyzer import BackendEntryInfo, FileInfo
 
 
 class BackendEntryLoadingEngine:
-    """백엔드 진입점 분석 메인 엔진"""
+    """獄쏄퉮肉??筌욊쑴????브쑴苑?筌롫뗄???遺우춭"""
     
     def __init__(self, project_name: str, conn: sqlite3.Connection):
         """
-        엔진 초기화
+        ?遺우춭 ?λ뜃由??
         
         Args:
-            project_name: 프로젝트명
-            conn: 외부에서 주입된 데이터베이스 연결 객체
+            project_name: ?袁⑥쨮??븍뱜筌?
+            conn: ?紐??癒?퐣 雅뚯눘????怨쀬뵠?怨뺤퓢??곷뮞 ?怨뚭퍙 揶쏆빘猿?
         """
         self.project_name = project_name
         self.conn = conn
@@ -45,17 +39,20 @@ class BackendEntryLoadingEngine:
         
         self.servlet_url_map = self._parse_web_xml()
         self.analyzers = self._load_analyzers()
-        app_logger.debug(f"로드된 분석기: {[analyzer.get_framework_name() for analyzer in self.analyzers]}")
-        app_logger.info(f"백엔드 진입점 분석 엔진 초기화 완료: {project_name}")
+        try:
+            app_logger.debug("Analyzers: {}".format([analyzer.get_framework_name() for analyzer in self.analyzers]))
+        except Exception:
+            app_logger.debug("Analyzers loaded")
+        app_logger.info(f"獄쏄퉮肉??筌욊쑴????브쑴苑??遺우춭 ?λ뜃由???袁⑥┷: {project_name}")
     
     def _load_analyzers(self) -> List:
-        """설정에서 분석기 로드"""
+        """??쇱젟?癒?퐣 ?브쑴苑띷묾?嚥≪뮆諭?""
         try:
             analyzers = self.factory.load_analyzers_from_config(self.project_name, self.servlet_url_map)
-            app_logger.debug(f"분석기 로드 완료: {len(analyzers)}개")
+            app_logger.debug("Analyzers loaded: {}".format(len(analyzers)))
             return analyzers
         except Exception as e:
-            handle_error(e, f"분석기 로드 실패: {self.project_name}")
+            handle_error(e, f"?브쑴苑띷묾?嚥≪뮆諭???쎈솭: {self.project_name}")
             return []
     
     def _build_project_file_path(self, dir_path: Optional[str], file_name: str) -> str:
@@ -73,7 +70,7 @@ class BackendEntryLoadingEngine:
         return self.path_utils.normalize_path_separator(combined, 'unix')
 
     def _parse_web_xml(self) -> Dict[str, str]:
-        """Parse web.xml files and build servlet URL mappings."""
+        """Parse web.xml files and build servlet URL mappings"""
         try:
             query = "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
             results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
@@ -113,27 +110,37 @@ class BackendEntryLoadingEngine:
             return {}
 
     def execute_backend_entry_loading(self) -> bool:
-        """5단계 백엔드 진입점 분석 실행 (외부 트랜잭션 내에서)"""
+        """5??ｍ?獄쏄퉮肉??筌욊쑴????브쑴苑???쎈뻬 (?紐? ?紐껋삏??????곷퓠??"""
         try:
-            app_logger.info("=== 백엔드 진입점 분석 시작 ===")
+            app_logger.info("=== 獄쏄퉮肉??筌욊쑴????브쑴苑???뽰삂 ===")
             self.stats.start_analysis()
 
             java_files = self._get_java_files()
             if not java_files:
-                handle_error(Exception("분석할 Java 파일이 없습니다."), "백엔드 진입점 분석 실패")
+                handle_error(Exception("?브쑴苑??Java ???뵬????곷뮸??덈뼄."), "獄쏄퉮肉??筌욊쑴????브쑴苑???쎈솭")
                 return True
 
             all_backend_entries = self._analyze_backend_entries(java_files)
-            app_logger.info(f"백엔드 진입점 분석 완료: {len(all_backend_entries)}개 진입점")
+            try:
+                app_logger.info("Backend entry analysis done: {} entries".format(len(all_backend_entries)))
+            except Exception:
+                app_logger.info("Backend entry analysis done")
 
             self._save_results_to_db(all_backend_entries)
-            app_logger.info("분석 결과 DB 저장 완료")
+            app_logger.info("?브쑴苑?野껉퀗??DB ?????袁⑥┷")
 
+            # 蹂댁셿 ??? MyBatis mapper namespace+id ?몃뜳????mapper_map upsert
+            try:
+                from util.mapper_indexer import index_mappers
+                indexed = index_mappers(self.project_name, self.conn)
+                app_logger.info("mapper_map ??? {}嫄?.format(indexed))
+            except Exception as e:
+                handle_error(e, "mapper_map ?몃뜳???섑뻾 ?ㅽ뙣")
             self._print_backend_entry_statistics()
-            app_logger.info("=== 백엔드 진입점 분석 완료 ===")
+            app_logger.info("=== 獄쏄퉮肉??筌욊쑴????브쑴苑??袁⑥┷ ===")
             return True
         except Exception as e:
-            handle_error(e, f"백엔드 진입점 분석 프로세스 실패: {self.project_name}")
+            handle_error(e, f"獄쏄퉮肉??筌욊쑴????브쑴苑??袁⑥쨮?紐꾨뮞 ??쎈솭: {self.project_name}")
             return False
         finally:
             self.stats.end_analysis()
@@ -163,22 +170,22 @@ class BackendEntryLoadingEngine:
         return java_files
 
     def _read_file_content(self, file_path: str) -> Optional[str]:
-        """파일 내용 읽기"""
+        """???뵬 ??곸뒠 ??꾨┛"""
         try:
             normalized_path = self.path_utils.normalize_path(file_path)
             with open(normalized_path, 'r', encoding='utf-8') as file:
                 return file.read()
         except FileNotFoundError:
-            # 파일이 없는 경우 경고만 출력하고 None 반환 (프로그램 종료하지 않음)
-            handle_error(Exception(f"파일을 찾을 수 없음: {file_path}"), "파일 읽기 실패")
+            # ???뵬????용뮉 野껋럩??野껋럡?э쭕??곗뮆???랁?None 獄쏆꼹??(?袁⑥쨮域밸챶???ル굝利??? ??놁벉)
+            handle_error(Exception(f"???뵬??筌≪뼚??????곸벉: {file_path}"), "???뵬 ??꾨┛ ??쎈솭")
             return None
         except Exception as e:
-            # 기타 예외는 handle_error로 처리
-            handle_error(e, f"파일 읽기 실패: {file_path}")
+            # 疫꿸퀬? ??됱뇚??handle_error嚥?筌ｌ꼶??
+            handle_error(e, f"???뵬 ??꾨┛ ??쎈솭: {file_path}")
             return None
 
     def _analyze_backend_entries(self, java_files: List[FileInfo]) -> List[BackendEntryInfo]:
-        """백엔드 진입점 분석"""
+        """獄쏄퉮肉??筌욊쑴????브쑴苑?""
         all_entries = []
         for java_file in java_files:
             cached_entries = self.cache.get(java_file.hash_value)
@@ -193,7 +200,7 @@ class BackendEntryLoadingEngine:
         return all_entries
 
     def _filter_and_analyze_file(self, java_file: FileInfo) -> List[BackendEntryInfo]:
-        """2차 필터링 및 분석 실행"""
+        """2筌??袁り숲筌?獄??브쑴苑???쎈뻬"""
         file_entries = []
         for analyzer in self.analyzers:
             full_path = self.path_utils.join_path("projects", self.project_name, java_file.file_path)
@@ -205,10 +212,10 @@ class BackendEntryLoadingEngine:
         return file_entries
 
     def _save_results_to_db(self, entries: List[BackendEntryInfo]) -> None:
-        """분석 결과를 DB에 저장"""
+        """?브쑴苑?野껉퀗?든몴?DB??????""
         project_id = self.db.get_project_id(self.project_name, conn=self.conn)
         if not project_id:
-            raise Exception("프로젝트 ID 조회 실패")
+            raise Exception("?袁⑥쨮??븍뱜 ID 鈺곌퀬????쎈솭")
 
         components_to_insert = []
         if entries:
@@ -223,7 +230,7 @@ class BackendEntryLoadingEngine:
                 self.db.batch_insert_or_replace('relationships', relationships_to_insert, conn=self.conn)
 
     def _create_api_url_component(self, entry: BackendEntryInfo, project_id: int) -> Optional[Dict[str, Any]]:
-        """API_URL 컴포넌트 데이터 생성"""
+        # API_URL component creation
         url_pattern = entry.url_pattern.strip()
         if not url_pattern or url_pattern == '/' or url_pattern.startswith(':') or not url_pattern.startswith('/') or url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE'] or ':' in url_pattern:
             return None
@@ -248,21 +255,19 @@ class BackendEntryLoadingEngine:
         }
 
     def _create_api_components(self, entries: List[BackendEntryInfo], project_id: int, components_to_insert: List[Dict[str, Any]]):
-        """API_URL 컴포넌트 생성 로직"""
+        # Create API_URL components from analyzed entries
         for entry in entries:
             component = self._create_api_url_component(entry, project_id)
             if component:
                 components_to_insert.append(component)
 
     def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
-        """기존 METHOD 컴포넌트 찾기"""
         full_method_name = f"{entry.class_name}.{entry.method_name}"
         query = "SELECT c.component_id FROM components c WHERE c.project_id = ? AND c.component_type = 'METHOD' AND c.component_name = ? AND c.del_yn = 'N'"
         results = self.db.execute_query(query, (project_id, full_method_name), conn=self.conn)
         return results[0]['component_id'] if results else None
 
     def _create_api_relationships(self, entries: List[BackendEntryInfo], project_id: int, relationships_to_insert: List[Dict[str, Any]]):
-        """API_URL → METHOD 관계 생성"""
         for entry in entries:
             api_url_name = format_api_component_name(entry.http_method, entry.method_name, entry.url_pattern) or entry.url_pattern
             api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
@@ -270,7 +275,7 @@ class BackendEntryLoadingEngine:
             if api_url_id and method_id:
                 relationships_to_insert.append({'src_id': api_url_id, 'dst_id': method_id, 'rel_type': 'CALL_METHOD', 'del_yn': 'N', 'has_error': 'N', 'error_message': None})
 
-            # Controller 어노테이션 매핑 저장 (정밀 매칭용)
+            # Controller ??????뵠??筌띲끋釉?????(?類? 筌띲끉臾??
             try:
                 identity_key = build_api_identity_key(entry.url_pattern, entry.http_method)
                 identity_hash = self.hash_utils.generate_content_hash(identity_key)
@@ -287,23 +292,22 @@ class BackendEntryLoadingEngine:
                 # controller_api_map upsert
                 self.db.insert_or_replace_with_id('controller_api_map', map_data, conn=self.conn)
             except Exception as e:
-                handle_error(e, f"controller_api_map 저장 실패: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
+                handle_error(e, f"controller_api_map ??????쎈솭: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
 
     def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
-        """컴포넌트명과 타입으로 컴포넌트 ID 조회"""
         query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'"
         results = self.db.execute_query(query, (project_id, component_name, component_type), conn=self.conn)
         return results[0]['component_id'] if results else None
 
     def _print_backend_entry_statistics(self) -> None:
-        """분석 통계 출력"""
         self.stats.print_summary()
 
 def execute_backend_entry_loading(project_name: str, conn: sqlite3.Connection) -> bool:
-    """백엔드 진입점 분석 실행 편의 함수"""
     try:
         engine = BackendEntryLoadingEngine(project_name, conn)
         return engine.execute_backend_entry_loading()
     except Exception as e:
-        handle_error(e, f"백엔드 진입점 분석 실행 실패: {project_name}")
+        handle_error(e, f"獄쏄퉮肉??筌욊쑴????브쑴苑???쎈뻬 ??쎈솭: {project_name}")
         return False
+
+
