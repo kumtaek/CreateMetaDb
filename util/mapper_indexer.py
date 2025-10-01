@@ -24,6 +24,15 @@ class MapperIndexer:
 
     def run(self) -> int:
         try:
+            # DDL 상 mapper_map이 없을 수 있으므로 존재 확인
+            try:
+                if not self.db.table_exists('mapper_map'):
+                    info("mapper_map 테이블이 없어 인덱싱을 건너뜁니다")
+                    return 0
+            except Exception:
+                # 조회 실패 시에도 안전하게 스킵
+                info("mapper_map 테이블 확인 실패, 인덱싱 스킵")
+                return 0
             count = 0
             for root, _, files in os.walk(self.project_src):
                 for fn in files:
@@ -103,4 +112,3 @@ class MapperIndexer:
 
 def index_mappers(project_name: str, conn: sqlite3.Connection) -> int:
     return MapperIndexer(project_name, conn).run()
-

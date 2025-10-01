@@ -537,8 +537,6 @@ class XmlLoadingEngine:
                             'dst_id': dst_component_id,
                             'rel_type': rel_info['rel_type'],
                             'confidence': 1.0,
-                            'has_error': 'N',
-                            'error_message': None,
                             'del_yn': 'N'
                         }
                         
@@ -1192,8 +1190,6 @@ class XmlLoadingEngine:
                             'dst_id': dst_component_id,
                             'rel_type': rel_info['rel_type'],
                             'confidence': 1.0,
-                            'has_error': 'N',
-                            'error_message': None,
                             'del_yn': 'N'
                         }
                         
@@ -1847,8 +1843,6 @@ class XmlLoadingEngine:
                             'dst_id': dst_component_id,
                             'rel_type': rel_info['rel_type'],
                             'confidence': 1.0,
-                            'has_error': 'N',
-                            'error_message': None,
                             'del_yn': 'N'
                         }
                         

@@ -23,7 +23,8 @@ class RelationshipBuilder:
         self.project_id = project_id
         self.conn = conn
         self.path_utils = PathUtils()
-        self.db_utils = DatabaseUtils(None)
+        # Use actual metadata DB path for utility queries (e.g., table_exists)
+        self.db_utils = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
 
         self.stats: Dict[str, int] = {
             'method_query_relationships': 0,
@@ -77,27 +78,24 @@ class RelationshipBuilder:
     # ===== Precise builders =====
 
     def _build_api_method_from_controller_map(self) -> None:
-        """Create API_URL ??METHOD (CALL_METHOD) using controller_api_map."""
+        """Create API_URL → METHOD (CALL_METHOD) using controller_api_map."""
         try:
             cur = self.conn.cursor()
             rows = cur.execute(
                 """
                 SELECT api.component_id AS api_id,
-                       m.component_id   AS method_id
+                       cam.component_id  AS method_id
                   FROM controller_api_map cam
                   JOIN components api
                     ON api.component_type = 'API_URL'
-                   AND api.hash_value = cam.identity_hash
+                   AND api.hash_value = cam.hash_value
                    AND api.del_yn = 'N'
                   JOIN components m
-                    ON m.component_type = 'METHOD'
+                    ON m.component_id = cam.component_id
+                   AND m.component_type = 'METHOD'
                    AND m.del_yn = 'N'
-                  JOIN classes cl
-                    ON cl.class_id = m.parent_id
                  WHERE cam.project_id = ?
                    AND cam.del_yn = 'N'
-                   AND cl.class_name = cam.class_name
-                   AND m.component_name = cam.method_name
                 """,
                 (self.project_id,),
             ).fetchall()
@@ -108,15 +106,19 @@ class RelationshipBuilder:
                 created += 1
 
             self.stats['api_method_relationships'] += created
-            info(f"API_URL?묺ETHOD via controller_api_map: {created}")
+            info(f"API_URL→METHOD via controller_api_map: {created}")
         except Exception as e:
-            handle_error(e, "controller_api_map based API?묺ETHOD failed")
+            handle_error(e, "controller_api_map based API→METHOD failed")
 
     def _build_method_query_relationships_from_mapper_map(self) -> None:
         """Create METHOD → SQL_* (CALL_QUERY) using mapper_map (namespace+id).
         Adds a fuzzy fallback when strict class_name match fails.
         """
         try:
+            # mapper_map이 없는 스키마에서는 스킵
+            if not self.db_utils.table_exists('mapper_map'):
+                info("mapper_map 없음: METHOD→SQL 정밀 매칭 스킵")
+                return
             cur = self.conn.cursor()
             rows = cur.execute(
                 """
@@ -248,8 +250,8 @@ class RelationshipBuilder:
         cur.execute(
             """
             INSERT OR IGNORE INTO relationships
-                (src_id, dst_id, rel_type, confidence, has_error, error_message, del_yn)
-            VALUES (?, ?, ?, 1.0, 'N', NULL, 'N')
+                (src_id, dst_id, rel_type, confidence, del_yn)
+            VALUES (?, ?, ?, 1.0, 'N')
             """,
             (src_id, dst_id, rel_type),
         )

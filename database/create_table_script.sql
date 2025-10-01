@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS projects (
     project_id    INTEGER PRIMARY KEY AUTOINCREMENT, -- 프로젝트 고유 ID
     project_name  VARCHAR(100) NOT NULL,             -- 프로젝트명 (예: SampleSrc)
     project_path  VARCHAR(500) NOT NULL,             -- 프로젝트 루트 경로(절대/상대)
-    hash_value    VARCHAR(64),                       -- 프로젝트 전체 해시값(생성)
     created_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn        CHAR(1)  DEFAULT 'N'               -- 삭제 여부
@@ -78,8 +77,6 @@ CREATE TABLE IF NOT EXISTS tables (
     table_name    VARCHAR(100) NOT NULL,             -- 테이블명
     table_owner   VARCHAR(50)  NOT NULL,             -- 스키마 소유자(예: HR, SCOTT)
     table_comments TEXT,                             -- 설명/주석(생성)
-    has_error     CHAR(1) DEFAULT 'N',
-    error_message TEXT,
     hash_value    VARCHAR(64) NOT NULL,
     created_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
@@ -100,8 +97,6 @@ CREATE TABLE IF NOT EXISTS columns (
     position_pk   INTEGER,                            -- PK 순서(생성)
     data_default  TEXT,
     owner         VARCHAR(50),
-    has_error     CHAR(1) DEFAULT 'N',
-    error_message TEXT,
     hash_value    VARCHAR(64) NOT NULL,
     created_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
@@ -133,16 +128,16 @@ CREATE INDEX IF NOT EXISTS ix_classes_02 ON classes (parent_class_id);
 CREATE TABLE IF NOT EXISTS components (
     component_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id      INTEGER NOT NULL,
-    file_id         INTEGER NOT NULL,                  -- 소속 파일
-    component_name  VARCHAR(200) NOT NULL,             -- 표시명(예: GET:selectUser, findUsers 등)
-    component_type  VARCHAR(20)  NOT NULL,             -- 컴포넌트 유형(전체 나열)
+    file_id         INTEGER NOT NULL,                -- 소속 파일
+    component_name  VARCHAR(500) NOT NULL,           -- 표시명 : 예: GET:selectUser, findUsers 등.  Mybatis는 namespace.query_id를 표현함(com.example.user.UserMapper.selectById)
+    component_type  VARCHAR(20)  NOT NULL,           -- 컴포넌트 유형(전체 나열)
                                                      --  - 코드 구조: CLASS, METHOD, JSP
                                                      --  - API     : API_URL
                                                      --  - SQL     : SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_MERGE
                                                      --             QUERY(동적/추정 SQL 보관 시 사용 가능)
                                                      --  - DB 개념 : TABLE, COLUMN (필요 시 병행 보관)
-    parent_id       INTEGER,                           -- 부모(예: METHOD의 부모 CLASS)
-    layer           VARCHAR(30),                       -- 계층(전체 나열, 선택)
+    parent_id       INTEGER,                         -- 부모(예: METHOD의 부모 CLASS, COLUMN의 소속 테이블의 Component_id)
+    layer           VARCHAR(30),                     -- 계층(전체 나열, 선택)
                                                      --  - 코드: CONTROLLER, SERVICE, DAO, REPOSITORY, ENTITY
                                                      --  - 프런트: FRONTEND
                                                      --  - API 엔트리: API_ENTRY (API_URL에 사용)
@@ -171,8 +166,6 @@ CREATE TABLE IF NOT EXISTS relationships (
                                                      --  - CALL_QUERY : METHOD → SQL_xxx
                                                      --  - USE_TABLE  : SQL_xxx → TABLE
     confidence      FLOAT DEFAULT 1.0,
-    has_error       CHAR(1) DEFAULT 'N',
-    error_message   TEXT,
     created_at      DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at      DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn          CHAR(1) DEFAULT 'N',
@@ -186,43 +179,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, 
    4) 컨트롤러/서블릿 매핑 정보 (정밀 매칭)
    ----------------------------------------------------------------------- */
 /* 컨트롤러 어노테이션 정보(@GetMapping 등)를 통해 API↔METHOD 연결
-   - 백엔드에서 추출한 (class_name, method_name, http_method, url)을 저장.
-   - API_URL의 identity_hash(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
+   - 백엔드에서 추출한 (http_method, url)을 저장.
+   - API_URL의 hash_value(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
 CREATE TABLE IF NOT EXISTS controller_api_map (
-    map_id         INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id     INTEGER NOT NULL,
-    file_id        INTEGER,
-    class_name     VARCHAR(200) NOT NULL,
-    method_name    VARCHAR(200) NOT NULL,
+    component_id   INTEGER NOT NULL,                   -- 메소드의 component_id
     http_method    VARCHAR(10),                        -- GET/POST/...
     url            TEXT,
-    identity_hash  VARCHAR(64),                        -- HTTP+URL 조합 해시(API_URL과 동일 식별)
+    hash_value     VARCHAR(64) NOT NULL,               -- HTTP+URL 조합 해시(API_URL과 동일 식별)
     created_at     DATETIME DEFAULT (datetime('now', '+9 hours')),
     del_yn         CHAR(1) DEFAULT 'N',
     FOREIGN KEY (project_id) REFERENCES projects(project_id),
-    FOREIGN KEY (file_id)    REFERENCES files(file_id)
+    FOREIGN KEY (component_id) REFERENCES components(component_id)
 );
-CREATE INDEX IF NOT EXISTS ix_controller_api_map_01 ON controller_api_map (project_id, identity_hash);
-CREATE INDEX IF NOT EXISTS ix_controller_api_map_02 ON controller_api_map (project_id, class_name, method_name);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_controller_api_map_01 ON controller_api_map (component_id, hash_value, project_id);
+CREATE INDEX IF NOT EXISTS ix_controller_api_map_02 ON controller_api_map (hash_value);
 
-/* MyBatis: namespace + id 와 SQL 컴포넌트(component_id)
-   - XML mapper의 namespace, 쿼리 id를 SQL 컴포넌트(component_id)와 연결하여 저장.
-   - Java 인터페이스/DAO의 FQN.method와 namespace.id를 매칭하여 CALL_QUERY 관계 생성. */
-CREATE TABLE IF NOT EXISTS mapper_map (
-    map_id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id       INTEGER NOT NULL,
-    file_id          INTEGER,
-    namespace        VARCHAR(500) NOT NULL,
-    query_id         VARCHAR(200) NOT NULL,
-    sql_component_id INTEGER NOT NULL,
-    created_at       DATETIME DEFAULT (datetime('now', '+9 hours')),
-    del_yn           CHAR(1) DEFAULT 'N',
-    FOREIGN KEY (project_id)       REFERENCES projects(project_id),
-    FOREIGN KEY (file_id)          REFERENCES files(file_id),
-    FOREIGN KEY (sql_component_id) REFERENCES components(component_id)
-);
-CREATE UNIQUE INDEX IF NOT EXISTS ix_mapper_map_01 ON mapper_map (project_id, namespace, query_id);
-
-/* =======================================================================
-   끝 (필요 시 추가 보조 테이블은 여기에 추가)
-   ======================================================================= */

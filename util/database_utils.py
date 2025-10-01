@@ -496,7 +496,11 @@ class DatabaseUtils:
         Returns:
             생성 성공 여부 (True/False)
         """
-        return self.execute_script(schema_script_path)
+        ok = self.execute_script(schema_script_path)
+        if not ok:
+            return False
+        # 추가 마이그레이션은 수행하지 않음. DDL 정의에만 맞춰 동작.
+        return True
     
     def table_exists(self, table_name: str) -> bool:
         """
@@ -541,6 +545,37 @@ class DatabaseUtils:
         query = f"SELECT COUNT(*) as count FROM {table_name}"
         results = self.execute_query(query)
         return results[0]['count'] if results else 0
+
+    def _get_table_columns(self, table_name: str, conn: sqlite3.Connection = None) -> List[str]:
+        """지정 테이블의 실제 컬럼 목록을 반환"""
+        try:
+            results = self.execute_query(f"PRAGMA table_info({table_name})", conn=conn)
+            cols: List[str] = []
+            for row in results or []:
+                # sqlite3.Row or dict
+                name = row['name'] if isinstance(row, sqlite3.Row) or isinstance(row, dict) else row[1]
+                cols.append(name)
+            return cols
+        except Exception as e:
+            handle_error(e, f"테이블 컬럼 조회 실패: {table_name}")
+            return []
+
+    def _assert_data_matches_schema(self, table_name: str, data: Dict[str, Any], conn: sqlite3.Connection = None) -> None:
+        """데이터 컬럼이 스키마와 정확히 일치하는지 검증. 불일치 시 예외 발생."""
+        cols = set(self._get_table_columns(table_name, conn))
+        if not cols:
+            raise Exception(f"스키마 조회 실패 또는 빈 컬럼 목록: {table_name}")
+        invalid = [k for k in data.keys() if k not in cols]
+        if invalid:
+            raise Exception(f"정의되지 않은 컬럼 탐지: {table_name} -> {invalid}")
+
+    def _normalize_data_for_table(self, table_name: str, data: Dict[str, Any], conn: sqlite3.Connection = None) -> Dict[str, Any]:
+        """테이블별 허용/폐지된 컬럼을 정규화한다. (명시적 규칙)"""
+        if table_name == 'relationships':
+            # DDL에서 has_error, error_message 폐지됨: 제거하여 스키마 준수
+            if 'has_error' in data or 'error_message' in data:
+                data = {k: v for k, v in data.items() if k not in ('has_error', 'error_message')}
+        return data
     
     def upsert(self, table_name: str, data: Dict[str, Any], unique_columns: List[str], conn: sqlite3.Connection = None) -> bool:
         """
@@ -556,7 +591,9 @@ class DatabaseUtils:
             성공 여부 (True/False)
         """
         try:
-            # 기존 레코드 확인을 위한 WHERE 조건 생성
+            # 테이블별 정규화 후 스키마 검증
+            data = self._normalize_data_for_table(table_name, data, conn)
+            self._assert_data_matches_schema(table_name, data, conn)
             where_conditions = {col: data[col] for col in unique_columns if col in data}
             
             if where_conditions:
@@ -603,6 +640,9 @@ class DatabaseUtils:
             성공 여부 (True/False)
         """
         try:
+            # 테이블별 정규화 후 스키마 검증 (엄격)
+            data = self._normalize_data_for_table(table_name, data, conn)
+            self._assert_data_matches_schema(table_name, data, conn)
             columns = list(data.keys())
             placeholders = ', '.join(['?' for _ in columns])
             values = tuple(data.values())
@@ -730,6 +770,12 @@ class DatabaseUtils:
             성공 여부 (True/False)
         """
         try:
+            # 스키마 검증 (엄격) - 정규화 적용
+            merged = self._normalize_data_for_table(table_name, {**update_data, **where_conditions}, conn)
+            self._assert_data_matches_schema(table_name, merged, conn)
+            # 정규화 후 update_data / where_conditions 재구성
+            update_data = {k: v for k, v in merged.items() if k in update_data}
+            where_conditions = {k: v for k, v in merged.items() if k in where_conditions}
             # SET 절 생성
             set_clauses = []
             values = []

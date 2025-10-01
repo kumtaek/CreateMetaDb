@@ -205,8 +205,9 @@ class SimpleJavaLoader:
         """UPSERT into classes table"""
         try:
             data = {
-                'project_id': project_id, 'file_id': file_id,
-                'class_name': cls_data['name'], 'line_start': cls_data['line'],
+                'project_id': project_id,
+                'file_id': file_id,
+                'class_name': cls_data['name'],
                 'hash_value': HashUtils().generate_content_hash(f"{cls_data['name']}{cls_data['line']}")
             }
             return self.db_utils.insert_or_replace_with_id('classes', data, conn=self.conn)

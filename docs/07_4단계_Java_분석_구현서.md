@@ -11,16 +11,16 @@
 - **Spring/JPA 지원**: Controller, Repository, Entity 어노테이션 분석
 - **RelationshipBuilder 연동**: 중앙 관계 관리 시스템과 통합
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
-**구현 상태**: ✅ **구현 완료** (Enhanced SQL 추출 기능 포함)  
+**구현 상태**: 구현됨 (Enhanced SQL 추출 기능 포함)  
 **파일**: `java_loading.py`, `parser/java_parser.py`, `util/java_query_analyzer.py`  
 **메모리 최적화**: 스트리밍 처리로 한 파일씩만 메모리에 로드하여 처리  
-**SQL 처리 개선**: ✅ **StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석** - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
-**쿼리 도려내기**: ✅ **JPA @Query, StringBuilder, String.format, JPA 메서드 쿼리 지원**  
-**JPA 단순화**: ✅ **@Query(...) 괄호 안 문자열만 추출 (문법 오류 무시)**  
-**쿼리 종류 인식**: ✅ **INSERT/UPDATE/DELETE/MERGE/SELECT 자동 구분 (21/21 테스트 성공)**  
-**공통부 활용**: ✅ **SqlParser + SqlJoinAnalyzer로 일관된 고품질 분석**  
+**SQL 처리 개선**: StringBuilder + 정규식 SQL 추출 + 압축 저장 + 조인 분석 - [07_SQL공통파서_구현서.md](./07_SQL공통파서_구현서.md) 참조  
+**쿼리 도려내기**: JPA @Query, StringBuilder, String.format, JPA 메서드 쿼리 지원  
+**JPA 단순화**: @Query(...) 괄호 안 문자열만 추출 (문법 오류 무시)  
+**쿼리 종류 인식**: INSERT/UPDATE/DELETE/MERGE/SELECT 자동 구분 (21/21 테스트 성공)  
+**공통부 활용**: SqlParser + SqlJoinAnalyzer로 일관된 고품질 분석  
 
-## 3단계 쿼리 분석기 구현 완료 (Java 파서 적용)
+## 3단계 쿼리 분석기 (Java 파서 적용)
 
 ### 1단계 - Java 쿼리 추출 및 저장 (단순화된 접근법)
 - **동적 쿼리 처리**: 문자열 변수의 concaternation 누적 처리

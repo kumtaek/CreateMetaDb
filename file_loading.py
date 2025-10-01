@@ -105,9 +105,7 @@ class FileLoadingEngine:
                         self.stats['error_files'] += 1
                         
                 except Exception as e:
-                    warning(f"파일 스캔 오류: {file_path}, 오류: {str(e)}")
-                    self.stats['error_files'] += 1
-                    continue
+                    handle_error(e, f"파일 스캔 오류: {file_path}")
             
             self.stats['total_files'] = len(scanned_files)
             # info(f"파일 스캔 완료: 총 {self.stats['total_files']}개 파일")  # 로그 제거
@@ -115,7 +113,7 @@ class FileLoadingEngine:
             return scanned_files
             
         except Exception as e:
-            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+            # 모든 예외는 handle_error()로 처리
             handle_error(e, "프로젝트 파일 스캔 실패")
             return []
     
@@ -145,8 +143,6 @@ class FileLoadingEngine:
                     'file_type': file_type,
                     'hash_value': '-',
                     'line_count': 0,
-                    'has_error': 'Y',
-                    'error_message': '파일이 존재하지 않습니다',
                     'del_yn': 'N'
                 }
 
@@ -156,8 +152,6 @@ class FileLoadingEngine:
                 'file_type': file_info['file_type'].upper(),
                 'hash_value': file_info['hash_value'],
                 'line_count': file_info['line_count'],
-                'has_error': 'N',
-                'error_message': None,
                 'del_yn': 'N'
             }
 
@@ -180,11 +174,10 @@ class FileLoadingEngine:
                     'file_type': file_type,
                     'hash_value': '-',
                     'line_count': 0,
-                    'has_error': 'Y',
-                    'error_message': f"파일 정보 수집 실패: {str(e)}",
                     'del_yn': 'N'
                 }
-            except Exception:
+            except Exception as e2:
+                handle_error(e2, f"파일 정보 수집 실패(보조 경로 계산 실패): {file_path}")
                 return None
     def _should_include_file(self, relative_path: str) -> bool:
         """
@@ -224,8 +217,8 @@ class FileLoadingEngine:
             return False
             
         except Exception as e:
-            # 오류 발생 시 안전하게 제외
-            warning(f"파일 포함 여부 확인 실패: {relative_path}, 오류: {str(e)}")
+            # 모든 예외는 handle_error()로 처리
+            handle_error(e, f"파일 포함 여부 확인 실패: {relative_path}")
             return False
     
     def _apply_file_filters(self, normalized_path: str) -> bool:
@@ -271,8 +264,7 @@ class FileLoadingEngine:
             return True
             
         except Exception as e:
-            warning(f"파일 필터 적용 실패: {normalized_path}, 오류: {str(e)}")
-            # 오류 발생 시 안전하게 포함
+            handle_error(e, f"파일 필터 적용 실패: {normalized_path}")
             return True
     
     def _load_target_source_config(self) -> Optional[Dict[str, Any]]:
@@ -299,7 +291,7 @@ class FileLoadingEngine:
             return None
             
         except Exception as e:
-            warning(f"target_source_config.yaml 로드 실패: {str(e)}")
+            handle_error(e, "target_source_config.yaml 로드 실패")
             return None
     
     
@@ -328,7 +320,7 @@ class FileLoadingEngine:
                 return fnmatch.fnmatch(path, pattern)
                 
         except Exception as e:
-            warning(f"패턴 매칭 실패: {path}, {pattern}, 오류: {str(e)}")
+            handle_error(e, f"패턴 매칭 실패: {path}, {pattern}")
             return False
     
     def _parse_data_type(self, data_type_raw: str) -> tuple[str, Optional[int]]:
@@ -412,7 +404,16 @@ class FileLoadingEngine:
             if not project_id:
                 raise Exception("프로젝트 ID를 찾을 수 없습니다")
 
-            file_data_list = [{'project_id': project_id, **f} for f in files]
+            # DB 스키마에 맞춰 files 테이블 컬럼만 남겨 저장
+            allowed_cols = {
+                'project_id', 'file_path', 'file_name', 'file_type',
+                'hash_value', 'line_count', 'frameworks', 'del_yn'
+            }
+            file_data_list = []
+            for f in files:
+                base = {'project_id': project_id, **f}
+                filtered = {k: v for k, v in base.items() if k in allowed_cols}
+                file_data_list.append(filtered)
             
             processed_count = 0
             for file_data in file_data_list:
@@ -420,7 +421,6 @@ class FileLoadingEngine:
                     processed_count += 1
             
             if processed_count > 0:
-                self._update_project_total_files(project_id, processed_count)
                 return True
             else:
                 raise Exception("파일 정보 저장 실패")
@@ -429,14 +429,7 @@ class FileLoadingEngine:
             handle_error(e, "파일 정보 저장 실패")
             return False
 
-    def _update_project_total_files(self, project_id: int, total_files: int):
-        """프로젝트의 총 파일 수 업데이트 (주입된 연결 사용)"""
-        try:
-            query = "UPDATE projects SET total_files = ? WHERE project_id = ?"
-            self.db_utils.execute_update(query, (total_files, project_id), conn=self.conn)
-            debug(f"프로젝트 총 파일 수 업데이트: {total_files}")
-        except Exception as e:
-            warning(f"프로젝트 총 파일 수 업데이트 실패: {str(e)}")
+    # total_files 컬럼 제거에 따라 프로젝트 파일 수 업데이트는 수행하지 않음
 
     def save_tables_to_database(self, tables_data: List[Dict[str, str]]) -> bool:
         """테이블 정보를 tables 테이블에 저장 (주입된 연결 사용)"""
@@ -462,8 +455,8 @@ class FileLoadingEngine:
                 table_data_list.append({
                     'project_id': project_id, 'component_id': None,
                     'table_name': table_name, 'table_owner': table_owner,
-                    'table_comments': table_info.get('COMMENTS', ''), 'has_error': 'N',
-                    'error_message': None, 'hash_value': table_hash, 'del_yn': 'N'
+                    'table_comments': table_info.get('COMMENTS', ''),
+                    'hash_value': table_hash, 'del_yn': 'N'
                 })
 
             processed_count = self.db_utils.batch_insert_or_replace('tables', table_data_list, conn=self.conn)
@@ -497,8 +490,7 @@ class FileLoadingEngine:
                     'table_id': table_id, 'column_name': column_name, 'data_type': data_type,
                     'data_length': data_length, 'nullable': 'Y' if col_info.get('NULLABLE', 'Y') == 'Y' else 'N',
                     'column_comments': col_info.get('COLUMN_COMMENTS', ''), 'position_pk': int(col_info.get('PK', '0')) if col_info.get('PK', '0').isdigit() else None,
-                    'data_default': None, 'owner': table_owner, 'has_error': 'N' if table_id else 'Y',
-                    'error_message': None if table_id else f"테이블 ID를 찾을 수 없습니다: {table_owner}.{table_name}",
+                    'data_default': None, 'owner': table_owner,
                     'hash_value': column_hash, 'del_yn': 'N'
                 })
 
@@ -633,9 +625,8 @@ class FileLoadingEngine:
                 else:
                     handle_error(Exception("DB 초기화 실패"), "메타데이터베이스 스키마 생성 실패")
 
-            project_hash = HashUtils.generate_content_hash(f"{self.project_name}{self.project_source_path}")
             project_path_normalized = self.path_utils.normalize_path(self.path_utils.join_path("projects", self.project_name))
-            project_data = {'project_name': self.project_name, 'project_path': project_path_normalized, 'hash_value': project_hash, 'del_yn': 'N', 'total_files': 0}
+            project_data = {'project_name': self.project_name, 'project_path': project_path_normalized, 'del_yn': 'N'}
             self.db_utils.upsert('projects', project_data, ['project_name', 'project_path'], self.conn)
 
             # 파일 스캔 및 저장

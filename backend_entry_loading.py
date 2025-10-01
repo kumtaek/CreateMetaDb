@@ -1,9 +1,12 @@
-﻿"""Backend entry loading engine (UTF-8)"""
+"""
+Backend entry loading engine (clean UTF-8, no BOM)
+"""
 
 import os
 import sqlite3
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
+
 from util.logger import app_logger, handle_error
 from util.database_utils import DatabaseUtils
 from util.path_utils import PathUtils
@@ -16,16 +19,10 @@ from parser.base_entry_analyzer import BackendEntryInfo, FileInfo
 
 
 class BackendEntryLoadingEngine:
-    """獄쏄퉮肉??筌욊쑴????브쑴苑?筌롫뗄???遺우춭"""
-    
+    # Engine to analyze backend entries and persist components/relationships
+
     def __init__(self, project_name: str, conn: sqlite3.Connection):
-        """
-        ?遺우춭 ?λ뜃由??
-        
-        Args:
-            project_name: ?袁⑥쨮??븍뱜筌?
-            conn: ?紐??癒?퐣 雅뚯눘????怨쀬뵠?怨뺤퓢??곷뮞 ?怨뚭퍙 揶쏆빘猿?
-        """
+        # Initialize engine with project and DB connection
         self.project_name = project_name
         self.conn = conn
         self.path_utils = PathUtils()
@@ -33,28 +30,28 @@ class BackendEntryLoadingEngine:
         self.cache = get_global_cache()
         self.stats = get_global_collector()
         self.factory = get_global_factory()
-        
+
         self.db = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
         self.project_source_path = self.path_utils.get_project_source_path(project_name)
-        
+
         self.servlet_url_map = self._parse_web_xml()
         self.analyzers = self._load_analyzers()
         try:
-            app_logger.debug("Analyzers: {}".format([analyzer.get_framework_name() for analyzer in self.analyzers]))
+            app_logger.debug("Analyzers: {}".format([a.get_framework_name() for a in self.analyzers]))
         except Exception:
             app_logger.debug("Analyzers loaded")
-        app_logger.info(f"獄쏄퉮肉??筌욊쑴????브쑴苑??遺우춭 ?λ뜃由???袁⑥┷: {project_name}")
-    
+        app_logger.info(f"Backend entry loading initialized: {project_name}")
+
     def _load_analyzers(self) -> List:
-        """??쇱젟?癒?퐣 ?브쑴苑띷묾?嚥≪뮆諭?""
+        # Load analyzers from config
         try:
             analyzers = self.factory.load_analyzers_from_config(self.project_name, self.servlet_url_map)
             app_logger.debug("Analyzers loaded: {}".format(len(analyzers)))
             return analyzers
         except Exception as e:
-            handle_error(e, f"?브쑴苑띷묾?嚥≪뮆諭???쎈솭: {self.project_name}")
+            handle_error(e, f"Failed to load analyzers: {self.project_name}")
             return []
-    
+
     def _build_project_file_path(self, dir_path: Optional[str], file_name: str) -> str:
         parts = ['projects', self.project_name]
         if dir_path:
@@ -63,22 +60,22 @@ class BackendEntryLoadingEngine:
         return self.path_utils.join_path(*parts)
 
     def _compose_relative_file_path(self, dir_path: Optional[str], file_name: str) -> str:
-        if dir_path:
-            combined = os.path.join(dir_path, file_name)
-        else:
-            combined = file_name
+        combined = os.path.join(dir_path, file_name) if dir_path else file_name
         return self.path_utils.normalize_path_separator(combined, 'unix')
 
     def _parse_web_xml(self) -> Dict[str, str]:
-        """Parse web.xml files and build servlet URL mappings"""
+        # Parse web.xml files and build servlet URL mappings
         try:
-            query = "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
+            query = (
+                "SELECT f.file_path, f.file_name FROM files f JOIN projects p ON f.project_id = p.project_id "
+                "WHERE p.project_name = ? AND f.file_name = 'web.xml' AND f.del_yn = 'N'"
+            )
             results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
             if not results:
                 app_logger.debug("web.xml file not found")
                 return {}
 
-            url_map = {}
+            url_map: Dict[str, str] = {}
             for row in results:
                 try:
                     relative_label = self._compose_relative_file_path(row['file_path'], row['file_name'])
@@ -110,47 +107,53 @@ class BackendEntryLoadingEngine:
             return {}
 
     def execute_backend_entry_loading(self) -> bool:
-        """5??ｍ?獄쏄퉮肉??筌욊쑴????브쑴苑???쎈뻬 (?紐? ?紐껋삏??????곷퓠??"""
+        # Run full backend entry analysis and persist results
         try:
-            app_logger.info("=== 獄쏄퉮肉??筌욊쑴????브쑴苑???뽰삂 ===")
+            app_logger.info("=== Backend entry analysis start ===")
             self.stats.start_analysis()
 
             java_files = self._get_java_files()
             if not java_files:
-                handle_error(Exception("?브쑴苑??Java ???뵬????곷뮸??덈뼄."), "獄쏄퉮肉??筌욊쑴????브쑴苑???쎈솭")
+                handle_error(Exception("No Java files found to analyze."), "Backend entry loading")
                 return True
 
             all_backend_entries = self._analyze_backend_entries(java_files)
             try:
-                app_logger.info("Backend entry analysis done: {} entries".format(len(all_backend_entries)))
+                app_logger.info(
+                    "Backend entry analysis done: {} entries".format(len(all_backend_entries))
+                )
             except Exception:
                 app_logger.info("Backend entry analysis done")
 
             self._save_results_to_db(all_backend_entries)
-            app_logger.info("?브쑴苑?野껉퀗??DB ?????袁⑥┷")
+            app_logger.info("Backend entry components/relationships persisted to DB")
 
-            # 蹂댁셿 ??? MyBatis mapper namespace+id ?몃뜳????mapper_map upsert
+            # MyBatis mapper namespace+id indexing (mapper_map upsert)
             try:
                 from util.mapper_indexer import index_mappers
                 indexed = index_mappers(self.project_name, self.conn)
-                app_logger.info("mapper_map ??? {}嫄?.format(indexed))
+                app_logger.info("mapper_map indexed {}".format(indexed))
             except Exception as e:
-                handle_error(e, "mapper_map ?몃뜳???섑뻾 ?ㅽ뙣")
+                handle_error(e, "mapper_map indexing failed")
             self._print_backend_entry_statistics()
-            app_logger.info("=== 獄쏄퉮肉??筌욊쑴????브쑴苑??袁⑥┷ ===")
+            app_logger.info("=== Backend entry analysis done ===")
             return True
         except Exception as e:
-            handle_error(e, f"獄쏄퉮肉??筌욊쑴????브쑴苑??袁⑥쨮?紐꾨뮞 ??쎈솭: {self.project_name}")
+            handle_error(e, f"Backend entry loading failed: {self.project_name}")
             return False
         finally:
             self.stats.end_analysis()
 
     def _get_java_files(self) -> List[FileInfo]:
-        """Collect Java files to analyze."""
-        query = "SELECT f.file_id, f.file_path, f.file_name, f.file_type, f.hash_value FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND UPPER(f.file_type) = 'JAVA' AND f.del_yn = 'N'"
+        # Collect Java files to analyze
+        query = (
+            "SELECT f.file_id, f.file_path, f.file_name, f.file_type, f.hash_value "
+            "FROM files f JOIN projects p ON f.project_id = p.project_id "
+            "WHERE p.project_name = ? AND UPPER(f.file_type) = 'JAVA' AND f.del_yn = 'N'"
+        )
         results = self.db.execute_query(query, (self.project_name,), conn=self.conn)
 
-        java_files = []
+        java_files: List[FileInfo] = []
         for row in results or []:
             relative_path = self._compose_relative_file_path(row['file_path'], row['file_name'])
             full_path = self._build_project_file_path(row['file_path'], row['file_name'])
@@ -170,29 +173,27 @@ class BackendEntryLoadingEngine:
         return java_files
 
     def _read_file_content(self, file_path: str) -> Optional[str]:
-        """???뵬 ??곸뒠 ??꾨┛"""
+        # Read file content as UTF-8
         try:
             normalized_path = self.path_utils.normalize_path(file_path)
             with open(normalized_path, 'r', encoding='utf-8') as file:
                 return file.read()
         except FileNotFoundError:
-            # ???뵬????용뮉 野껋럩??野껋럡?э쭕??곗뮆???랁?None 獄쏆꼹??(?袁⑥쨮域밸챶???ル굝利??? ??놁벉)
-            handle_error(Exception(f"???뵬??筌≪뼚??????곸벉: {file_path}"), "???뵬 ??꾨┛ ??쎈솭")
+            handle_error(Exception(f"File not found: {file_path}"), "Read file failed")
             return None
         except Exception as e:
-            # 疫꿸퀬? ??됱뇚??handle_error嚥?筌ｌ꼶??
-            handle_error(e, f"???뵬 ??꾨┛ ??쎈솭: {file_path}")
+            handle_error(e, f"Read file failed: {file_path}")
             return None
 
     def _analyze_backend_entries(self, java_files: List[FileInfo]) -> List[BackendEntryInfo]:
-        """獄쏄퉮肉??筌욊쑴????브쑴苑?""
-        all_entries = []
+        # Analyze each Java file using registered analyzers
+        all_entries: List[BackendEntryInfo] = []
         for java_file in java_files:
             cached_entries = self.cache.get(java_file.hash_value)
             if cached_entries:
                 all_entries.extend(cached_entries)
                 continue
-            
+
             file_entries = self._filter_and_analyze_file(java_file)
             if file_entries:
                 self.cache.set(java_file.hash_value, file_entries)
@@ -200,8 +201,8 @@ class BackendEntryLoadingEngine:
         return all_entries
 
     def _filter_and_analyze_file(self, java_file: FileInfo) -> List[BackendEntryInfo]:
-        """2筌??袁り숲筌?獄??브쑴苑???쎈뻬"""
-        file_entries = []
+        # Run analyzers on a single file; prefer Spring analyzer when matched
+        file_entries: List[BackendEntryInfo] = []
         for analyzer in self.analyzers:
             full_path = self.path_utils.join_path("projects", self.project_name, java_file.file_path)
             if analyzer.is_target_file(full_path):
@@ -212,18 +213,18 @@ class BackendEntryLoadingEngine:
         return file_entries
 
     def _save_results_to_db(self, entries: List[BackendEntryInfo]) -> None:
-        """?브쑴苑?野껉퀗?든몴?DB??????""
+        # Persist API_URL components and relationships
         project_id = self.db.get_project_id(self.project_name, conn=self.conn)
         if not project_id:
-            raise Exception("?袁⑥쨮??븍뱜 ID 鈺곌퀬????쎈솭")
+            raise Exception("Project ID not found")
 
-        components_to_insert = []
+        components_to_insert: List[Dict[str, Any]] = []
         if entries:
             self._create_api_components(entries, project_id, components_to_insert)
             if components_to_insert:
                 self.db.batch_insert_or_replace('components', components_to_insert, conn=self.conn)
 
-        relationships_to_insert = []
+        relationships_to_insert: List[Dict[str, Any]] = []
         if entries:
             self._create_api_relationships(entries, project_id, relationships_to_insert)
             if relationships_to_insert:
@@ -231,10 +232,17 @@ class BackendEntryLoadingEngine:
 
     def _create_api_url_component(self, entry: BackendEntryInfo, project_id: int) -> Optional[Dict[str, Any]]:
         # API_URL component creation
-        url_pattern = entry.url_pattern.strip()
-        if not url_pattern or url_pattern == '/' or url_pattern.startswith(':') or not url_pattern.startswith('/') or url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE'] or ':' in url_pattern:
+        url_pattern = (entry.url_pattern or '').strip()
+        if (
+            not url_pattern
+            or url_pattern == '/'
+            or url_pattern.startswith(':')
+            or not url_pattern.startswith('/')
+            or url_pattern.upper() in ['GET', 'POST', 'PUT', 'DELETE']
+            or ':' in url_pattern
+        ):
             return None
-        
+
         component_name = format_api_component_name(entry.http_method, entry.method_name, url_pattern) or url_pattern
         identity_key = build_api_identity_key(url_pattern, entry.http_method)
         hash_value = self.hash_utils.generate_content_hash(identity_key)
@@ -248,10 +256,18 @@ class BackendEntryLoadingEngine:
                 self.db.update_component_file_id(existing_id, entry.file_id, conn=self.conn)
             return None
         return {
-            'project_id': project_id, 'file_id': entry.file_id, 'component_name': component_name,
-            'component_type': 'API_URL', 'layer': 'API_ENTRY', 'line_start': entry.line_start,
-            'line_end': entry.line_end, 'hash_value': hash_value, 'del_yn': 'N',
-            'has_error': entry.has_error, 'error_message': entry.error_message, 'parent_id': None
+            'project_id': project_id,
+            'file_id': entry.file_id,
+            'component_name': component_name,
+            'component_type': 'API_URL',
+            'layer': 'API_ENTRY',
+            'line_start': entry.line_start,
+            'line_end': entry.line_end,
+            'hash_value': hash_value,
+            'del_yn': 'N',
+            'has_error': entry.has_error,
+            'error_message': entry.error_message,
+            'parent_id': None,
         }
 
     def _create_api_components(self, entries: List[BackendEntryInfo], project_id: int, components_to_insert: List[Dict[str, Any]]):
@@ -263,7 +279,10 @@ class BackendEntryLoadingEngine:
 
     def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
         full_method_name = f"{entry.class_name}.{entry.method_name}"
-        query = "SELECT c.component_id FROM components c WHERE c.project_id = ? AND c.component_type = 'METHOD' AND c.component_name = ? AND c.del_yn = 'N'"
+        query = (
+            "SELECT c.component_id FROM components c WHERE c.project_id = ? "
+            "AND c.component_type = 'METHOD' AND c.component_name = ? AND c.del_yn = 'N'"
+        )
         results = self.db.execute_query(query, (project_id, full_method_name), conn=self.conn)
         return results[0]['component_id'] if results else None
 
@@ -273,26 +292,30 @@ class BackendEntryLoadingEngine:
             api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
             method_id = self._find_existing_method(entry, project_id)
             if api_url_id and method_id:
-                relationships_to_insert.append({'src_id': api_url_id, 'dst_id': method_id, 'rel_type': 'CALL_METHOD', 'del_yn': 'N', 'has_error': 'N', 'error_message': None})
+                relationships_to_insert.append({
+                    'src_id': api_url_id,
+                    'dst_id': method_id,
+                    'rel_type': 'CALL_METHOD',
+                    'del_yn': 'N',
+                })
 
-            # Controller ??????뵠??筌띲끋釉?????(?類? 筌띲끉臾??
+            # Upsert controller_api_map for controller -> (method, http, url)
             try:
                 identity_key = build_api_identity_key(entry.url_pattern, entry.http_method)
-                identity_hash = self.hash_utils.generate_content_hash(identity_key)
-                map_data = {
-                    'project_id': project_id,
-                    'file_id': entry.file_id,
-                    'class_name': entry.class_name,
-                    'method_name': entry.method_name,
-                    'http_method': (entry.http_method or ''),
-                    'url': entry.url_pattern,
-                    'identity_hash': identity_hash,
-                    'del_yn': 'N'
-                }
-                # controller_api_map upsert
-                self.db.insert_or_replace_with_id('controller_api_map', map_data, conn=self.conn)
+                api_hash = self.hash_utils.generate_content_hash(identity_key)
+                if method_id:
+                    map_data = {
+                        'project_id': project_id,
+                        'component_id': method_id,
+                        'http_method': (entry.http_method or ''),
+                        'url': entry.url_pattern,
+                        'hash_value': api_hash,
+                        'del_yn': 'N',
+                    }
+                    # Unique by (project_id, component_id, hash_value)
+                    self.db.upsert('controller_api_map', map_data, ['project_id', 'component_id', 'hash_value'], self.conn)
             except Exception as e:
-                handle_error(e, f"controller_api_map ??????쎈솭: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
+                handle_error(e, f"controller_api_map upsert failed: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
 
     def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
         query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'"
@@ -302,12 +325,11 @@ class BackendEntryLoadingEngine:
     def _print_backend_entry_statistics(self) -> None:
         self.stats.print_summary()
 
+
 def execute_backend_entry_loading(project_name: str, conn: sqlite3.Connection) -> bool:
     try:
         engine = BackendEntryLoadingEngine(project_name, conn)
         return engine.execute_backend_entry_loading()
     except Exception as e:
-        handle_error(e, f"獄쏄퉮肉??筌욊쑴????브쑴苑???쎈뻬 ??쎈솭: {project_name}")
+        handle_error(e, f"Backend entry loading failed: {project_name}")
         return False
-
-
