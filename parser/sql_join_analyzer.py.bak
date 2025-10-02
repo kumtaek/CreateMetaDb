@@ -146,27 +146,24 @@ class SqlJoinAnalyzer:
             handle_error(e, "MERGE JOIN 분석 실패")
             return []
 
-        def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
-            """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+    def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+        try:
             relationships = []
-            try:
-                where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
-                if where_match:
-                    where_clause = where_match.group(1)
+            where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
+            if where_match:
+                where_clause = where_match.group(1)
+                condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+                conditions = re.findall(condition_pattern, where_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
+                    if rel:
+                        relationships.append(rel)
+            return relationships
+        except Exception as e:
+            handle_error(e, "IMPLICIT JOIN 분석 실패")
+            return []
     
-                    # Oracle (+) Outer Join 구문 처리
-                    where_clause = re.sub(r'\(\+\)', '', where_clause)
-    
-                    condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
-                    conditions = re.findall(condition_pattern, where_clause)
-                    for cond in conditions:
-                        rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
-                        if rel:
-                            relationships.extend(rel) # Use extend for list of dicts
-                return relationships
-            except Exception as e:
-                handle_error(e, "IMPLICIT JOIN 분석 실패")
-                return []    
     def _normalize_sql_for_analysis(self, sql_content: str, dynamic_patterns: dict) -> str:
         """SQL 정규화 (주석 제거, 동적 태그 처리)"""
         try:
@@ -212,39 +209,26 @@ class SqlJoinAnalyzer:
             return []
 
 
-    def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[List[Dict[str, Any]]]:
-        """조인 조건 파트에서 JOIN 관계 1개와 USE_COLUMN 관계 2개를 생성하여 리스트로 반환합니다."""
-        part1_has_dot = '.' in part1
-        part2_has_dot = '.' in part2
+    def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[Dict[str, Any]]:
+        """조인 조건 파트에서 관계 딕셔너리를 생성합니다."""
+        if '.' not in part1 or '.' not in part2:
+            return None
 
-        table1, col1, table2, col2 = None, None, None, None
+        alias1, col1 = part1.split('.')
+        alias2, col2 = part2.split('.')
 
-        if part1_has_dot:
-            alias1, col1 = part1.split('.', 1)
-            table1 = alias_map.get(alias1.upper())
-        else:
-            col1 = part1
+        table1 = alias_map.get(alias1.upper())
+        table2 = alias_map.get(alias2.upper())
 
-        if part2_has_dot:
-            alias2, col2 = part2.split('.', 1)
-            table2 = alias_map.get(alias2.upper())
-        else:
-            col2 = part2
-
-        if col1 and col2:
-            if table1 and table2 and table1 == table2:
-                return None
-
+        if table1 and table2 and table1 != table2:
             return {
                 'source_table': table1,
                 'target_table': table2,
                 'source_column': col1.upper(),
                 'target_column': col2.upper(),
                 'rel_type': rel_type,
-                'confidence': 0.8,
-                'alias_map': alias_map
+                'confidence': 0.9
             }
-
         return None
     
     def _analyze_implicit_joins_in_where(self, sql_content: str, alias_map: dict, 

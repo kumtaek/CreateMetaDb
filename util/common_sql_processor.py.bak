@@ -6,7 +6,7 @@ import sqlite3
 import re
 import gzip
 import hashlib
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass
 
 @dataclass
@@ -30,11 +30,8 @@ class CommonSqlAnalyzer:
     """공통 SQL 분석기 - SqlContent.db 기반"""
     
     def __init__(self, project_name: str):
-        from util.database_utils import DatabaseUtils
         self.project_name = project_name
         self.sql_content_db_path = f"projects/{project_name}/SqlContent.db"
-        self.db_utils = DatabaseUtils(f"projects/{project_name}/metadata.db")
-        self.project_id = self.db_utils.get_project_id(project_name)
         
         # Oracle 키워드 로드
         self.oracle_keywords = self._load_oracle_keywords()
@@ -48,49 +45,88 @@ class CommonSqlAnalyzer:
             return set()
     
     def analyze_all_queries(self) -> Dict[str, Any]:
-        """[수정] 모든 SQL을 분석하고, 컬럼의 parent_id를 정확히 설정합니다."""
-        # ... (함수 시작 및 쿼리 조회 부분은 동일) ...
+        """SqlContent.db의 모든 쿼리 분석"""
+        results = {
+            'tables': [],
+            'join_relationships': [],
+            'statistics': {
+                'total_queries': 0,
+                'tables_found': 0,
+                'joins_found': 0
+            }
+        }
         
         try:
             conn = sqlite3.connect(self.sql_content_db_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT component_id, sql_content_compressed FROM sql_contents WHERE del_yn = 'N'")
+            
+            # SqlContent.db에서 모든 쿼리 가져오기
+            cursor.execute("""
+                SELECT component_id, component_name, sql_content_compressed, file_path
+                FROM sql_contents 
+                WHERE del_yn = 'N'
+            """)
+            
             queries = cursor.fetchall()
-
-            for component_id, compressed_sql in queries:
+            results['statistics']['total_queries'] = len(queries)
+            
+            all_tables = set()
+            all_joins = []
+            
+            for component_id, component_name, compressed_sql, file_path in queries:
                 try:
-                    if not compressed_sql:
+                    # 압축된 SQL 해제
+                    if compressed_sql:
+                        sql_content = gzip.decompress(compressed_sql).decode('utf-8')
+                    else:
                         continue
-                    sql_content = gzip.decompress(compressed_sql).decode('utf-8')
+                    
+                    # 주석 제거
                     clean_sql = self._remove_comments(sql_content)
                     
+                    # 테이블 추출 (2단계)
                     table_result = self._extract_tables(clean_sql)
-                    alias_map = table_result.get('alias_map', {})
-
-                    # USE_TABLE 관계 저장
-                    if table_result.get('tables'):
+                    all_tables.update(table_result['tables'])
+                    # 메타데이터에 SQL(component) → TABLE 관계 저장
+                    if table_result['tables']:
                         self._save_use_table_relationships(component_id, table_result['tables'])
-
-                    # JOIN 관계 저장
-                    joins = self._extract_join_relationships(clean_sql, alias_map)
+                    
+                    # 조인 관계 추출 (3단계) - alias_map 전달
+                    joins = self._extract_join_relationships(clean_sql, table_result['alias_map'])
+                    all_joins.extend(joins)
+                    # 즉시 JOIN 관계 저장 (TABLE components 기준)
                     if joins:
                         self._save_table_joins_components(joins)
-
-                    # COLUMN 컴포넌트의 PARENT_ID 설정
-                    columns_to_process = self._extract_columns(clean_sql, alias_map)
-                    if columns_to_process:
-                        self._update_column_parent_ids(columns_to_process, alias_map)
-
+                    # 컬럼 추출 및 즉시 저장 (COLUMN components 있는 경우에만)
+                    columns = self._extract_columns(clean_sql, table_result['alias_map'])
+                    if columns:
+                        self._save_use_column_relationships(component_id, columns)
+                    
                 except Exception as e:
                     from util.logger import handle_error
-                    handle_error(e, f"쿼리 분석 실패: component_id={component_id}")
+                    handle_error(e, f"쿼리 분석 실패: {component_name}")
                     continue
+            
+            # 결과 정리
+            results['tables'] = list(all_tables)
+            results['join_relationships'] = all_joins
+            results['statistics']['tables_found'] = len(all_tables)
+            results['statistics']['joins_found'] = len(all_joins)
+            
+            # 데이터베이스에 저장
+            if all_tables:
+                self._save_tables_batch_to_metadata(list(all_tables))
+                    
+            if all_joins:
+                self._save_joins_batch_to_metadata(all_joins)
+            
             conn.close()
+            
         except Exception as e:
             from util.logger import handle_error
             handle_error(e, "analyze_all_queries 실행 실패")
             
-        return {} # 반환값 형식은 기존 코드와 맞출 필요 있음
+        return results
 
     def _save_use_table_relationships(self, sql_component_id: int, tables: List[str]) -> None:
         """metadata.db의 components(표 TABLE)와 relationships를 이용해 USE_TABLE 생성"""
@@ -121,7 +157,7 @@ class CommonSqlAnalyzer:
             handle_error(e, f"USE_TABLE 관계 저장 실패: sql_component_id={sql_component_id}")
 
     def _save_table_joins_components(self, joins: List[JoinCondition]) -> None:
-        """[수정] TABLE(component) 간 JOIN_* 관계와 USE_COLUMN 관계를 함께 생성합니다."""
+        """TABLE(component) 간 JOIN_* 관계 생성"""
         try:
             from util.database_utils import DatabaseUtils
             metadata_db_path = f"projects/{self.project_name}/metadata.db"
@@ -136,129 +172,71 @@ class CommonSqlAnalyzer:
                     (join.right_table,), conn=conn)
                 if not left_rows or not right_rows:
                     continue
-                
-                src_comp_id = left_rows[0]['component_id']
-                dst_comp_id = right_rows[0]['component_id']
-
-                # JOIN 관계 저장
                 rel = {
-                    'src_id': src_comp_id,
-                    'dst_id': dst_comp_id,
+                    'src_id': left_rows[0]['component_id'],
+                    'dst_id': right_rows[0]['component_id'],
                     'rel_type': f"JOIN_{join.join_type}",
                     'confidence': 0.8,
                     'del_yn': 'N'
                 }
                 db.insert_or_replace_with_id('relationships', rel, conn=conn)
-
-                # USE_COLUMN 관계 저장
-                src_col_row = db.execute_query("SELECT component_id FROM components WHERE component_type='COLUMN' AND parent_id=? AND component_name=?", (src_comp_id, join.left_column), conn=conn)
-                dst_col_row = db.execute_query("SELECT component_id FROM components WHERE component_type='COLUMN' AND parent_id=? AND component_name=?", (dst_comp_id, join.right_column), conn=conn)
-                
-                src_col_comp_id = src_col_row[0]['component_id'] if src_col_row else None
-                dst_col_comp_id = dst_col_row[0]['component_id'] if dst_col_row else None
-
-                if src_comp_id and src_col_comp_id:
-                    db.insert_relationship(src_comp_id, src_col_comp_id, 'USE_COLUMN')
-                if dst_comp_id and dst_col_comp_id:
-                    db.insert_relationship(dst_comp_id, dst_col_comp_id, 'USE_COLUMN')
-
         except Exception as e:
             from util.logger import handle_error
-            handle_error(e, "JOIN 및 USE_COLUMN 관계 저장 실패")
+            handle_error(e, "JOIN 관계 저장 실패(components 기반)")
 
     def _extract_columns(self, sql: str, alias_map: Dict[str, str]) -> List[Tuple[str, str]]:
-        """[임시 수정] WHERE/ON 절의 '조인 조건'에 사용된 컬럼만 추출합니다."""
+        """SELECT/WHERE/ON에서 alias.col 패턴을 추출하고 alias를 테이블로 해석"""
         try:
             cols = set()
-            where_on_segment = ""
-            
-            where_on_match = re.search(r"\b(WHERE|ON)\b(.*)", sql, flags=re.IGNORECASE | re.DOTALL)
-            if where_on_match:
-                where_on_segment = where_on_match.group(2)
-            else: # WHERE나 ON이 없으면 조인 컬럼도 없음
-                return []
-
-            # 조인 조건 패턴: a.col = b.col 또는 a.col = col
-            condition_pattern = r'\b([\w\.]+)\b\s*=\s*\b([\w\.]+)\b'
-            conditions = re.findall(condition_pattern, where_on_segment)
-            for part1, part2 in conditions:
-                # 양쪽 중 하나라도 '.'을 포함해야 조인 조건으로 간주
-                if '.' in part1 or '.' in part2:
-                    cols.add(part1)
-                    cols.add(part2)
-
+            m = re.search(r"\bSELECT\b(.*?)\bFROM\b", sql, flags=re.IGNORECASE | re.DOTALL)
+            if m:
+                segment = m.group(1)
+                cols.update(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b", segment))
+            for kw in ("WHERE", "ON"):
+                for seg in re.findall(rf"\b{kw}\b(.*?)(?=\bGROUP\b|\bORDER\b|\bHAVING\b|\bUNION\b|$)", sql, flags=re.IGNORECASE | re.DOTALL):
+                    cols.update(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b", seg))
             resolved = []
-            for col_part in cols:
-                if '.' in col_part:
-                    alias, col_name = col_part.split('.', 1)
-                    table_name = alias_map.get(alias.upper(), alias.upper())
-                    resolved.append((table_name, col_name.upper()))
-                else:
-                    resolved.append(('UNKNOWN', col_part.upper()))
-            
+            for a, c in cols:
+                alias = a.upper()
+                table = alias_map.get(alias, alias)
+                resolved.append((table.upper(), c.upper()))
             return resolved
-        except Exception as e:
-            from util.logger import handle_error
-            handle_error(e, "Column extraction failed")
+        except Exception:
             return []
 
-
-
-    def _find_owner_table_of_column(self, column_name: str, candidate_tables: list[str]) -> Optional[str]:
-        """[신규] 후보 테이블 목록 중에서, 특정 컬럼을 실제로 소유한 테이블을 DB에서 찾습니다."""
-        if not column_name or not candidate_tables:
-            return None
-        try:
-            conn = self.db_utils.get_persistent_connection()
-            cur = conn.cursor()
-            for table_name in candidate_tables:
-                table_comp_id = self.db_utils.get_component_id(self.project_id, table_name, 'TABLE')
-                if not table_comp_id:
-                    continue
-
-                cur.execute("SELECT 1 FROM components WHERE project_id=? AND component_type='COLUMN' AND parent_id=? AND component_name=?",
-                            (self.project_id, table_comp_id, column_name))
-                if cur.fetchone():
-                    return table_name
-            return None
-        except Exception as e:
-            from util.logger import handle_error
-            handle_error(e, f"컬럼 소유자 테이블 검색 실패 '{column_name}': {e}")
-            return None
-
-    def _update_column_parent_ids(self, columns: List[Tuple[str, str]], alias_map: Dict[str, str]) -> None:
-        """별칭 없는 컬럼의 부모 테이블 ID를 찾아 업데이트합니다."""
+    def _save_use_column_relationships(self, sql_component_id: int, columns: List[Tuple[str, str]]) -> None:
+        """COLUMN(component) 존재 시 SQL(component) -> COLUMN(component) USE_COLUMN 생성
+        columns: [(table_name, column_name)]
+        """
         try:
             if not columns:
                 return
-            conn = self.db_utils.get_persistent_connection()
+            from util.database_utils import DatabaseUtils
+            db = DatabaseUtils(f"projects/{self.project_name}/metadata.db")
+            conn = db.get_persistent_connection()
             for table_name, col_name in columns:
-                if table_name == 'UNKNOWN':
-                    candidate_tables = list(alias_map.values())
-                    owner_table = self._find_owner_table_of_column(col_name, candidate_tables)
-                    if owner_table:
-                        table_name = owner_table
-                    elif candidate_tables:
-                        table_name = candidate_tables[0]
-                        self.db_utils.register_inferred_column(self.project_id, table_name, col_name)
-                    else:
-                        continue
-
-                table_comp_id = self.db_utils.get_component_id(self.project_id, table_name, 'TABLE')
-                if not table_comp_id:
+                # 테이블 컴포넌트 조회
+                tbl = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
+                    (table_name,), conn=conn)
+                if not tbl:
                     continue
-
-                col_comp = self.db_utils.execute_query("SELECT component_id FROM components WHERE component_type='COLUMN' AND component_name=? AND parent_id=?", (col_name, table_comp_id), conn=conn)
-                if col_comp:
-                    # 이미 올바른 parent_id를 가지고 있으므로 업데이트 불필요
+                row = db.execute_query(
+                    "SELECT component_id FROM components WHERE component_type='COLUMN' AND component_name=? AND parent_id=? AND del_yn='N' LIMIT 1",
+                    (col_name, tbl[0]['component_id']), conn=conn)
+                if not row:
                     continue
-                else:
-                    # parent_id가 잘못되었거나 없는 경우, 올바른 parent_id로 업데이트
-                    self.db_utils.update_record('components', {'parent_id': table_comp_id}, {'component_name': col_name, 'component_type': 'COLUMN', 'project_id': self.project_id}, conn=conn)
-
+                rel = {
+                    'src_id': sql_component_id,
+                    'dst_id': row[0]['component_id'],
+                    'rel_type': 'USE_COLUMN',
+                    'confidence': 0.7,
+                    'del_yn': 'N'
+                }
+                db.insert_or_replace_with_id('relationships', rel, conn=conn)
         except Exception as e:
             from util.logger import handle_error
-            handle_error(e, "컬럼 parent_id 업데이트 실패")
+            handle_error(e, "USE_COLUMN 관계 저장 실패")
     
     def _remove_comments(self, sql: str) -> str:
         """SQL 주석 제거"""
@@ -324,62 +302,34 @@ class CommonSqlAnalyzer:
         return joins
     
     def _extract_implicit_joins(self, sql: str, alias_map: Dict[str, str]) -> List[JoinCondition]:
-        """[수정] WHERE 절에서 별칭이 없거나 (+)가 포함된 조인 조건을 분석합니다."""
+        """WHERE 절에서 암시적 조인 관계 추출"""
         joins = []
-        where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql, re.IGNORECASE | re.DOTALL)
-        if not where_match:
-            return joins
-
-        where_clause = where_match.group(1)
-        where_clause = re.sub(r'\(\+\)', '', where_clause)
-
-        condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
-        conditions = re.findall(condition_pattern, where_clause)
-
-        for part1, part2 in conditions:
-            part1_has_dot = '.' in part1
-            part2_has_dot = '.' in part2
-
-            table1, col1, table2, col2 = None, None, None, None
-
-            if part1_has_dot:
-                alias1, col1 = part1.split('.', 1)
-                table1 = alias_map.get(alias1.upper())
-            else:
-                col1 = part1
-
-            if part2_has_dot:
-                alias2, col2 = part2.split('.', 1)
-                table2 = alias_map.get(alias2.upper())
-            else:
-                col2 = part2
-
-            if not col1 or not col2:
-                continue
-
-            # 테이블 추론
-            if table1 and not table2:
-                candidate_tables = [tbl for tbl in alias_map.values() if tbl != table1]
-                # 이 부분은 DB 조회가 필요하지만, 우선 첫번째 후보로 단순화
-                if candidate_tables:
-                    table2 = candidate_tables[0]
-            elif not table1 and table2:
-                candidate_tables = [tbl for tbl in alias_map.values() if tbl != table2]
-                if candidate_tables:
-                    table1 = candidate_tables[0]
-
-            if table1 and table2 and table1 != table2:
-                if (table1.upper() not in self.oracle_keywords and 
-                    table2.upper() not in self.oracle_keywords and
-                    col1.upper() not in self.oracle_keywords and 
-                    col2.upper() not in self.oracle_keywords):
-                    joins.append(JoinCondition(
-                        left_table=table1,
-                        right_table=table2,
-                        left_column=col1.upper(),
-                        right_column=col2.upper(),
-                        join_type='IMPLICIT'
-                    ))
+        
+        # WHERE 절에서 = 조건 직접 찾기 (알리아스 있음/없음 모두)
+        where_join_pattern = r'WHERE\s+.*?(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
+        matches = re.findall(where_join_pattern, sql, re.IGNORECASE | re.DOTALL)
+        
+        for match in matches:
+            left_alias, left_col, right_alias, right_col = match
+            
+            # 알리아스 매핑 (있으면 매핑, 없으면 그대로)
+            left_table = alias_map.get(left_alias.upper(), left_alias.upper())
+            right_table = alias_map.get(right_alias.upper(), right_alias.upper())
+            
+            # Oracle 키워드만 제외 (INFERRED 테이블/컬럼 도출 목표)
+            if (left_table.upper() not in self.oracle_keywords and 
+                right_table.upper() not in self.oracle_keywords and
+                left_col.upper() not in self.oracle_keywords and 
+                right_col.upper() not in self.oracle_keywords):
+                
+                joins.append(JoinCondition(
+                    left_table=left_table,
+                    right_table=right_table,
+                    left_column=left_col.upper(),
+                    right_column=right_col.upper(),
+                    join_type='IMPLICIT'
+                ))
+        
         return joins
     
     def _extract_explicit_joins(self, sql: str, alias_map: Dict[str, str]) -> List[JoinCondition]:

@@ -134,172 +134,52 @@ class XmlLoadingEngine:
             handle_error(e, "XML 로딩 실행 실패")
     
     def _save_sql_components_to_database(self, sql_queries: List[Dict[str, Any]], file_id: int, conn=None) -> bool:
-        """
-        SQL 컴포넌트를 데이터베이스에 저장 (3단계, 단일 연결 지원)
-        
-        Args:
-            sql_queries: SQL 쿼리 정보 리스트
-            file_id: 파일 ID
-            conn: 사용할 연결 객체 (None이면 새 연결 생성)
-            
-        Returns:
-            저장 성공 여부
-        """
+        """SQL 컴포넌트를 데이터베이스에 저장합니다."""
         try:
-            debug(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 시작 ===")
-            debug(f"전달받은 SQL 쿼리 수: {len(sql_queries)}개")
-            
-            # SQL 쿼리 타입별 통계
-            if sql_queries:
-                query_types = {}
-                for query in sql_queries:
-                    tag_name = query.get('tag_name', 'unknown')
-                    query_types[tag_name] = query_types.get(tag_name, 0) + 1
-                debug(f"XML에서 추출된 SQL 쿼리 타입별 통계: {query_types}")
-            
             if not sql_queries:
-                handle_error("저장할 SQL 쿼리가 없습니다")
                 return True
-            
-            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
+
             project_id = self._get_project_id()
             if not project_id:
-                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
                 handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "SQL 컴포넌트 저장 실패")
-            
-            debug(f"프로젝트 ID: {project_id}")
-            
-            # file_id는 매개변수로 전달받음
-            debug(f"파일 ID: {file_id}")
-            
-            # SQL Content 저장 (공통부)
-            if sql_queries:
-                info(f"수집된 SQL 쿼리 {len(sql_queries)}개를 SQL Content에 저장")
-                try:
-                    from util.sql_content_manager import SqlContentManager
-                    sql_content_manager = SqlContentManager(self.project_name)
-                    
-                    if sql_content_manager.initialized:
-                        for query in sql_queries:
-                            # query_id와 file_id 전달 (Component 등록은 공통부에서 처리)
-                            query_id = query.get('sql_id', '') or query.get('query_id', '') or f"query_{query.get('file_id', 0)}_{len(sql_queries)}"
-                            success = sql_content_manager.save_sql_content(
-                                sql_content=query.get('sql_content', ''),
-                                project_id=project_id,
-                                query_id=query_id,  # query_id 전달
-                                file_id=file_id,    # file_id 전달 (개별부에서 알고 있는 값)
-                                file_path=query.get('file_path', ''),
-                                file_name=query.get('file_name', ''),
-                                hash_value=query.get('hash_value', '-'),
-                                query_type=query.get('query_type', 'SQL_QUERY'),
-                                conn=conn
-                            )
-                            # 저장 직후 즉시 JOIN/컬럼 관계 생성 (보완 저장)
-                            try:
-                                if success:
-                                    sql_text = query.get('sql_content', '')
-                                    if sql_text:
-                                        from util.common_sql_processor import CommonSqlAnalyzer
-                                        analyzer = CommonSqlAnalyzer(self.project_name)
-                                        clean_sql = analyzer._remove_comments(sql_text)
-                                        table_info = analyzer._extract_tables(clean_sql)
-                                        alias_map = table_info.get('alias_map', {})
-                                        joins = []
-                                        joins.extend(analyzer._extract_explicit_joins(clean_sql, alias_map))
-                                        joins.extend(analyzer._extract_implicit_joins(clean_sql, alias_map))
-                                        joins.extend(analyzer._extract_merge_joins(clean_sql, alias_map))
-                                        if joins:
-                                            analyzer._save_table_joins_components(joins)
-                                        columns = analyzer._extract_columns(clean_sql, alias_map)
-                                        if columns:
-                                            comp_row = self.db_utils.execute_query(
-                                                "SELECT component_id FROM components WHERE project_id=(SELECT project_id FROM projects WHERE project_name=?) AND component_name=? AND component_type LIKE 'SQL_%' AND del_yn='N' ORDER BY component_id DESC LIMIT 1",
-                                                (self.project_name, query_id),
-                                                self.conn,
-                                            )
-                                            if comp_row:
-                                                analyzer._save_use_column_relationships(comp_row[0]['component_id'], columns)
-                            except Exception as ee:
-                                handle_error(ee, "즉시 SQL 보완 분석 실패(XML)")
-                            if success:
-                                debug(f"SQL Content + Component 저장 성공: {query_id}")
-                            else:
-                                handle_error(Exception(f"SQL Content + Component 저장 실패: {query_id}"), "SQL Content + Component 저장 실패")
-                    else:
-                        handle_error(Exception("SQL Content Manager 초기화 실패"), "SQL Content Manager 초기화 실패")
-                except Exception as e:
-                    handle_error(e, "SQL Content 저장 실패")
-            
-            # SQL Content Processor를 사용하여 처리
-            if self.common_sql_processor:
-                info("Common SQL Processor를 사용하여 처리 시작")
-                try:
-                    result = self.common_sql_processor.analyze_all_queries()
-                    
-                    info(f"=== XML 로딩 엔진: SQL 컴포넌트 저장 완료 ===")
-                    return result
-                except Exception as e:
-                    handle_error(e, "process_sql_queries 호출 실패")
-            else:
-                error("Common SQL Processor가 초기화되지 않았습니다")
-            
-            # 기존 방식으로 SQL 컴포넌트 저장 (SQL Content Processor 보류 상태)
+                return False
+
             success_count = 0
-            
             for sql_query in sql_queries:
                 try:
-                    # SQL 쿼리 정보 추출
                     sql_id = sql_query.get('query_id', '') or sql_query.get('sql_id', '')
                     sql_content = sql_query.get('sql_content', '')
-                    tag_name = sql_query.get('tag_name', 'select')
-                    
                     if not sql_id or not sql_content:
-                        handle_error(f"SQL 쿼리 정보가 불완전함: id={sql_id}, content={sql_content[:50]}...")
-                    
-                    # 컴포넌트 타입 결정 (SQL 내용 기반으로 xml_parser에서 분석된 query_type 사용)
-                    component_type = sql_query.get('query_type', f"SQL_{tag_name.upper()}")
-                    
-                    # 컴포넌트 데이터 구성
+                        continue
+
+                    component_type = sql_query.get('query_type', f"SQL_{sql_query.get('tag_name', 'QUERY').upper()}")
                     component_data = {
                         'project_id': project_id,
                         'file_id': file_id,
                         'component_type': component_type,
                         'component_name': sql_id,
-                        'parent_id': None,
-                        'layer': 'QUERY',  # SQL 컴포넌트는 QUERY layer
-                        'line_start': 1,  # XML에서는 정확한 라인 번호 추출이 어려움
-                        'line_end': 1,
-                        'has_error': 'N',
-                        'error_message': None,
                         'hash_value': HashUtils.generate_md5(sql_content),
                         'del_yn': 'N'
                     }
                     
-                    # components 테이블에 저장
-                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
-                    
+                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data, conn=self.conn)
+
                     if component_id:
                         success_count += 1
                         debug(f"SQL 컴포넌트 저장 성공: {sql_id} (component_id: {component_id})")
-                        
-                        # SQL Content 저장은 공통부에서 처리
-
-                        # SQL과 테이블 간의 USE_TABLE 관계 생성
-                        self._create_sql_table_relationships(component_id, sql_content, project_id)
-
+                        # SqlContent.db 저장은 별도의 매니저가 담당
                     else:
-                        handle_error(f"SQL 컴포넌트 저장 실패: {sql_id}")
-                        
+                        warning(f"SQL 컴포넌트 저장 실패: {sql_id}")
+
                 except Exception as e:
-                    handle_error(f"SQL 쿼리 저장 중 오류: {sql_id}, 오류: {e}")
-            
+                    handle_error(e, f"개별 SQL 쿼리 처리 실패: {sql_id}")
+
             debug(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
             return success_count > 0
 
         except Exception as e:
-            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, "SQL 컴포넌트 저장 실패")
-
+            return False
     def _create_sql_table_relationships(self, sql_component_id: int, sql_content: str, project_id: int) -> None:
         """
         SQL 컴포넌트와 테이블 간의 USE_TABLE 관계를 생성

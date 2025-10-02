@@ -127,44 +127,15 @@ class SimpleJavaLoader:
             handle_error(e, f"Java query analysis failed: {java_file}")
 
     def _process_collected_queries(self, project_id: int):
-        """Process all collected SQL queries"""
-        info(f"Collected SQL queries: {len(self.collected_sql_queries)} → save & post-process")
+        """Process all collected SQL queries by saving them to SqlContent.db"""
+        info(f"Collected SQL queries: {len(self.collected_sql_queries)} → saving to SqlContent.db")
         if not self.sql_content_manager or not self.sql_content_manager.initialized:
-            warning("SQL Content Manager媛 珥덇린?붾릺吏 ?딆븘 荑쇰━ 泥섎━瑜?嫄대꼫?곷땲??")
+            warning("SQL Content Manager가 초기화되지 않아 쿼리 처리를 건너뜁니다.")
             return
 
         try:
-            from util.common_sql_processor import CommonSqlAnalyzer
-            analyzer = CommonSqlAnalyzer(self.project_name)
             for query_data in self.collected_sql_queries:
-                ok = self.sql_content_manager.save_sql_content(conn=self.conn, **query_data)
-                # 利됱떆 USE_TABLE/JOIN/而щ읆 愿怨??앹꽦 蹂댁셿 泥섎━
-                try:
-                    if ok and query_data.get('sql_content'):
-                        clean_sql = analyzer._remove_comments(query_data['sql_content'])
-                        table_info = analyzer._extract_tables(clean_sql)
-                        alias_map = table_info.get('alias_map', {})
-                        joins = []
-                        joins.extend(analyzer._extract_explicit_joins(clean_sql, alias_map))
-                        joins.extend(analyzer._extract_implicit_joins(clean_sql, alias_map))
-                        joins.extend(analyzer._extract_merge_joins(clean_sql, alias_map))
-                        if joins:
-                            analyzer._save_table_joins_components(joins)
-                        # 而щ읆 ?ъ슜 愿怨꾨뒗 SQL component_id媛 ?꾩슂?섏뿬 ??λ맂 component?????common_sql_processor媛 泥섎━
-                        # ?ш린?쒕뒗 而щ읆紐낅쭔 異붿텧?섏뿬 愿怨?????쒕룄
-                        columns = analyzer._extract_columns(clean_sql, alias_map)
-                        if columns:
-                            # component_id??諛⑷툑 ??λ맂 component_name???ㅻ줈 議고쉶
-                            comp_name = query_data.get('query_id') or query_data.get('component_name')
-                            comp_row = self.db_utils.execute_query(
-                                "SELECT component_id FROM components WHERE project_id=(SELECT project_id FROM projects WHERE project_name=?) AND component_name=? AND component_type LIKE 'SQL_%' AND del_yn='N' ORDER BY component_id DESC LIMIT 1",
-                                (self.project_name, comp_name),
-                                conn=self.conn,
-                            )
-                            if comp_row:
-                                analyzer._save_use_column_relationships(comp_row[0]['component_id'], columns)
-                except Exception as e:
-                    handle_error(e, "利됱떆 SQL 蹂댁셿 遺꾩꽍 ?ㅽ뙣(Java)")
+                self.sql_content_manager.save_sql_content(conn=self.conn, **query_data)
         except Exception as e:
             handle_error(e, "SQL content save failed")
 

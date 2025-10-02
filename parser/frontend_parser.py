@@ -230,7 +230,7 @@ class FrontendParser:
                         line = content[line_start:line_end]
                         
                         # API 호출 정보 추출
-                        api_call = self._extract_api_call_info(match, line, line_num, file_name, default_methods)
+                        api_call = self._extract_api_call_info(match, line, line_num, file_name, default_methods, file_type)
                         if api_call:
                             api_calls.append(api_call)
                             
@@ -266,7 +266,7 @@ class FrontendParser:
         except Exception as e:
             handle_error(e, "HTML API 호출 추출 실패")
 
-    def _extract_api_call_info(self, match, line: str, line_num: int, file_name: str, default_methods: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    def _extract_api_call_info(self, match, line: str, line_num: int, file_name: str, default_methods: Dict[str, str], file_type: str = '') -> Optional[Dict[str, Any]]:
         """API 호출 정보 추출 (JSP 파서 로직 재사용)"""
         try:
             groups = match.groups()
@@ -288,7 +288,8 @@ class FrontendParser:
                 'http_method': http_method,
                 'line_number': line_num,
                 'source_line': line.strip(),
-                'component_name': f"{api_url}:{http_method}"
+                'component_name': f"{api_url}:{http_method}",
+                'file_type': file_type
             }
             
             return api_call
@@ -344,6 +345,7 @@ class FrontendParser:
 
     def _extract_components_from_javascript(self, content: str, file_name: str, file_type: str) -> List[Dict[str, Any]]:
         """JavaScript 계열 파일에서 컴포넌트 추출"""
+        debug(f"DEBUG: _extract_components_from_javascript received file_name={file_name}, file_type={file_type}")
         try:
             components = []
             
@@ -352,6 +354,8 @@ class FrontendParser:
                 components = self._extract_jsx_components(content, file_name)
             elif file_type.upper() == 'VUE':
                 components = self._extract_vue_components(content, file_name)
+            elif file_type.upper() == 'TSX': # TSX 처리 추가
+                components = self._extract_tsx_components(content, file_name)
             elif file_type.upper() in ['TS', 'JS']:
                 components = self._extract_js_components(content, file_name)
             
@@ -386,28 +390,28 @@ class FrontendParser:
             components = []
             
             # React 컴포넌트 패턴 찾기
-            component_patterns = [
-                r'function\s+(\w+)\s*\(',  # function ComponentName(
-                r'const\s+(\w+)\s*=\s*\(',  # const ComponentName = (
-                r'class\s+(\w+)\s+extends',  # class ComponentName extends
-                r'export\s+default\s+function\s+(\w+)',  # export default function ComponentName
-                r'export\s+default\s+(\w+)'  # export default ComponentName
-            ]
+            # 파일명에서 확장자를 제외한 부분을 컴포넌트 이름으로 사용
+            base_name = os.path.splitext(file_name)[0]
             
-            for pattern in component_patterns:
-                matches = re.finditer(pattern, content, re.IGNORECASE)
-                for match in matches:
-                    component_name = match.group(1)
-                    line_num = content[:match.start()].count('\n') + 1
-                    
-                    component = {
-                        'component_name': component_name,
-                        'component_type': 'JSX',
-                        'line_start': line_num,
-                        'line_end': line_num,
-                        'hash_value': HashUtils.generate_content_hash(component_name)
-                    }
-                    components.append(component)
+            # export default로 내보내지는 컴포넌트 우선 추출
+            export_default_pattern = re.compile(r'export\s+default\s+(?:function\s+)?(\w+)', re.IGNORECASE)
+            match = export_default_pattern.search(content)
+            if match:
+                component_name = match.group(1)
+            else:
+                # export default가 없으면 파일명 사용
+                component_name = base_name
+
+            line_num = 1 # 파일 전체를 하나의 컴포넌트로 간주
+            
+            component = {
+                'component_name': component_name,
+                'component_type': 'JSX',
+                'line_start': line_num,
+                'line_end': content.count('\n') + 1,
+                'hash_value': HashUtils.generate_content_hash(component_name)
+            }
+            components.append(component)
             
             return components
             
@@ -419,60 +423,84 @@ class FrontendParser:
         try:
             components = []
             
-            # Vue 컴포넌트 패턴 찾기
-            component_patterns = [
-                r'<template[^>]*>',  # <template> 태그
-                r'<script[^>]*>',   # <script> 태그
-                r'<style[^>]*>'     # <style> 태그
-            ]
+            # Vue 파일 자체를 하나의 컴포넌트로 처리
+            # 파일명에서 확장자를 제외한 부분을 컴포넌트 이름으로 사용
+            base_name = os.path.splitext(file_name)[0]
             
-            for pattern in component_patterns:
-                matches = re.finditer(pattern, content, re.IGNORECASE)
-                for match in matches:
-                    tag_name = match.group(0).split()[0][1:-1]  # 태그명 추출
-                    line_num = content[:match.start()].count('\n') + 1
-                    
-                    component = {
-                        'component_name': f"{file_name}_{tag_name}",
-                        'component_type': 'VUE',
-                        'line_start': line_num,
-                        'line_end': line_num,
-                        'hash_value': HashUtils.generate_content_hash(tag_name)
-                    }
-                    components.append(component)
+            component = {
+                'component_name': base_name,
+                'component_type': 'VUE',
+                'line_start': 1,
+                'line_end': content.count('\n') + 1,
+                'hash_value': HashUtils.generate_content_hash(base_name)
+            }
+            components.append(component)
             
             return components
             
         except Exception as e:
             handle_error(e, "Vue 컴포넌트 추출 실패")
 
+    def _extract_tsx_components(self, content: str, file_name: str) -> List[Dict[str, Any]]:
+        # 로깅 시스템 우회를 위한 파일 직접 쓰기
+        with open("temp/tsx_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"_extract_tsx_components called for {file_name}\n")
+
+        debug(f"DEBUG: _extract_tsx_components called for {file_name}")
+        try:
+            components = []
+            
+            # TSX 파일 자체를 하나의 컴포넌트로 처리
+            # 파일명에서 확장자를 제외한 부분을 컴포넌트 이름으로 사용
+            base_name = os.path.splitext(file_name)[0]
+            
+            # export default로 내보내지는 컴포넌트 우선 추출
+            export_default_pattern = re.compile(r'export\s+default\s+(?:function\s+)?(\w+)', re.IGNORECASE)
+            match = export_default_pattern.search(content)
+            if match:
+                component_name = match.group(1)
+            else:
+                # export default가 없으면 파일명 사용
+                component_name = base_name
+
+            line_num = 1 # 파일 전체를 하나의 컴포넌트로 간주
+            
+            component = {
+                'component_name': component_name,
+                'component_type': 'TSX',
+                'line_start': line_num,
+                'line_end': content.count('\n') + 1,
+                'hash_value': HashUtils.generate_content_hash(component_name)
+            }
+            components.append(component)
+            debug(f"DEBUG: _extract_tsx_components returning {len(components)} components for {file_name}")
+            
+            with open("temp/tsx_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"_extract_tsx_components returning {len(components)} components for {file_name}\n")
+
+            return components
+            
+        except Exception as e:
+            handle_error(e, "TSX 컴포넌트 추출 실패")
+            return [] # 에러 발생 시 빈 리스트 반환
+
     def _extract_js_components(self, content: str, file_name: str) -> List[Dict[str, Any]]:
         """JavaScript 파일에서 컴포넌트 추출"""
         try:
             components = []
             
-            # JavaScript 함수/클래스 패턴 찾기
-            component_patterns = [
-                r'function\s+(\w+)\s*\(',  # function functionName(
-                r'class\s+(\w+)',          # class ClassName
-                r'const\s+(\w+)\s*=\s*function',  # const functionName = function
-                r'export\s+default\s+function\s+(\w+)'  # export default function
-            ]
+            # JavaScript 파일 자체를 하나의 컴포넌트로 처리
+            # 파일명에서 확장자를 제외한 부분을 컴포넌트 이름으로 사용
+            base_name = os.path.splitext(file_name)[0]
             
-            for pattern in component_patterns:
-                matches = re.finditer(pattern, content, re.IGNORECASE)
-                for match in matches:
-                    component_name = match.group(1)
-                    line_num = content[:match.start()].count('\n') + 1
-                    
-                    component = {
-                        'component_name': component_name,
-                        'component_type': 'JS',
-                        'line_start': line_num,
-                        'line_end': line_num,
-                        'hash_value': HashUtils.generate_content_hash(component_name)
-                    }
-                    components.append(component)
+            component = {
+                'component_name': base_name,
+                'component_type': 'JS',
+                'line_start': 1,
+                'line_end': content.count('\n') + 1,
+                'hash_value': HashUtils.generate_content_hash(base_name)
+            }
+            components.append(component)
             
             return components
             

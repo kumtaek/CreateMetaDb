@@ -1279,6 +1279,21 @@ class DatabaseUtils:
             handle_error(e, f"컴포넌트 해시 조회 실패: project_id={project_id}, component_type={component_type}")
             return None
 
+    def get_component_by_name(self, project_id: int, component_type: str, component_name: str, conn: Optional[sqlite3.Connection] = None) -> Optional[Dict[str, Any]]:
+        """component_name으로 컴포넌트를 조회"""
+        try:
+            query = """
+                SELECT component_id, component_name, file_id
+                FROM components
+                WHERE project_id = ? AND component_type = ? AND component_name = ? AND del_yn = 'N'
+                LIMIT 1
+            """
+            results = self.execute_query(query, (project_id, component_type, component_name), conn=conn)
+            return results[0] if results else None
+        except Exception as e:
+            handle_error(e, f"컴포넌트 이름 조회 실패: project_id={project_id}, component_type={component_type}, component_name={component_name}")
+            return None
+
     def update_component_file_id(self, component_id: int, new_file_id: int, conn: Optional[sqlite3.Connection] = None) -> bool:
         """컴포넌트가 속한 파일을 갱신"""
         try:
@@ -1454,10 +1469,10 @@ class DatabaseUtils:
                 return False
 
             sql = """
-                INSERT OR IGNORE INTO relationships (src_id, dst_id, rel_type, confidence, has_error, del_yn)
-                VALUES (?, ?, ?, ?, 'N', 'N')
+                INSERT OR IGNORE INTO relationships (src_id, dst_id, rel_type, confidence, del_yn)
+                VALUES (?, ?, ?, ?, 'N')
             """
-            result = self.execute_update(sql, (src_id, dst_id, rel_type, confidence))
+            result = self.execute_update(sql, (src_id, dst_id, rel_type, confidence)) # , conn=self.conn)
             return result > 0
 
         except Exception as e:
@@ -1706,6 +1721,55 @@ class DatabaseUtils:
             
         except Exception as e:
             handle_error(e, f"inferred 컴포넌트용 file_id 조회 실패")
+            return None
+
+    def register_inferred_column(self, project_id: int, table_name: str, column_name: str) -> Optional[int]:
+        """추론된 컬럼을 DB에 등록하고, 생성된 컬럼 컴포넌트 ID를 반환합니다."""
+        try:
+            if not project_id:
+                return None
+
+            table_res = self.execute_query("SELECT table_id, component_id FROM tables WHERE project_id = ? AND table_name = ? AND del_yn = 'N'", (project_id, table_name))
+            if not table_res:
+                return None
+            table_id, table_component_id = table_res[0]['table_id'], table_res[0]['component_id']
+
+            existing_col = self.execute_query("SELECT component_id FROM columns WHERE table_id = ? AND column_name = ? AND del_yn = 'N'", (table_id, column_name.upper()))
+            if existing_col:
+                return existing_col[0]['component_id']
+
+            # 1. columns 테이블에 삽입
+            column_data = {
+                'table_id': table_id,
+                'column_name': column_name.upper(),
+                'data_type': 'VARCHAR2(50)',
+                'column_comments': 'Inferred from SQL analysis',
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+            self.insert_record('columns', column_data)
+            column_id = self.get_last_insert_id()
+
+            # 2. components 테이블에 삽입
+            inferred_file_id = self._get_inferred_file_id_for_component(project_id)
+            component_data = {
+                'project_id': project_id,
+                'file_id': inferred_file_id,
+                'component_name': column_name.upper(),
+                'component_type': 'COLUMN',
+                'parent_id': table_component_id,
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+            component_id = self.insert_or_replace_with_id('components', component_data)
+
+            # 3. columns 테이블에 component_id 업데이트
+            if component_id and column_id:
+                self.update_record('columns', {'component_id': component_id}, {'column_id': column_id})
+            
+            return component_id
+        except Exception as e:
+            handle_error(e, f"Failed to register inferred column '{column_name}' for table '{table_name}': {e}")
             return None
 
     def get_relationship_count(self, project_id: int = None) -> int:

@@ -136,7 +136,10 @@ class FileLoadingEngine:
             file_name = file_info.get('file_name') or components.get('filename') or components.get('file_name') or os.path.basename(file_path)
 
             if not file_info.get('exists', False):
-                file_type = FileUtils.get_file_type(file_path).upper()
+                raw_file_type = FileUtils.get_file_type(file_path)
+                file_type = raw_file_type.upper()
+                debug(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}")
+                print(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}") # Added print statement
                 return {
                     'file_path': relative_dir,
                     'file_name': file_name,
@@ -146,10 +149,14 @@ class FileLoadingEngine:
                     'del_yn': 'N'
                 }
 
+            raw_file_type = file_info['file_type']
+            file_type = raw_file_type.upper()
+            debug(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}")
+            print(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}") # Added print statement
             return {
                 'file_path': relative_dir,
                 'file_name': file_name,
-                'file_type': file_info['file_type'].upper(),
+                'file_type': file_type,
                 'hash_value': file_info['hash_value'],
                 'line_count': file_info['line_count'],
                 'del_yn': 'N'
@@ -297,8 +304,8 @@ class FileLoadingEngine:
     
     def _match_pattern(self, path: str, pattern: str) -> bool:
         """
-        경로가 패턴과 매칭되는지 확인
-        **/ 패턴 지원
+        경로가 패턴과 매칭되는지 확인 (pathlib.Path.match 사용)
+        '**' 패턴을 올바르게 지원합니다.
         
         Args:
             path: 확인할 경로
@@ -308,16 +315,11 @@ class FileLoadingEngine:
             매칭 여부 (True/False)
         """
         try:
-            import fnmatch
-            
-            # **/ 패턴을 처리하기 위해 정규화
-            if pattern.startswith('**/'):
-                # **/ 패턴: 경로의 어느 부분이든 매칭
-                pattern = pattern[3:]  # **/ 제거
-                return fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(path, f"*/{pattern}")
-            else:
-                # 일반 패턴: 정확한 매칭
-                return fnmatch.fnmatch(path, pattern)
+            from pathlib import Path
+            # 윈도우 경로 구분자를 POSIX 스타일로 변경하여 match 메서드가 올바르게 동작하도록 함
+            # pathlib.Path.match는 POSIX 스타일 경로에서만 '**'를 올바르게 처리함
+            normalized_path_for_match = path.replace('\\', '/')
+            return Path(normalized_path_for_match).match(pattern)
                 
         except Exception as e:
             handle_error(e, f"패턴 매칭 실패: {path}, {pattern}")
@@ -349,7 +351,8 @@ class FileLoadingEngine:
                     length_part = length_part.split(',')[0]
                 data_length = int(length_part)
                 return type_part, data_length
-            except ValueError:
+            except ValueError as ve:
+                handle_error(ve, f"데이터 길이 파싱 실패: {length_part}")
                 return type_part, None
         else:
             # 괄호가 없는 경우 (NUMBER, DATE 등)

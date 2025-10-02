@@ -132,10 +132,13 @@ class FrontendLoadingEngine:
     def _save_frontend_components_to_database(self, components: List[Dict[str, Any]], project_id: int, file_type: str):
         """프론트엔드 컴포넌트를 데이터베이스에 저장"""
         try:
+            if file_type.upper() != 'JSP':
+                return
+
             for component in components:
                 component_data = {
                     'project_id': project_id, 'file_id': self.current_file_id,
-                    'component_name': component['component_name'], 'component_type': file_type.upper(),
+                    'component_name': component['component_name'], 'component_type': 'JSP',
                     'layer': 'FRONTEND', 'line_start': component.get('line_start', 1),
                     'line_end': component.get('line_end', 1), 'hash_value': component.get('hash_value', '-'),
                     'del_yn': 'N', 'has_error': 'N', 'error_message': None, 'parent_id': None
@@ -158,18 +161,10 @@ class FrontendLoadingEngine:
                     api_url_id = self._find_or_create_api_url_component(api_call, project_id)
                     if not api_url_id: continue
 
-                    # 수정 필요: JSP만이 아닌 모든 프론트엔드 파일 타입 허용
-                    file_type = api_call.get('file_type', '').upper()
-                    app_logger.info(f"[DEBUG] CALL_API 관계 생성 시도: file_type={file_type}, file_name={api_call['file_name']}, api_url_id={api_url_id}")
-                    if file_type in ['JSP', 'JSX', 'VUE', 'TS', 'TSX', 'JS', 'HTML']:
+                    if api_call.get('file_type', '').upper() == 'JSP':
                         jsp_component_id = self._find_frontend_component_id(api_call['file_name'], project_id)
                         if jsp_component_id:
-                            app_logger.info(f"[DEBUG] CALL_API 관계 생성: jsp_component_id={jsp_component_id} -> api_url_id={api_url_id}")
                             self._create_relationship(jsp_component_id, api_url_id, 'CALL_API')
-                        else:
-                            app_logger.warning(f"[DEBUG] CALL_API 관계 생성 실패: jsp_component_id를 찾을 수 없음")
-                    else:
-                        app_logger.info(f"[DEBUG] CALL_API 관계 생성 스킵: 지원하지 않는 파일 타입={file_type}")
                 except Exception as e:
                     handle_error(e, f"API 호출 관계 저장 실패: {api_call}")
 
@@ -189,19 +184,17 @@ class FrontendLoadingEngine:
         if not api_url:
             return None
 
-        identity_key = f"{http_method}:{api_url}"
+        identity_key = build_api_identity_key(api_url, http_method)
         identity_hash = self.hash_utils.generate_content_hash(identity_key)
 
-        existing = self.db_utils.get_component_by_name(project_id, 'API_URL', identity_key)
-        app_logger.info(f"[DEBUG] API_URL 매칭 시도: identity_key={identity_key}, existing={existing is not None}")
+        existing = self.db_utils.get_component_by_hash(project_id, 'API_URL', identity_hash)
         if existing:
             component_id = existing['component_id']
-            app_logger.info(f"[DEBUG] API_URL 매칭 성공: component_id={component_id}, existing_file_id={existing.get('file_id')}, current_file_id={self.current_file_id}")
             if existing.get('file_id') != self.current_file_id:
                 self.db_utils.update_component_file_id(component_id, self.current_file_id, conn=self.conn)
             return component_id
 
-        component_name = f"{http_method}:{api_url}"
+        component_name = format_api_component_name(http_method, api_call.get('method_name'), api_url)
         if not component_name:
             return None
 
@@ -221,16 +214,9 @@ class FrontendLoadingEngine:
     def _find_frontend_component_id(self, file_name: str, project_id: int) -> Optional[int]:
         """프론트엔드 컴포넌트 ID 찾기"""
         try:
-            # 파일명에서 확장자 제거 (예: JpaApiService.js -> JpaApiService)
-            base_name = file_name
-            if '.' in file_name:
-                base_name = file_name.rsplit('.', 1)[0]
-            
             query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND file_id = ? AND del_yn = 'N'"
-            result = self.db_utils.execute_query(query, (project_id, base_name, self.current_file_id), conn=self.conn)
-            component_id = result[0]['component_id'] if result else None
-            app_logger.info(f"[DEBUG] _find_frontend_component_id: file_name={file_name}, base_name={base_name}, project_id={project_id}, current_file_id={self.current_file_id}, found_component_id={component_id}")
-            return component_id
+            result = self.db_utils.execute_query(query, (project_id, file_name, self.current_file_id), conn=self.conn)
+            return result[0]['component_id'] if result else None
         except Exception as e:
             handle_error(e, f"프론트엔드 컴포넌트 ID 조회 실패: {file_name}")
             return None
@@ -238,12 +224,8 @@ class FrontendLoadingEngine:
     def _create_relationship(self, src_id: int, dst_id: int, rel_type: str):
         """관계 생성"""
         try:
-            app_logger.info(f"[DEBUG] _create_relationship 시도: src_id={src_id}, dst_id={dst_id}, rel_type={rel_type}")
-            if self.db_utils.insert_relationship(src_id, dst_id, rel_type):
+            if self.db_utils.insert_relationship(src_id, dst_id, rel_type, conn=self.conn):
                 self.stats['relationships_created'] += 1
-                app_logger.info(f"[DEBUG] _create_relationship 성공: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
-            else:
-                app_logger.warning(f"[DEBUG] _create_relationship 실패: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
         except Exception as e:
             handle_error(e, f"관계 생성 실패: {src_id} -> {dst_id} ({rel_type})")
 

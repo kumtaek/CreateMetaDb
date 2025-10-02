@@ -6,6 +6,7 @@ SourceAnalyzer 메인 실행 파일
 
 import sys
 import os
+import logging # logging 모듈 추가
 from util import (
     ArgUtils, validate_and_get_project_name, print_usage_and_exit,
     PathUtils, get_project_source_path, project_exists,
@@ -55,6 +56,15 @@ def main():
         output_format = arg_utils.get_output_format()
         dry_run = arg_utils.get_dry_run()
         force = arg_utils.get_force()
+
+        # 로거 레벨 설정
+        from util import app_logger
+        if verbose:
+            app_logger.logger.setLevel(logging.DEBUG)
+            info("로거 레벨을 DEBUG로 설정합니다.")
+        else:
+            app_logger.logger.setLevel(logging.INFO)
+            info("로거 레벨을 INFO로 설정합니다.")
         
         info(f"분석 옵션:")
         info(f"  - 메타데이터베이스 초기화: {clear_metadb}")

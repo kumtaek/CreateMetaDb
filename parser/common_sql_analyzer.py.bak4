@@ -26,53 +26,88 @@ class JoinCondition:
     right_column: str
     join_type: str = 'INNER'
 
-from .sql_join_analyzer import SqlJoinAnalyzer
-from .sql_parser import SqlParser
-
 class CommonSqlAnalyzer:
     """공통 SQL 분석기 - SqlContent.db 기반"""
     
     def __init__(self, project_name: str):
         self.project_name = project_name
         self.sql_content_db_path = f"projects/{project_name}/SqlContent.db"
-        self.sql_parser = SqlParser()
-        self.sql_join_analyzer = SqlJoinAnalyzer()
+        
+        # Oracle 키워드 로드
+        self.oracle_keywords = self._load_oracle_keywords()
+        
+    def _load_oracle_keywords(self) -> set:
+        """Oracle 키워드 로드"""
+        try:
+            with open('config/parser/oracle_keywords.txt', 'r', encoding='utf-8') as f:
+                return set(line.strip().upper() for line in f if line.strip())
+        except:
+            return set()
     
-    def analyze_all_queries(self) -> List[Dict[str, Any]]:
-        """SqlContent.db의 모든 쿼리를 분석하여 '조인 후보' 딕셔너리 리스트를 반환합니다."""
-        all_join_candidates = []
+    def analyze_all_queries(self) -> Dict[str, Any]:
+        """SqlContent.db의 모든 쿼리 분석"""
+        results = {
+            'tables': [],
+            'join_relationships': [],
+            'statistics': {
+                'total_queries': 0,
+                'tables_found': 0,
+                'joins_found': 0
+            }
+        }
+        
         try:
             conn = sqlite3.connect(self.sql_content_db_path)
             cursor = conn.cursor()
             
-            cursor.execute("SELECT sql_content_compressed FROM sql_contents WHERE del_yn = 'N'")
-            queries = cursor.fetchall()
+            # SqlContent.db에서 모든 쿼리 가져오기
+            cursor.execute("""
+                SELECT component_name, sql_content_compressed, file_path
+                FROM sql_contents 
+                WHERE del_yn = 'N'
+            """)
             
-            for compressed_sql_row in queries:
+            queries = cursor.fetchall()
+            results['statistics']['total_queries'] = len(queries)
+            
+            all_tables = set()
+            all_joins = []
+            
+            for component_name, compressed_sql, file_path in queries:
                 try:
-                    if not compressed_sql_row[0]:
+                    # 압축된 SQL 해제
+                    if compressed_sql:
+                        sql_content = gzip.decompress(compressed_sql).decode('utf-8')
+                    else:
                         continue
-                    sql_content = gzip.decompress(compressed_sql_row[0]).decode('utf-8')
-                    clean_sql = self.sql_parser._preprocess_sql(sql_content)
                     
-                    alias_map = self.sql_parser.extract_tables_and_aliases(clean_sql)
-                    if not alias_map:
-                        continue
-
-                    join_candidates = self.sql_join_analyzer.analyze_join_relationships(clean_sql, alias_map)
-                    if join_candidates:
-                        all_join_candidates.extend(join_candidates)
-                        
+                    # 주석 제거
+                    clean_sql = self._remove_comments(sql_content)
+                    
+                    # 테이블 추출
+                    tables = self._extract_tables(clean_sql)
+                    all_tables.update(tables)
+                    
+                    # 조인 관계 추출
+                    joins = self._extract_join_relationships(clean_sql, tables)
+                    all_joins.extend(joins)
+                    
                 except Exception as e:
-                    print(f"Error analyzing a single query: {e}")
+                    print(f"Error analyzing query {component_name}: {e}")
                     continue
+            
+            # 결과 정리
+            results['tables'] = list(all_tables)
+            results['join_relationships'] = all_joins
+            results['statistics']['tables_found'] = len(all_tables)
+            results['statistics']['joins_found'] = len(all_joins)
             
             conn.close()
             
         except Exception as e:
             print(f"Error in analyze_all_queries: {e}")
             
-        return all_join_candidates
+        return results
     
     def _remove_comments(self, sql: str) -> str:
         """SQL 주석 제거"""

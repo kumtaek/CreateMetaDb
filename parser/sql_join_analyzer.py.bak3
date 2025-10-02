@@ -146,27 +146,27 @@ class SqlJoinAnalyzer:
             handle_error(e, "MERGE JOIN 분석 실패")
             return []
 
-        def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
-            """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+    def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+        try:
             relationships = []
-            try:
-                where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
-                if where_match:
-                    where_clause = where_match.group(1)
+            where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
+                    if where_match:
+                        where_clause = where_match.group(1)
+            
+                        # Oracle (+) Outer Join 구문 처리
+                        where_clause = re.sub(r'\(\+\)', '', where_clause)
+            
+                        condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'                conditions = re.findall(condition_pattern, where_clause)
+                for cond in conditions:
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
+                    if rel:
+                        relationships.append(rel)
+            return relationships
+        except Exception as e:
+            handle_error(e, "IMPLICIT JOIN 분석 실패")
+            return []
     
-                    # Oracle (+) Outer Join 구문 처리
-                    where_clause = re.sub(r'\(\+\)', '', where_clause)
-    
-                    condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
-                    conditions = re.findall(condition_pattern, where_clause)
-                    for cond in conditions:
-                        rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
-                        if rel:
-                            relationships.extend(rel) # Use extend for list of dicts
-                return relationships
-            except Exception as e:
-                handle_error(e, "IMPLICIT JOIN 분석 실패")
-                return []    
     def _normalize_sql_for_analysis(self, sql_content: str, dynamic_patterns: dict) -> str:
         """SQL 정규화 (주석 제거, 동적 태그 처리)"""
         try:
@@ -212,26 +212,50 @@ class SqlJoinAnalyzer:
             return []
 
 
-    def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[List[Dict[str, Any]]]:
-        """조인 조건 파트에서 JOIN 관계 1개와 USE_COLUMN 관계 2개를 생성하여 리스트로 반환합니다."""
+        def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[Dict[str, Any]]:
+        """
+        조인 조건 파트에서 '부분적인' 관계 딕셔너리를 생성합니다.
+        컬럼의 소속 테이블이 불분명한 경우, 테이블 정보를 None으로 두고 반환하여
+        호출자가 후처리(inferred column 등)를 할 수 있도록 합니다.
+        """
         part1_has_dot = '.' in part1
         part2_has_dot = '.' in part2
 
         table1, col1, table2, col2 = None, None, None, None
 
-        if part1_has_dot:
+        # Case 1: a.col1 = b.col2 (양쪽 모두 별칭 존재)
+        if part1_has_dot and part2_has_dot:
             alias1, col1 = part1.split('.', 1)
+            alias2, col2 = part2.split('.', 1)
             table1 = alias_map.get(alias1.upper())
-        else:
-            col1 = part1
+            table2 = alias_map.get(alias2.upper())
 
-        if part2_has_dot:
+        # Case 2: a.col1 = col2 (한쪽만 별칭 존재)
+        elif part1_has_dot and not part2_has_dot:
+            alias1, col1 = part1.split('.', 1)
+            col2 = part2
+            table1 = alias_map.get(alias1.upper())
+            # table2는 후처리에서 찾아야 함
+            table2 = None
+
+        # Case 3: col1 = b.col2 (반대쪽만 별칭 존재)
+        elif not part1_has_dot and part2_has_dot:
+            col1 = part1
             alias2, col2 = part2.split('.', 1)
             table2 = alias_map.get(alias2.upper())
-        else:
+            # table1은 후처리에서 찾아야 함
+            table1 = None
+        
+        # Case 4: col1 = col2 (양쪽 모두 별칭 없음) - 후처리 위임
+        elif not part1_has_dot and not part2_has_dot:
+            col1 = part1
             col2 = part2
+            table1 = None
+            table2 = None
 
+        # 유효한 컬럼 정보가 추출되었으면, 테이블 정보가 일부 없더라도 후보 관계를 반환
         if col1 and col2:
+            # 두 테이블이 모두 확인되고, 서로 다른 경우에만 바로 확정
             if table1 and table2 and table1 == table2:
                 return None
 
@@ -241,8 +265,8 @@ class SqlJoinAnalyzer:
                 'source_column': col1.upper(),
                 'target_column': col2.upper(),
                 'rel_type': rel_type,
-                'confidence': 0.8,
-                'alias_map': alias_map
+                'confidence': 0.8,  # 추론이 필요할 수 있으므로 신뢰도 조정
+                'alias_map': alias_map  # 후처리를 위해 alias_map 전체를 함께 반환
             }
 
         return None

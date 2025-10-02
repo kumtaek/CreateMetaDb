@@ -85,8 +85,8 @@ class SourceAnalyzerLogger:
                     self.logger.addHandler(new_file_handler)
                     print(f"[DEBUG] 새로운 파일 핸들러 추가 완료")
                     
-                    self.logger.setLevel(logging.INFO)
-                    print(f"[DEBUG] 로거 레벨 설정: INFO")
+                    self.logger.setLevel(logging.DEBUG) # INFO -> DEBUG로 변경
+                    print(f"[DEBUG] 로거 레벨 설정: DEBUG")
                     print(f"[DEBUG] 최종 핸들러 수: {len(self.logger.handlers)}")
                     print(f"[DEBUG] 로깅 시스템 초기화 완료")
                     

@@ -245,6 +245,8 @@ class JavaParser:
                         alias_map = sql_parser.extract_tables_and_aliases(clean_sql)
                         join_relationships = self.sql_join_analyzer.analyze_join_relationships(clean_sql, alias_map, java_file)
 
+
+
                         # 쿼리가 발견된 대략적인 라인 찾기
                         line_num = method_start_line
                         for i, line in enumerate(method_content.split('\n')):

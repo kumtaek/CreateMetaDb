@@ -243,8 +243,8 @@ class BackendEntryLoadingEngine:
         ):
             return None
 
-        component_name = format_api_component_name(entry.http_method, entry.method_name, url_pattern) or url_pattern
-        identity_key = build_api_identity_key(url_pattern, entry.http_method)
+        component_name = f"{entry.http_method}:{url_pattern}"
+        identity_key = f"{entry.http_method}:{url_pattern}"
         hash_value = self.hash_utils.generate_content_hash(identity_key)
 
         existing = self.db.get_component_by_hash(project_id, 'API_URL', hash_value)

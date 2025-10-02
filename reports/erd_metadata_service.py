@@ -148,24 +148,7 @@ class ERDMetadataService:
                     # 테이블은 존재하지만 컬럼이 없는 경우
                     tables_data[table_name] = []
                 
-                # 컬럼이 없는 경우 조인 관계에서 컬럼 추론 및 실제 DB에 저장
-                if len(tables_data.get(table_name, [])) == 0:
-                    join_columns = self._extract_columns_from_relationships(table_name)
-                    if join_columns:
-                        # 조인에서 사용된 컬럼들을 실제 COLUMNS 테이블에 저장
-                        self._save_inferred_columns_to_database(table_name, join_columns)
-                        
-                        # 조인에서 사용된 컬럼들 추가 (추론된 컬럼)
-                        for col_name in join_columns:
-                            tables_data[table_name].append({
-                                'column_name': col_name,
-                                'data_type': 'VARCHAR2(50)',  # 기본 타입
-                                'is_primary_key': col_name.upper().endswith('_ID') or col_name.upper() == 'ID',
-                                'is_nullable': True,
-                                'column_comments': f'조인에서 추론된 컬럼',
-                                'data_length': 50,
-                                'data_default': None
-                            })
+
             
             app_logger.debug(f"관계가 있는 테이블 정보 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 제외)")
             return tables_data
@@ -219,25 +202,7 @@ class ERDMetadataService:
                         'data_default': row['data_default']
                     })
             
-            # 컬럼이 없는 테이블들에 대해 조인 조건에서 컬럼 추가 (모든 테이블 대상)
-            for table_name in tables_data.keys():
-                if len(tables_data[table_name]) == 0:
-                    join_columns = self._extract_columns_from_relationships(table_name)
-                    if join_columns:
-                        # 조인에서 사용된 컬럼들을 실제 COLUMNS 테이블에 저장
-                        self._save_inferred_columns_to_database(table_name, join_columns)
-                        
-                        # 조인에서 사용된 컬럼들 추가 (추론된 컬럼)
-                        for col_name in join_columns:
-                            tables_data[table_name].append({
-                                'column_name': col_name,
-                                'data_type': 'VARCHAR2(50)',  # 기본 타입
-                                'is_primary_key': col_name.upper().endswith('_ID') or col_name.upper() == 'ID',
-                                'is_nullable': True,
-                                'column_comments': f'조인에서 추론된 컬럼',
-                                'data_length': 50,
-                                'data_default': None
-                            })
+
             
             app_logger.debug(f"모든 테이블 정보 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 포함)")
             return tables_data
@@ -742,71 +707,4 @@ class ERDMetadataService:
                 'dst_data_type': 'VARCHAR'
             }
     
-    def _save_inferred_columns_to_database(self, table_name: str, join_columns: List[str]) -> None:
-        """
-        조인 관계에서 추론된 컬럼들을 실제 COLUMNS 테이블에 저장
-        
-        Args:
-            table_name: 테이블명
-            join_columns: 조인에서 사용된 컬럼명 리스트
-        """
-        try:
-            # 프로젝트 ID 조회
-            project_result = self.db_utils.execute_query(
-                "SELECT project_id FROM projects WHERE project_name = ?",
-                (self.project_name,)
-            )
-            
-            if not project_result:
-                app_logger.warning(f"프로젝트를 찾을 수 없습니다: {self.project_name}")
-                return
-            
-            project_id = project_result[0]['project_id']
-            
-            # 테이블 ID 조회
-            table_result = self.db_utils.execute_query(
-                "SELECT table_id FROM tables WHERE project_id = ? AND table_name = ? AND del_yn = 'N'",
-                (project_id, table_name)
-            )
-            
-            if not table_result:
-                app_logger.warning(f"테이블을 찾을 수 없습니다: {table_name}")
-                return
-            
-            table_id = table_result[0]['table_id']
-            
-            # 각 컬럼에 대해 COLUMNS 테이블에 저장
-            for col_name in join_columns:
-                # 이미 존재하는 컬럼인지 확인
-                existing_result = self.db_utils.execute_query(
-                    "SELECT column_id FROM columns WHERE table_id = ? AND column_name = ? AND del_yn = 'N'",
-                    (table_id, col_name.upper())
-                )
-                
-                if existing_result:
-                    # 이미 존재하는 컬럼은 건너뛰기
-                    continue
-                
-                # inferred 컬럼 데이터 생성
-                column_data = {
-                    'table_id': table_id,
-                    'column_name': col_name.upper(),
-                    'data_type': 'VARCHAR2(50)',
-                    'data_length': 50,
-                    'nullable': 'Y',
-                    'column_comments': 'Inferred from JOIN analysis',
-                    'position_pk': 1 if col_name.upper().endswith('_ID') or col_name.upper() == 'ID' else None,
-                    'data_default': None,
-                    'owner': 'UNKNOWN',
-                    'has_error': 'N',
-                    'error_message': None,
-                    'hash_value': 'INFERRED',
-                    'del_yn': 'N'
-                }
-                
-                # COLUMNS 테이블에 삽입
-                self.db_utils.insert_or_replace('columns', column_data)
-                app_logger.debug(f"inferred 컬럼 저장 완료: {table_name}.{col_name}")
-                
-        except Exception as e:
-            app_logger.error(f"inferred 컬럼 저장 실패: {table_name}, {str(e)}")
+
