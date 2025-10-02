@@ -49,7 +49,7 @@ class RelationshipBuilder:
                 warning("mapper_map indexing warning: continue")
 
             # 1) Precise builders
-            self._build_api_method_from_controller_map()
+            self._build_api_method_from_file_id()
             self._build_method_query_relationships_from_mapper_map()
 
             # 2) Conservative fallbacks
@@ -77,25 +77,22 @@ class RelationshipBuilder:
 
     # ===== Precise builders =====
 
-    def _build_api_method_from_controller_map(self) -> None:
-        """Create API_URL → METHOD (CALL_METHOD) using controller_api_map."""
+    def _build_api_method_from_file_id(self) -> None:
+        """Create API_URL → METHOD (CALL_METHOD) using file_id based matching."""
         try:
             cur = self.conn.cursor()
             rows = cur.execute(
                 """
                 SELECT api.component_id AS api_id,
-                       cam.component_id  AS method_id
-                  FROM controller_api_map cam
-                  JOIN components api
-                    ON api.component_type = 'API_URL'
-                   AND api.hash_value = cam.hash_value
+                       method.component_id AS method_id
+                  FROM components api
+                  JOIN components method
+                    ON api.file_id = method.file_id
+                 WHERE api.project_id = ?
+                   AND api.component_type = 'API_URL'
+                   AND method.component_type = 'METHOD'
                    AND api.del_yn = 'N'
-                  JOIN components m
-                    ON m.component_id = cam.component_id
-                   AND m.component_type = 'METHOD'
-                   AND m.del_yn = 'N'
-                 WHERE cam.project_id = ?
-                   AND cam.del_yn = 'N'
+                   AND method.del_yn = 'N'
                 """,
                 (self.project_id,),
             ).fetchall()
@@ -106,9 +103,9 @@ class RelationshipBuilder:
                 created += 1
 
             self.stats['api_method_relationships'] += created
-            info(f"API_URL→METHOD via controller_api_map: {created}")
+            info(f"API_URL→METHOD via file_id: {created}")
         except Exception as e:
-            handle_error(e, "controller_api_map based API→METHOD failed")
+            handle_error(e, "file_id based API→METHOD failed")
 
     def _build_method_query_relationships_from_mapper_map(self) -> None:
         """Create METHOD → SQL_* (CALL_QUERY) using mapper_map (namespace+id).

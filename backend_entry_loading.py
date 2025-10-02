@@ -299,23 +299,6 @@ class BackendEntryLoadingEngine:
                     'del_yn': 'N',
                 })
 
-            # Upsert controller_api_map for controller -> (method, http, url)
-            try:
-                identity_key = build_api_identity_key(entry.url_pattern, entry.http_method)
-                api_hash = self.hash_utils.generate_content_hash(identity_key)
-                if method_id:
-                    map_data = {
-                        'project_id': project_id,
-                        'component_id': method_id,
-                        'http_method': (entry.http_method or ''),
-                        'url': entry.url_pattern,
-                        'hash_value': api_hash,
-                        'del_yn': 'N',
-                    }
-                    # Unique by (project_id, component_id, hash_value)
-                    self.db.upsert('controller_api_map', map_data, ['project_id', 'component_id', 'hash_value'], self.conn)
-            except Exception as e:
-                handle_error(e, f"controller_api_map upsert failed: {entry.class_name}.{entry.method_name} {entry.http_method} {entry.url_pattern}")
 
     def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
         query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'"
