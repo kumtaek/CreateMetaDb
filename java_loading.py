@@ -83,8 +83,17 @@ class SimpleJavaLoader:
         try:
             debug(f"Parsing Java file: {java_file}")
             parse_result = self.java_parser.parse_java_file(java_file)
+            debug(f"parse_result keys: {list(parse_result.keys())}")
+            debug(f"classes in parse_result: {parse_result.get('classes')}")
             if not parse_result.get('classes'):
-                warning(f"No classes extracted: {java_file}")
+                # Enum 파일인지 확인
+                with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    if 'enum ' in content:
+                        # Enum은 연관관계가 없어서 처리하지 않음
+                        debug(f"Enum file ignored (no relationships): {java_file}")
+                    else:
+                        warning(f"No classes extracted: {java_file}")
         except Exception as e:
             handle_error(e, f"Java file parse failed: {java_file}")
             return

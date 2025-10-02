@@ -550,10 +550,14 @@ class JavaParser:
                 java_content = f.read()
 
             # 1. 클래스 추출
+            debug(f"parse_java_file: _extract_classes 호출 전")
             classes = self._extract_classes(java_content)
+            debug(f"parse_java_file: _extract_classes 결과: {len(classes)}개")
 
             # 2. 메서드 추출
+            debug(f"parse_java_file: _extract_methods 호출 전")
             methods = self._extract_methods(java_content)
+            debug(f"parse_java_file: _extract_methods 결과: {len(methods)}개")
 
             # 3. SQL 쿼리 추출
             sql_queries = self._extract_sql_queries_from_java(java_content, java_file)
@@ -602,10 +606,13 @@ class JavaParser:
             }
 
     def _extract_classes(self, java_content: str) -> List[Dict[str, Any]]:
-        """Java 파일에서 클래스 정보를 추출"""
+        """Java 파일에서 클래스 정보를 추출
+        Note: Enum은 연관관계가 없어서 처리하지 않음 (class 키워드만 매칭)
+        """
         classes = []
+        debug(f"_extract_classes 호출됨, java_content 길이: {len(java_content)}")
         try:
-            # public/protected/private class 패턴
+            # public/protected/private class 패턴 (Enum은 제외)
             class_pattern = re.compile(
                 r'(?:^|\n)\s*(?:(public|protected|private)\s+)?'
                 r'(?:(static|final|abstract)\s+)*'
@@ -616,7 +623,10 @@ class JavaParser:
                 re.MULTILINE
             )
 
-            for match in class_pattern.finditer(java_content):
+            matches = list(class_pattern.finditer(java_content))
+            debug(f"정규식 매칭 결과: {len(matches)}개")
+            
+            for match in matches:
                 access_modifier = match.group(1) or 'package'
                 class_name = match.group(3)
                 extends_class = match.group(4)
@@ -637,11 +647,14 @@ class JavaParser:
                 debug(f"클래스 추출: {class_name}")
 
         except Exception as e:
+            debug(f"클래스 추출 예외 발생: {java_file}, 예외: {str(e)}")
             handle_error(e, f"클래스 추출 실패: {java_file}")
         return classes
 
     def _extract_methods(self, java_content: str) -> List[Dict[str, Any]]:
-        """Java 파일에서 메서드 정보를 추출 (public/protected만)"""
+        """Java 파일에서 메서드 정보를 추출 (public/protected만)
+        Note: Enum 메서드는 연관관계가 없어서 처리하지 않음
+        """
         methods = []
         try:
             # public/protected 메서드만 추출 (Java 표준 API 메서드 제외)

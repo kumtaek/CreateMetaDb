@@ -129,10 +129,11 @@ class FrontendParser:
             jsp_components = [jsp_component] if jsp_component else []
             api_calls = parse_result.get('api_calls', [])
             
-            # API 호출에서 jsp_name을 file_name으로 매핑
+            # API 호출에서 jsp_name을 file_name으로 매핑하고 file_type 추가
             for api_call in api_calls:
                 if 'jsp_name' in api_call:
                     api_call['file_name'] = api_call['jsp_name']
+                api_call['file_type'] = 'JSP'
             
             return {
                 'file_name': os.path.basename(file_path),
