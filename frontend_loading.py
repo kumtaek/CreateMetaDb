@@ -243,7 +243,7 @@ class FrontendLoadingEngine:
                 self.stats['relationships_created'] += 1
                 app_logger.info(f"[DEBUG] _create_relationship 성공: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
             else:
-                app_logger.warning(f"[DEBUG] _create_relationship 실패: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
+                app_logger.info(f"[DEBUG] _create_relationship 기존재 스킵: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
         except Exception as e:
             handle_error(e, f"관계 생성 실패: {src_id} -> {dst_id} ({rel_type})")
 

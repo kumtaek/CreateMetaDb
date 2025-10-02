@@ -114,6 +114,10 @@ class XmlParser:
             with open(xml_file, 'r', encoding='utf-8', errors='ignore') as f:
                 xml_content = f.read()
 
+            # namespace 추출
+            namespace_match = re.search(r'<mapper\s+namespace="([^"]+)"', xml_content)
+            namespace = namespace_match.group(1) if namespace_match else None
+
             # MyBatis SQL 태그들 추출 (select, insert, update, delete, merge)
             # id 속성이 있는 태그만 처리
             mybatis_tags = ['select', 'insert', 'update', 'delete', 'merge']
@@ -167,7 +171,8 @@ class XmlParser:
                     'line_end': 1,
                     'hash_value': HashUtils().generate_md5(sql_content),
                     'used_tables': [],  # 이후 공통 처리에서 추출
-                    'join_relationships': []  # 이후 공통 처리에서 추출
+                    'join_relationships': [],  # 이후 공통 처리에서 추출
+                    'namespace': namespace  # namespace 정보 추가
                 }
                 sql_queries.append(query_info)
                 debug(f"MyBatis XML 쿼리 추출: {query_id} - {query_type}")

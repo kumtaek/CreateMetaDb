@@ -184,11 +184,109 @@ class JavaParser:
             dynamic_queries = self._extract_dynamic_sql_queries(java_content, java_file)
             sql_queries.extend(dynamic_queries)
 
+            # 4. MyBatis FQMN 추출 (새로 추가)
+            mybatis_fqmn_queries = self._extract_mybatis_fqmn_queries(java_content, java_file)
+            sql_queries.extend(mybatis_fqmn_queries)
+
             debug(f"Java 파일에서 추출된 SQL 쿼리: {len(sql_queries)}개")
             return sql_queries
 
         except Exception as e:
             handle_error(e, f"Java SQL 쿼리 추출 실패: {java_file}")
+            return []
+
+    def _extract_mybatis_fqmn_queries(self, java_content: str, java_file: str) -> List[Dict[str, Any]]:
+        """MyBatis FQMN 기반 쿼리 추출"""
+        try:
+            import re
+            queries = []
+            
+            # 1. Import 문에서 Mapper 클래스 네임스페이스 추출
+            mapper_namespaces = self._extract_mapper_namespaces(java_content)
+            
+            # 2. @Autowired로 주입된 Mapper 변수들 추출
+            mapper_variables = self._extract_mapper_variables(java_content)
+            
+            # 3. 모든 MyBatis 호출 추출
+            all_mybatis_calls = self._extract_all_mybatis_calls(java_content, mapper_variables)
+            
+            # 4. FQMN 조합 및 쿼리 정보 생성
+            for var_name, call_method in all_mybatis_calls:
+                if var_name in mapper_variables:
+                    namespace = mapper_variables[var_name]
+                    fqmn = f"{namespace}.{call_method}"
+                    
+                    query_info = {
+                        'query_id': fqmn,
+                        'sql_content': f"-- MyBatis FQMN: {fqmn}",
+                        'source_type': 'MYBATIS_FQMN',
+                        'method_name': None  # 메소드별 매칭은 _create_call_query_relationships에서 처리
+                    }
+                    queries.append(query_info)
+                    debug(f"MyBatis FQMN 추출: {var_name}.{call_method} → {fqmn}")
+            
+            return queries
+            
+        except Exception as e:
+            handle_error(e, f"MyBatis FQMN 추출 실패: {java_file}")
+            return []
+    
+    def _extract_mapper_namespaces(self, java_content: str) -> Dict[str, str]:
+        """Import 문에서 Mapper 클래스 네임스페이스 추출"""
+        try:
+            import re
+            namespaces = {}
+            
+            # import com.example.mapper.UserMapper; 패턴
+            import_pattern = r'import\s+([a-zA-Z0-9_.]+\.([A-Z][a-zA-Z0-9]*Mapper))\s*;'
+            matches = re.findall(import_pattern, java_content)
+            
+            for full_namespace, class_name in matches:
+                namespaces[class_name] = full_namespace
+                debug(f"Mapper namespace: {class_name} → {full_namespace}")
+            
+            return namespaces
+        except Exception as e:
+            handle_error(e, "Mapper namespace extraction failed")
+            return {}
+    
+    def _extract_mapper_variables(self, java_content: str) -> Dict[str, str]:
+        """@Autowired로 주입된 Mapper 변수들 추출"""
+        try:
+            import re
+            variables = {}
+            
+            # @Autowired private UserMapper userMapper; 패턴
+            autowired_pattern = r'@Autowired\s+private\s+([A-Z][a-zA-Z0-9]*Mapper)\s+([a-zA-Z][a-zA-Z0-9]*)\s*;'
+            matches = re.findall(autowired_pattern, java_content)
+            
+            for class_name, var_name in matches:
+                variables[var_name] = class_name
+                debug(f"Mapper variable: {var_name} → {class_name}")
+            
+            return variables
+        except Exception as e:
+            handle_error(e, "Mapper variable extraction failed")
+            return {}
+    
+    def _extract_all_mybatis_calls(self, java_content: str, mapper_variables: Dict[str, str]) -> List[Tuple[str, str]]:
+        """Java 파일에서 모든 MyBatis 호출 추출"""
+        try:
+            import re
+            calls = []
+            
+            # userMapper.selectUserById(id) 패턴
+            for var_name in mapper_variables.keys():
+                call_pattern = rf'{var_name}\.([a-zA-Z][a-zA-Z0-9]*)\s*\('
+                matches = re.findall(call_pattern, java_content)
+                
+                for call_method in matches:
+                    calls.append((var_name, call_method))
+                    debug(f"MyBatis call: {var_name}.{call_method}()")
+            
+            return calls
+        except Exception as e:
+            handle_error(e, "MyBatis call extraction failed")
             return []
 
     def _extract_dynamic_sql_queries(self, java_content: str, java_file: str) -> List[Dict[str, Any]]:

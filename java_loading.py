@@ -126,6 +126,58 @@ class SimpleJavaLoader:
         except Exception as e:
             handle_error(e, f"Java query analysis failed: {java_file}")
 
+        # MyBatis FQMN 쿼리 추출 및 upsert 처리
+        try:
+            from parser.java_parser import JavaParser
+            java_parser = JavaParser()
+            
+            with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
+                java_content = f.read()
+            
+            # MyBatis FQMN 쿼리 추출
+            mybatis_fqmn_queries = java_parser._extract_mybatis_fqmn_queries(java_content, java_file)
+            
+            if mybatis_fqmn_queries:
+                debug(f"MyBatis FQMN 쿼리 {len(mybatis_fqmn_queries)}개 추출: {java_file}")
+                
+                for query in mybatis_fqmn_queries:
+                    fqmn = query['query_id']  # com.example.mapper.UserMapper.selectUserById
+                    
+                    # 기존 SQL 컴포넌트 확인 (XML에서 이미 등록되었을 수 있음)
+                    existing_component = self.db_utils.execute_query(
+                        "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? AND del_yn = 'N'",
+                        (fqmn, project_id)
+                    )
+                    
+                    if existing_component:
+                        # XML에서 이미 등록됨 → 관계만 생성
+                        debug(f"기존 SQL 컴포넌트 발견: {fqmn}")
+                    else:
+                        # XML에서 등록되지 않음 → INFERRED 쿼리로 등록
+                        sql_component = {
+                            'project_id': project_id,
+                            'file_id': file_id,
+                            'component_name': fqmn,
+                            'component_type': 'SQL_QUERY',  # INFERRED 쿼리
+                            'parent_id': None,
+                            'hash_value': HashUtils().generate_content_hash(fqmn)
+                        }
+                        
+                        if self._upsert_component(sql_component):
+                            self.stats['sql_queries_extracted'] += 1
+                            debug(f"INFERRED 쿼리 컴포넌트 등록: {fqmn}")
+                            
+                            # SqlContent.db에도 저장
+                            self.collected_sql_queries.append({
+                                'sql_content': query['sql_content'],
+                                'query_id': fqmn,
+                                'file_id': file_id,
+                                'project_id': project_id
+                            })
+                
+        except Exception as e:
+            handle_error(e, f"MyBatis FQMN 처리 실패: {java_file}")
+
     def _process_collected_queries(self, project_id: int):
         """Process all collected SQL queries by saving them to SqlContent.db"""
         info(f"Collected SQL queries: {len(self.collected_sql_queries)} → saving to SqlContent.db")

@@ -153,11 +153,18 @@ class XmlLoadingEngine:
                         continue
 
                     component_type = sql_query.get('query_type', f"SQL_{sql_query.get('tag_name', 'QUERY').upper()}")
+                    # namespace.id 형식으로 component_name 설정
+                    namespace = sql_query.get('namespace', '')
+                    if namespace:
+                        component_name = f"{namespace}.{sql_id}"
+                    else:
+                        component_name = sql_id  # fallback
+                    
                     component_data = {
                         'project_id': project_id,
                         'file_id': file_id,
                         'component_type': component_type,
-                        'component_name': sql_id,
+                        'component_name': component_name,
                         'hash_value': HashUtils.generate_md5(sql_content),
                         'del_yn': 'N'
                     }

@@ -179,8 +179,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, 
    4) 컨트롤러/서블릿 매핑 정보 (정밀 매칭)
    ----------------------------------------------------------------------- */
 /* 컨트롤러 어노테이션 정보(@GetMapping 등)를 통해 API↔METHOD 연결
-   - 백엔드에서 추출한 (class_name, method_name, http_method, url)을 저장.
-   - API_URL의 identity_hash(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
+   - 백엔드에서 추출한 (http_method, url)을 저장.
+   - API_URL의 hash_value(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
 CREATE TABLE IF NOT EXISTS controller_api_map (
     project_id     INTEGER NOT NULL,
     component_id   INTEGER NOT NULL,                   -- 메소드의 component_id

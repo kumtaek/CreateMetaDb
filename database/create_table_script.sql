@@ -175,23 +175,23 @@ CREATE TABLE IF NOT EXISTS relationships (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, dst_id, rel_type);
 
-/* -----------------------------------------------------------------------
-   4) 컨트롤러/서블릿 매핑 정보 (정밀 매칭)
-   ----------------------------------------------------------------------- */
-/* 컨트롤러 어노테이션 정보(@GetMapping 등)를 통해 API↔METHOD 연결
-   - 백엔드에서 추출한 (http_method, url)을 저장.
-   - API_URL의 hash_value(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
-CREATE TABLE IF NOT EXISTS controller_api_map (
-    project_id     INTEGER NOT NULL,
-    component_id   INTEGER NOT NULL,                   -- 메소드의 component_id
-    http_method    VARCHAR(10),                        -- GET/POST/...
-    url            TEXT,
-    hash_value     VARCHAR(64) NOT NULL,               -- HTTP+URL 조합 해시(API_URL과 동일 식별)
-    created_at     DATETIME DEFAULT (datetime('now', '+9 hours')),
-    del_yn         CHAR(1) DEFAULT 'N',
-    FOREIGN KEY (project_id) REFERENCES projects(project_id),
-    FOREIGN KEY (component_id) REFERENCES components(component_id)
-);
-CREATE UNIQUE INDEX IF NOT EXISTS ix_controller_api_map_01 ON controller_api_map (component_id, hash_value, project_id);
-CREATE INDEX IF NOT EXISTS ix_controller_api_map_02 ON controller_api_map (hash_value);
+--/* -----------------------------------------------------------------------
+--    4) 컨트롤러/서블릿 매핑 정보 (정밀 매칭)
+--    ----------------------------------------------------------------------- */
+-- /* 컨트롤러 어노테이션 정보(@GetMapping 등)를 통해 API↔METHOD 연결
+--    - 백엔드에서 추출한 (http_method, url)을 저장.
+--    - API_URL의 hash_value(HTTP+URL)와 동일 식별으로 정밀 매칭에 사용. */
+-- CREATE TABLE IF NOT EXISTS controller_api_map (
+--     project_id     INTEGER NOT NULL,
+--     component_id   INTEGER NOT NULL,                   -- 메소드의 component_id
+--     http_method    VARCHAR(10),                        -- GET/POST/...
+--     url            TEXT,
+--     hash_value     VARCHAR(64) NOT NULL,               -- HTTP+URL 조합 해시(API_URL과 동일 식별)
+--     created_at     DATETIME DEFAULT (datetime('now', '+9 hours')),
+--     del_yn         CHAR(1) DEFAULT 'N',
+--     FOREIGN KEY (project_id) REFERENCES projects(project_id),
+--     FOREIGN KEY (component_id) REFERENCES components(component_id)
+-- );
+-- CREATE UNIQUE INDEX IF NOT EXISTS ix_controller_api_map_01 ON controller_api_map (component_id, hash_value, project_id);
+-- CREATE INDEX IF NOT EXISTS ix_controller_api_map_02 ON controller_api_map (hash_value);
 
