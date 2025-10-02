@@ -51,8 +51,7 @@ class SimpleJavaLoader:
                         java_files.append(os.path.join(root, file))
 
             if not java_files:
-                warning("No Java files found to analyze.")
-                return True
+                handle_error(Exception("No Java files found"), "No Java files found to analyze.")
 
             info(f"Java files to process: {len(java_files)}")
 
@@ -77,8 +76,7 @@ class SimpleJavaLoader:
         """Process a single Java file"""
         file_id = self._get_file_id(java_file)
         if not file_id:
-            debug(f"File ID not found: {java_file}")
-            return
+            handle_error(Exception("File ID not found"), f"File ID not found: {java_file}")
 
         try:
             debug(f"Parsing Java file: {java_file}")
@@ -191,8 +189,7 @@ class SimpleJavaLoader:
         """Process all collected SQL queries by saving them to SqlContent.db"""
         info(f"Collected SQL queries: {len(self.collected_sql_queries)} → saving to SqlContent.db")
         if not self.sql_content_manager or not self.sql_content_manager.initialized:
-            warning("SQL Content Manager가 초기화되지 않아 쿼리 처리를 건너뜁니다.")
-            return
+            handle_error(Exception("SQL Content Manager not initialized"), "SQL Content Manager가 초기화되지 않아 쿼리 처리를 건너뜁니다.")
 
         try:
             for query_data in self.collected_sql_queries:
@@ -223,7 +220,6 @@ class SimpleJavaLoader:
             return result[0]['file_id'] if result else None
         except Exception as e:
             handle_error(e, f"File ID lookup failed: {file_path}")
-            return None
 
     def _upsert_component(self, comp_data: Dict) -> Optional[int]:
         """UPSERT component"""

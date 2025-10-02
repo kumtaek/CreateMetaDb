@@ -42,15 +42,9 @@ class RelationshipBuilder:
             info("Relationship build start")
 
             # 0) Optional: index MyBatis mapper namespace/id map
-            try:
-                from util.mapper_indexer import index_mappers
-                index_mappers(self.project_name, self.conn)
-            except Exception:
-                warning("mapper_map indexing warning: continue")
 
             # 1) Precise builders
             self._build_api_method_from_file_id()
-            self._build_method_query_relationships_from_mapper_map()
             self._build_mybatis_fqmn_relationships()
 
             # 2) Conservative fallbacks
@@ -108,79 +102,6 @@ class RelationshipBuilder:
         except Exception as e:
             handle_error(e, "file_id based API→METHOD failed")
 
-    def _build_method_query_relationships_from_mapper_map(self) -> None:
-        """Create METHOD → SQL_* (CALL_QUERY) using mapper_map (namespace+id).
-        Adds a fuzzy fallback when strict class_name match fails.
-        """
-        try:
-            # mapper_map이 없는 스키마에서는 스킵
-            if not self.db_utils.table_exists('mapper_map'):
-                info("mapper_map 없음: METHOD→SQL 정밀 매칭 스킵")
-                return
-            cur = self.conn.cursor()
-            rows = cur.execute(
-                """
-                SELECT mm.namespace, mm.query_id, mm.sql_component_id
-                  FROM mapper_map mm
-                  JOIN components sc ON sc.component_id = mm.sql_component_id
-                 WHERE sc.component_type LIKE 'SQL_%'
-                   AND mm.project_id = ?
-                   AND mm.del_yn='N'
-                """,
-                (self.project_id,),
-            ).fetchall()
-
-            created = 0
-            for namespace, query_id, sql_comp_id in rows:
-                base_class = namespace.split('.')[-1]
-                method_name = query_id
-
-                # 1) strict match: class == namespace tail, method == id
-                m = cur.execute(
-                    """
-                    SELECT c.component_id
-                      FROM components c
-                 LEFT JOIN classes cl ON cl.class_id = c.parent_id
-                     WHERE c.component_type='METHOD'
-                       AND c.component_name = ?
-                       AND cl.class_name = ?
-                       AND c.del_yn='N'
-                     LIMIT 1
-                    """,
-                    (method_name, base_class),
-                ).fetchone()
-
-                # 2) fuzzy class: allow class names ending with base_class (e.g., UserMapperImpl)
-                if not m:
-                    m = cur.execute(
-                        """
-                        SELECT c.component_id
-                          FROM components c
-                     LEFT JOIN classes cl ON cl.class_id = c.parent_id
-                         WHERE c.project_id = ?
-                           AND c.component_type='METHOD'
-                           AND c.component_name = ?
-                           AND cl.class_name LIKE '%' || ?
-                           AND c.del_yn='N'
-                      ORDER BY CASE WHEN cl.class_name LIKE '%Repository%' THEN 0
-                                    WHEN cl.class_name LIKE '%Dao%' THEN 1
-                                    WHEN cl.class_name LIKE '%Mapper%' THEN 2
-                                    ELSE 3 END,
-                               c.component_id ASC
-                         LIMIT 1
-                        """,
-                        (self.project_id, method_name, base_class),
-                    ).fetchone()
-
-                if not m:
-                    continue
-                self._insert_relationship(m[0], sql_comp_id, 'CALL_QUERY')
-                created += 1
-
-            self.stats['method_query_relationships'] += created
-            info(f"MyBatis namespace METHOD?뭆QL: {created}")
-        except Exception as e:
-            handle_error(e, "mapper_map based METHOD?뭆QL failed")
 
     # ===== Fallback builders =====
 
