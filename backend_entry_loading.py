@@ -128,13 +128,7 @@ class BackendEntryLoadingEngine:
             self._save_results_to_db(all_backend_entries)
             app_logger.info("Backend entry components/relationships persisted to DB")
 
-            # MyBatis mapper namespace+id indexing (mapper_map upsert)
-            try:
-                from util.mapper_indexer import index_mappers
-                indexed = index_mappers(self.project_name, self.conn)
-                app_logger.info("mapper_map indexed {}".format(indexed))
-            except Exception as e:
-                handle_error(e, "mapper_map indexing failed")
+            # MyBatis mapper namespace+id indexing removed (mapper_map table not used)
             self._print_backend_entry_statistics()
             app_logger.info("=== Backend entry analysis done ===")
             return True
