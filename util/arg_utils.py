@@ -70,6 +70,12 @@ class ArgUtils:
 
             
             self.parser.add_argument(
+                '--config-file',
+                type=str,
+                help='설정 파일 경로 (옵션)'
+            )
+            # 기존 dry-run 옵션 유지
+            self.parser.add_argument(
                 '--dry-run',
                 action='store_true',
                 help='실제 분석 없이 설정만 확인'
