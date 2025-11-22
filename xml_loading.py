@@ -24,9 +24,10 @@ from parser.xml_parser import XmlParser
 from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
 # from util.sql_content_processor import SqlContentProcessor  # 보류 상태
+from util.base_loading_engine import BaseLoadingEngine
 
 
-class XmlLoadingEngine:
+class XmlLoadingEngine(BaseLoadingEngine):
     """XML 로딩 엔진 - 3단계 통합 처리"""
     
     def __init__(self, project_name: str, conn: Optional[sqlite3.Connection], sql_content_enabled: bool = False):
@@ -38,11 +39,7 @@ class XmlLoadingEngine:
             conn: 외부에서 주입된 데이터베이스 연결 객체
             sql_content_enabled: SQL Content 기능 활성화 여부
         """
-        self.project_name = project_name
-        self.conn = conn
-        self.project_source_path = get_project_source_path(project_name)
-        self.metadata_db_path = get_project_metadata_db_path(project_name)
-        self.db_utils = DatabaseUtils(self.metadata_db_path)
+        super().__init__(project_name, conn)
         self.sql_content_enabled = sql_content_enabled
         
         self.xml_parser = XmlParser()
@@ -490,12 +487,7 @@ class XmlLoadingEngine:
     
     def _get_project_id(self) -> Optional[int]:
         """프로젝트 ID 조회 (USER RULES: 공통함수 사용)"""
-        try:
-            return self.db_utils.get_project_id(self.project_name)
-        except Exception as e:
-            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
-            handle_error(e, "프로젝트 ID 조회 실패")
-            return None
+        return self.get_project_id()
     
     def _get_table_component_id(self, project_id: int, table_name: str) -> Optional[int]:
         """

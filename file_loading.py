@@ -12,9 +12,10 @@ from util import (
     get_project_source_path, get_project_metadata_db_path, get_database_schema_path,
     get_project_db_schema_path, validate_file_exists, validate_directory_exists, join_path
 )
+from util.base_loading_engine import BaseLoadingEngine
 
 
-class FileLoadingEngine:
+class FileLoadingEngine(BaseLoadingEngine):
     """파일 로딩 엔진 - 1-2단계 처리플로우 구현"""
     
     def __init__(self, project_name: str, conn: Optional[Any] = None):
@@ -25,17 +26,10 @@ class FileLoadingEngine:
             project_name: 프로젝트명
             conn: 외부에서 주입된 데이터베이스 연결 객체
         """
-        self.project_name = project_name
-        self.conn = conn
-        self.path_utils = PathUtils()
+        super().__init__(project_name, conn)
         
-        # 프로젝트 경로들
-        self.project_source_path = get_project_source_path(project_name)
-        self.metadata_db_path = get_project_metadata_db_path(project_name)
+        # 프로젝트 경로들 (부모에 없는 것만 추가)
         self.project_db_schema_path = get_project_db_schema_path(project_name)
-        
-        # DatabaseUtils 인스턴스는 연결 없이 유틸리티 메서드 사용을 위해 생성
-        self.db_utils = DatabaseUtils(self.metadata_db_path)
         
         # 통계 정보
         self.stats = {
@@ -47,9 +41,7 @@ class FileLoadingEngine:
             'components_created': 0, 'components_with_errors': 0, 'inferred_columns_created': 0
         }
 
-    def get_project_id(self) -> Optional[int]:
-        """프로젝트 ID 조회"""
-        return self.db_utils.get_project_id(self.project_name, self.conn)
+
     
     def scan_project_files(self) -> List[Dict[str, Any]]:
         """

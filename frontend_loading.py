@@ -22,9 +22,10 @@ from util import (
     get_project_source_path, get_project_metadata_db_path
 )
 from parser.frontend_parser import FrontendParser
+from util.base_loading_engine import BaseLoadingEngine
 
 
-class FrontendLoadingEngine:
+class FrontendLoadingEngine(BaseLoadingEngine):
     """범용 프론트엔드 로딩 엔진 - JSP, JSX, Vue, TS, JS, HTML 지원"""
 
     def __init__(self, project_name: str, conn: sqlite3.Connection):
@@ -35,10 +36,7 @@ class FrontendLoadingEngine:
             project_name: 프로젝트명
             conn: 외부에서 주입된 데이터베이스 연결 객체
         """
-        self.project_name = project_name
-        self.conn = conn
-        self.project_source_path = get_project_source_path(project_name)
-        self.db_utils = DatabaseUtils(get_project_metadata_db_path(project_name))
+        super().__init__(project_name, conn)
         self.frontend_parser = FrontendParser(project_name=project_name)
         self.hash_utils = HashUtils()
         self.current_file_id = None
@@ -55,7 +53,7 @@ class FrontendLoadingEngine:
         """프론트엔드 파일 로딩 실행 (외부 트랜잭션 내에서)"""
         try:
             info("=== 프론트엔드 파일 로딩 시작 ===")
-            project_id = self._get_project_id()
+            project_id = self.get_project_id()
             if not project_id:
                 raise Exception("프로젝트 ID를 찾을 수 없음")
 
@@ -82,11 +80,7 @@ class FrontendLoadingEngine:
             handle_error(e, "프론트엔드 파일 로딩 실행 실패")
             return False
 
-    def _get_project_id(self) -> Optional[int]:
-        """프로젝트 ID 조회"""
-        query = "SELECT project_id FROM projects WHERE project_name = ? AND del_yn = 'N'"
-        result = self.db_utils.execute_query(query, (self.project_name,), conn=self.conn)
-        return result[0]['project_id'] if result else None
+
 
     def _get_frontend_files(self, project_id: int) -> List[Dict[str, Any]]:
         """프론트엔드 파일 목록 조회"""

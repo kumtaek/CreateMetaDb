@@ -63,27 +63,11 @@ class ArgUtils:
                 help='상세한 로그 출력'
             )
             
-            self.parser.add_argument(
-                '--output-format',
-                type=str,
-                choices=['html', 'markdown', 'json'],
-                default='html',
-                help='출력 형식 (기본값: html)'
-            )
+
             
-            self.parser.add_argument(
-                '--config-file',
-                type=str,
-                help='사용할 설정 파일 경로 (기본값: config/config.yaml)'
-            )
+
             
-            self.parser.add_argument(
-                '--log-level',
-                type=str,
-                choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                default='INFO',
-                help='로그 레벨 (기본값: INFO)'
-            )
+
             
             self.parser.add_argument(
                 '--dry-run',
@@ -91,11 +75,7 @@ class ArgUtils:
                 help='실제 분석 없이 설정만 확인'
             )
             
-            self.parser.add_argument(
-                '--force',
-                action='store_true',
-                help='기존 결과를 덮어쓰기'
-            )
+
             
         
         except RecursionError as e:
@@ -234,38 +214,11 @@ class ArgUtils:
             return getattr(self.args, 'verbose', False)
         return False
     
-    def get_output_format(self) -> str:
-        """
-        출력 형식 반환
-        
-        Returns:
-            출력 형식 (html, markdown, json)
-        """
-        if self.args:
-            return getattr(self.args, 'output_format', 'html')
-        return 'html'
+
     
-    def get_config_file(self) -> Optional[str]:
-        """
-        설정 파일 경로 반환
-        
-        Returns:
-            설정 파일 경로 또는 None
-        """
-        if self.args:
-            return getattr(self.args, 'config_file', None)
-        return None
+
     
-    def get_log_level(self) -> str:
-        """
-        로그 레벨 반환
-        
-        Returns:
-            로그 레벨
-        """
-        if self.args:
-            return getattr(self.args, 'log_level', 'INFO')
-        return 'INFO'
+
     
     def get_dry_run(self) -> bool:
         """
@@ -278,16 +231,7 @@ class ArgUtils:
             return getattr(self.args, 'dry_run', False)
         return False
     
-    def get_force(self) -> bool:
-        """
-        강제 실행 여부 반환
-        
-        Returns:
-            강제 실행 여부 (True/False)
-        """
-        if self.args:
-            return getattr(self.args, 'force', False)
-        return False
+
     
     
     def get_all_args(self) -> Dict[str, Any]:

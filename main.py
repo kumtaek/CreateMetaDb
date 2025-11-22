@@ -53,9 +53,9 @@ def main():
         # 5. 분석 옵션 확인
         clear_metadb = arg_utils.get_clear_metadb()
         verbose = arg_utils.get_verbose()
-        output_format = arg_utils.get_output_format()
+
         dry_run = arg_utils.get_dry_run()
-        force = arg_utils.get_force()
+
 
         # 로거 레벨 설정
         from util import app_logger
@@ -69,9 +69,9 @@ def main():
         info(f"분석 옵션:")
         info(f"  - 메타데이터베이스 초기화: {clear_metadb}")
         info(f"  - 상세 로그: {verbose}")
-        info(f"  - 출력 형식: {output_format}")
+
         info(f"  - 드라이런 모드: {dry_run}")
-        info(f"  - 강제 실행: {force}")
+
         
         # 6. 드라이런 모드 확인
         if dry_run:

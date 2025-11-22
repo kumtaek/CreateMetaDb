@@ -1,394 +1,56 @@
-# SourceAnalyzer °³¹ßÁöÄ§
 
-## °³¿ä
 
-SourceAnalyzer ½Ã½ºÅÛÀ» µ¿Àû ÇÁ·ÎÁ§Æ® ºĞ¼®ÀÌ °¡´ÉÇÏµµ·Ï °³¼±ÇÏ¿©, ÇÏµåÄÚµùµÈ °æ·Î¿Í ÇÁ·ÎÁ§Æ®¸íÀ» Á¦°ÅÇÏ°í ¸í·ÉÇà ÆÄ¶ó¹ÌÅÍ·Î ÇÁ·ÎÁ§Æ®¸¦ ÁöÁ¤ÇÒ ¼ö ÀÖµµ·Ï ÇÏ´Â ¿ä±¸»çÇ×ÀÔ´Ï´Ù.
-
-- **ÇÁ·ÎÁ§Æ® Root Æú´õ**: D:\Analyzer\CreateMetaDb
-
-## 1. ÇÊµ¶ ¹®¼­
-
-- `./docs/*.md` - ¸ğµç ¼³°è ¹× ±¸Çö ¹®¼­ ÂüÁ¶ ÇÊ¼ö
-
-### 2.3 ¸ŞÅ¸»ı¼º ½ÇÇà ½ºÅ©¸³Æ®
-
-```bash
-cd CreateMetaDb && python main.py --project-name {project_name} > ./temp/meta_generation_{project_name}.log 2>&1
-```
-
-## 4. µ¿Àû °æ·Î ±¸Á¶ ¹× ÆÄÀÏ °ü¸®
-
-### 4.1 µ¿Àû ÇÁ·ÎÁ§Æ® Æú´õ ±¸Á¶
-
-```
-./projects/{project_name}/
-¦§¦¡¦¡ src/                    # ºĞ¼®ÇÒ ¼Ò½ºÄÚµå
-¦¢   ¦§¦¡¦¡ main/java/         # Java ¼Ò½º
-¦¢   ¦¦¦¡¦¡ main/resources/    # MyBatis XML µî
-¦¢   ¦¦¦¡¦¡ (ÇÏÀ§ Æú´õ ±¸Á¶´Â ÇÁ·ÎÁ§Æ®¸¶´Ù »óÀÌÇÔ)
-¦§¦¡¦¡ db_schema/             # ºĞ¼®ÇÒ DB ½ºÅ°¸¶ Á¤º¸
-¦¢   ¦§¦¡¦¡ ALL_TABLES.csv     # Å×ÀÌºí Á¤º¸
-¦¢   ¦§¦¡¦¡ ALL_TAB_COLUMNS.csv # ÄÃ·³ Á¤º¸
-¦§¦¡¦¡ config/                # ÇÁ·ÎÁ§Æ®º° ¼³Á¤ (¼±ÅÃ»çÇ×)
-¦¢   ¦¦¦¡¦¡ target_source_config.yaml
-¦§¦¡¦¡ metadata.db            # ¸ŞÅ¸µ¥ÀÌÅÍº£ÀÌ½º
-¦§¦¡¦¡ SqlContent.db          # SQL Content µ¥ÀÌÅÍº£ÀÌ½º
-¦¦¦¡¦¡ report/                # »ı¼ºµÈ ¸®Æ÷Æ®
-    ¦§¦¡¦¡ *.html
-    ¦§¦¡¦¡ css/           # OfflineÈ¯°æ ½ÇÇà¿ë css ÆÄÀÏ
-    ¦¦¦¡¦¡ js/            # OfflineÈ¯°æ ½ÇÇà¿ë js ÆÄÀÏ
-```
-
-### 4.2 Æú´õ ±¸Á¶ º¯°æ ±İÁö
-
-- ÇöÀç Æú´õ ÆÄÀÏ ±¸Á¶¸¦ ¹Ù²ÙÁö ¸» °Í
-- `improved`, `enhanced`, `new` ºÙ¿©¼­ »õ·Î¿î ÆÄÀÏ ¸¸µé ¶§´Â ²À Çã¶ô¹Ş±â
-
-### 4.3 ÀÓ½Ã ÆÄÀÏ °ü¸®
-
-- Å×½ºÆ®¿ë, ÀÓ½Ã¿ëµµÀÇ ÆÄÀÏÀº `./temp`¿¡ ÀúÀå
-- `./temp` ÆÄÀÏ ³»¿ëÀº ½Å·ÚÇÏÁö ¾Ê°í Âü°íÇÏÁö ¾ÊÀ½
-- ¾ğÁ¦µç »èÁ¦ °¡´ÉÇÑ ÀÓ½Ã¿ëµµ·Î »ç¿ë
-- ÇÑ Æú´õ¿¡ ¸¹Àº ÆÄÀÏ Á¸Àç ½Ã ¼º´É ÀúÇÏ ¡æ ÆÄÀÏ Å¸ÀÔº°·Î ÇÏÀ§ Æú´õ »ı¼ºÇÏ¿© °ü¸®
-
-### 4.4 Á¦¿Ü ´ë»ó
-
-- ¿µÇâÆò°¡ ¶Ç´Â °ËÅä¿äÃ»¿¡¼­ ±âº»ÀûÀ¸·Î `./temp`¿Í `./projects`´Â Ç×»ó Á¦¿Ü
-
-## 5. µ¿Àû ÇÁ·ÎÁ§Æ® Ã³¸® ¹× ¸ŞÅ¸µ¥ÀÌÅÍ Àü·«
-
-### 5.1 ÇÁ·ÎÁ§Æ® Ã³¸® ¿øÄ¢
-
-- `--project-name {project_name}` ÆÄ¶ó¹ÌÅÍ·Î ÇÁ·ÎÁ§Æ®¸í ÀÔ·Â
-- `./projects/{project_name}/src`¿¡¼­ ¼Ò½º ºĞ¼®
-- `./projects/{project_name}/db_schema`¿¡¼­ CSV·Î Å×ÀÌºí/ÄÃ·³ Á¤º¸ ·Îµå
-- CSV¿¡ Æ÷¸°Å°/Á¶ÀÎ Á¤º¸°¡ ºÒ¿ÏÀüÇÒ ¼ö ÀÖÀ¸¹Ç·Î Äõ¸® ºĞ¼®À¸·Î JOIN °ü°è µµÃâ
-- ¸ŞÅ¸DB¿¡ relationships Á¤º¸ ÀúÀå ÈÄ ERD »ı¼º ½Ã È°¿ë
-
-### 5.2 ¸ŞÅ¸µ¥ÀÌÅÍ ÀúÀå Àü·«
-
-- **¸ŞÅ¸DB¿¡ ÀúÀå**: Å×ÀÌºí¸í, ÄÃ·³¸í, °ü°è, JOIN Á¤º¸ (±¸Á¶Àû Á¤º¸¸¸)
-- **ÆÄÀÏ¿¡¼­ µ¿Àû ·Îµå**: ¼Ò½ºÄÚµå ³»¿ë, Äõ¸® ³»¿ë (ÇÊ¿ä½Ã¿¡¸¸)
-- **Áßº¹ Á¦°Å**: ¸ŞÅ¸Á¤º¸´Â Áßº¹ ¾øÀÌ »ı¼º
-- **µ¿Àû ·ÎÁ÷**: `./projects/{project_name}` Æú´õ ÇÏÀ§ ÆÄÀÏµé·Î µ¿Àû ºĞ¼®
-
-### 5.3 ºĞ¼® ÇÁ·Î¼¼½º
-
-1. **CSV ·Îµå**: `db_schema/*.csv`¿¡¼­ Å×ÀÌºí/ÄÃ·³ Á¤º¸
-2. **¼Ò½º ºĞ¼®**: `src/` ÇÏÀ§ JSP, JSX, Spring, Java, MyBatis XML ºĞ¼® (ÇÏÀ§Æú´õ ±¸Á¶´Â µ¿Àû)
-3. **JOIN ÃßÃâ**: Äõ¸®¿¡¼­ JOIN °ü°è µµÃâ
-   - CSV¿¡ PK/FK°¡ ºÒ¿ÏÀüÇÒ ¼ö ÀÖÀ½
-   - `db_tables`¿¡ ¹ÌÁ¸Àç Å×ÀÌºí ¹ß°ß ½Ã µî·Ï
-   - owner ¹ÌÁ¤ ½Ã `UNKNOWN` °ª »ç¿ë
-4. **¸ŞÅ¸DB ÀúÀå**: Áßº¹ ¾ø´Â ±¸Á¶Àû Á¤º¸¸¸ ÀúÀå
-5. **¸®Æ÷Æ® »ı¼º**: `./projects/{project_name}/report/` Æú´õ¿¡ Ãâ·Â
-
-## 6. °³¹ß ¹× ±¸Çö ±ÔÄ¢
-
-### 6.1 °øÅë ÇÔ¼ö È°¿ë
-
-- °øÅëÇÔ¼ö°¡ ÀÖ´Â ±â´ÉÀ» Ãß°¡ °³¹ßÇÏÁö ¸» °Í (²À ½ÂÀÎ ÈÄ Ãß°¡ °³¹ß)
-- °øÅëÇÔ¼ö³ª ±âÁ¸¿¡ ±¸ÇöµÈ ±â´ÉÀÌ Á¸ÀçÇÏ´ÂÁö È®ÀÎ ÈÄ È°¿ë
-- ÇÏµåÄÚµù Áö¾ç, °øÅë °æ·Î À¯Æ¿¸®Æ¼ ÇÔ¼ö »ç¿ë
-- ÆÄÀÏ ¹× µğ·ºÅä¸® °æ·Î ÀÛ¾÷ ½Ã ÇÁ·ÎÁ§Æ®ÀÇ °øÅë °æ·Î À¯Æ¿¸®Æ¼ ÇÔ¼ö »ç¿ë
-
-### 6.2 ÆÄ¼­ °³¹ß Âü°í»çÇ×
-
-- `D:\Analyzer\CreateMetaDb\parser\manual` Âü°í
-- `D:\Analyzer\CreateMetaDb\config\parser`ÀÇ Å°¿öµå, ÆĞÅÏ Á¤ÀÇ ¼³Á¤ÆÄÀÏ Âü°í
-- ÇÏµåÄÚµù Áö¾çÇÒ °Í
-
-### 6.3 ¿¡·¯ Ã³¸® ±ÔÄ¢
-
-- **¸ğµç exception ¹ß»ı ½Ã** `handle_error()`·Î `exit()` ÇØ¾ß ¿¡·¯ ÀÎÁö °¡´É
-- ÆÄ½Ì Áß ¼Ò½º¿¡ ¿À·ù°¡ ÀÖ´Â °æ¿ì ½ºÅµÇÏ´Â °ÍÃ³·³ ÀÇ¹Ì°¡ ÀÖ´Â °æ¿ì¸¦ Á¦¿ÜÇÏ°í´Â ¸ğµç ¿À·ù ¹ß»ı ½Ã ¿¡·¯·Î±× ³²±â°í **Áß´Ü**µÇ¾î¾ß ÇÔ
-- ¿¡·¯ ¹ß»ı ½Ã warn Âï°í °è¼Ó ÁøÇàÇÏ¸é Áß¿äÇÑ ¿¡·¯µµ ³õÄ¡°Ô µÇ´Ï, ²À `handle_error()`·Î exit Ã³¸®
-
-**Àß¸øµÈ »ç·Ê:**
-
-```python
-try:
-    # ÆÄ½Ì ·ÎÁ÷
-    return await parser.parse(content, file_path)  # ¿©±â¼­ ¿¡·¯ ¹ß»ı
-except Exception as e:
-    logger.error(f"ÆÄÀÏ ºĞ¼® Áß ¿À·ù ¹ß»ı {file_path}: {e}")  # ¿¡·¯ ·Î±×¸¸ Âï°í
-    return None  # None ¹İÈ¯ÇÏ°í ´ÙÀ½ ÆÄÀÏ·Î ³Ñ¾î°¨ # °è¼Ó ÁøÇà --> ÀÌ·¯¸é ¾ÈµÊ!!!
-```
-
-### 6.4 ÇÏµåÄÚµù ±İÁö ±ÔÄ¢ (Àı´ë ±İÁö!!!)
-
-- **Àı´ë ±İÁö**: `SampleSrc`¿¡ Æ¯È­µÈ ·ÎÁ÷ °³¹ß ±İÁö
-- **Àı´ë ±İÁö**: ÇÁ·ÎÁ§Æ®¸í, °æ·Î µîÀ¸·Î ÇÏµåÄÚµù ±İÁö. °³¹ß,Å×½ºÆ®¿ë »ùÇÃ¼Ò½ºÀÎ SampleSrc/ ³»ÀÇ Á¤º¸·Î ÇÏµåÄÚµù ±İÁö
-- `--project-name {project_name}` ÆÄ¶ó¹ÌÅÍ¸¦ ¹Ş¾Æ¼­ µ¿ÀûÀ¸·Î ±¸Çö
-- `./projects/{project_name}/src`¿¡¼­ ¼Ò½ºÆÄÀÏ, `./projects/{project_name}/db_schema`¿¡¼­ DB½ºÅ°¸¶ Á¤º¸(csv) ¼öÁı
-- ÇÏÀ§ Æú´õ ±¸Á¶³ª ÆÄÀÏÀº ÇÁ·ÎÁ§Æ®¸¶´Ù »óÀÌÇÏ¹Ç·Î µ¿Àû ·ÎÁ÷À¸·Î ±¸Çö
-- **»ó´ë°æ·Î »ç¿ë**: Àı´ë°æ·Î »ç¿ë ±İÁö, ¿î¿µÈ¯°æ ¹èÆ÷ ½Ã °æ·Î º¯°æ °í·Á
-  (°³¹ß - WIndows, ¿î¿µ - RHEL, Root°æ·Î°¡ ´Ù¸¦ ¼ö ÀÖÀ½)
-
-### 6.5 ÇÁ·ÎÁ§Æ®º° ¼³Á¤
-
-- ÇÁ·ÎÁ§Æ® hash_value´Â »ó¼ö '-'·Î ÇÏµåÄÚµù
-- µ¿ÀÏÇÑ Äõ¸® ID ¶Ç´Â Class, Method°¡ ´Ù¸¥ ÆÄÀÏ¿¡ Áßº¹ °¡´ÉÇÏ´Ù
-- OracleÀÌ ÁÖ»ç¿ë DBÀÌ´Ù. Oracle 11g À§ÁÖ·Î SQL ÆÄ½Ì·ÎÁ÷ °³¹ßÇÏ¸é µÊ
-
-### 6.6 ±âÁ¸ ¼Ò½º È°¿ë ±ÔÄ¢
-
-- ±â °³¹ßµÈ ¼Ò½º¸¦ ºĞ¼®ÇØ¼­ °ü·Ã ·ÎÁ÷ÀÌ ÀÖ´Â °æ¿ì »õ·Î °³¹ßÇÒ ·ÎÁ÷°ú ¿¬°èÇÏ¿© ÅëÇÕ
-- ¹«Á¶°Ç ½Å±Ô ¸Ş¼Òµå, ÇÔ¼ö »ı¼ºÀ» ÇØ¼­ Á×Àº ¼Ò½º¸¦ ¸¸µéÁö ¸» °Í
-
-### 6.7 ÆÄÀÏ »ı¼º ±ÔÄ¢
-
-- **½Ã°¢È­ ¸®Æ÷Æ®, ºĞ¼® ¸®Æ÷Æ®**: `./projects/{project_name}/report/` ÇÏÀ§¿¡ »ı¼ºÀÏ½Ã Æ÷ÇÔÇÏ¿© ÀúÀå
-
-### 6.8 °³¹ß È¯°æ ±ÔÄ¢
-
-- **¿ÀÇÁ¶óÀÎ È¯°æ**: ¿ÀÇÁ¶óÀÎ Æó¼â¸Á¿¡¼­ µ¿ÀÛ °¡´ÉÇÏµµ·Ï ±¸Çö
-- Å©·Î½ºÇÃ·§Æû °í·Á. °³¹ß - WIndows, ¿î¿µ - RHEL, Root°æ·Î°¡ ´Ş¶óÁú ¼ö ÀÖÀ½.
-- **¶óÀÌ¼±½º**: ±â¾÷ ³» ¹«·á »ç¿ë °¡´ÉÇÑ ¶óÀÌ¼±½º¸¸ »ç¿ë
-
-## 7. ¹®¼­ ¹× º¸°í¼­ ÀÛ¼º
-
-### 7.1 ¹®¼­ ÀÛ¼º °æ·Î
-
-- `./docs/report` Æú´õ¿¡ `{timestamp}_{¹®¼­Á¦¸ñ}.md` ÆÄÀÏ·Î ÀÛ¼º
-- md ¹®¼­ ÀÛ¼º ¶Ç´Â º¸°íÇØÁà ¶ó´Â ¿äÃ»¿¡ ±âº»ÀûÀ¸·Î ./docs/report °æ·Î¿¡ ÆÄÀÏ »ı¼º ÇÒ °Í
-
-### 7.2 ÁúÀÇ ÆÄÀÏ ÀÛ¼º¹ı
-
-- `qna/` Æú´õ¿¡ `Q_{timestamp}_{ÁúÀÇÁ¦¸ñ}.md` ÆÄÀÏ·Î ÁúÀÇ¼­ ÀÛ¼º
-- ´äº¯Àº `A*.md`·Î ÀÛ¼º
-
-### 7.3 ÁøÃ´ º¸°í
-
-- 'ÁøÃ´º¸°í ÇØÁà' ¿äÃ» ½Ã: `./docs/report/ÁøÃ´º¸°í_{timestamp}_{ÁøÃ´ÁÖ¿ä³»¿ëÁ¦¸ñ}.md` ÆÄÀÏ·Î ÀÛ¼º
-- timestamp»ó Á÷Àü º¸°í ÀÌÈÄ ¼öÇàÇÑ ³»¿ëÀ¸·Î º¸°í
-
-### 7.4 º¸°í¼­ ÀÛ¼º
-
-- 'OOO º¸°í¼­ ÀÛ¼ºÇØÁà' ¿äÃ» ½Ã: `./docs/report/{timestamp}_{º¸°í¼­Á¦¸ñ}.md`·Î ÀÛ¼º
-
-## 8. ±â¼úÀû Á¦¾à»çÇ×
-
-### 8.1 ÀÌ¸ğÁö »ç¿ë ±İÁö
-
-- ÀÎÄÚµù ¹®Á¦·Î ¿¡·¯ ¹ß»ı
-- ÀÌ¸ğÁö ´ë½Å ´Ü¼ø ±âÈ£ »ç¿ë
-
-### 8.2 Mermaid ÄÚµå ÀÛ¼º ½Ã ÁÖÀÇ»çÇ×
-
-# ?? Mermaid ¿¡·¯ Á¶Ä¡¹æ¹ı
-
-## °³¿ä
-
-º» ¹®¼­´Â Mermaid ´ÙÀÌ¾î±×·¥ ÀÛ¼º ½Ã ¹ß»ıÇÏ´Â ¿À·ùµé°ú ÇØ°á¹æ¹ıÀ» Á¤¸®ÇÑ °¡ÀÌµåÀÔ´Ï´Ù. ½ÇÁ¦ °³¹ß È¯°æ¿¡¼­ ¹ß»ıÇÑ ¹®Á¦µéÀ» ¹ÙÅÁÀ¸·Î ÀÛ¼ºµÇ¾ú½À´Ï´Ù.
-
-## Mermaid Invalid Codes Ã¼Å©¸®½ºÆ®
-
-### 1. HTML ÅÂ±× ¿ÀÀÎ½Ä
-
-**¹®Á¦**: `<User>` °°Àº Ç¥±â´Â HTML ÅÂ±×·Î ÀÎ½ÄµÊ ¡æ ¿¡·¯ ¹ß»ı
-
-**ÇØ°á**: `&lt;User&gt;` ·Î º¯È¯
-
-```mermaid
-# ? Àß¸øµÈ ¿¹
-A[<User> Á¤º¸] --> B[Ã³¸®]
-
-# ? ¿Ã¹Ù¸¥ ¿¹  
-A[&lt;User&gt; Á¤º¸] --> B[Ã³¸®]
-```
-
-### 2. ÁÙ¹Ù²Ş Ã³¸® (È¯°æº° ´ëÀÀ)
-
-#### ±âº» ¿øÄ¢ (Ç¥ÁØ Mermaid):
-- **³ëµå ¶óº§ ¾È** ([], {}, ()) ¡æ `\n` Àº ÁÙ¹Ù²ŞÀ¸·Î µ¿ÀÛ
-- **³ëµå ¶óº§ ¹Û** (¿¹: style, ÀÏ¹İ ÅØ½ºÆ®) ¡æ `\n` ±×´ë·Î Ãâ·Â
-- ? **±ÇÀå**: ¶óº§ ¾È ÁÙ¹Ù²ŞÀº `\n` »ç¿ë
-
-#### È¯°æº° ¿¹¿Ü Ã³¸®:
-- **MarkText, ±¸¹öÀü Mermaid**: `\n`ÀÌ µ¿ÀÛÇÏÁö ¾Ê´Â °æ¿ì ¹ß»ı
-- **º¹ÀâÇÑ ¶óº§**: ÇÑ±Û + ¼ıÀÚ + Æ¯¼ö¹®ÀÚ Á¶ÇÕ ½Ã `\n` ½ÇÆĞ °¡´É
-- **HTML ÅÂ±× È¥Àç**: ´Ù¸¥ HTML ÅÂ±×¿Í ÇÔ²² »ç¿ë ½Ã Ãæµ¹
-
-#### ÇØ°á ¹æ¹ı ¿ì¼±¼øÀ§:
-
-```mermaid
-# 1¼øÀ§: Ç¥ÁØ ¹æ¹ı (±ÇÀå)
-A["Ã¹ ¹øÂ° ÁÙ\nµÎ ¹øÂ° ÁÙ"]
-
-# 2¼øÀ§: \n µ¿ÀÛ ¾È ÇÒ ¶§
-A["Ã¹ ¹øÂ° ÁÙ<br/>µÎ ¹øÂ° ÁÙ"]
-
-# 3¼øÀ§: º¹ÀâÇÑ °æ¿ì
-A["º¹ÀâÇÑ ³»¿ë<br/>Æ¯¼ö¹®ÀÚ &lt;tag&gt;<br/>¿©·¯ ÁÙ"]
-```
-
-**½ÇÁ¦ Àû¿ë ¿¹½Ã**:
-```mermaid
-# ? µ¿ÀÛÇÏÁö ¾Ê´Â °æ¿ì
-JSP["JSP Pages\n12°³ ÆÄÀÏ"]
-
-# ? ÇØ°áµÈ °æ¿ì
-JSP["JSP Pages<br/>12°³ ÆÄÀÏ"]
-```
-
-### 3. ±ä ¶óº§ / Æ¯¼ö¹®ÀÚ
-
-**¹®Á¦**: ¶óº§ÀÌ ±æ°Å³ª `{}`, `<`, `>` °°Àº Æ¯¼ö¹®ÀÚ°¡ Æ÷ÇÔµÇ¸é ÆÄ½Ì ¿À·ù À§Çè ¡è
-
-**ÇØ°á**: ¶óº§À» `[" ... "]` ·Î °¨½Î±â
-
-```mermaid
-# ? À§ÇèÇÑ ¿¹
-A[UserController{º¹ÀâÇÑ³»¿ë}] --> B
-
-# ? ¾ÈÀüÇÑ ¿¹
-A["UserController{º¹ÀâÇÑ³»¿ë}"] --> B
-```
-
-### 4. ÀÌ¸ğÁö »ç¿ë
-
-**¹®Á¦**: ÀÏºÎ ÀÌ¸ğÁö(?, ?, ??)´Â ÆÄ¼­¿¡¼­ ±úÁü
-
-**ÇØ°á**: "?", "?" °°Àº ´Ü¼ø ±âÈ£ »ç¿ë
-
-```mermaid
-# ? ¹®Á¦ ¹ß»ı °¡´É
-A[Ã³¸® ¿Ï·á ?] --> B[´ÙÀ½ ´Ü°è ??]
-
-# ? ¾ÈÀüÇÑ ¹æ¹ı
-A[Ã³¸® ¿Ï·á ?] --> B[´ÙÀ½ ´Ü°è ¡æ]
-```
-
-### 5. Áßº¹ Á¤ÀÇ
-
-**¹®Á¦**: 
-- °°Àº edge(¿¹: A --> B)¸¦ µÎ ¹ø ¼±¾ğ ¡æ ¿À·ù
-- °°Àº styleÀ» µÎ ¹ø ¼±¾ğ ¡æ °æ°í/È¥¶õ
-
-**ÇØ°á**: Áßº¹ Á¦°Å
-
-```mermaid
-# ? Áßº¹ Á¤ÀÇ
-A --> B
-A --> B  # Áßº¹!
-style A fill:#red
-style A fill:#blue  # Áßº¹!
-
-# ? Áßº¹ Á¦°Å
-A --> B
-style A fill:#red
-```
-
-### 6. ERD(erDiagram) Á¦¾à
-
-**¹®Á¦**: 
-- PK/FK, Á¦¾àÁ¶°Ç, ÀÎµ¦½º ¡æ Áö¿ø ¾È µÊ
-- º¹ÀâÇÑ ¼Ó¼º Á¤ÀÇ ¡æ ÆÄ½Ì ¿À·ù
-
-**Áö¿øµÇ´Â Çü½Ä**:
-- ¼Ó¼º Á¤ÀÇ: `string name`, `int age` °°Àº ´Ü¼ø Çü½Ä¸¸ Áö¿ø
-- °ü°è Á¤ÀÇ: `A ||--o{ B : has` ÇüÅÂ¸¸ Áö¿ø
-
-**ÇØ°á**: ´Ü¼ø ¹®¹ı¸¸ »ç¿ë
-
-```mermaid
-# ? Áö¿øµÇ´Â ERD ¹®¹ı
-erDiagram
-    USER {
-        string name
-        int age
-        string email
-    }
-    ORDER {
-        int order_id
-        string status
-    }
-    USER ||--o{ ORDER : has
-```
-
-### 7. ÃÊ±âÈ­ ºí·Ï(init)
-
-**¹®Á¦**: JSONÀº Å«µû¿ÈÇ¥¸¸ Çã¿ë
-
-```mermaid
-# ? ÀÛÀºµû¿ÈÇ¥ »ç¿ë
-%%{init: {'theme':'default'}}%%
-
-# ? Å«µû¿ÈÇ¥ »ç¿ë
-%%{init: {"theme":"default"}}%%
-```
-
-### 8. È­»ìÇ¥ ±âÈ£
-
-**¹®Á¦**: À¯´ÏÄÚµå È­»ìÇ¥ `¡æ`´Â Áö¿øµÇÁö ¾ÊÀ½
-
-**ÇØ°á**: `->` »ç¿ë
-
-```mermaid
-# ? À¯´ÏÄÚµå È­»ìÇ¥
-A ¡æ B
-
-# ? ASCII È­»ìÇ¥
-A -> B
-```
-
-## È¯°æº° ´ëÀÀ °¡ÀÌµå
-
-### MarkText »ç¿ë ½Ã
-- `\n` ´ë½Å `<br/>` ÅÂ±× ¿ì¼± »ç¿ë
-- º¹ÀâÇÑ ÇÑ±Û ¶óº§Àº ¹İµå½Ã Å«µû¿ÈÇ¥·Î °¨½Î±â
-- Æ¯¼ö¹®ÀÚ Æ÷ÇÔ ½Ã HTML ¿£Æ¼Æ¼ »ç¿ë
-
-### VS Code + Mermaid Extension
-- Ç¥ÁØ `\n` ¹®¹ı Á¤»ó µ¿ÀÛ
-- ½Ç½Ã°£ ¹Ì¸®º¸±â¿¡¼­ ¿À·ù È®ÀÎ °¡´É
-
-### GitHub/GitLab
-- Ç¥ÁØ Mermaid ¹®¹ı Áö¿ø
-- ÀÌ¸ğÁö Áö¿ø Á¦ÇÑÀû
-
-## µğ¹ö±ë ¹æ¹ı
-
-### 1. ´Ü°èº° Ãà¼Ò
-º¹ÀâÇÑ ´ÙÀÌ¾î±×·¥¿¡¼­ ¿À·ù ¹ß»ı ½Ã:
-1. ³ëµå ÇÏ³ª¾¿ Á¦°ÅÇÏ¸é¼­ Å×½ºÆ®
-2. ¿À·ù ¹ß»ı ÁöÁ¡ Æ¯Á¤
-3. ÇØ´ç ºÎºĞ¸¸ ¼öÁ¤
-
-### 2. ºê¶ó¿ìÀú °³¹ßÀÚ µµ±¸ È°¿ë
-- F12 ¡æ Console ÅÇ¿¡¼­ Mermaid ¿À·ù ¸Ş½ÃÁö È®ÀÎ
-- ±¸Ã¼ÀûÀÎ ÆÄ½Ì ¿À·ù À§Ä¡ ÆÄ¾Ç °¡´É
-
-### 3. ¿Â¶óÀÎ Mermaid ¿¡µğÅÍ È°¿ë
-- https://mermaid.live/ ¿¡¼­ Å×½ºÆ®
-- ½Ç½Ã°£À¸·Î ¿À·ù È®ÀÎ ¹× ¼öÁ¤
-
-## ÃÖÁ¾ ¿ä¾à
-
-### ? ¾ÈÀüÇÑ ÀÛ¼º¹ı
-1. HTML ÅÂ±×: `&lt;tag&gt;` »ç¿ë
-2. ÁÙ¹Ù²Ş: `\n` ¿ì¼±, ¾ÈµÇ¸é `<br/>` »ç¿ë  
-3. ±ä ¶óº§: `"³»¿ë"` Å«µû¿ÈÇ¥·Î °¨½Î±â
-4. ÀÌ¸ğÁö: ´Ü¼ø ±âÈ£ »ç¿ë (`?`, `?`)
-5. Áßº¹: °ü°è/½ºÅ¸ÀÏ Áßº¹ Á¦°Å
-6. ERD: ´Ü¼ø ¹®¹ı¸¸ »ç¿ë (PK/FK ºÒ°¡)
-7. init: Å«µû¿ÈÇ¥ JSON (`{"theme":"default"}`)
-8. È­»ìÇ¥: `->` »ç¿ë (À¯´ÏÄÚµå `¡æ` ±İÁö)
-
-### ?? ¹®Á¦ ÇØ°á ¼ø¼­
-1. **±âº» ¹®¹ı È®ÀÎ**: Ç¥ÁØ Mermaid ¹®¹ı ÁØ¼ö
-2. **È¯°æ È®ÀÎ**: »ç¿ë ÁßÀÎ ºä¾î/¿¡µğÅÍ Æ¯¼º ÆÄ¾Ç
-3. **´Ü°èÀû ¼öÁ¤**: º¹ÀâÇÑ ºÎºĞºÎÅÍ ´Ü¼øÈ­
-4. **Å×½ºÆ®**: ¿Â¶óÀÎ ¿¡µğÅÍ¿¡¼­ °ËÁõ
-5. **Àû¿ë**: ½ÇÁ¦ È¯°æ¿¡ ¹İ¿µ
-
-
-
-
-## 9. Âü°í ¹®¼­
-
-- `D:\Analyzer\CreateMetaDb\docs\*.md` - °¢Á¾ ¼³°è¹®¼­ ÂüÁ¶
-
-
-
+# Repository Guidelines (ë ˆí¬ì§€í† ë¦¬ ê°€ì´ë“œë¼ì¸)
+
+## Project Structure & Module Organization (í”„ë¡œì íŠ¸ êµ¬ì¡° ë° ëª¨ë“ˆ ì¡°ì§)
+
+- Loaders: `base_loading_engine.py` (common base), `file_loading.py`, `java_loading.py`, `xml_loading.py`, `frontend_loading.py` (ingest sources â†’ components) (ë¡œë“œëŸ¬: ê³µí†µ ë² ì´ìŠ¤ ë° íŒŒì¼, ìë°”, XML, í”„ë¡ íŠ¸ì—”ë“œ ë¡œë” (ì†ŒìŠ¤ â†’ ì»´í¬ë„ŒíŠ¸))
+- Parsers: `parser/` (SQL, Spring annotations, JSP/front, String.format SQL) (íŒŒì„œ: `parser/` (SQL, ìŠ¤í”„ë§ ì–´ë…¸í…Œì´ì…˜, JSP/í”„ë¡ íŠ¸, String.format SQL))
+- Relationships: `relationship_builder.py` (Frontendâ†’Methodâ†’Queryâ†’Table builders) (ê´€ê³„: `relationship_builder.py` (í”„ë¡ íŠ¸ì—”ë“œâ†’ë©”ì„œë“œâ†’ì¿¼ë¦¬â†’í…Œì´ë¸” ë¹Œë”))
+- Utilities: `util/` (DB, path, hashing, API naming, mapper indexer, logging) (ìœ í‹¸ë¦¬í‹°: `util/` (DB, ê²½ë¡œ, í•´ì‹±, API ëª…ëª…, ë§¤í¼ ì¸ë±ì„œ, ë¡œê¹…))
+- Reports: `reports/` (ERD, call-chain, architecture) (ë¦¬í¬íŠ¸: `reports/` (ERD, í˜¸ì¶œ ì²´ì¸, ì•„í‚¤í…ì²˜))
+- Database DDL: `database/` (metadata and SqlContent schemas) (ë°ì´í„°ë² ì´ìŠ¤ DDL: `database/` (ë©”íƒ€ë°ì´í„° ë° SqlContent ìŠ¤í‚¤ë§ˆ))
+- **temp í´ë” ìš©ë„**: `./temp` ë””ë ‰í„°ë¦¬ëŠ” í”„ë¡œì íŠ¸ ì†ŒìŠ¤ ì½”ë“œë¥¼ ì§ì ‘ ìˆ˜ì •í•˜ì§€ ì•Šê³ , ì„ì‹œ íŒŒì´ì¬ ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì‘ì„±Â·ì‹¤í–‰Â·ê²€ì¦í•˜ê¸° ìœ„í•œ ê³µê°„ì…ë‹ˆë‹¤.
+  - ì„ì‹œ ìŠ¤í¬ë¦½íŠ¸ëŠ” `temp` ì•ˆì—ë§Œ ë‘ë©°, `.gitignore` ì— ì˜í•´ Gitì— í¬í•¨ë˜ì§€ ì•Šìœ¼ë¯€ë¡œ ì»¤ë°‹ë˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
+  - í…ŒìŠ¤íŠ¸ê°€ ëë‚˜ë©´ ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì‚­ì œí•˜ê±°ë‚˜ `temp` í´ë”ë¥¼ ë¹„ì›Œ ë‘ì–´ë„ ë¬´ë°©í•©ë‹ˆë‹¤.
+
+## Build, Test, and Development Commands
+
+- Run analyzer: `python main.py --project-name SampleSrc` (ë¶„ì„ê¸° ì‹¤í–‰: `python main.py --project-name SampleSrc`)
+- Generate reports: `python create_report.py --project-name SampleSrc` (ë¦¬í¬íŠ¸ ìƒì„±: `python create_report.py --project-name SampleSrc`)
+- Run tests: `pytest -q` (í…ŒìŠ¤íŠ¸ ì‹¤í–‰: `pytest -q`)
+- Clean DBs: delete `projects/SampleSrc/metadata.db` and `projects/SampleSrc/SqlContent.db` (DB ì •ë¦¬: `projects/SampleSrc/metadata.db` ë° `projects/SampleSrc/SqlContent.db` ì‚­ì œ)
+
+### main.py ì‹¤í–‰ íŒŒë¼ë¯¸í„° (ì†ŒìŠ¤ ê¸°ì¤€)
+
+- `--project-name <ì´ë¦„>`: í•„ìˆ˜. ë¶„ì„ ëŒ€ìƒ í”„ë¡œì íŠ¸ëª…. (`--project-name <name>`: required, target project name)
+- `--clear-metadb`: ì„ íƒ. ì˜µì…˜ ê°’ì€ ì½ì§€ë§Œ, í˜„ì¬ ë©”ì¸ í”Œë¡œìš°ì˜ ìŠ¤í‚¤ë§ˆ ìƒì„± ë¶„ê¸°ì—ëŠ” ì§ì ‘ ì—°ë™ë˜ì–´ ìˆì§€ ì•ŠìŒ. (`--clear-metadb`: optional, currently not directly linked to schema creation in main flow)
+- `--verbose`: ì„ íƒ. ìƒì„¸ ë¡œê·¸ ì¶œë ¥(DEBUG ë ˆë²¨ ì„¤ì •). (`--verbose`: optional, detailed log output (DEBUG level))
+- `--dry-run`: ì„ íƒ. ì‹¤ì œ ë¶„ì„ì„ ìˆ˜í–‰í•˜ì§€ ì•Šê³  ì„¤ì •ë§Œ í™•ì¸ í›„ ì¢…ë£Œ. (`--dry-run`: optional, validates settings without running analysis)
+- `--help`, `-h`: ë„ì›€ë§ ì¶œë ¥ í›„ ì¢…ë£Œ. (`--help`, `-h`: display help and exit)
+
+### main.py ê°œìš” (ì†ŒìŠ¤ ê¸°ì¤€)
+
+- ëª©ì : í”„ë¡œì íŠ¸ ì†ŒìŠ¤ ë¶„ì„ ë° ë©”íƒ€ë°ì´í„° DB êµ¬ì¶• ì „ ê³¼ì • ì˜¤ì¼€ìŠ¤íŠ¸ë ˆì´ì…˜ (Purpose: orchestrate the entire process of source analysis and metadata DB construction)
+- ì£¼ìš” ë‹¨ê³„:
+  - ë¡œê·¸ ì •ë¦¬(24h ì§€ë‚œ íŒŒì¼ ì‚­ì œ), ì¬ê·€ ì œí•œ ì„¤ì •(50) (Log cleanup (delete files older than 24h), set recursion limit (50))
+  - ì¸ì íŒŒì‹±/ê²€ì¦, í”„ë¡œì íŠ¸ ì¡´ì¬ ì—¬ë¶€ í™•ì¸ (Argument parsing/validation, check project existence)
+  - ë©”íƒ€ë°ì´í„° DB ì—°ê²° ë° ìŠ¤í‚¤ë§ˆ ìƒì„± ì‹œë„(`database/create_table_script.sql`) (Connect to metadata DB and attempt schema creation (`database/create_table_script.sql`))
+  - 1ë‹¨ê³„: íŒŒì¼ ìŠ¤ìº” ë° íŒŒì¼/ì»´í¬ë„ŒíŠ¸ ë¡œë“œ (`FileLoadingEngine.execute_file_loading()`) (Step 1: file scan and component loading (`FileLoadingEngine.execute_file_loading()`))
+  - í”„ë¡œì íŠ¸ ID ì¡°íšŒ í›„ ì „ì—­ ì„¤ì • (Retrieve project ID and set global configuration)
+  - 2ë‹¨ê³„: DB êµ¬ì¡° ë¡œë“œ (`FileLoadingEngine.execute_db_loading()`) (Step 2: load DB structure (`FileLoadingEngine.execute_db_loading()`))
+  - 3ë‹¨ê³„: XML ë¶„ì„ ë° SQL/Join ë¡œë“œ (`XmlLoadingEngine.execute_xml_loading()`) (Step 3: XML analysis and SQL/Join loading (`XmlLoadingEngine.execute_xml_loading()`))
+  - 4ë‹¨ê³„: Java ë¶„ì„ (`load_java_files_simple`) (Step 4: Java analysis (`load_java_files_simple`))
+  - 5ë‹¨ê³„: ë°±ì—”ë“œ API ì§„ì…ì  ë¶„ì„ (`execute_backend_entry_loading`) (Step 5: backend API entry point analysis (`execute_backend_entry_loading`))
+  - 6ë‹¨ê³„: í”„ë¡ íŠ¸ì—”ë“œ ë¶„ì„ (`FrontendLoadingEngine.execute_frontend_loading`) ë° ê´€ê³„ êµ¬ì¶•(`RelationshipBuilder.build_all_relationships`) (Step 6: frontend analysis (`FrontendLoadingEngine.execute_frontend_loading`) and relationship building (`RelationshipBuilder.build_all_relationships`))
+  - 7ë‹¨ê³„: DB ê¸°ë°˜ ê´€ê³„ ë³´ê°•(`execute_db_relationship_backfill`) + ì¼ê´€ì„± ê²€ì¦(`execute_consistency_validation`) (Step 7: DB-based relationship backfill (`execute_db_relationship_backfill`) and consistency validation (`execute_consistency_validation`))
+- ì‹¤í–‰ ëª¨ë“œ: ê¸°ë³¸ Auto Commit ì„±ê²©ìœ¼ë¡œ ë‹¨ê³„ë³„ ì§„í–‰, `--dry-run` ì‹œ ë¶„ì„ ë¯¸ìˆ˜í–‰ (Execution mode: default Auto Commit, stepâ€‘wise execution; analysis skipped with `--dry-run`)
+
+### create_report.py ê°œìš” ë° íŒŒë¼ë¯¸í„° (ì†ŒìŠ¤ ê¸°ì¤€)
+
+- ëª©ì : ë©”íƒ€ë°ì´í„° DB ê¸°ë°˜ ë¦¬í¬íŠ¸ HTML ìƒì„± (Purpose: generate HTML reports based on metadata DB)
+- ë¦¬í¬íŠ¸ íƒ€ì…(`--report-type` / `-t`): `callchain`, `erd`, `erd-dagre`, `architecture`, `architecture-layer`, `sequence`, `query-list`, `all`(ê¸°ë³¸ê°’) (Report types (`--report-type` / `-t`): `callchain`, `erd`, `erd-dagre`, `architecture`, `architecture-layer`, `sequence`, `query-list`, `all` (default))
+- í•„ìˆ˜: `--project-name` / `-p` (Required: `--project-name` / `-p`)
+- ì„ íƒ: `--output-dir` / `-o` (ê¸°ë³¸: `projects/{project}/report`), `--verbose` / `-v`, `--include-orphan`(ERD/ERD-dagreì—ì„œ ê³ ì•„ í…Œì´ë¸” í¬í•¨) (Optional: `--output-dir` / `-o` (default: `projects/{project}/report`), `--verbose` / `-v`, `--include-orphan` (include orphan tables in ERD/ERD-dagre))
+- ì „ì œ: í”„ë¡œì íŠ¸ ë””ë ‰í„°ë¦¬ì™€ `metadata.db`ê°€ ì¡´ì¬í•´ì•¼ í•¨ (Prerequisite: project directory and `metadata.db` must exist)
+- ìƒì„±ê¸°: `reports/` í•˜ìœ„ ê° Generatorì˜ `generate_report()` í˜¸ì¶œ (Generators: invoke `generate_report()` of each generator under `reports/`)

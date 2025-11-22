@@ -16,23 +16,23 @@ from util.cache_utils import get_global_cache
 from util.statistics_utils import get_global_collector
 from parser.entry_analyzer_factory import get_global_factory
 from parser.base_entry_analyzer import BackendEntryInfo, FileInfo
+from util.base_loading_engine import BaseLoadingEngine
 
 
-class BackendEntryLoadingEngine:
+class BackendEntryLoadingEngine(BaseLoadingEngine):
     # Engine to analyze backend entries and persist components/relationships
 
     def __init__(self, project_name: str, conn: sqlite3.Connection):
         # Initialize engine with project and DB connection
-        self.project_name = project_name
-        self.conn = conn
-        self.path_utils = PathUtils()
+        super().__init__(project_name, conn)
+        self.db = self.db_utils  # Alias for compatibility
+        
         self.hash_utils = HashUtils()
         self.cache = get_global_cache()
         self.stats = get_global_collector()
         self.factory = get_global_factory()
 
-        self.db = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
-        self.project_source_path = self.path_utils.get_project_source_path(project_name)
+        # self.project_source_path is already set by super()
 
         self.servlet_url_map = self._parse_web_xml()
         self.analyzers = self._load_analyzers()

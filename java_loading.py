@@ -14,17 +14,15 @@ from parser.simple_java_parser import SimpleJavaParser
 from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
 from util.path_utils import PathUtils
+from util.base_loading_engine import BaseLoadingEngine
 
-class SimpleJavaLoader:
+class SimpleJavaLoader(BaseLoadingEngine):
     """Simple Java file loader"""
 
     def __init__(self, project_name: str, conn: sqlite3.Connection):
         """Initialize loader"""
-        self.project_name = project_name
-        self.conn = conn
-        self.project_source_path = get_project_source_path(project_name)
+        super().__init__(project_name, conn)
 
-        self.db_utils = DatabaseUtils(get_project_metadata_db_path(project_name))
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.conn)
         self.sql_content_manager = SqlContentManager(project_name)
