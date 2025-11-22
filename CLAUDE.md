@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 필수 지침
+- **중복 기능 개발 금지**: 기존에 개발된 함수가 있는지 확인해보고, 동일 기능의 소스를 중복해서 개발하지 말 것.  공통화 할 수 있는 부분은 함수화 할 것. 불필요한 소스를 작성하지 않고 효율적인 리팩토링에 신경쓸 것.
+- **주석, docstring 작성**: 한글로 함수, 클래스, 모듈에 대한 주석, docstring 작성
+- **하드코 절대 금지**: 하드코딩된 값이 있는지 확인해보고, 하드코딩된 값을 사용하지 말 것. 특히 sampleSrc이 샘플임을 명심하여 sampleSrc의 특화된 로직을 개발하지 않고 범용적인 로직을 개발할 것!!!
+
 ## 프로젝트 개요
 
 SourceAnalyzer는 Java/Spring/MyBatis 기반 웹 애플리케이션의 소스코드를 분석하여 **프론트엔드 -> 백엔드 -> 데이터베이스**까지의 완전한 연관관계를 도출하는 메타데이터 분석 시스템입니다.

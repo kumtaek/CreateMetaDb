@@ -201,7 +201,7 @@ class QueryListReportGenerator:
             query_data = []
             for row in results:
                 component_name = row[0]
-                file_path = row[1]
+                file_path = row[1] or ''  # Ensure file_path is a string
                 sql_content_compressed = row[2]
                 hash_value = row[3]
                 created_at = row[4]
@@ -209,8 +209,11 @@ class QueryListReportGenerator:
                 # SQL 내용 압축 해제
                 sql_content = self._decompress_sql_content(sql_content_compressed)
                 
-                # 파일 타입 결정
-                file_type = 'XML' if file_path.endswith('.xml') else 'JAVA'
+                # 파일 타입 결정 (fallback to UNKNOWN if path is empty)
+                if file_path:
+                    file_type = 'XML' if file_path.lower().endswith('.xml') else 'JAVA'
+                else:
+                    file_type = 'UNKNOWN'
                 
                 # SQL 내용에서 테이블명 추출
                 extracted_tables = self._extract_tables_from_sql(sql_content)
@@ -358,6 +361,40 @@ class QueryListReportGenerator:
         except Exception as e:
             app_logger.debug(f"테이블 오너 조회 실패: {table_name} - {str(e)}")
             return 'SAMPLE'
+    
+    def _decompress_sql_content(self, compressed_data: bytes) -> str:
+        """압축된 SQL 내용을 gzip으로 압축 해제"""
+        try:
+            return gzip.decompress(compressed_data).decode('utf-8')
+        except Exception as e:
+            app_logger.warning(f"SQL 내용 압축 해제 실패: {str(e)}")
+            try:
+                # Fallback: 압축되지 않은 데이터로 시도
+                return compressed_data.decode('utf-8', errors='replace')
+            except:
+                return "SQL 내용 압축 해제 실패"
+    
+    def _determine_query_type(self, sql_content: str) -> str:
+        """SQL 내용을 기반으로 쿼리 타입 결정"""
+        try:
+            sql_upper = sql_content.upper().strip()
+            
+            if sql_upper.startswith('SELECT'):
+                return 'SQL_SELECT'
+            elif sql_upper.startswith('INSERT'):
+                return 'SQL_INSERT'
+            elif sql_upper.startswith('UPDATE'):
+                return 'SQL_UPDATE'
+            elif sql_upper.startswith('DELETE'):
+                return 'SQL_DELETE'
+            elif sql_upper.startswith('MERGE'):
+                return 'SQL_MERGE'
+            else:
+                return 'SQL_QUERY'
+                
+        except Exception as e:
+            app_logger.debug(f"쿼리 타입 결정 실패: {str(e)}")
+            return 'SQL_QUERY'
     
     def _generate_html(self, stats: Dict[str, int], query_data: List[Dict[str, Any]]) -> str:
         """HTML 생성"""

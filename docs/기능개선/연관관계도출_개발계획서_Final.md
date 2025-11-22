@@ -75,7 +75,7 @@
   # parser/jsp_parser.py 내 JspParser 클래스
   def parse(self, file_path, content):
       api_calls = []
-      # SampleSrc에 존재하는 모든 종류의 API 호출 패턴 추가
+      # sampleSrc에 존재하는 모든 종류의 API 호출 패턴 추가
       api_patterns = [
           r'axios\.get(["\\]?)(.*?)[\"\\]?$',      # axios.get('/api/url')
           r'axios\.post(["\\]?)(.*?)[\"\\]?$',     # axios.post('/api/url')

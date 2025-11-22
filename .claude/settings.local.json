@@ -17,7 +17,8 @@
       "WebSearch",
       "Bash(/dev/null)",
       "Bash(tasklist)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

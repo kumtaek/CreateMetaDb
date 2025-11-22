@@ -40,7 +40,7 @@
    1) 프로젝트/파일 기본 테이블   ----------------------------------------------------------------------- */
 CREATE TABLE IF NOT EXISTS projects (
     project_id    INTEGER PRIMARY KEY AUTOINCREMENT, -- 프로젝트 고유 ID
-    project_name  VARCHAR(100) NOT NULL,             -- 프로젝트명 (예: SampleSrc)
+    project_name  VARCHAR(100) NOT NULL,             -- 프로젝트명 (예: sampleSrc)
     project_path  VARCHAR(500) NOT NULL,             -- 프로젝트 루트 경로(절대/상대)
     created_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at    DATETIME DEFAULT (datetime('now', '+9 hours')),
@@ -194,4 +194,3 @@ CREATE UNIQUE INDEX IF NOT EXISTS ix_relationships_01 ON relationships (src_id, 
 -- );
 -- CREATE UNIQUE INDEX IF NOT EXISTS ix_controller_api_map_01 ON controller_api_map (component_id, hash_value, project_id);
 -- CREATE INDEX IF NOT EXISTS ix_controller_api_map_02 ON controller_api_map (hash_value);
-

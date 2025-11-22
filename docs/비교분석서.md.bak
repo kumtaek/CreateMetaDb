@@ -3,7 +3,7 @@
 
 ## 📋 분석 개요
 
-- **메타디비**: `projects/SampleSrc/metadata.db` (del_yn='N' 활성 데이터만)
+- **메타디비**: `projects/sampleSrc/metadata.db` (del_yn='N' 활성 데이터만)
 - **정답지**: `docs/정답지_*.md` 파일들
 - **분석 시각**: 2025-10-01 22:13:45
 - **핵심**: parent_id를 통한 컬럼-테이블, 메서드-클래스 연결 구조 반영

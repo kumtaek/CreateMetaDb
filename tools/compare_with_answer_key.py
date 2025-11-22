@@ -3,7 +3,7 @@ import sqlite3
 import json
 from typing import Dict, Any
 
-BASE = os.path.join('projects', 'SampleSrc')
+BASE = os.path.join('projects', 'sampleSrc')
 META_DB = os.path.join(BASE, 'metadata.db')
 SQL_DB = os.path.join(BASE, 'SqlContent.db')
 
@@ -65,4 +65,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

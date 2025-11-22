@@ -3,23 +3,22 @@ setlocal
 
 :: Check if a commit message was provided as an argument
 if "%~1"=="" (
-    set /p "CommitMessage=Enter commit message: "
+    rem No commit message provided, use current timestamp
+    set "CommitMessage=%date%_%time%"
+    rem Replace spaces with underscores
+    set "CommitMessage=%CommitMessage: =_%"
+    rem Replace colons with hyphens
+    set "CommitMessage=%CommitMessage::=-%"
 ) else (
     set "CommitMessage=%*"
 )
 
-:: If still empty, exit
-if "%CommitMessage%"=="" (
-    echo Error: Commit message is required.
-    pause
-    exit /b 1
-)
-
+:: Change to project directory
 d:
-cd D:\Analyzer\CreateMetaDb
+cd /d "D:\Analyzer\CreateMetaDb"
 
-:: Add changes (excluding temp and backup directories using double quotes for Windows CMD)
-git add . -- ":!temp/"
+:: Add changes (excluding temp and backup directories)
+git add . -- ":!temp/" ":!backup/"
 
 :: Commit with the message
 git commit -m "%CommitMessage%"

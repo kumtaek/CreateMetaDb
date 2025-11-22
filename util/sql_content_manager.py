@@ -183,9 +183,9 @@ class SqlContentManager:
                 app_logger.error("query_id가 비어있음")
                 return None
             
-            # SQL 내용 기반으로 쿼리 타입 결정
+            # SQL 내용 기반으로 쿼리 타입 결정 (SQL 내용이 없으면 query_id에서 추론)
             if query_type == 'SQL_QUERY':
-                query_type = self._determine_sql_component_type(sql_content)
+                query_type = self._determine_sql_component_type(sql_content, query_id)
             
             # metadata.db에 연결하여 Component 등록
             metadata_db_path = f'projects/{self.project_name}/metadata.db'
@@ -267,10 +267,21 @@ class SqlContentManager:
             handle_error(e, f"SQL Component 등록 실패: {query_id}")
             return None
     
-    def _determine_sql_component_type(self, sql_content: str) -> str:
-        """SQL 내용을 기반으로 컴포넌트 타입 결정"""
-        sql_upper = sql_content.upper().strip()
-        
+    def _determine_sql_component_type(self, sql_content: str, query_id: str = None) -> str:
+        """
+        SQL 내용을 기반으로 컴포넌트 타입 결정.
+        SQL 내용이 없거나 타입을 결정할 수 없는 경우 query_id(메서드명)에서 추론.
+
+        Args:
+            sql_content: SQL 내용
+            query_id: 쿼리 ID (메서드명 포함, 예: UserMapper.selectById)
+
+        Returns:
+            SQL 컴포넌트 타입 (SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE, SQL_MERGE, SQL_QUERY)
+        """
+        sql_upper = (sql_content or '').upper().strip()
+
+        # SQL 내용 기반 타입 결정
         if sql_upper.startswith('SELECT'):
             return 'SQL_SELECT'
         elif sql_upper.startswith('INSERT'):
@@ -281,8 +292,24 @@ class SqlContentManager:
             return 'SQL_DELETE'
         elif sql_upper.startswith('MERGE'):
             return 'SQL_MERGE'
-        else:
-            return 'SQL_QUERY'
+
+        # SQL 내용으로 타입을 결정할 수 없는 경우, query_id(메서드명)에서 추론
+        if query_id:
+            method_name = query_id.split('.')[-1] if '.' in query_id else query_id
+            method_lower = method_name.lower()
+
+            if method_lower.startswith(('select', 'find', 'get', 'count', 'exists', 'search', 'query', 'fetch', 'load', 'retrieve')):
+                return 'SQL_SELECT'
+            elif method_lower.startswith(('insert', 'create', 'add', 'save', 'register')):
+                return 'SQL_INSERT'
+            elif method_lower.startswith(('update', 'modify', 'change', 'edit', 'set')):
+                return 'SQL_UPDATE'
+            elif method_lower.startswith(('delete', 'remove', 'drop', 'truncate', 'erase')):
+                return 'SQL_DELETE'
+            elif method_lower.startswith('merge'):
+                return 'SQL_MERGE'
+
+        return 'SQL_QUERY'
     
     def _upsert_sql_content(self, sql_content_data: Dict[str, Any]) -> bool:
         """

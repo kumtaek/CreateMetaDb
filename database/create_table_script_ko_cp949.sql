@@ -39,7 +39,7 @@
 /* -----------------------------------------------------------------------
    1) ?�로?�트/?�일 베이???�이�?   ----------------------------------------------------------------------- */
 CREATE TABLE IF NOT EXISTS projects (
-    project_id    INTEGER PRIMARY KEY AUTOINCREMENT, -- ?�로?�트 고유??    project_name  VARCHAR(100) NOT NULL,             -- ?�로?�트�?(?? SampleSrc)
+    project_id    INTEGER PRIMARY KEY AUTOINCREMENT, -- ?�로?�트 고유??    project_name  VARCHAR(100) NOT NULL,             -- ?�로?�트�?(?? sampleSrc)
     project_path  VARCHAR(500) NOT NULL,             -- ?�로?�트 루트 경로(?��?/?��?)
     hash_value    VARCHAR(64),                       -- ?�로?�트 ?�체 ?�냅???�시(?�택)
     created_at    DATETIME DEFAULT (datetime('now', '+9 hours')),

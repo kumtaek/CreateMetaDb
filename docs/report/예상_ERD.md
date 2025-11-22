@@ -1,8 +1,8 @@
-# 예상 ERD 리포트 (SampleSrc) - 수정판
+# 예상 ERD 리포트 (sampleSrc) - 수정판
 
 ## 개요
 
-본 문서는 SampleSrc 프로젝트의 메타데이터 분석을 바탕으로 생성될 것으로 예상되는 ERD(Entity Relationship Diagram) 리포트입니다. **INFERRED 테이블과 실제 스키마 테이블을 구분**하여 올바른 ERD 구조를 제시합니다.
+본 문서는 sampleSrc 프로젝트의 메타데이터 분석을 바탕으로 생성될 것으로 예상되는 ERD(Entity Relationship Diagram) 리포트입니다. **INFERRED 테이블과 실제 스키마 테이블을 구분**하여 올바른 ERD 구조를 제시합니다.
 
 **예상 생성일**: 메타데이터 생성 후  
 **기준 데이터**: 메타디비데이터분석보고서.md (수정판)  
@@ -574,7 +574,7 @@ ORDER BY total_spent DESC;
 
 ## 결론 (수정판)
 
-예상되는 ERD 리포트는 SampleSrc 프로젝트의 **올바른 데이터베이스 구조**를 보여주며, 다음과 같은 특징을 가집니다:
+예상되는 ERD 리포트는 sampleSrc 프로젝트의 **올바른 데이터베이스 구조**를 보여주며, 다음과 같은 특징을 가집니다:
 
 ### 시스템의 정상 동작 확인
 1. **INFERRED 테이블 처리 올바름**: SQL JOIN에서 추론된 테이블들이 적절히 생성됨

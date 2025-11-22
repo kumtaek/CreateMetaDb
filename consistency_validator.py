@@ -697,7 +697,7 @@ def execute_consistency_validation(project_name: str, conn: sqlite3.Connection) 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("사용법: py consistency_validator.py <project_name>")
-        print("예: py consistency_validator.py SampleSrc")
+        print("예: py consistency_validator.py sampleSrc")
         sys.exit(1)
     
     project_name = sys.argv[1]

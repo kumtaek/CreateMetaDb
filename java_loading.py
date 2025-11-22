@@ -159,11 +159,13 @@ class SimpleJavaLoader(BaseLoadingEngine):
                         debug(f"기존 SQL 컴포넌트 발견: {fqmn}")
                     else:
                         # XML에서 등록되지 않음 → INFERRED 쿼리로 등록
+                        # 메서드명에서 SQL 타입 추론
+                        inferred_type = self._infer_sql_type_from_method_name(fqmn)
                         sql_component = {
                             'project_id': project_id,
                             'file_id': file_id,
                             'component_name': fqmn,
-                            'component_type': 'SQL_QUERY',  # INFERRED 쿼리
+                            'component_type': inferred_type,
                             'parent_id': None,
                             'hash_value': HashUtils().generate_content_hash(fqmn)
                         }
@@ -240,6 +242,36 @@ class SimpleJavaLoader(BaseLoadingEngine):
         except Exception as e:
             handle_error(e, f"Class UPSERT failed: {cls_data}")
             return None
+
+    def _infer_sql_type_from_method_name(self, fqmn: str) -> str:
+        """
+        MyBatis Mapper 메서드명(FQMN)에서 SQL 타입을 추론.
+
+        Args:
+            fqmn: Fully Qualified Method Name (예: UserMapper.selectById)
+
+        Returns:
+            추론된 SQL 타입 (SQL_SELECT, SQL_INSERT, SQL_UPDATE, SQL_DELETE)
+            추론 불가 시 SQL_QUERY 반환
+        """
+        # FQMN에서 메서드명 추출 (예: UserMapper.selectById -> selectById)
+        method_name = fqmn.split('.')[-1] if '.' in fqmn else fqmn
+        method_lower = method_name.lower()
+
+        # 메서드명 접두어 기반 SQL 타입 추론
+        if method_lower.startswith(('select', 'find', 'get', 'count', 'exists', 'search', 'query', 'fetch', 'load', 'retrieve')):
+            return 'SQL_SELECT'
+        elif method_lower.startswith(('insert', 'create', 'add', 'save', 'register')):
+            return 'SQL_INSERT'
+        elif method_lower.startswith(('update', 'modify', 'change', 'edit', 'set')):
+            return 'SQL_UPDATE'
+        elif method_lower.startswith(('delete', 'remove', 'drop', 'truncate', 'erase')):
+            return 'SQL_DELETE'
+        elif method_lower.startswith('merge'):
+            return 'SQL_MERGE'
+        else:
+            # 추론 불가 시 기본값
+            return 'SQL_QUERY'
 
 def load_java_files_simple(project_name: str, project_id: int, conn: sqlite3.Connection) -> tuple[bool, dict]:
     """Run simple Java loading"""
