@@ -20,7 +20,9 @@
       "Bash(git add:*)",
       "Bash(cd:*)",
       "Bash(cmd /c del \"D:\\Analyzer\\CreateMetaDb\\config\\parser\\oracle_sql_keyword.yaml\")",
-      "Bash(cmd /c dir \"D:\\Analyzer\\CreateMetaDb\\config\\parser\\*.yaml\")"
+      "Bash(cmd /c dir \"D:\\Analyzer\\CreateMetaDb\\config\\parser\\*.yaml\")",
+      "Bash(chcp 65001)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

@@ -98,40 +98,68 @@ class SimpleQueryAnalyzer:
             return []
 
     def _extract_java_queries(self, method_content: str, method_name: str) -> List[Dict]:
-        """Find SQL assembled via string literals/concat/StringBuilder."""
+        """자바 메서드 내 SQL 추출: 변수별 리터럴 누적 → 변수명을 query_id로 저장."""
         try:
             queries: List[Dict] = []
-            string_vars: Dict[str, str] = {}
 
-            # String constants
-            for i, const in enumerate(re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', method_content, re.DOTALL)):
-                string_vars[f'STRING_CONST_{i}'] = const.strip()
+            # 변수별 누적: 문자열 리터럴만 모아 이어붙이는 심플 전략
+            var_map: Dict[str, str] = {}
 
-            # var = "..."
-            for m in re.finditer(r'String\s+(\w+)\s*=\s*"([^"]*)"', method_content, re.IGNORECASE):
-                string_vars[m.group(1)] = m.group(2).strip()
+            def _append(var: str, raw: str):
+                val = var_map.get(var, '')
+                # 리터럴만 추출해 공백으로 연결
+                parts = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', raw, re.DOTALL)
+                joined = ' '.join(p.strip() for p in parts)
+                # 다른 변수 내용을 참조하면 선행 문자열을 합쳐줌 (String.format(productQuery + "..."))
+                ref_chunks: List[str] = []
+                for ref_name, ref_val in var_map.items():
+                    if not ref_val or ref_name == var:
+                        continue
+                    if re.search(rf'\b{re.escape(ref_name)}\b', raw):
+                        ref_chunks.append(ref_val)
+                new_chunk = ' '.join([c for c in ref_chunks + ([joined] if joined else []) if c])
+                if new_chunk:
+                    var_map[var] = (val + ' ' + new_chunk).strip()
+                else:
+                    var_map[var] = val
 
-            # var += "..."  /  var = var + "..."
-            concat_patterns = [
-                r'(\w+)\s*\+=\s*"([^"\\]*(?:\\.[^"\\]*)*)"',
-                r'(\w+)\s*=\s*\w+\s*\+\s*"([^"\\]*(?:\\.[^"\\]*)*)"',
-            ]
-            for p in concat_patterns:
-                for m in re.finditer(p, method_content, re.IGNORECASE):
-                    var, append = m.group(1), m.group(2).strip()
-                    string_vars[var] = (string_vars.get(var, '') + ' ' + append).strip()
-
-            # StringBuilder.append("...")
-            for m in re.finditer(r'StringBuilder\s+(\w+).*?\.append\("([^"\\]*(?:\\.[^"\\]*)*)"\)', method_content, re.DOTALL | re.IGNORECASE):
-                var, append = m.group(1), m.group(2).strip()
-                string_vars[var] = (string_vars.get(var, '') + ' ' + append).strip()
+            # 구문 순서를 유지하며 문자열 조각 누적
+            stmt_pattern = r'(String\s+\w+\s*=\s*[^;]+;|\w+\s*\+=\s*[^;]+;|\w+\s*=\s*\w+\s*\+\s*[^;]+;|\b\w+\.append\([^;]+?\);)'
+            for stmt in re.finditer(stmt_pattern, method_content, re.DOTALL | re.IGNORECASE):
+                text = stmt.group(0)
+                var = None
+                rhs = None
+                if text.strip().lower().startswith('string'):
+                    m = re.search(r'String\s+(\w+)\s*=\s*([^;]+);', text, re.DOTALL | re.IGNORECASE)
+                    if m:
+                        var, rhs = m.group(1), m.group(2)
+                elif '.append' in text:
+                    m = re.search(r'\b(\w+)\.append\(([^;]+)\);', text, re.DOTALL | re.IGNORECASE)
+                    if m:
+                        var, rhs = m.group(1), m.group(2)
+                elif '+=' in text:
+                    m = re.search(r'(\w+)\s*\+=\s*([^;]+);', text, re.DOTALL | re.IGNORECASE)
+                    if m:
+                        var, rhs = m.group(1), m.group(2)
+                else:
+                    m = re.search(r'(\w+)\s*=\s*\w+\s*\+\s*([^;]+);', text, re.DOTALL | re.IGNORECASE)
+                    if m:
+                        var, rhs = m.group(1), m.group(2)
+                if var and rhs is not None:
+                    _append(var, rhs)
 
             # Keep only SQL-looking strings
-            for var_name, var_content in string_vars.items():
+            for var_name, var_content in var_map.items():
                 cleaned = re.sub(r'\s+', ' ', var_content.strip())
+                upper = cleaned.upper()
+                if cleaned and ' FROM ' not in upper:
+                    if upper.startswith('UPDATE '):
+                        cleaned = cleaned.replace('UPDATE ', 'UPDATE FROM ', 1)
+                    elif upper.startswith('DELETE '):
+                        cleaned = cleaned.replace('DELETE ', 'DELETE FROM ', 1)
                 if self._is_sql_query(cleaned):
                     queries.append({
-                        'query_id': f"{method_name}_{var_name}",
+                        'query_id': var_name,
                         'method_name': method_name,
                         'variable_name': var_name,
                         'sql_content': cleaned,
@@ -285,44 +313,24 @@ class SimpleQueryAnalyzer:
         - "...": 단순 문자열
         """
         try:
-            # 1. value = "..." 패턴 (멀티라인 포함)
-            # value = """...""" (Java 15+ text block)
-            text_block_match = re.search(
-                r'value\s*=\s*"""([\s\S]*?)"""',
-                annotation_content,
-                re.DOTALL
-            )
+            # 1) value = """...""" (Java text block)
+            text_block_match = re.search(r'value\s*=\s*"""([\s\S]*?)"""', annotation_content, re.DOTALL)
             if text_block_match:
                 return re.sub(r'\s+', ' ', text_block_match.group(1).strip())
 
-            # value = "..." + "..." (문자열 연결)
-            value_match = re.search(
-                r'value\s*=\s*("(?:[^"\\]|\\.)*"(?:\s*\+\s*"(?:[^"\\]|\\.)*")*)',
-                annotation_content,
-                re.DOTALL
-            )
+            parts: List[str] = []
+
+            # 2) value = "..." + "..." (문자열 연결 포함)
+            value_match = re.search(r'value\s*=\s*("(?:[^"\\]|\\.)*"(?:\s*\+\s*"(?:[^"\\]|\\.)*")*)', annotation_content, re.DOTALL)
             if value_match:
                 parts = re.findall(r'"((?:[^"\\]|\\.)*)"', value_match.group(1), re.DOTALL)
-                if parts:
-                    return re.sub(r'\s+', ' ', ' '.join(p.strip() for p in parts).strip())
 
-            # 2. 단순 @Query("...") 패턴 (value= 없이)
-            # 첫 번째 문자열이 SQL인 경우
-            direct_match = re.search(
-                r'^[^"]*"((?:[^"\\]|\\.)*)"',
-                annotation_content,
-                re.DOTALL
-            )
-            if direct_match:
-                sql = direct_match.group(1).strip()
-                # nativeQuery, value 등의 키워드가 아닌 실제 SQL인지 확인
-                if sql and not re.match(r'^(nativeQuery|value|countQuery|name)\s*$', sql, re.IGNORECASE):
-                    return re.sub(r'\s+', ' ', sql)
+            # 3) value=가 없거나 direct 문자열만 있는 경우: 모든 문자열 리터럴을 모아 합침
+            if not parts:
+                parts = re.findall(r'"((?:[^"\\]|\\.)*)"', annotation_content, re.DOTALL)
 
-            # 3. 모든 문자열 조각을 연결
-            all_strings = re.findall(r'"((?:[^"\\]|\\.)*)"', annotation_content, re.DOTALL)
-            if all_strings:
-                combined = ' '.join(s.strip() for s in all_strings if s.strip())
+            if parts:
+                combined = ' '.join(p.strip() for p in parts if p.strip())
                 return re.sub(r'\s+', ' ', combined.strip())
 
             return ''

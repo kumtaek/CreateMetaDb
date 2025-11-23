@@ -134,6 +134,9 @@ class XmlParser:
                 query_id = match.group(2)
                 inner_content = match.group(3)
 
+                # 0. MyBatis 동적 태그를 SQL 키워드 위주로 간단 보정
+                inner_content = self._approximate_mybatis_dynamic_tags(inner_content)
+
                 # 1. CDATA 섹션 처리 (내용만 남기기)
                 cleaned_content = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', inner_content, flags=re.DOTALL)
 
@@ -201,6 +204,33 @@ class XmlParser:
                 'has_error': 'Y',
                 'error_message': f"XML 파싱 실패: {str(e)}"
             }
+
+    def _approximate_mybatis_dynamic_tags(self, content: str) -> str:
+        """
+        MyBatis 동적 태그를 최소한의 SQL 키워드 형태로 보정합니다.
+        정확한 파싱이 목적이 아니므로 WHERE/SET 접두만 살리고 공백을 정리합니다.
+        """
+        try:
+            replacements = [
+                (r'<\s*where[^>]*>', ' WHERE '),
+                (r'</\s*where\s*>', ' '),
+                (r'<\s*set[^>]*>', ' SET '),
+                (r'</\s*set\s*>', ' '),
+                (r'<\s*trim[^>]*prefix=\"WHERE\"[^>]*>', ' WHERE '),
+                (r'<\s*trim[^>]*prefix=\"SET\"[^>]*>', ' SET '),
+                (r'</\s*trim\s*>', ' '),
+            ]
+
+            normalized = content
+            for pattern, repl in replacements:
+                normalized = re.sub(pattern, repl, normalized, flags=re.IGNORECASE)
+
+            normalized = re.sub(r'WHERE\s+(AND|OR)\s+', 'WHERE ', normalized, flags=re.IGNORECASE)
+            normalized = re.sub(r'SET\s+,', 'SET ', normalized, flags=re.IGNORECASE)
+            normalized = re.sub(r'\s+,', ' ,', normalized)
+            return normalized
+        except Exception:
+            return content
 
 
     def get_statistics(self) -> Dict[str, Any]:

@@ -169,20 +169,76 @@ class CommonSqlAnalyzer:
             
         return {"statistics": {"joins_found": joins_saved}}
 
-    def _save_use_table_relationships(self, sql_component_id: int, tables: List[str]) -> None:
+    def _save_use_table_relationships(self, sql_component_id: int, tables: List[tuple]) -> None:
         """metadata.db의 components(표 TABLE)와 relationships를 이용해 USE_TABLE 생성"""
         try:
             from util.database_utils import DatabaseUtils
             metadata_db_path = f"projects/{self.project_name}/metadata.db"
             db = DatabaseUtils(metadata_db_path)
             conn = db.get_persistent_connection()
-            for table_name in tables:
+            # ensure_table_component 내부 사용을 위해 로컬 정의
+            def ensure_table_component(table_name: str, owner: str = 'UNKNOWN') -> int:
+                """테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지)."""
+                proj_id_rows = db.execute_query("SELECT project_id FROM projects WHERE project_name=?", (self.project_name,), conn=conn)
+                project_id = proj_id_rows[0]['project_id'] if proj_id_rows else None
+                if project_id is None:
+                    msg = f"[CommonSqlAnalyzer] 프로젝트 ID를 찾을 수 없습니다: {self.project_name}"
+                    error(msg)
+                    raise RuntimeError(msg)
                 rows = db.execute_query(
-                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
-                    (table_name,), conn=conn)
+                    """
+                    SELECT component_id FROM components 
+                    WHERE component_type='TABLE' 
+                      AND component_name = ? 
+                      AND project_id = ? 
+                      AND del_yn='N'
+                    LIMIT 1
+                    """,
+                    (table_name, project_id), conn=conn)
+                if rows:
+                    return rows[0]['component_id']
+
+                # 기존 테이블 컴포넌트가 없으면 현재 파일 컨텍스트를 활용해 생성
+                try:
+                    from util.file_context import get_file_context_manager
+                    ctx = get_file_context_manager().require_current_file()
+                    file_id = ctx.file_id
+                    if not file_id:
+                        msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 누락 및 file_id 없음: {table_name}"
+                        error(msg)
+                        raise RuntimeError(msg)
+                    comp_data = {
+                        'project_id': project_id,
+                        'file_id': file_id,
+                        'component_name': table_name,
+                        'component_type': 'TABLE',
+                        'parent_id': None,
+                        'layer': None,
+                        'line_start': None,
+                        'line_end': None,
+                        'has_error': 'N',
+                        'error_message': None,
+                        'hash_value': hashlib.md5(f"{table_name}".encode()).hexdigest(),
+                        'del_yn': 'N'
+                    }
+                    comp_id = db.insert_or_replace_with_id('components', comp_data, conn=conn)
+                    return comp_id
+                except Exception as e:
+                    msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 생성 실패: {table_name}"
+                    error(msg)
+                    raise RuntimeError(msg) from e
+            for table_name, owner in tables:
+                rows = db.execute_query(
+                    """SELECT component_id FROM components 
+                       WHERE component_type='TABLE' 
+                         AND component_name=? 
+                         AND project_id=(SELECT project_id FROM projects WHERE project_name=?)
+                         AND del_yn='N' LIMIT 1""",
+                    (table_name, self.project_name), conn=conn)
                 if not rows:
-                    continue
-                table_component_id = rows[0]['component_id']
+                    table_component_id = ensure_table_component(table_name, owner)
+                else:
+                    table_component_id = rows[0]['component_id']
                 rel_data = {
                     'src_id': sql_component_id,
                     'dst_id': table_component_id,
@@ -208,7 +264,7 @@ class CommonSqlAnalyzer:
             proj_id_rows = db.execute_query("SELECT project_id FROM projects WHERE project_name=?", (self.project_name,), conn=conn)
             project_id = proj_id_rows[0]['project_id'] if proj_id_rows else None
 
-            def ensure_table_component(table_name: str) -> int:
+            def ensure_table_component(table_name: str, owner: str = 'UNKNOWN') -> int:
                 """테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지)."""
                 if project_id is None:
                     msg = f"[CommonSqlAnalyzer] 프로젝트 ID를 찾을 수 없습니다: {self.project_name}"
@@ -409,14 +465,15 @@ class CommonSqlAnalyzer:
         alias_map = {}
         
         # 2단계: 테이블 추출 정규식 패턴들
+        name = r'[a-zA-Z_\.][a-zA-Z0-9_\.]*'
         patterns = [
-            r'FROM\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)',
-            r'UPDATE\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)\s+SET',
-            r'DELETE\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)',
-            r'INSERT\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)',
-            r'MERGE\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)',
-            r'JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)\s+ON',
-            r'USING\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\s+[a-zA-Z_][a-zA-Z0-9_]*)?)\s+ON'
+            rf'FROM\s+({name}(?:\s+{name})?)',
+            rf'UPDATE\s+({name}(?:\s+{name})?)\s+SET',
+            rf'DELETE\s+FROM\s+({name}(?:\s+{name})?)',
+            rf'INSERT\s+INTO\s+({name}(?:\s+{name})?)',
+            rf'MERGE\s+INTO\s+({name}(?:\s+{name})?)',
+            rf'JOIN\s+({name}(?:\s+{name})?)\s+ON',
+            rf'USING\s+({name}(?:\s+{name})?)\s+ON'
         ]
         
         for pattern in patterns:
@@ -424,13 +481,17 @@ class CommonSqlAnalyzer:
             for match in matches:
                 # 테이블명과 별칭 분리
                 parts = match.strip().split()
-                table_name = parts[0].upper()
+                raw_name = parts[0].upper()
+                # OWNER/alias 포함 가능: 테이블명은 원문 그대로(정규화 없음)
+                if raw_name == 'FETCH':
+                    continue  # JOIN FETCH의 FETCH 키워드 무시
+                table_name = raw_name
                 
                 # Oracle 키워드 체크
                 if table_name not in self.oracle_keywords:
-                    tables.add(table_name)
+                    tables.add((table_name, 'UNKNOWN'))
                     
-                    # 알리아스가 있으면 매핑 생성
+                    # 알리아스가 있으면 매핑 생성 (별칭 -> table명)
                     if len(parts) > 1:
                         alias = parts[1].upper()
                         alias_map[alias] = table_name
@@ -460,8 +521,15 @@ class CommonSqlAnalyzer:
     
     def _extract_implicit_joins(self, sql: str, alias_map: Dict[str, str]) -> List[JoinCondition]:
         """[수정] WHERE 절에서 별칭이 없거나 (+)가 포함된 조인 조건을 분석합니다."""
-        joins = []
-        where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql, re.IGNORECASE | re.DOTALL)
+        joins: List[JoinCondition] = []
+
+        # WHERE 절 범위를 GROUP/ORDER/HAVING/ON/; 까지로 한정하여
+        # MERGE UPDATE SET 등 이후 구문에서의 = 연산자가 조인으로 해석되지 않도록 방지
+        where_match = re.search(
+            r'\bWHERE\s+(.*?)(?=\bGROUP\b|\bORDER\b|\bHAVING\b|\bON\b|;|$)',
+            sql,
+            re.IGNORECASE | re.DOTALL,
+        )
         if not where_match:
             return joins
 
@@ -494,6 +562,7 @@ class CommonSqlAnalyzer:
 
             # 리터럴 값 체크 (숫자, 문자열, SYSDATE 등은 조인 조건에서 제외)
             from util.oracle_keyword_manager import is_literal_value
+
             if is_literal_value(col1) or is_literal_value(col2):
                 continue
 
@@ -509,17 +578,21 @@ class CommonSqlAnalyzer:
                 table1 = self._find_table_for_column(col1, candidate_tables)
 
             if table1 and table2 and table1 != table2:
-                if (table1.upper() not in self.oracle_keywords and
-                    table2.upper() not in self.oracle_keywords and
-                    col1.upper() not in self.oracle_keywords and
-                    col2.upper() not in self.oracle_keywords):
-                    joins.append(JoinCondition(
-                        left_table=table1,
-                        right_table=table2,
-                        left_column=col1.upper(),
-                        right_column=col2.upper(),
-                        join_type='IMPLICIT'
-                    ))
+                if (
+                    table1.upper() not in self.oracle_keywords
+                    and table2.upper() not in self.oracle_keywords
+                    and col1.upper() not in self.oracle_keywords
+                    and col2.upper() not in self.oracle_keywords
+                ):
+                    joins.append(
+                        JoinCondition(
+                            left_table=table1,
+                            right_table=table2,
+                            left_column=col1.upper(),
+                            right_column=col2.upper(),
+                            join_type='IMPLICIT',
+                        )
+                    )
         return joins
     
     def _extract_explicit_joins(self, sql: str, alias_map: Dict[str, str]) -> List[JoinCondition]:

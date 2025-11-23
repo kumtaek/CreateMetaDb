@@ -85,6 +85,14 @@ class SqlContentManager:
             저장 성공 여부
         """
         try:
+            # 파일 경로/파일명 정리: 경로에 파일명이 섞여 온 경우 분리
+            file_path = kwargs.get('file_path')
+            file_name = kwargs.get('file_name')
+            if file_path or file_name:
+                clean_path, clean_name = self._sanitize_file_path(file_path, file_name)
+                kwargs['file_path'] = clean_path
+                kwargs['file_name'] = clean_name
+
             # 프로젝트 정보 먼저 저장 (외래키 제약조건 대비)
             self._ensure_project_exists(project_id, kwargs.get('file_path', ''))
 
@@ -186,6 +194,23 @@ class SqlContentManager:
         except Exception as e:
             handle_error(e, "SQL 내용 저장 실패")
     
+    def _sanitize_file_path(self, file_path: str, file_name: Optional[str]) -> (str, Optional[str]):
+        """
+        file_path에 파일명이 섞여 있는 경우 디렉터리/파일명으로 분리
+        """
+        path_utils = PathUtils()
+        normalized_path = path_utils.normalize_path_separator(file_path or '', 'unix')
+        # 파일명이 path 끝에 포함된 경우
+        if file_name and normalized_path.endswith('/' + file_name):
+            directory = os.path.dirname(normalized_path)
+            return directory, file_name
+        # file_name이 없고 path만 있는 경우 path에서 파일명 추출
+        if normalized_path and not file_name:
+            basename = os.path.basename(normalized_path)
+            dirname = os.path.dirname(normalized_path)
+            return dirname, basename if basename else None
+        return normalized_path, file_name
+
     def _register_sql_component(self, sql_content: str, project_id: int, file_id: int, 
                                query_id: str, file_path: str, query_type: str, conn=None, file_name: str = None) -> Optional[int]:
         """

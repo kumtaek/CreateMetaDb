@@ -235,7 +235,12 @@ class SimpleRelationshipAnalyzer:
             relationships = []
 
             # WHERE 절에서 조인 조건 찾기
-            where_match = re.search(r'\bWHERE\b(.+?)(?:\bGROUP\b|\bORDER\b|\bHAVING\b|$)', normalized_sql, re.IGNORECASE | re.DOTALL)
+            # GROUP/ORDER/HAVING/ON 이전까지만 분석하여 MERGE UPDATE SET 등 이후 구문의 = 연산자는 제외
+            where_match = re.search(
+                r'\bWHERE\b(.+?)(?:\bGROUP\b|\bORDER\b|\bHAVING\b|\bON\b|$)',
+                normalized_sql,
+                re.IGNORECASE | re.DOTALL,
+            )
 
             if not where_match:
                 return relationships

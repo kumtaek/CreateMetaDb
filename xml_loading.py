@@ -123,21 +123,21 @@ class XmlLoadingEngine(BaseLoadingEngine):
                         continue
 
                     if analysis_result['sql_queries']:
-                        project_id = self._get_project_id()
-                        for sql_query in analysis_result['sql_queries']:
-                            # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
-                            saved = self.sql_content_manager.save_sql_content(
-                                sql_content=sql_query.get('sql_content', ''),
-                                project_id=project_id,
-                                conn=self.conn,
-                                query_id=sql_query.get('query_id'),
-                                file_id=file_id,
-                                file_path=unix_relative_path,
-                                file_name=file_name,
-                                query_type=sql_query.get('query_type'),
-                                hash_value=sql_query.get('hash_value'),
-                                component_name=sql_query.get('query_id'),
-                            )
+                            project_id = self._get_project_id()
+                            for sql_query in analysis_result['sql_queries']:
+                                # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
+                                saved = self.sql_content_manager.save_sql_content(
+                                    sql_content=sql_query.get('sql_content', ''),
+                                    project_id=project_id,
+                                    conn=self.conn,
+                                    query_id=sql_query.get('query_id'),
+                                    file_id=file_id,
+                                    file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
+                                    file_name=file_name,
+                                    query_type=sql_query.get('query_type'),
+                                    hash_value=sql_query.get('hash_value'),
+                                    component_name=sql_query.get('query_id'),
+                                )
                             if saved:
                                 self.stats['sql_components_created'] += 1
 

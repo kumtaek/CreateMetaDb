@@ -1,0 +1,3244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Mapping Report - sampleSrc</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1800px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #2980b9; margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px; background: #ecf0f1; padding: 10px; }
+        .info { color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #e8f4f8; }
+        .sql-type { font-weight: bold; color: #27ae60; }
+        .join-type { font-style: italic; color: #8e44ad; font-weight: bold; }
+        .tables { color: #c0392b; font-size: 0.9em; }
+        .conditions { font-family: 'Courier New', monospace; color: #d35400; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Backend Mapping Report</h1>
+        <div class="info">
+            <strong>프로젝트:</strong> sampleSrc<br>
+            <strong>생성일시:</strong> 2025-11-23 23:52:57
+        </div>
+        
+        
+        <h2>MyBatis SQL 매핑</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px;">No</th>
+                    <th style="width: 250px;">Path</th>
+                    <th style="width: 180px;">File</th>
+                    <th style="width: 150px;">Method</th>
+                    <th style="width: 200px;">Query ID</th>
+                    <th style="width: 100px;">SQL_Type</th>
+                    <th style="width: 200px;">Tables</th>
+                    <th>Join Conditions</th>
+                    <th style="width: 120px;">JOIN_Type</th>
+                    <th style="width: 200px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            <tr>
+                <td>192</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>analyzeProductSalesPerformance</td>
+                <td>analyzeProductSalesPerformance</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.ORDERS, SAMPLE.PRODUCTS, BRANDS</td>
+                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>193</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>countProductsByCondition</td>
+                <td>countProductsByCondition</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>194</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>createUser</td>
+                <td>createUser</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>195</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>deleteInactiveUsers</td>
+                <td>deleteInactiveUsers</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>196</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>deleteProduct</td>
+                <td>deleteProduct</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>197</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>deleteProductsByCondition</td>
+                <td>deleteProductsByCondition</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>198</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>deleteUser</td>
+                <td>deleteUser</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>199</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>existsByEmail</td>
+                <td>existsByEmail</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>200</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>existsByUsername</td>
+                <td>existsByUsername</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>201</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUserById</td>
+                <td>findUserById</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>202</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersByAdvancedCondition</td>
+                <td>findUsersByAdvancedCondition</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>203</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersByComplexSearch</td>
+                <td>findUsersByComplexSearch</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">U.USER_ID = O.USER_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>204</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersByCondition</td>
+                <td>findUsersByCondition</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>205</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersByType</td>
+                <td>findUsersByType</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>206</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithOrderInfo</td>
+                <td>findUsersWithOrderInfo</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>207</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getActiveUserCount</td>
+                <td>getActiveUserCount</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>208</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getMonthlyRegistrationStats</td>
+                <td>getMonthlyRegistrationStats</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>209</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getNewUsersTodayCount</td>
+                <td>getNewUsersTodayCount</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>210</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getPremiumUserCount</td>
+                <td>getPremiumUserCount</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>211</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>getProductStatsByCategory</td>
+                <td>getProductStatsByCategory</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>212</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getTotalUserCount</td>
+                <td>getTotalUserCount</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>213</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getUserStatisticsByStatus</td>
+                <td>getUserStatisticsByStatus</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>214</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>getUserStatisticsByType</td>
+                <td>getUserStatisticsByType</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>215</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>insertProductDynamic</td>
+                <td>insertProductDynamic</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>216</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>insertUser</td>
+                <td>insertUser</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>217</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>isEmailVerified</td>
+                <td>isEmailVerified</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>218</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>isPhoneVerified</td>
+                <td>isPhoneVerified</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>219</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/MergeQueryMapper.xml" target="_blank" rel="noopener noreferrer">MergeQueryMapper.xml</a></td>
+                <td>mergeCategoryStatistics</td>
+                <td>mergeCategoryStatistics</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
+                <td class="conditions">C.CATEGORY_ID = P.CATEGORY_ID</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>220</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/MergeQueryMapper.xml" target="_blank" rel="noopener noreferrer">MergeQueryMapper.xml</a></td>
+                <td>mergeOrderSummary</td>
+                <td>mergeOrderSummary</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>221</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/MergeQueryMapper.xml" target="_blank" rel="noopener noreferrer">MergeQueryMapper.xml</a></td>
+                <td>mergeProductInventory</td>
+                <td>mergeProductInventory</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>222</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/MergeQueryMapper.xml" target="_blank" rel="noopener noreferrer">MergeQueryMapper.xml</a></td>
+                <td>mergeUserActivityLog</td>
+                <td>mergeUserActivityLog</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>223</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/MergeQueryMapper.xml" target="_blank" rel="noopener noreferrer">MergeQueryMapper.xml</a></td>
+                <td>mergeUserStatistics</td>
+                <td>mergeUserStatistics</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_STATISTICS</td>
+                <td class="conditions">U.USER_ID = O.USER_ID</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>224</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectLowStockProducts</td>
+                <td>selectLowStockProducts</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS, INVENTORY, SUPPLIERS</td>
+                <td class="conditions">P.SUPPLIER_ID = S.SUPPLIER_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>225</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectProductById</td>
+                <td>selectProductById</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>226</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectProductsByAdvancedCondition</td>
+                <td>selectProductsByAdvancedCondition</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, BRANDS</td>
+                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>227</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectProductsByBrand</td>
+                <td>selectProductsByBrand</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS, BRANDS</td>
+                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>228</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectProductsByCategory</td>
+                <td>selectProductsByCategory</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>229</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>selectProductsByCondition</td>
+                <td>selectProductsByCondition</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>230</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>selectUserById</td>
+                <td>selectUserById</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">U.USER_ID = UP.USER_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>231</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>selectUserStatistics</td>
+                <td>selectUserStatistics</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>232</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>selectUsers</td>
+                <td>selectUsers</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>233</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ImplicitJoinMapper.xml" target="_blank" rel="noopener noreferrer">ImplicitJoinMapper.xml</a></td>
+                <td>selectUsersWithActiveOrders</td>
+                <td>selectUsersWithActiveOrders</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>234</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ImplicitJoinMapper.xml" target="_blank" rel="noopener noreferrer">ImplicitJoinMapper.xml</a></td>
+                <td>selectUsersWithOrderDetails</td>
+                <td>selectUsersWithOrderDetails</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">U.USER_ID = O.USER_ID; O.ORDER_ID = OI.ORDER_ID; OI.PRODUCT_ID = P.PRODUCT_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>235</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ImplicitJoinMapper.xml" target="_blank" rel="noopener noreferrer">ImplicitJoinMapper.xml</a></td>
+                <td>selectUsersWithOrderStatistics</td>
+                <td>selectUsersWithOrderStatistics</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">U.USER_ID = O.USER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>236</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ImplicitJoinMapper.xml" target="_blank" rel="noopener noreferrer">ImplicitJoinMapper.xml</a></td>
+                <td>selectUsersWithOrders</td>
+                <td>selectUsersWithOrders</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">U.USER_ID = O.USER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>237</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ImplicitJoinMapper.xml" target="_blank" rel="noopener noreferrer">ImplicitJoinMapper.xml</a></td>
+                <td>selectUsersWithRecentOrders</td>
+                <td>selectUsersWithRecentOrders</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>238</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>updateLastLogin</td>
+                <td>updateLastLogin</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>239</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>updateProductDynamic</td>
+                <td>updateProductDynamic</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>240</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/ProductMapper.xml" target="_blank" rel="noopener noreferrer">ProductMapper.xml</a></td>
+                <td>updateProductStock</td>
+                <td>updateProductStock</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>241</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>updateUser</td>
+                <td>updateUser</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>242</td>
+                <td>src/main/resources/mybatis/mapper</td>
+                <td><a href="../src/main/resources/mybatis/mapper/UserManagementMapper.xml" target="_blank" rel="noopener noreferrer">UserManagementMapper.xml</a></td>
+                <td>updateUserStatus</td>
+                <td>updateUserStatus</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            </tbody>
+        </table>
+        
+        <h2>JPA Native / 커스텀 SQL 매핑</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px;">No</th>
+                    <th style="width: 250px;">Path</th>
+                    <th style="width: 180px;">File</th>
+                    <th style="width: 150px;">Method</th>
+                    <th style="width: 200px;">Query ID</th>
+                    <th style="width: 100px;">SQL_Type</th>
+                    <th style="width: 200px;">Tables</th>
+                    <th>Join Conditions</th>
+                    <th style="width: 120px;">JOIN_Type</th>
+                    <th style="width: 200px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            <tr>
+                <td>23</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>deleteInactiveUsersWithExists_Qry_1</td>
+                <td>JoinQueryRepository.deleteInactiveUsersWithExists_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USERS, USER_ACTIVITIES</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>24</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>deleteInactiveUsersWithJpql_Qry_1</td>
+                <td>JoinQueryRepository.deleteInactiveUsersWithJpql_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>25</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>deleteOldOrderItemsWithJoin_Qry_1</td>
+                <td>JoinQueryRepository.deleteOldOrderItemsWithJoin_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.user_id = u.user_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>26</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>insertProductRecommendationsWithJoin_Qry_1</td>
+                <td>JoinQueryRepository.insertProductRecommendationsWithJoin_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS, PRODUCT_RECOMMENDATIONS</td>
+                <td class="conditions">u.user_id = o.user_id; o.order_id = oi.order_id; oi.product_id = p.product_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>27</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>insertUserOrderStatisticsWithJoin_Qry_1</td>
+                <td>JoinQueryRepository.insertUserOrderStatisticsWithJoin_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS, USER_ORDER_STATISTICS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>28</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>insertUserStatisticsWithJpql_Qry_1</td>
+                <td>JoinQueryRepository.insertUserStatisticsWithJpql_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">USERSTATISTICS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>29</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>updateProductPricesWithJoin_Qry_1</td>
+                <td>JoinQueryRepository.updateProductPricesWithJoin_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">p.brand_id = b.brand_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>30</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>updateUserStatusWithExists_Qry_1</td>
+                <td>JoinQueryRepository.updateUserStatusWithExists_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>31</td>
+                <td>src/main/java/com/example/jpa</td>
+                <td><a href="../src/main/java/com/example/jpa/JoinQueryRepository.java" target="_blank" rel="noopener noreferrer">JoinQueryRepository.java</a></td>
+                <td>updateUserStatusWithJpql_Qry_1</td>
+                <td>JoinQueryRepository.updateUserStatusWithJpql_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>32</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findActiveCategoriesOrderedNative_Qry_1</td>
+                <td>CategoryRepository.findActiveCategoriesOrderedNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.CATEGORIES</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>33</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findActiveSubCategories_Qry_1</td>
+                <td>CategoryRepository.findActiveSubCategories_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>34</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findByIdWithProducts_Qry_1</td>
+                <td>CategoryRepository.findByIdWithProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>35</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findCategoriesWithActiveProducts_Qry_1</td>
+                <td>CategoryRepository.findCategoriesWithActiveProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS, CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>36</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findCategoriesWithProducts_Qry_1</td>
+                <td>CategoryRepository.findCategoriesWithProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>37</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findCategoryHierarchy_Qry_1</td>
+                <td>CategoryRepository.findCategoryHierarchy_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>38</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findDirectSubCategories_Qry_1</td>
+                <td>CategoryRepository.findDirectSubCategories_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>39</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findEmptyCategories_Qry_1</td>
+                <td>CategoryRepository.findEmptyCategories_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>40</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findRootCategoriesWithSubCategories_Qry_1</td>
+                <td>CategoryRepository.findRootCategoriesWithSubCategories_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>41</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>findSubCategoriesByParentId_Qry_1</td>
+                <td>CategoryRepository.findSubCategoriesByParentId_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>42</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>getActiveCategoriesWithProductCount_Qry_1</td>
+                <td>CategoryRepository.getActiveCategoriesWithProductCount_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>43</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/CategoryRepository.java" target="_blank" rel="noopener noreferrer">CategoryRepository.java</a></td>
+                <td>getCategoryProductCounts_Qry_1</td>
+                <td>CategoryRepository.getCategoryProductCounts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS, CATEGORY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>44</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>deleteCustomerWithOrders_Qry_1</td>
+                <td>JoinConditionRepository.deleteCustomerWithOrders_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.CUSTOMERS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.ORDER_ID = oi.ORDER_ID; oi.PRODUCT_ID = p.PRODUCT_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>45</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>deleteInactiveUsersWithRoles_Qry_1</td>
+                <td>JoinConditionRepository.deleteInactiveUsersWithRoles_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USER_ROLES, SAMPLE.USERS</td>
+                <td class="conditions">ur.ROLE_ID = r.ROLE_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>46</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>deleteProductWithCategory_Qry_1</td>
+                <td>JoinConditionRepository.deleteProductWithCategory_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">p.PRODUCT_ID = oi.PRODUCT_ID; oi.ORDER_ID = o.ORDER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>47</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>insertOrderItemWithProduct_Qry_1</td>
+                <td>JoinConditionRepository.insertOrderItemWithProduct_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.CUSTOMER_ID = c.CUSTOMER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>48</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>insertProductWithCategory_Qry_1</td>
+                <td>JoinConditionRepository.insertProductWithCategory_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">c.CATEGORY_ID = d.DEPT_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>49</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>insertUserProfileWithUserType_Qry_1</td>
+                <td>JoinConditionRepository.insertUserProfileWithUserType_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">u.ID = ut.TYPE_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>50</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>updateOrderStatusWithCustomer_Qry_1</td>
+                <td>JoinConditionRepository.updateOrderStatusWithCustomer_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.CUSTOMERS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.ORDER_ID = oi.ORDER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>51</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>updateUserWithDepartment_Qry_1</td>
+                <td>JoinConditionRepository.updateUserWithDepartment_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>52</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/JoinConditionRepository.java" target="_blank" rel="noopener noreferrer">JoinConditionRepository.java</a></td>
+                <td>updateUserWithProfile_Qry_1</td>
+                <td>JoinConditionRepository.updateUserWithProfile_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">u.ID = ur.USER_ID; ur.ROLE_ID = r.ROLE_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>53</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/MergeQueryRepository.java" target="_blank" rel="noopener noreferrer">MergeQueryRepository.java</a></td>
+                <td>mergeCategoryStatisticsWithJpa_Qry_1</td>
+                <td>MergeQueryRepository.mergeCategoryStatisticsWithJpa_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
+                <td class="conditions">c.category_id = p.category_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>54</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/MergeQueryRepository.java" target="_blank" rel="noopener noreferrer">MergeQueryRepository.java</a></td>
+                <td>mergeOrderSummaryWithJpa_Qry_1</td>
+                <td>MergeQueryRepository.mergeOrderSummaryWithJpa_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>55</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/MergeQueryRepository.java" target="_blank" rel="noopener noreferrer">MergeQueryRepository.java</a></td>
+                <td>mergeProductInventoryWithJpa_Qry_1</td>
+                <td>MergeQueryRepository.mergeProductInventoryWithJpa_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">p.brand_id = b.brand_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>56</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/MergeQueryRepository.java" target="_blank" rel="noopener noreferrer">MergeQueryRepository.java</a></td>
+                <td>mergeUserActivityLogWithJpa_Qry_1</td>
+                <td>MergeQueryRepository.mergeUserActivityLogWithJpa_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>57</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/MergeQueryRepository.java" target="_blank" rel="noopener noreferrer">MergeQueryRepository.java</a></td>
+                <td>mergeUserStatisticsWithJpa_Qry_1</td>
+                <td>MergeQueryRepository.mergeUserStatisticsWithJpa_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_STATISTICS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>58</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>cancelOrder_Qry_1</td>
+                <td>OrderRepository.cancelOrder_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>59</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>countUserOrdersByStatus_Qry_1</td>
+                <td>OrderRepository.countUserOrdersByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>60</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findByIdWithOrderItems_Qry_1</td>
+                <td>OrderRepository.findByIdWithOrderItems_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">FETCH, ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>61</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findByOrderNumberWithDetails_Qry_1</td>
+                <td>OrderRepository.findByOrderNumberWithDetails_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">FETCH, ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>62</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findByOrderStatusWithUser_Qry_1</td>
+                <td>OrderRepository.findByOrderStatusWithUser_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">FETCH, ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>63</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findByStatusAndAmountNative_Qry_1</td>
+                <td>OrderRepository.findByStatusAndAmountNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>64</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrderSummariesByStatus_Qry_1</td>
+                <td>OrderRepository.findOrderSummariesByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>65</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersByDynamicCriteria_Qry_1</td>
+                <td>OrderRepository.findOrdersByDynamicCriteria_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>66</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersByPremiumUsers_Qry_1</td>
+                <td>OrderRepository.findOrdersByPremiumUsers_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>67</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersContainingProduct_Qry_1</td>
+                <td>OrderRepository.findOrdersContainingProduct_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER, ORDERITEMS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>68</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersContainingProductsFromCategory_Qry_1</td>
+                <td>OrderRepository.findOrdersContainingProductsFromCategory_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>69</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersWithInconsistentTotals_Qry_1</td>
+                <td>OrderRepository.findOrdersWithInconsistentTotals_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER, ORDERITEMS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>70</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersWithInferredBrandMetric_Qry_1</td>
+                <td>OrderRepository.findOrdersWithInferredBrandMetric_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDERS, BRAND_METRICS</td>
+                <td class="conditions">o.ORDER_ID = bm.ORDER_REF</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>71</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersWithMinimumItems_Qry_1</td>
+                <td>OrderRepository.findOrdersWithMinimumItems_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>72</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findOrdersWithUserInDateRangeNative_Qry_1</td>
+                <td>OrderRepository.findOrdersWithUserInDateRangeNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.USER_ID = u.USER_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>73</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findRecentOrdersByStatuses_Qry_1</td>
+                <td>OrderRepository.findRecentOrdersByStatuses_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>74</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>findRecentOrdersByUserId_Qry_1</td>
+                <td>OrderRepository.findRecentOrdersByUserId_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>75</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>getAverageOrderAmountByStatus_Qry_1</td>
+                <td>OrderRepository.getAverageOrderAmountByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>76</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>getDailyOrderCount_Qry_1</td>
+                <td>OrderRepository.getDailyOrderCount_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>77</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>getOrderCountByStatus_Qry_1</td>
+                <td>OrderRepository.getOrderCountByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>78</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>getTopCustomersByTotalAmount_Qry_1</td>
+                <td>OrderRepository.getTopCustomersByTotalAmount_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>79</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>getTotalAmountByUserId_Qry_1</td>
+                <td>OrderRepository.getTotalAmountByUserId_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>80</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>updateOrderStatusByDateAndStatus_Qry_1</td>
+                <td>OrderRepository.updateOrderStatusByDateAndStatus_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>81</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/OrderRepository.java" target="_blank" rel="noopener noreferrer">OrderRepository.java</a></td>
+                <td>updateShippingAddress_Qry_1</td>
+                <td>OrderRepository.updateShippingAddress_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>82</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>addStock_Qry_1</td>
+                <td>ProductRepository.addStock_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>83</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findByCategoryName_Qry_1</td>
+                <td>ProductRepository.findByCategoryName_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>84</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findByNameAndPriceNative_Qry_1</td>
+                <td>ProductRepository.findByNameAndPriceNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>85</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findByStatusWithCategoryNameNative_Qry_1</td>
+                <td>ProductRepository.findByStatusWithCategoryNameNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">p.CATEGORY_ID = c.CATEGORY_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>86</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findByStatusWithCategory_Qry_1</td>
+                <td>ProductRepository.findByStatusWithCategory_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>87</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findExpensiveProductsWithStock_Qry_1</td>
+                <td>ProductRepository.findExpensiveProductsWithStock_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>88</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findLowStockProducts_Qry_1</td>
+                <td>ProductRepository.findLowStockProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>89</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findNeverOrderedProducts_Qry_1</td>
+                <td>ProductRepository.findNeverOrderedProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>90</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findOutOfStockProducts_Qry_1</td>
+                <td>ProductRepository.findOutOfStockProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>91</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findPopularProducts_Qry_1</td>
+                <td>ProductRepository.findPopularProducts_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>92</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findProductSummariesByCategoryId_Qry_1</td>
+                <td>ProductRepository.findProductSummariesByCategoryId_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>93</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findProductsByDynamicCriteria_Qry_1</td>
+                <td>ProductRepository.findProductsByDynamicCriteria_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>94</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findProductsInActiveCategories_Qry_1</td>
+                <td>ProductRepository.findProductsInActiveCategories_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>95</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>findProductsOrderedAfterDate_Qry_1</td>
+                <td>ProductRepository.findProductsOrderedAfterDate_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>96</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>getAveragePriceByStatus_Qry_1</td>
+                <td>ProductRepository.getAveragePriceByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>97</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>getMaxPriceByCategoryId_Qry_1</td>
+                <td>ProductRepository.getMaxPriceByCategoryId_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>98</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>getProductCountByCategory_Qry_1</td>
+                <td>ProductRepository.getProductCountByCategory_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>99</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>getTotalActiveStock_Qry_1</td>
+                <td>ProductRepository.getTotalActiveStock_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>100</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>reduceStock_Qry_1</td>
+                <td>ProductRepository.reduceStock_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>101</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>updateOutOfStockProducts_Qry_1</td>
+                <td>ProductRepository.updateOutOfStockProducts_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>102</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/ProductRepository.java" target="_blank" rel="noopener noreferrer">ProductRepository.java</a></td>
+                <td>updateProductStatus_Qry_1</td>
+                <td>ProductRepository.updateProductStatus_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">PRODUCT</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>103</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>countUsersByStatusNative_Qry_1</td>
+                <td>UserRepository.countUsersByStatusNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>104</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findActiveUsersFromDate_Qry_1</td>
+                <td>UserRepository.findActiveUsersFromDate_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>105</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findByEmailDomain_Qry_1</td>
+                <td>UserRepository.findByEmailDomain_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>106</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findByIdWithOrders_Qry_1</td>
+                <td>UserRepository.findByIdWithOrders_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER, FETCH</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>107</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findByStatusWithProfile_Qry_1</td>
+                <td>UserRepository.findByStatusWithProfile_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER, FETCH</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>108</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findByUserTypeAndCreatedAtAfterNative_Qry_1</td>
+                <td>UserRepository.findByUserTypeAndCreatedAtAfterNative_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>109</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUserSummariesByStatus_Qry_1</td>
+                <td>UserRepository.findUserSummariesByStatus_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>110</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUsersByCityOrNoProfile_Qry_1</td>
+                <td>UserRepository.findUsersByCityOrNoProfile_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER, USERPROFILE</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>111</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUsersByDynamicCriteria_Qry_1</td>
+                <td>UserRepository.findUsersByDynamicCriteria_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>112</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUsersWithOrdersAboveAmount_Qry_1</td>
+                <td>UserRepository.findUsersWithOrdersAboveAmount_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>113</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUsersWithOrdersAfterDate_Qry_1</td>
+                <td>UserRepository.findUsersWithOrdersAfterDate_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>114</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>findUsersWithoutCompletedOrders_Qry_1</td>
+                <td>UserRepository.findUsersWithoutCompletedOrders_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>115</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>getUserStatusStatistics_Qry_1</td>
+                <td>UserRepository.getUserStatusStatistics_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>116</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>getUserTypeStatistics_Qry_1</td>
+                <td>UserRepository.getUserTypeStatistics_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USER</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>117</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>updateLastLoginTime_Qry_1</td>
+                <td>UserRepository.updateLastLoginTime_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>118</td>
+                <td>src/main/java/com/example/jpa/repository</td>
+                <td><a href="../src/main/java/com/example/jpa/repository/UserRepository.java" target="_blank" rel="noopener noreferrer">UserRepository.java</a></td>
+                <td>updateUserStatusByDateAndStatus_Qry_1</td>
+                <td>UserRepository.updateUserStatusByDateAndStatus_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            </tbody>
+        </table>
+        
+        <h2>Java 문자열 기반 SQL 매핑</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px;">No</th>
+                    <th style="width: 250px;">Path</th>
+                    <th style="width: 180px;">File</th>
+                    <th style="width: 150px;">Method</th>
+                    <th style="width: 200px;">Query ID</th>
+                    <th style="width: 100px;">SQL_Type</th>
+                    <th style="width: 200px;">Tables</th>
+                    <th>Join Conditions</th>
+                    <th style="width: 120px;">JOIN_Type</th>
+                    <th style="width: 200px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            <tr>
+                <td>1</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findComplexJoins</td>
+                <td>findComplexJoins</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDERS</td>
+                <td class="conditions">O.CUSTOMER_ID = C.CUSTOMER_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>2</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findComplexScatteredJoins</td>
+                <td>findComplexScatteredJoins</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>3</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findOrdersWithScatteredJoins</td>
+                <td>findOrdersWithScatteredJoins</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>4</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsers</td>
+                <td>findUsers</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">U.DEPT_ID = D.DEPT_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>5</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithAliasOmission</td>
+                <td>findUsersWithAliasOmission</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>6</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithAnsiJoin</td>
+                <td>findUsersWithAnsiJoin</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.DEPARTMENTS, SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">U.USER_ID = P.USER_ID</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>7</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithInferredBrand</td>
+                <td>findUsersWithInferredBrand</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, BRANDS_AUX</td>
+                <td class="conditions">U.USER_ID = B.USER_REF</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>8</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithMixedJoins</td>
+                <td>findUsersWithMixedJoins</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">U.DEPT_ID = D.DEPT_ID</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>9</td>
+                <td>src/com/example/dynamicquery</td>
+                <td><a href="../src/com/example/dynamicquery/UserMapper.xml" target="_blank" rel="noopener noreferrer">UserMapper.xml</a></td>
+                <td>findUsersWithScatteredConditions</td>
+                <td>findUsersWithScatteredConditions</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>10</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/CoreSqlPatternDao.java" target="_blank" rel="noopener noreferrer">CoreSqlPatternDao.java</a></td>
+                <td>executeOracleDataWarehouseQuery_Qry_1</td>
+                <td>CoreSqlPatternDao.executeOracleDataWarehouseQuery_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_, CATEGORIES_, PRODUCTS_, ORDERS_</td>
+                <td class="conditions">o.order_id = oi.order_id; oi.product_id = p.product_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>11</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/CoreSqlPatternDao.java" target="_blank" rel="noopener noreferrer">CoreSqlPatternDao.java</a></td>
+                <td>executeOracleDataWarehouseQuery_Qry_2</td>
+                <td>CoreSqlPatternDao.executeOracleDataWarehouseQuery_Qry_2</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>12</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>deleteInactiveUsersWithNoActivity_Qry_1</td>
+                <td>JoinQueryDao.deleteInactiveUsersWithNoActivity_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USERS, USER_ACTIVITIES</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>13</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>deleteOldOrderItems_Qry_1</td>
+                <td>JoinQueryDao.deleteOldOrderItems_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.user_id = u.user_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>14</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>insertProductRecommendations_Qry_1</td>
+                <td>JoinQueryDao.insertProductRecommendations_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS, PRODUCT_RECOMMENDATIONS</td>
+                <td class="conditions">u.user_id = o.user_id; o.order_id = oi.order_id; oi.product_id = p.product_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>15</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>insertUserOrderStatistics_Qry_1</td>
+                <td>JoinQueryDao.insertUserOrderStatistics_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">SAMPLE.USERS, USER_ORDER_STATISTICS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>16</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>updateProductPricesBasedOnAnalysis_Qry_1</td>
+                <td>JoinQueryDao.updateProductPricesBasedOnAnalysis_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
+                <td class="conditions">p.brand_id = b.brand_id</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>17</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/JoinQueryDao.java" target="_blank" rel="noopener noreferrer">JoinQueryDao.java</a></td>
+                <td>updateUserStatusBasedOnOrders_Qry_1</td>
+                <td>JoinQueryDao.updateUserStatusBasedOnOrders_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>18</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/MergeQueryDao.java" target="_blank" rel="noopener noreferrer">MergeQueryDao.java</a></td>
+                <td>mergeCategoryStatistics_Qry_1</td>
+                <td>MergeQueryDao.mergeCategoryStatistics_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
+                <td class="conditions">c.category_id = p.category_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>19</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/MergeQueryDao.java" target="_blank" rel="noopener noreferrer">MergeQueryDao.java</a></td>
+                <td>mergeOrderSummary_Qry_1</td>
+                <td>MergeQueryDao.mergeOrderSummary_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>20</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/MergeQueryDao.java" target="_blank" rel="noopener noreferrer">MergeQueryDao.java</a></td>
+                <td>mergeProductInventory_Qry_1</td>
+                <td>MergeQueryDao.mergeProductInventory_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">p.brand_id = b.brand_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>21</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/MergeQueryDao.java" target="_blank" rel="noopener noreferrer">MergeQueryDao.java</a></td>
+                <td>mergeUserActivityLog_Qry_1</td>
+                <td>MergeQueryDao.mergeUserActivityLog_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>22</td>
+                <td>src/main/java/com/example/dao</td>
+                <td><a href="../src/main/java/com/example/dao/MergeQueryDao.java" target="_blank" rel="noopener noreferrer">MergeQueryDao.java</a></td>
+                <td>mergeUserStatistics_Qry_1</td>
+                <td>MergeQueryDao.mergeUserStatistics_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_STATISTICS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>119</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>analyzeCustomerOrderPaymentFlow_Qry_1</td>
+                <td>HybridSqlPatternDao.analyzeCustomerOrderPaymentFlow_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>120</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>analyzeSalesTrends_Qry_1</td>
+                <td>HybridSqlPatternDao.analyzeSalesTrends_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>121</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>buildOrganizationHierarchy_Qry_1</td>
+                <td>HybridSqlPatternDao.buildOrganizationHierarchy_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">DEPARTMENTS_</td>
+                <td class="conditions">d.manager_id = u.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>122</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>buildOrganizationHierarchy_Qry_2</td>
+                <td>HybridSqlPatternDao.buildOrganizationHierarchy_Qry_2</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">DEPARTMENTS_, DEPT_HIERARCHY</td>
+                <td class="conditions">d.parent_dept_id = dh.dept_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>123</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>buildOrganizationHierarchy_Qry_3</td>
+                <td>HybridSqlPatternDao.buildOrganizationHierarchy_Qry_3</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">DEPT_HIERARCHY</td>
+                <td class="conditions">rp.permission_id = p.permission_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>124</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/HybridSqlPatternDao.java" target="_blank" rel="noopener noreferrer">HybridSqlPatternDao.java</a></td>
+                <td>findUserOrdersWithHybridPattern_Qry_1</td>
+                <td>HybridSqlPatternDao.findUserOrdersWithHybridPattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>125</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>buildExtractQuery_Qry_1</td>
+                <td>LargeDataProcessor.buildExtractQuery_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>126</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>buildInsertQuery_Qry_1</td>
+                <td>LargeDataProcessor.buildInsertQuery_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>127</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>cleanupOldData_Qry_1</td>
+                <td>LargeDataProcessor.cleanupOldData_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">USER_ACTIVITIES_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>128</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>cleanupOldData_Qry_2</td>
+                <td>LargeDataProcessor.cleanupOldData_Qry_2</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SYSTEM_LOGS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>129</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>cleanupOldData_Qry_3</td>
+                <td>LargeDataProcessor.cleanupOldData_Qry_3</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">TEMP_PROCESSING_DATA_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>130</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>generateComprehensiveReport_Qry_1</td>
+                <td>LargeDataProcessor.generateComprehensiveReport_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_</td>
+                <td class="conditions">u.user_id = a.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>131</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>generateComprehensiveReport_Qry_2</td>
+                <td>LargeDataProcessor.generateComprehensiveReport_Qry_2</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">DEPARTMENTS_</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>132</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>generateComprehensiveReport_Qry_3</td>
+                <td>LargeDataProcessor.generateComprehensiveReport_Qry_3</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>133</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>markEventsAsProcessed_Qry_1</td>
+                <td>LargeDataProcessor.markEventsAsProcessed_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">REAL_TIME_EVENTS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>134</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>markEventsAsProcessed_Qry_2</td>
+                <td>LargeDataProcessor.markEventsAsProcessed_Qry_2</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>135</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processCustomerLifecycle_Qry_1</td>
+                <td>LargeDataProcessor.processCustomerLifecycle_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">CUSTOMERS_</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>136</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processDataQualityChecks_Qry_1</td>
+                <td>LargeDataProcessor.processDataQualityChecks_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_, PRODUCTS_, ORDERS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>137</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processFinancialReporting_Qry_1</td>
+                <td>LargeDataProcessor.processFinancialReporting_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PAYMENTS_</td>
+                <td class="conditions">p.order_id = o.order_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>138</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processInventoryManagement_Qry_1</td>
+                <td>LargeDataProcessor.processInventoryManagement_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCTS_</td>
+                <td class="conditions">oi.order_id = o.order_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>139</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processOrderAnalytics_Qry_1</td>
+                <td>LargeDataProcessor.processOrderAnalytics_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDERS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>140</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processProductCatalogSync_Qry_1</td>
+                <td>LargeDataProcessor.processProductCatalogSync_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PRODUCTS_</td>
+                <td class="conditions">p.brand_id = b.brand_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>141</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processShippingAnalytics_Qry_1</td>
+                <td>LargeDataProcessor.processShippingAnalytics_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SHIPMENTS_</td>
+                <td class="conditions">s.order_id = o.order_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>142</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processSystemPerformanceMetrics_Qry_1</td>
+                <td>LargeDataProcessor.processSystemPerformanceMetrics_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">PERFORMANCE_METRICS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>143</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processUserActivityTracking_Qry_1</td>
+                <td>LargeDataProcessor.processUserActivityTracking_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_</td>
+                <td class="conditions">u.user_id = a.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>144</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>processUserSegmentation_Qry_1</td>
+                <td>LargeDataProcessor.processUserSegmentation_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>145</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>updateStatistics_Qry_1</td>
+                <td>LargeDataProcessor.updateStatistics_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">ORDERS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>146</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>updateStatistics_Qry_2</td>
+                <td>LargeDataProcessor.updateStatistics_Qry_2</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">ORDER_ITEMS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>147</td>
+                <td>src/main/java/com/example/performance</td>
+                <td><a href="../src/main/java/com/example/performance/LargeDataProcessor.java" target="_blank" rel="noopener noreferrer">LargeDataProcessor.java</a></td>
+                <td>validateDataIntegrity_Qry_1</td>
+                <td>LargeDataProcessor.validateDataIntegrity_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">ORDER_ITEMS_, ORDERS_</td>
+                <td class="conditions">o.user_id = u.user_id; oi.order_id = o.order_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>148</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>countProductsByCondition</td>
+                <td>ProductMapper.countProductsByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>149</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>deleteProductsByCondition</td>
+                <td>ProductMapper.deleteProductsByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>150</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>selectProductById</td>
+                <td>ProductMapper.selectProductById</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>151</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>selectProductsByAdvancedCondition</td>
+                <td>ProductMapper.selectProductsByAdvancedCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>152</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>selectProductsByCategory</td>
+                <td>ProductMapper.selectProductsByCategory</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>153</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>selectProductsByCondition</td>
+                <td>ProductMapper.selectProductsByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>154</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>updateProductDynamic</td>
+                <td>ProductMapper.updateProductDynamic</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>155</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/ProductServiceImpl.java" target="_blank" rel="noopener noreferrer">ProductServiceImpl.java</a></td>
+                <td>updateProductStock</td>
+                <td>ProductMapper.updateProductStock</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>156</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>countUsersByCondition</td>
+                <td>UserMapper.countUsersByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>157</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>deleteUsersByCondition</td>
+                <td>UserMapper.deleteUsersByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>158</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/LogicErrorService.java" target="_blank" rel="noopener noreferrer">LogicErrorService.java</a></td>
+                <td>insert</td>
+                <td>UserMapper.insert</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>159</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/LogicErrorService.java" target="_blank" rel="noopener noreferrer">LogicErrorService.java</a></td>
+                <td>selectAll</td>
+                <td>UserMapper.selectAll</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>160</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/LogicErrorService.java" target="_blank" rel="noopener noreferrer">LogicErrorService.java</a></td>
+                <td>selectById</td>
+                <td>UserMapper.selectById</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>161</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>selectUserById</td>
+                <td>UserMapper.selectUserById</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>162</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>selectUsersByAdvancedCondition</td>
+                <td>UserMapper.selectUsersByAdvancedCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>163</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>selectUsersByCondition</td>
+                <td>UserMapper.selectUsersByCondition</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>164</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>selectUsersByType</td>
+                <td>UserMapper.selectUsersByType</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>165</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/LogicErrorService.java" target="_blank" rel="noopener noreferrer">LogicErrorService.java</a></td>
+                <td>update</td>
+                <td>UserMapper.update</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>166</td>
+                <td>src/main/java/com/example/service</td>
+                <td><a href="../src/main/java/com/example/service/UserServiceImpl.java" target="_blank" rel="noopener noreferrer">UserServiceImpl.java</a></td>
+                <td>updateUserDynamic</td>
+                <td>UserMapper.updateUserDynamic</td>
+                <td class="sql-type">SQL_EMPTY</td>
+                <td class="tables">-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>SQL 본문이 비어있거나 주석만 존재</td>
+            </tr>
+            
+            <tr>
+                <td>167</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testLargeScaleSQL_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testLargeScaleSQL_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">MAIN_TABLE, TABLE</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>168</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testMergeStringLiteral_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testMergeStringLiteral_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.ORDERS, USER_STATISTICS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>169</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testMixedPattern_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testMixedPattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>170</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testMultiLineStringLiteral_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testMultiLineStringLiteral_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.PRODUCTS</td>
+                <td class="conditions">p.category_id = c.category_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>171</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testPlusEqualsPattern_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testPlusEqualsPattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>172</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testStringBuilderPattern_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testStringBuilderPattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
+                <td class="conditions">u.user_id = o.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>173</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testStringFormatPattern_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testStringFormatPattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">USERS_</td>
+                <td class="conditions">o.product_id = p.product_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>174</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestComplexJavaPatternDao.java" target="_blank" rel="noopener noreferrer">TestComplexJavaPatternDao.java</a></td>
+                <td>testVariableReferencePattern_Qry_1</td>
+                <td>TestComplexJavaPatternDao.testVariableReferencePattern_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">O, U</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>175</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testComplexSubqueryConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testComplexSubqueryConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDERS</td>
+                <td class="conditions">oi.product_id = p.product_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>176</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testConditionalConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testConditionalConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDERS</td>
+                <td class="conditions">o.product_id = p.product_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>177</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testDeleteConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testDeleteConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USER_SESSIONS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>178</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testInferredTablesJoinSample_Qry_1</td>
+                <td>TestEnhancedSqlDao.testInferredTablesJoinSample_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, INVENTORY_AUDIT</td>
+                <td class="conditions">u.user_id = o.user_id; o.order_id = ia.order_ref</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>179</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testInsertConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testInsertConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">USER_AUDIT_LOGS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>180</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testInsertConcatenation_Qry_2</td>
+                <td>TestEnhancedSqlDao.testInsertConcatenation_Qry_2</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">USER_AUDIT_LOGS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>181</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testLoopConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testLoopConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS, T</td>
+                <td class="conditions">u.user_id = t.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>182</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testMergeConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testMergeConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.ORDERS, USER_STATISTICS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>183</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testNonSQLStrings_Qry_1</td>
+                <td>TestEnhancedSqlDao.testNonSQLStrings_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">THE</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>184</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testSimpleConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testSimpleConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>185</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_1</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_1</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>186</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_2</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_2</td>
+                <td class="sql-type">SQL_SELECT</td>
+                <td class="tables">SAMPLE.USER_PROFILES, SAMPLE.USERS</td>
+                <td class="conditions">u.user_id = up.user_id</td>
+                <td class="join-type">JOIN_EXPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>187</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_3</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_3</td>
+                <td class="sql-type">SQL_INSERT</td>
+                <td class="tables">USER_AUDIT_LOGS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>188</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_4</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_4</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>189</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_5</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_5</td>
+                <td class="sql-type">SQL_DELETE</td>
+                <td class="tables">SAMPLE.USER_SESSIONS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>190</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testStringLiteralSQL_Qry_6</td>
+                <td>TestEnhancedSqlDao.testStringLiteralSQL_Qry_6</td>
+                <td class="sql-type">SQL_MERGE</td>
+                <td class="tables">SAMPLE.USERS, USER_STATISTICS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_MERGE</td>
+                <td>-</td>
+            </tr>
+            
+            <tr>
+                <td>191</td>
+                <td>src/main/java/com/example/testcase</td>
+                <td><a href="../src/main/java/com/example/testcase/TestEnhancedSqlDao.java" target="_blank" rel="noopener noreferrer">TestEnhancedSqlDao.java</a></td>
+                <td>testUpdateConcatenation_Qry_1</td>
+                <td>TestEnhancedSqlDao.testUpdateConcatenation_Qry_1</td>
+                <td class="sql-type">SQL_UPDATE</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">JOIN_IMPLICIT</td>
+                <td>-</td>
+            </tr>
+            
+            </tbody>
+        </table>
+        
+    </div>
+</body>
+</html>

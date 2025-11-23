@@ -62,6 +62,8 @@ class SimpleJavaLoader(BaseLoadingEngine):
                     self.stats['java_files_processed'] += 1
                 except Exception as e:
                     handle_error(e, f"Java file processing failed: {java_file}")
+                    raise
+
                     self.stats['errors'] += 1
 
             if self.collected_sql_queries:
@@ -145,15 +147,18 @@ class SimpleJavaLoader(BaseLoadingEngine):
                 if query_analysis and (query_analysis.get('java_queries') or query_analysis.get('jpa_queries')):
                     all_queries = query_analysis['java_queries'] + query_analysis['jpa_queries']
                     self.stats['sql_queries_extracted'] += len(all_queries)
-                    class_name = os.path.splitext(os.path.basename(java_file))[0]
-                    query_counter = {}
                     for query in all_queries:
                         method_name = query.get('method_name', 'unknown')
-                        query_counter[method_name] = query_counter.get(method_name, 0) + 1
-                        formatted_query_id = f"{class_name}.{method_name}_Qry_{query_counter[method_name]}"
+                        query_id = query.get('query_id') or query.get('variable_name') or method_name
+                        # ✅ file_path, file_name을 수집 시점에 포함 (이미 계산된 값 사용)
                         self.collected_sql_queries.append({
-                            'sql_content': query.get('sql_content', ''), 'query_id': formatted_query_id,
-                            'file_id': file_id, 'project_id': project_id
+                            'sql_content': query.get('sql_content', ''), 
+                            'query_id': query_id,
+                            'query_type': query.get('query_type', 'SQL_QUERY'),
+                            'file_id': file_id, 
+                            'project_id': project_id,
+                            'file_path': file_dir,    # ✅ 추가: 이미 계산된 file_path
+                            'file_name': file_name    # ✅ 추가: 이미 계산된 file_name
                         })
             except Exception as e:
                 handle_error(e, f"Java query analysis failed: {java_file}")
@@ -206,7 +211,9 @@ class SimpleJavaLoader(BaseLoadingEngine):
                                     'sql_content': query['sql_content'],
                                     'query_id': fqmn,
                                     'file_id': file_id,
-                                    'project_id': project_id
+                                    'project_id': project_id,
+                                    'file_path': file_dir,    # ✅ 추가
+                                    'file_name': file_name    # ✅ 추가
                                 })
                             
             except Exception as e:
@@ -339,7 +346,5 @@ def load_java_files_simple(project_name: str, project_id: int, conn: sqlite3.Con
     loader = SimpleJavaLoader(project_name, conn)
     success = loader.execute_java_loading(project_id)
     return success, loader.stats
-
-
 
 

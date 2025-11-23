@@ -22,6 +22,7 @@ from reports.erd_dagre_report_generator import ERDDagreReportGenerator
 from reports.architecture_layer_report_generator import ArchitectureLayerReportGenerator
 from reports.sequence_diagram_report_generator import SequenceDiagramReportGenerator
 from reports.query_list_report_generator import QueryListReportGenerator
+from reports.backend_mapping_report_generator import BackendMappingReportGenerator
 
 
 def parse_arguments():
@@ -48,7 +49,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'query-list', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'query-list', 'backend-mapping', 'all'],
         default='all',
         help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
@@ -261,6 +262,18 @@ def generate_query_list_report(project_name: str, output_dir: str) -> bool:
         return False
 
 
+def generate_backend_mapping_report(project_name: str, output_dir: str) -> bool:
+    """Backend Mapping Report 생성"""
+    try:
+        generator = BackendMappingReportGenerator(project_name, output_dir)
+        success = generator.generate_report()
+        return success
+            
+    except Exception as e:
+        handle_error(e, "Backend Mapping Report 생성 중 오류 발생")
+        return False
+
+
 def main():
     """메인 함수"""
     try:
@@ -364,6 +377,17 @@ def main():
             else:
                 failed_reports.append("Query List Report")
                 app_logger.info("실패: Query List Report 생성 실패")
+        
+        if args.report_type in ['backend-mapping', 'all']:
+            app_logger.info("\n\n\n\n8단계 시작 ========================================")
+            app_logger.info("Backend Mapping Report 생성")
+            total_count += 1
+            if generate_backend_mapping_report(args.project_name, output_dir):
+                success_count += 1
+                app_logger.info("성공: Backend Mapping Report 생성 완료")
+            else:
+                failed_reports.append("Backend Mapping Report")
+                app_logger.info("실패: Backend Mapping Report 생성 실패")
         
         # 결과 출력
         app_logger.info(f"\n\n\n\n=== 리포트 생성 완료 ===")
