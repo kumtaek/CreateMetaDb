@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>ERD Dagre Report - SampleSrc</title>
+    <title>ERD Dagre Report - sampleSrc</title>
     <link rel="stylesheet" href="css/woori.css">
     <style>
         
@@ -2297,7 +2297,7 @@
     <div class="erd-dagre-container">
         <div class="erd-dagre-header">
             <h1>ERD Dagre Report</h1>
-            <div class="subtitle">프로젝트: SampleSrc | 생성일시: 2025-09-21 23:31:20</div>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-09-21 23:31:20</div>
             <div id="toolbar">
                 <button onclick="resetView()">초기화</button>
                 <button onclick="toggleLayout()">레이아웃 전환</button>
@@ -2507,7 +2507,7 @@
             });
             
             const link = document.createElement('a');
-            link.download = 'SampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
+            link.download = 'sampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
             link.href = png;
             link.click();
         }
@@ -2526,7 +2526,7 @@
                     
                     const link = document.createElement('a');
                     link.href = svgUrl;
-                    link.download = 'SampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                    link.download = 'sampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);

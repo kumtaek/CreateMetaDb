@@ -6,6 +6,7 @@ ERD Report 생성기
 """
 
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,7 @@ from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from reports.report_templates import ReportTemplates
 from reports.erd_metadata_service import ERDMetadataService
+import json
 
 
 class ERDReportGenerator:
@@ -104,6 +106,17 @@ class ERDReportGenerator:
             # 공용 서비스에서 관계 정보 조회
             relationships = self.metadata_service.get_relationships()
             
+            # 데이터 유효성 검증 (빈 리포트 생성 방지)
+            if not tables_data or not relationships:
+                # 관계가 없거나 관계 기반 테이블 조회가 비어 있으면 전체 테이블로 대체
+                app_logger.warning("관계 데이터가 없거나 테이블 조회 결과가 비어 전체 테이블로 ERD를 생성합니다.")
+                tables_data = self.metadata_service.get_all_tables_with_columns()
+                relationships = relationships or []
+            
+            if not tables_data:
+                app_logger.error("ERD를 생성할 테이블 데이터가 없습니다.")
+                raise Exception("ERD 생성 실패: 테이블 데이터 없음")
+            
             # Mermaid ERD 코드 생성
             mermaid_code = self._generate_mermaid_erd(tables_data, relationships)
             
@@ -183,35 +196,74 @@ class ERDReportGenerator:
     def _generate_mermaid_erd(self, tables_data: Dict[str, List[Dict[str, Any]]], relationships: List[Dict[str, Any]]) -> str:
         """Mermaid ERD 코드 생성"""
         try:
+            # === 디버깅 코드 추가 ===
+            try:
+                with open('temp/debug_tables_data.json', 'w', encoding='utf-8') as f:
+                    json.dump(tables_data, f, ensure_ascii=False, indent=4)
+            except Exception as debug_e:
+                app_logger.error(f"디버깅 파일 저장 실패: {debug_e}")
+            # === 디버깅 코드 추가 끝 ===
+
             mermaid_lines = ["erDiagram"]
             
             # 테이블 정의
             for table_name, columns in tables_data.items():
-                # 테이블명 정리 (Mermaid 호환) - 특수문자 제거
-                clean_table_name = table_name.replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-                mermaid_lines.append(f"    {clean_table_name} {{")
+                # 테이블명 정리 (Mermaid 호환)
+                prefix_inferred = table_name.startswith("[I]")
+                raw_table_name = table_name[3:] if prefix_inferred else table_name
+                clean_table_name = self._sanitize_identifier(raw_table_name)
+                if not clean_table_name:
+                    app_logger.warning(f"Mermaid ERD에서 테이블명을 정규화할 수 없어 제외: {table_name}")
+                    continue
+                label_table_name = f"[I]{clean_table_name}" if prefix_inferred else clean_table_name
+                mermaid_lines.append(f'    "{label_table_name}" {{')
                 
                 for column in columns:
+                    is_inferred = column.get('is_inferred')
+                    col_name_for_id = column['column_name']
+                    if is_inferred and col_name_for_id.startswith('[I]'):
+                        # 식별자는 안전하게 정규화
+                        col_name_for_id = self._sanitize_identifier(col_name_for_id.replace('[', '').replace(']', ''))
+                    if not is_inferred and not self._is_valid_identifier(col_name_for_id):
+                        app_logger.warning(f"Mermaid ERD에서 허용되지 않는 컬럼명으로 제외: {table_name}.{column['column_name']}")
+                        continue
                     # 데이터 타입 정규화
                     normalized_type = self._normalize_data_type(column['data_type'])
+                    mermaid_type = self._sanitize_identifier(normalized_type)
                     
-                    # 컬럼명 정리 (특수문자 제거)
-                    clean_column_name = column['column_name'].replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+                    # 컬럼명 정리 (Mermaid 호환)
+                    clean_column_name = self._sanitize_identifier(col_name_for_id)
+                    if not clean_column_name:
+                        app_logger.warning(f"Mermaid ERD에서 컬럼명을 정규화할 수 없어 제외: {column['column_name']}")
+                        continue
                     
                     # 컬럼 정의 (PK 표시 포함)
-                    column_def = f"        {normalized_type} {clean_column_name}"
+                    column_def = f"        {mermaid_type or 'string'} {clean_column_name}"
                     
                     # Primary Key 표시 (Mermaid ERD 문법에 맞게)
                     if column['is_primary_key']:
                         column_def += " PK"
                     
-                    # NULL 허용 여부 표시
+                    # 컬럼 주석/제약을 하나의 어노테이션으로 묶어 Mermaid 파서 오류 방지
+                    annotations: List[str] = []
+                    if column.get('is_inferred'):
+                        inferred_from = column.get('inferred_from') or column['column_name']
+                        annotations.append(f"[I]{self._escape_mermaid_text(str(inferred_from))}")
                     if not column['is_nullable']:
-                        column_def += " \"NOT NULL\""
+                        annotations.append("NOT NULL")
+                    if clean_column_name != column['column_name']:
+                        annotations.append(self._escape_mermaid_text(column['column_name']))
+                    if column.get('column_comments'):
+                        annotations.append(self._escape_mermaid_text(column['column_comments']))
+                    if column.get('data_default'):
+                        annotations.append(self._escape_mermaid_text(str(column['data_default'])))
+                    if annotations:
+                        column_def += f' "{" | ".join(annotations)}"'
                     
                     mermaid_lines.append(column_def)
                 
                 mermaid_lines.append("    }")
+                mermaid_lines.append("") # 테이블 정의 블록 사이에 빈 줄 추가
             
             # 관계 정의 (중복 제거 및 수 제한)
             seen_relationships = set()
@@ -222,8 +274,23 @@ class ERDReportGenerator:
                 if relationship_count >= max_relationships:
                     break
                     
-                src_table = rel['src_table'].replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-                dst_table = rel['dst_table'].replace(' ', '_').replace('-', '_').replace('<', '').replace('>', '').replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+                # Validate identifiers (allowing [I] prefix)
+                if not (self._is_valid_identifier(rel['src_table']) and self._is_valid_identifier(rel['dst_table'])):
+                    continue
+                if not (self._is_valid_identifier(rel['src_column']) and self._is_valid_identifier(rel['dst_column'])):
+                    continue
+
+                # Preserve [I] prefix for inferred tables while sanitizing the raw name
+                raw_src_table = rel['src_table']
+                raw_dst_table = rel['dst_table']
+                src_prefix = raw_src_table.startswith('[I]')
+                dst_prefix = raw_dst_table.startswith('[I]')
+                clean_src = raw_src_table[3:] if src_prefix else raw_src_table
+                clean_dst = raw_dst_table[3:] if dst_prefix else raw_dst_table
+                sanitized_src = self._sanitize_identifier(clean_src)
+                sanitized_dst = self._sanitize_identifier(clean_dst)
+                src_table = f"[I]{sanitized_src}" if src_prefix else sanitized_src
+                dst_table = f"[I]{sanitized_dst}" if dst_prefix else sanitized_dst
                 rel_type = rel['rel_type']
                 
                 # 중복 관계 제거 (방향성 고려하여 중복 제거)
@@ -235,7 +302,7 @@ class ERDReportGenerator:
                 
                 # 관계 유형별 Mermaid 문법 적용
                 # 동일한 키로 조인되는 경우 중복 표시 제거
-                relationship_label = self._format_relationship_label(rel['src_column'], rel['dst_column'])
+                relationship_label = self._format_relationship_label(rel['src_table'], rel['src_column'], rel['dst_table'], rel['dst_column'])
                 
                 # 관계 정보 확인 (PK-FK 여부, nullable 여부)
                 rel_info = self._get_relationship_info(rel['src_table'], rel['src_column'], rel['dst_table'], rel['dst_column'])
@@ -250,7 +317,7 @@ class ERDReportGenerator:
                 
                 # ERD는 단순 문법만 지원: A ||--o{ B : has 형태만 사용
                 # PK-FK 관계든 JOIN 관계든 동일한 문법 사용
-                mermaid_lines.append(f"    {src_table} ||--o{{ {dst_table} : {relationship_label}")
+                mermaid_lines.append(f'    "{src_table}" ||--o{{ "{dst_table}" : {relationship_label}')
                 
                 relationship_count += 1
             
@@ -276,40 +343,87 @@ class ERDReportGenerator:
         rel_info = self._get_relationship_info(src_table, src_column, dst_table, dst_column)
         return rel_info['is_pk_fk']
 
-    def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
-        """관계 라벨 포맷팅 - Mermaid 호환성 고려"""
+    def _format_relationship_label(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> str:
+        """
+        관계 라벨 포맷팅 - Mermaid 호환성 고려
+        동일 컬럼명: 컬럼명만 표시 (예: USER_ID)
+        다른 컬럼명: 테이블.컬럼 형식으로 표시 (예: USERS.ID-USER_ROLES.USER_ID)
+        """
         try:
             # HTML 태그 오인식 방지: <, > 문자를 &lt;, &gt;로 변환
             def escape_html_chars(text: str) -> str:
                 return text.replace('<', '&lt;').replace('>', '&gt;')
-            
+
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
                 src_keys = [key.strip() for key in src_column.split(',')]
                 dst_keys = [key.strip() for key in dst_column.split(',')]
-                
+
                 # 동일한 키로 조인되는 경우 하나만 표시
                 if src_keys == dst_keys:
                     label = f"[{', '.join(src_keys)}]"
                 else:
-                    # 다른 경우 하이픈으로 연결
-                    label = f"[{', '.join(src_keys)}]-[{', '.join(dst_keys)}]"
+                    # 다른 경우 테이블.컬럼 형식으로 표시
+                    src_part = ', '.join([f"{src_table}.{k}" for k in src_keys])
+                    dst_part = ', '.join([f"{dst_table}.{k}" for k in dst_keys])
+                    label = f"[{src_part}] = [{dst_part}]"
             else:
                 # 단일 키 처리
                 if src_column == dst_column:
+                    # 동일한 컬럼명은 컬럼명만 표시
                     label = src_column
                 else:
-                    # 다른 경우 하이픈으로 연결
-                    label = f"{src_column}-{dst_column}"
-            
+                    # 다른 컬럼명은 테이블.컬럼 형식으로 표시
+                    label = f"{src_table}.{src_column} = {dst_table}.{dst_column}"
+
             # HTML 특수문자 이스케이프 처리
             label = escape_html_chars(label)
-            
+
             # ERD 안정성을 위해 모든 라벨을 따옴표로 감싸기
             return f'"{label}"'
-                
+
         except Exception as e:
             handle_error(e, f"관계 라벨 포맷팅 실패: {src_column} -> {dst_column}")
+    
+    def _sanitize_identifier(self, name: str) -> str:
+        """
+        Mermaid 호환 식별자 생성
+        - 공백/특수문자 제거, 숫자로 시작하면 접두어 추가
+        """
+        try:
+            if not name:
+                return ""
+            sanitized = re.sub(r'[^A-Za-z0-9_]', '_', name)
+            if sanitized and sanitized[0].isdigit():
+                sanitized = f"_{sanitized}"
+            return sanitized
+        except Exception as e:
+            handle_error(e, f"Mermaid 식별자 정규화 실패: {name}")
+            return ""
+
+    def _escape_mermaid_text(self, text: str) -> str:
+        """Mermaid 문자열에서 따옴표 등 문제되는 문자를 이스케이프"""
+        try:
+            return (text or "").replace('"', "'")
+        except Exception as e:
+            handle_error(e, f"Mermaid 문자열 이스케이프 실패: {text}")
+            return ""
+    
+    def _is_valid_identifier(self, name: str) -> bool:
+        """Mermaid에서 허용하는 식별자 패턴 검증 (영문/언더스코어 시작, [I] 접두어 허용)"""
+        try:
+            if not name:
+                return False
+            # 리터럴 값은 유효한 식별자가 아님 (YAML 설정 기반)
+            from util.oracle_keyword_manager import is_literal_value
+            if is_literal_value(name):
+                return False
+            # [I] 접두어 제거 후 검증 (INFERRED 테이블 지원)
+            check_name = name[3:] if name.startswith('[I]') else name
+            return bool(re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', check_name))
+        except Exception as e:
+            handle_error(e, f"Mermaid 식별자 검증 실패: {name}")
+            return False
     
     def _normalize_data_type(self, data_type: str) -> str:
         """데이터 타입 정규화 (길이 정보 보존)"""
@@ -317,11 +431,14 @@ class ERDReportGenerator:
             if not data_type:
                 return "string"
             
-            data_type_upper = data_type.upper()
-            
+            # 길이·정밀도 제거 후 타입만 추출
+            data_type_clean = re.sub(r'\s+', '', str(data_type))
+            data_type_clean = re.sub(r'\((.*?)\)', '', data_type_clean)
+            data_type_upper = data_type_clean.upper()
+
             # VARCHAR, CHAR, TEXT 등 문자열 타입
             if data_type_upper.startswith(('VARCHAR', 'CHAR', 'TEXT')):
-                return data_type  # 길이 정보 보존
+                return "string"
             
             # 숫자 타입
             elif data_type_upper.startswith(('INT', 'INTEGER', 'BIGINT', 'SMALLINT')):

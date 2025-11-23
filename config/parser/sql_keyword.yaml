@@ -1,8 +1,54 @@
-# SQL 키워드 정의 파일 (리뉴얼)
+# SQL 키워드 정의 파일 (통합 버전)
 # 소스코드 분석 시 SQL 관련 키워드를 체크하는 용도
-# Oracle 전용, 메뉴얼 기반으로 체계적으로 재구성
+# Oracle 전용, Oracle Database SQL Language Reference 메뉴얼 기반으로 체계적으로 재구성
+# 주의: oracle_sql_keyword.yaml 삭제됨 - 이 파일로 통합
 
+# =============================================================================
+# 리터럴 값 패턴 (조인 조건에서 컬럼으로 인식하지 않을 패턴)
+# 예: 0, 1, 'Y', 'N', :param, #{value} 등
+# =============================================================================
+literal_value_patterns:
+  # 숫자 리터럴
+  - "^-?\\d+$"                    # 정수: 0, 1, -1, 123
+  - "^-?\\d+\\.\\d+$"             # 실수: 1.5, -0.5, 3.14
+
+  # 문자열 리터럴
+  - "^'.*'$"                      # 작은따옴표 문자열: 'Y', 'N', 'active'
+  - "^\".*\"$"                    # 큰따옴표 문자열: "value"
+
+  # 바인드 변수/파라미터
+  - "^\\?$"                       # JDBC 위치 파라미터: ?
+  - "^:[a-zA-Z_]\\w*$"           # Oracle 명명 파라미터: :param, :userId
+  - "^#\\{.*\\}$"                 # MyBatis 파라미터: #{userId}, #{item.id}
+  - "^\\$\\{.*\\}$"               # MyBatis 문자열 치환: ${tableName}
+
+  # Oracle 특수 패턴
+  - "^::[a-zA-Z_]\\w*$"          # PostgreSQL 캐스트 (참고용)
+
+# =============================================================================
+# 리터럴 키워드 (조인 조건에서 컬럼으로 인식하지 않을 키워드)
+# 예: SYSDATE, NULL, TRUE 등은 컬럼명이 아닌 리터럴/함수
+# =============================================================================
+literal_keywords:
+  # 날짜/시간 함수 (값 반환)
+  - "SYSDATE"
+  - "SYSTIMESTAMP"
+  - "CURRENT_DATE"
+  - "CURRENT_TIMESTAMP"
+  - "LOCALTIMESTAMP"
+
+  # 논리값/NULL
+  - "NULL"
+  - "TRUE"
+  - "FALSE"
+
+  # 일반적인 상수 문자열 (따옴표 없이 사용되는 경우)
+  - "Y"
+  - "N"
+
+# =============================================================================
 # SQL 예약어 (Oracle 기준)
+# =============================================================================
 sql_reserved_keywords:
   # DDL (Data Definition Language)
   - "CREATE"
@@ -62,11 +108,15 @@ sql_reserved_keywords:
   - "LIKE"
   - "IS"
   - "NULL"
+  - "TRUE"
+  - "FALSE"
   - "CASE"
   - "WHEN"
   - "THEN"
   - "ELSE"
   - "END"
+  - "ANY"
+  - "SOME"
   
   # 함수
   - "COUNT"
@@ -813,3 +863,213 @@ dynamic_sql_patterns:
   # JOIN이 포함된 동적 태그 감지 패턴
   dynamic_join_detection:
     - "<if[^>]*>.*?(?:LEFT|RIGHT|FULL|INNER|CROSS|NATURAL)\\s+JOIN.*?</if>"
+
+# =============================================================================
+# Oracle 특화 키워드 (oracle_sql_keyword.yaml에서 통합)
+# =============================================================================
+oracle_specific:
+  # DDL 확장
+  ddl_extended:
+    - "FLASHBACK"
+    - "PURGE"
+    - "CALL"
+    - "EXPLAIN"
+    - "LOCK"
+
+  # Oracle 조인 확장
+  join_extended:
+    - "USING"
+    - "ON"
+    - "EXCEPT"
+
+  # Oracle 윈도우 함수 키워드
+  window_keywords:
+    - "PIVOT"
+    - "UNPIVOT"
+    - "MODEL"
+    - "WINDOW"
+    - "RANGE"
+    - "ROWS"
+    - "PRECEDING"
+    - "FOLLOWING"
+    - "CURRENT"
+    - "UNBOUNDED"
+
+  # 추가 집계 함수
+  aggregate_extended:
+    - "STDDEV_POP"
+    - "STDDEV_SAMP"
+    - "VAR_POP"
+    - "VAR_SAMP"
+    - "COVAR_POP"
+    - "COVAR_SAMP"
+    - "CORR"
+    - "LISTAGG"
+    - "WM_CONCAT"
+    - "REGR_SLOPE"
+    - "REGR_INTERCEPT"
+    - "REGR_COUNT"
+    - "REGR_R2"
+    - "REGR_AVGX"
+    - "REGR_AVGY"
+    - "REGR_SXX"
+    - "REGR_SYY"
+    - "REGR_SXY"
+
+  # 추가 분석 함수
+  analytical_extended:
+    - "NTH_VALUE"
+    - "PERCENTILE_CONT"
+    - "PERCENTILE_DISC"
+    - "RATIO_TO_REPORT"
+
+  # 추가 문자열 함수
+  string_extended:
+    - "SUBSTRING"
+    - "LEN"
+    - "INITCAP"
+    - "TRANSLATE"
+    - "SOUNDEX"
+    - "ASCII"
+    - "CHR"
+    - "CONCAT"
+    - "REGEXP_SUBSTR"
+    - "REGEXP_REPLACE"
+    - "REGEXP_INSTR"
+    - "REGEXP_LIKE"
+    - "REGEXP_COUNT"
+
+  # 추가 날짜 함수
+  date_extended:
+    - "TO_TIMESTAMP"
+    - "NEW_TIME"
+    - "FROM_TZ"
+    - "TO_TZ"
+    - "AT"
+    - "TIME"
+    - "ZONE"
+
+  # 추가 숫자 함수
+  number_extended:
+    - "SIN"
+    - "COS"
+    - "TAN"
+    - "ASIN"
+    - "ACOS"
+    - "ATAN"
+    - "ATAN2"
+    - "SINH"
+    - "COSH"
+    - "TANH"
+    - "EXP"
+    - "LN"
+    - "LOG"
+    - "BITAND"
+    - "REMAINDER"
+
+  # 추가 변환 함수
+  conversion_extended:
+    - "TO_DSINTERVAL"
+    - "TO_YMINTERVAL"
+    - "CONVERT"
+    - "HEXTORAW"
+    - "RAWTOHEX"
+    - "CHARTOROWID"
+    - "ROWIDTOCHAR"
+    - "TO_LOB"
+    - "TO_NCLOB"
+    - "TO_CLOB"
+    - "TO_BLOB"
+    - "TO_RAW"
+    - "TO_SINGLE_BYTE"
+    - "TO_MULTI_BYTE"
+
+  # 추가 NULL 처리 함수
+  null_extended:
+    - "LNNVL"
+    - "NANVL"
+
+  # 기타 함수
+  other_functions:
+    - "GREATEST"
+    - "LEAST"
+    - "USERENV"
+    - "SYS_CONTEXT"
+    - "SYS_GUID"
+    - "SYS_EXTRACT_UTC"
+    - "TZ_OFFSET"
+    - "BFILENAME"
+    - "EMPTY_BLOB"
+    - "EMPTY_CLOB"
+    - "EMPTY_NCLOB"
+
+# Oracle 데이터 타입 (참조용)
+oracle_data_types:
+  character_types:
+    - "CHAR"
+    - "VARCHAR2"
+    - "NCHAR"
+    - "NVARCHAR2"
+    - "CLOB"
+    - "NCLOB"
+    - "LONG"
+
+  number_types:
+    - "NUMBER"
+    - "INTEGER"
+    - "INT"
+    - "SMALLINT"
+    - "FLOAT"
+    - "BINARY_FLOAT"
+    - "BINARY_DOUBLE"
+    - "REAL"
+    - "DECIMAL"
+    - "NUMERIC"
+
+  date_types:
+    - "DATE"
+    - "TIMESTAMP"
+    - "TIMESTAMP WITH TIME ZONE"
+    - "TIMESTAMP WITH LOCAL TIME ZONE"
+    - "INTERVAL YEAR TO MONTH"
+    - "INTERVAL DAY TO SECOND"
+
+  binary_types:
+    - "RAW"
+    - "LONG RAW"
+    - "BLOB"
+    - "BFILE"
+
+  other_types:
+    - "ROWID"
+    - "UROWID"
+    - "XMLType"
+    - "JSON"
+
+# Oracle 제약조건 (참조용)
+oracle_constraints:
+  - "PRIMARY KEY"
+  - "FOREIGN KEY"
+  - "UNIQUE"
+  - "CHECK"
+  - "NOT NULL"
+  - "REFERENCES"
+  - "ON DELETE CASCADE"
+  - "ON DELETE SET NULL"
+
+# Oracle 힌트 (자주 사용하는 것만)
+oracle_hints:
+  - "ALL_ROWS"
+  - "FIRST_ROWS"
+  - "INDEX"
+  - "FULL"
+  - "HASH"
+  - "MERGE"
+  - "NESTED_LOOPS"
+  - "PARALLEL"
+  - "NO_PARALLEL"
+  - "ORDERED"
+  - "USE_CONCAT"
+  - "NO_EXPAND"
+  - "PUSH_PRED"
+  - "PUSH_SUBQ"

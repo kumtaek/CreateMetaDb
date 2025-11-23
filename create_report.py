@@ -74,21 +74,75 @@ def parse_arguments():
 
 
 def validate_project(project_name: str, path_utils: PathUtils) -> bool:
-    """프로젝트 유효성 검증"""
+    """
+    프로젝트 유효성 검증 (대소문자 정확히 일치하는 프로젝트만 허용)
+    
+    Args:
+        project_name: 검증할 프로젝트명
+        path_utils: 경로 유틸리티
+        
+    Returns:
+        프로젝트가 유효하면 True, 아니면 False
+        
+    Raises:
+        Exception: 프로젝트가 존재하지 않거나 메타데이터베이스가 없는 경우
+    """
     try:
-        # 프로젝트 디렉토리 존재 확인
-        if not path_utils.project_exists(project_name):
-            app_logger.error(f"프로젝트가 존재하지 않습니다: {project_name}")
+        import os
+        
+        # 1. projects 디렉토리 확인
+        projects_root = path_utils.join_path('projects')
+        if not os.path.exists(projects_root):
+            app_logger.error(f"projects 디렉토리가 존재하지 않습니다: {projects_root}")
             return False
         
-        # 메타데이터베이스 파일 존재 확인 (공통함수 사용)
+        # 2. 프로젝트명 정확성 검증 (대소문자 엄격 구분)
+        real_projects = os.listdir(projects_root)
+        
+        if project_name not in real_projects:
+            # 대소문자만 다른 프로젝트가 있는지 확인 (에러 메시지용)
+            candidates = [p for p in real_projects if p.lower() == project_name.lower()]
+            if candidates:
+                app_logger.error(f"프로젝트명 대소문자가 일치하지 않습니다.")
+                app_logger.error(f"입력: '{project_name}' -> 실제: '{candidates[0]}'")
+                raise Exception(f"프로젝트명이 정확하지 않습니다. '{project_name}' 대신 '{candidates[0]}'를 사용하세요.")
+            else:
+                app_logger.error(f"프로젝트가 존재하지 않습니다: '{project_name}'")
+                return False
+        
+        # 3. 메타데이터베이스 파일 존재 확인
         metadata_db_path = path_utils.get_project_metadata_db_path(project_name)
-        from util.file_utils import FileUtils
-        if not FileUtils.get_file_info(metadata_db_path)['exists']:
+        if not os.path.exists(metadata_db_path):
             app_logger.error(f"메타데이터베이스가 존재하지 않습니다: {metadata_db_path}")
             return False
+            
+        # 4. DB 내용 검증 (빈 깡통 DB 확인)
+        try:
+            import sqlite3
+            conn = sqlite3.connect(f"file:{metadata_db_path}?mode=ro", uri=True)
+            cursor = conn.cursor()
+            
+            # tables 테이블 존재 확인
+            cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='tables'")
+            if cursor.fetchone()[0] == 0:
+                conn.close()
+                app_logger.error(f"메타데이터 DB가 초기화되지 않았습니다 (테이블 스키마 없음).")
+                return False
+                
+            # 데이터 존재 확인
+            cursor.execute("SELECT count(*) FROM tables")
+            table_count = cursor.fetchone()[0]
+            conn.close()
+            
+            if table_count == 0:
+                app_logger.error(f"메타데이터 DB에 분석된 데이터가 없습니다 (테이블 0개).")
+                return False
+                
+        except Exception as db_err:
+            app_logger.error(f"DB 검증 중 오류 발생: {db_err}")
+            return False
         
-        app_logger.debug(f"프로젝트 유효성 검증 완료: {project_name}")
+        app_logger.info(f"프로젝트 유효성 검증 완료: {project_name} (테이블 {table_count}개)")
         return True
         
     except Exception as e:
@@ -221,11 +275,13 @@ def main():
         # 프로젝트 유효성 검증
         if not validate_project(args.project_name, path_utils):
             handle_error(Exception("프로젝트 유효성 검증 실패"), "프로젝트 유효성 검증 실패")
+            sys.exit(1)  # 검증 실패 시 즉시 종료
         
         # 출력 디렉토리 생성
         output_dir = create_output_directory(args.project_name, path_utils, args.output_dir)
         if not output_dir:
             handle_error(Exception("출력 디렉토리 생성 실패"), "출력 디렉토리 생성 실패")
+            sys.exit(1)  # 디렉토리 생성 실패 시 즉시 종료
         
         # 리포트 생성
         success_count = 0

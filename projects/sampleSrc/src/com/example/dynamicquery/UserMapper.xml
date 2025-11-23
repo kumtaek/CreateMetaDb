@@ -245,4 +245,21 @@
             COUNT(o.ORDER_ID) > 5  -- 그룹 조건
     </select>
 
+    <!--
+      [INFERRED 테이블/컬럼 샘플]
+      CSV에는 없는 BRANDS_AUX 테이블과 USER_REF 컬럼을 조인하여 INFERRED 메타 생성 확인용
+    -->
+    <select id="findUsersWithInferredBrand" resultType="java.util.Map">
+        SELECT 
+            u.USER_ID,
+            u.USERNAME,
+            b.BRAND_CODE,
+            b.BRAND_SCORE
+        FROM 
+            USERS u
+            JOIN BRANDS_AUX b ON u.USER_ID = b.USER_REF
+        WHERE 
+            b.BRAND_SCORE > 80
+    </select>
+
 </mapper>

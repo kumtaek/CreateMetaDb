@@ -8,6 +8,7 @@
 import re
 from typing import List, Dict, Any, Set, Tuple
 from util import app_logger, info, error, debug, warning, handle_error
+from util.sql_normalization_utils import normalize_sql_loose_with_config, DEFAULT_SQL_NORMALIZATION_CONFIG
 
 
 class SimpleRelationshipAnalyzer:
@@ -154,17 +155,7 @@ class SimpleRelationshipAnalyzer:
     def _normalize_sql(self, sql_content: str) -> str:
         """SQL 정규화"""
         try:
-            # XML 태그 제거
-            sql = re.sub(r'<[^>]+>', ' ', sql_content)
-
-            # 주석 제거
-            sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
-            sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
-
-            # 개행, 탭을 공백으로 변환
-            sql = re.sub(r'\s+', ' ', sql)
-
-            return sql.strip().upper()
+            return normalize_sql_loose_with_config(sql_content, DEFAULT_SQL_NORMALIZATION_CONFIG.copy())
 
         except Exception as e:
             handle_error(e, "SQL 정규화 실패")
@@ -193,15 +184,16 @@ class SimpleRelationshipAnalyzer:
         if not table_name or len(table_name) < 2:
             return False
 
-        # 예약어 제외
-        reserved_words = {
-            'SELECT', 'FROM', 'WHERE', 'JOIN', 'ON', 'AND', 'OR', 'NOT',
-            'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
-            'INDEX', 'TABLE', 'DATABASE', 'SCHEMA', 'VIEW', 'TRIGGER',
-            'NULL', 'TRUE', 'FALSE', 'IF', 'THEN', 'ELSE', 'CASE', 'WHEN'
-        }
+        # 리터럴 값은 유효한 테이블명이 아님 (YAML 설정 기반)
+        from util.oracle_keyword_manager import is_literal_value, is_oracle_keyword
+        if is_literal_value(table_name):
+            return False
 
-        return table_name.upper() not in reserved_words
+        # Oracle 키워드 제외 (YAML 설정 기반)
+        if is_oracle_keyword(table_name):
+            return False
+
+        return True
 
     def _extract_explicit_joins(self, normalized_sql: str, tables: Set[str]) -> List[Dict[str, Any]]:
         """Explicit JOIN 관계 추출"""

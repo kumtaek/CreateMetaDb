@@ -436,20 +436,14 @@ class ValidationUtils:
         """
         if not table_name or not isinstance(table_name, str):
             return False
-        
-        # SQL 키워드 필터링 (파서 오류로 잘못 추출된 키워드들 제거)
-        # WHERE는 파서 오류로 테이블명으로 잘못 인식되는 경우가 많으므로 필터링
-        strict_sql_keywords = {
-            'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
-            'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL',
-            'UNION', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER', 'ON', 'AS',
-            'DISTINCT', 'ALL', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
-            'IF', 'FOR', 'WHILE', 'DO', 'LOOP', 'BEGIN', 'COMMIT', 'ROLLBACK',
-            'GRANT', 'REVOKE', 'TRUNCATE', 'MERGE', 'DUAL', 'SYSDATE', 'SYSTIMESTAMP'
-        }
-        
-        # 매우 확실한 키워드만 필터링 (실제 테이블명 가능성 고려)
-        if table_name.upper() in strict_sql_keywords:
+
+        # 리터럴 값 체크 (YAML 설정 기반)
+        from util.oracle_keyword_manager import is_literal_value, is_oracle_keyword
+        if is_literal_value(table_name):
+            return False
+
+        # Oracle 키워드 체크 (YAML 설정 기반)
+        if is_oracle_keyword(table_name):
             return False
         
         # 테이블명 규칙: 영문자로 시작, 영문자/숫자/언더스코어 허용

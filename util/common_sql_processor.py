@@ -6,8 +6,10 @@ import sqlite3
 import re
 import gzip
 import hashlib
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Tuple, Optional, Set
 from dataclasses import dataclass
+from util.sql_normalization_utils import normalize_sql_loose_with_config, DEFAULT_SQL_NORMALIZATION_CONFIG
+from util.logger import error, handle_error
 
 @dataclass
 class TableInfo:
@@ -38,15 +40,61 @@ class CommonSqlAnalyzer:
         
         # Oracle 키워드 로드
         self.oracle_keywords = self._load_oracle_keywords()
+        # SQL 정규화 설정 (향후 필요 시 환경설정으로 확장 가능)
+        self.sql_normalize_config = DEFAULT_SQL_NORMALIZATION_CONFIG.copy()
         
-    def _load_oracle_keywords(self) -> set:
-        """Oracle 키워드 로드"""
+    def _load_oracle_keywords(self) -> Set[str]:
+        """Oracle 키워드를 공통 매니저에서 로드"""
         try:
-            with open('config/parser/oracle_keywords.txt', 'r', encoding='utf-8') as f:
-                return set(line.strip().upper() for line in f if line.strip())
-        except:
+            from util.oracle_keyword_manager import get_oracle_keywords
+            return get_oracle_keywords()
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, "Oracle 키워드 로드 실패, 빈 집합으로 대체")
             return set()
-    
+
+    def _find_table_for_column(self, column_name: str, candidate_tables: List[str]) -> Optional[str]:
+        """
+        별칭 없는 컬럼에 대해 해당 컬럼을 가진 테이블을 DB에서 찾음
+        Oracle 방식: 정확히 1개의 테이블만 해당 컬럼을 가지면 반환, 그 외(0개 또는 2개 이상) None
+
+        Args:
+            column_name: 컬럼명 (별칭 없음)
+            candidate_tables: 후보 테이블 목록 (같은 쿼리에서 사용된 다른 테이블들)
+
+        Returns:
+            해당 컬럼을 가진 테이블명 (정확히 1개인 경우) 또는 None
+        """
+        if not column_name or not candidate_tables:
+            return None
+
+        try:
+            # DB에서 해당 컬럼을 가진 테이블 목록 조회
+            col_upper = column_name.upper()
+            matching_tables = []
+
+            for table_name in candidate_tables:
+                query = """
+                    SELECT COUNT(*) as cnt FROM columns c
+                    JOIN tables t ON c.table_id = t.table_id
+                    WHERE t.table_name = ? AND c.column_name = ? AND c.del_yn = 'N' AND t.del_yn = 'N'
+                """
+                result = self.db_utils.execute_query(query, (table_name.upper(), col_upper))
+                if result and result[0].get('cnt', 0) > 0:
+                    matching_tables.append(table_name)
+
+            # 정확히 1개의 테이블만 해당 컬럼을 가지는 경우에만 반환
+            if len(matching_tables) == 1:
+                return matching_tables[0]
+
+            # 0개 또는 2개 이상이면 모호하므로 None 반환
+            return None
+
+        except Exception as e:
+            from util.logger import handle_error
+            handle_error(e, f"컬럼 소속 테이블 조회 실패: {column_name}")
+            return None
+
     def analyze_all_queries(self) -> Dict[str, Any]:
         """[수정] 모든 SQL을 분석하고, 컬럼의 parent_id를 정확히 설정합니다."""
         # ... (함수 시작 및 쿼리 조회 부분은 동일) ...
@@ -54,15 +102,43 @@ class CommonSqlAnalyzer:
         try:
             conn = sqlite3.connect(self.sql_content_db_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT component_id, sql_content_compressed FROM sql_contents WHERE del_yn = 'N'")
+            cursor.execute("SELECT component_id, file_id, sql_content_compressed FROM sql_contents WHERE del_yn = 'N'")
             queries = cursor.fetchall()
 
-            for component_id, compressed_sql in queries:
+            joins_saved = 0
+
+            from util.file_context import get_file_context_manager
+            ctx_mgr = get_file_context_manager()
+
+            for component_id, file_id, compressed_sql in queries:
                 try:
                     if not compressed_sql:
                         continue
                     sql_content = gzip.decompress(compressed_sql).decode('utf-8')
-                    clean_sql = self._remove_comments(sql_content)
+                    clean_sql = normalize_sql_loose_with_config(sql_content, self.sql_normalize_config)
+
+                    # 파일 컨텍스트 설정 (분석 대상 SQL이 속한 파일 기준)
+                    file_path = ''
+                    file_name = ''
+                    if file_id:
+                        file_rows = self.db_utils.execute_query(
+                            "SELECT file_path, file_name FROM files WHERE file_id = ? AND del_yn='N'",
+                            (file_id,),
+                            conn=self.db_utils.get_persistent_connection()
+                        )
+                        if file_rows:
+                            file_path = file_rows[0].get('file_path', '') or ''
+                            file_name = file_rows[0].get('file_name', '') or ''
+                    ctx_mgr.push(
+                        project_name=self.project_name,
+                        project_id=self.project_id,
+                        file_id=file_id,
+                        file_path=file_path,
+                        file_name=file_name,
+                        file_type=None,
+                        source_type='SQL',
+                        stage='CommonSql'
+                    )
                     
                     table_result = self._extract_tables(clean_sql)
                     alias_map = table_result.get('alias_map', {})
@@ -75,6 +151,7 @@ class CommonSqlAnalyzer:
                     joins = self._extract_join_relationships(clean_sql, alias_map)
                     if joins:
                         self._save_table_joins_components(joins)
+                        joins_saved += len(joins)
 
                     # COLUMN 컴포넌트의 PARENT_ID 설정
                     columns_to_process = self._extract_columns(clean_sql, alias_map)
@@ -82,15 +159,15 @@ class CommonSqlAnalyzer:
                         self._update_column_parent_ids(columns_to_process, alias_map)
 
                 except Exception as e:
-                    from util.logger import handle_error
                     handle_error(e, f"쿼리 분석 실패: component_id={component_id}")
                     continue
+                finally:
+                    ctx_mgr.pop()
             conn.close()
         except Exception as e:
-            from util.logger import handle_error
             handle_error(e, "analyze_all_queries 실행 실패")
             
-        return {} # 반환값 형식은 기존 코드와 맞출 필요 있음
+        return {"statistics": {"joins_found": joins_saved}}
 
     def _save_use_table_relationships(self, sql_component_id: int, tables: List[str]) -> None:
         """metadata.db의 components(표 TABLE)와 relationships를 이용해 USE_TABLE 생성"""
@@ -127,18 +204,69 @@ class CommonSqlAnalyzer:
             metadata_db_path = f"projects/{self.project_name}/metadata.db"
             db = DatabaseUtils(metadata_db_path)
             conn = db.get_persistent_connection()
+            # 프로젝트 ID 조회 (INFERRED 파일/컴포넌트 생성 시 활용)
+            proj_id_rows = db.execute_query("SELECT project_id FROM projects WHERE project_name=?", (self.project_name,), conn=conn)
+            project_id = proj_id_rows[0]['project_id'] if proj_id_rows else None
+
+            def ensure_table_component(table_name: str) -> int:
+                """테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지)."""
+                if project_id is None:
+                    msg = f"[CommonSqlAnalyzer] 프로젝트 ID를 찾을 수 없습니다: {self.project_name}"
+                    error(msg)
+                    raise RuntimeError(msg)
+                rows = db.execute_query(
+                    """
+                    SELECT component_id FROM components 
+                    WHERE component_type='TABLE' 
+                      AND component_name = ? 
+                      AND project_id = ? 
+                      AND del_yn='N'
+                    LIMIT 1
+                    """,
+                    (table_name, project_id), conn=conn)
+                if rows:
+                    return rows[0]['component_id']
+
+                # 기존 테이블 컴포넌트가 없으면 현재 파일 컨텍스트를 활용해 생성
+                try:
+                    from util.file_context import get_file_context_manager
+                    ctx = get_file_context_manager().require_current_file()
+                    file_id = ctx.file_id
+                    if not file_id:
+                        msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 누락 및 file_id 없음: {table_name}"
+                        error(msg)
+                        raise RuntimeError(msg)
+                    comp_data = {
+                        'project_id': project_id,
+                        'file_id': file_id,
+                        'component_name': table_name,
+                        'component_type': 'TABLE',
+                        'parent_id': None,
+                        'layer': None,
+                        'line_start': None,
+                        'line_end': None,
+                        'has_error': 'N',
+                        'error_message': None,
+                        'hash_value': hashlib.md5(f"{table_name}".encode()).hexdigest(),
+                        'del_yn': 'N'
+                    }
+                    comp_id = db.insert_or_replace_with_id('components', comp_data, conn=conn)
+                    return comp_id
+                except Exception as e:
+                    msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 생성 실패: {table_name} (project_id={project_id})"
+                    error(msg)
+                    raise RuntimeError(msg) from e
+
             for join in joins:
-                left_rows = db.execute_query(
-                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
-                    (join.left_table,), conn=conn)
-                right_rows = db.execute_query(
-                    "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
-                    (join.right_table,), conn=conn)
-                if not left_rows or not right_rows:
+                src_comp_id = ensure_table_component(join.left_table)
+                dst_comp_id = ensure_table_component(join.right_table)
+                if not src_comp_id or not dst_comp_id:
                     continue
-                
-                src_comp_id = left_rows[0]['component_id']
-                dst_comp_id = right_rows[0]['component_id']
+
+                # 조인 조건 그대로 보존 (스키마에 없어도 INFERRED로 유지 - 쿼리에 나온 대로 메타 생성)
+                stored_src_col = join.left_column.upper()
+                stored_dst_col = join.right_column.upper()
+                join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
 
                 # JOIN 관계 저장
                 rel = {
@@ -146,14 +274,15 @@ class CommonSqlAnalyzer:
                     'dst_id': dst_comp_id,
                     'rel_type': f"JOIN_{join.join_type}",
                     'confidence': 0.8,
-                    'del_yn': 'N'
+                    'del_yn': 'N',
+                    'src_column': stored_src_col,
+                    'dst_column': stored_dst_col,
+                    'join_condition': join_cond
                 }
                 db.insert_or_replace_with_id('relationships', rel, conn=conn)
 
-                # USE_COLUMN 관계 저장
                 src_col_row = db.execute_query("SELECT component_id FROM components WHERE component_type='COLUMN' AND parent_id=? AND component_name=?", (src_comp_id, join.left_column), conn=conn)
                 dst_col_row = db.execute_query("SELECT component_id FROM components WHERE component_type='COLUMN' AND parent_id=? AND component_name=?", (dst_comp_id, join.right_column), conn=conn)
-                
                 src_col_comp_id = src_col_row[0]['component_id'] if src_col_row else None
                 dst_col_comp_id = dst_col_row[0]['component_id'] if dst_col_row else None
 
@@ -164,7 +293,13 @@ class CommonSqlAnalyzer:
 
         except Exception as e:
             from util.logger import handle_error
-            handle_error(e, "JOIN 및 USE_COLUMN 관계 저장 실패")
+            handle_error(e, "JOIN 및 USE_COLUMN 관계 저장 실패 (inferred 파일 생성 금지 모드)")
+        finally:
+            try:
+                if conn:
+                    conn.close()
+            except Exception:
+                pass
 
     def _extract_columns(self, sql: str, alias_map: Dict[str, str]) -> List[Tuple[str, str]]:
         """[임시 수정] WHERE/ON 절의 '조인 조건'에 사용된 컬럼만 추출합니다."""
@@ -233,6 +368,10 @@ class CommonSqlAnalyzer:
                 return
             conn = self.db_utils.get_persistent_connection()
             for table_name, col_name in columns:
+                # 키워드/리터럴 컬럼은 무시하여 잘못된 inferred 컬럼 생성을 방지
+                if not self._should_register_column(col_name):
+                    continue
+
                 if table_name == 'UNKNOWN':
                     candidate_tables = list(alias_map.values())
                     owner_table = self._find_owner_table_of_column(col_name, candidate_tables)
@@ -262,11 +401,7 @@ class CommonSqlAnalyzer:
     
     def _remove_comments(self, sql: str) -> str:
         """SQL 주석 제거"""
-        # -- 주석 제거
-        sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
-        # /* */ 주석 제거
-        sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
-        return sql.strip()
+        return normalize_sql_loose_with_config(sql, self.sql_normalize_config)
     
     def _extract_tables(self, sql: str) -> Dict[str, Any]:
         """SQL에서 테이블 추출 (2단계) - 테이블명과 알리아스 매핑"""
@@ -357,21 +492,26 @@ class CommonSqlAnalyzer:
             if not col1 or not col2:
                 continue
 
-            # 테이블 추론
+            # 리터럴 값 체크 (숫자, 문자열, SYSDATE 등은 조인 조건에서 제외)
+            from util.oracle_keyword_manager import is_literal_value
+            if is_literal_value(col1) or is_literal_value(col2):
+                continue
+
+            # 테이블 추론 (별칭 없는 컬럼 처리)
+            # Oracle 방식: 해당 컬럼을 가진 테이블이 정확히 1개일 때만 매핑
             if table1 and not table2:
                 candidate_tables = [tbl for tbl in alias_map.values() if tbl != table1]
-                # 이 부분은 DB 조회가 필요하지만, 우선 첫번째 후보로 단순화
-                if candidate_tables:
-                    table2 = candidate_tables[0]
+                # DB에서 col2를 가진 테이블 찾기
+                table2 = self._find_table_for_column(col2, candidate_tables)
             elif not table1 and table2:
                 candidate_tables = [tbl for tbl in alias_map.values() if tbl != table2]
-                if candidate_tables:
-                    table1 = candidate_tables[0]
+                # DB에서 col1을 가진 테이블 찾기
+                table1 = self._find_table_for_column(col1, candidate_tables)
 
             if table1 and table2 and table1 != table2:
-                if (table1.upper() not in self.oracle_keywords and 
+                if (table1.upper() not in self.oracle_keywords and
                     table2.upper() not in self.oracle_keywords and
-                    col1.upper() not in self.oracle_keywords and 
+                    col1.upper() not in self.oracle_keywords and
                     col2.upper() not in self.oracle_keywords):
                     joins.append(JoinCondition(
                         left_table=table1,
@@ -574,6 +714,32 @@ class CommonSqlAnalyzer:
             from util.logger import handle_error
             handle_error(e, "분석 결과 저장 실패")
             return False
+
+    def _should_register_column(self, column_name: str) -> bool:
+        """
+        컬럼 등록 여부 판단
+        - Oracle 키워드는 제외
+        - 리터럴 값(숫자, 문자열, SYSDATE, NULL, TRUE/FALSE 등)은 제외
+        - sql_keyword.yaml의 literal_keywords, literal_value_patterns 참조
+        """
+        try:
+            if not column_name:
+                return False
+
+            # 리터럴 값 체크 (YAML 설정 기반)
+            from util.oracle_keyword_manager import is_literal_value
+            if is_literal_value(column_name):
+                return False
+
+            name_upper = column_name.upper()
+
+            # Oracle 키워드 체크
+            if name_upper in self.oracle_keywords:
+                return False
+
+            return True
+        except Exception:
+            return False
     
     def _save_table(self, cursor, table_name: str):
         """테이블 정보 저장"""
@@ -677,6 +843,10 @@ class CommonSqlAnalyzer:
             right_table_id = cursor.fetchone()
             
             if left_table_id and right_table_id:
+                # 스키마에 없어도 조인 조건을 그대로 보존(INFERRED)
+                stored_src_col = join.left_column.upper()
+                stored_dst_col = join.right_column.upper()
+                join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
                 # 중복 체크
                 cursor.execute("""
                     SELECT COUNT(*) FROM relationships 
@@ -686,9 +856,9 @@ class CommonSqlAnalyzer:
                 if cursor.fetchone()[0] == 0:
                     # 조인 관계 저장
                     cursor.execute("""
-                        INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn)
-                        VALUES (?, ?, ?, ?, 'N')
-                    """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}", 0.8))
+                        INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
+                        VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
+                    """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}", 0.8, stored_src_col, stored_dst_col, join_cond))
                 
         except Exception as e:
             from util.logger import handle_error
@@ -722,12 +892,20 @@ class CommonSqlAnalyzer:
                 
                 if count_result[0]['COUNT(*)'] == 0:
                     # 조인 관계 저장
+                    # 스키마에 없어도 조인 조건을 그대로 보존(INFERRED)
+                    stored_src_col = join.left_column.upper()
+                    stored_dst_col = join.right_column.upper()
+                    join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
+
                     relationship_data = {
                         'src_id': left_result[0]['table_id'],
                         'dst_id': right_result[0]['table_id'],
                         'rel_type': f"JOIN_{join.join_type}",
                         'confidence': 0.8,
-                        'del_yn': 'N'
+                        'del_yn': 'N',
+                        'src_column': stored_src_col,
+                        'dst_column': stored_dst_col,
+                        'join_condition': join_cond
                     }
                     db_utils.insert_record('relationships', relationship_data)
                 

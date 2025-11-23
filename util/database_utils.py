@@ -844,6 +844,12 @@ class DatabaseUtils:
                     error(f"[DATABASE_UTILS] 삽입 데이터: {data}")
                     handle_error(Exception("insert_or_replace_with_id components 테이블에 file_id가 NULL인 데이터 삽입 시도"), f"components 테이블 삽입 실패: file_id NULL")
                     return 0
+                # 전역 컨텍스트 강제 확인 (컨텍스트가 없으면 중단)
+                try:
+                    from util.file_context import get_file_context_manager
+                    get_file_context_manager().require_current_file()
+                except Exception:
+                    return 0
                 
                 # 디버그 로그
                 debug(f"[DATABASE_UTILS] insert_or_replace_with_id components: {data.get('component_name')} ({data.get('component_type')}) file_id={data.get('file_id')}")
@@ -1304,6 +1310,10 @@ class DatabaseUtils:
             """
             affected = self.execute_update(query, (new_file_id, component_id), conn=conn, auto_commit=(conn is None))
             return affected > 0
+        except sqlite3.IntegrityError as e:
+            # 중복으로 인한 UNIQUE 제약 위반은 건너뛰고 계속 진행
+            app_logger.warning(f"file_id 갱신 건너뜀(UNIQUE 충돌): component_id={component_id}, file_id={new_file_id} - {e}")
+            return False
         except Exception as e:
             handle_error(e, f"컴포넌트 file_id 갱신 실패: component_id={component_id}")
             return False
@@ -1450,7 +1460,8 @@ class DatabaseUtils:
             handle_error(e, f"테이블 컬럼 조회 실패: {project_name}, component_id={table_component_id}")
             return []
 
-    def insert_relationship(self, src_id: int, dst_id: int, rel_type: str, confidence: float = 1.0) -> bool:
+    def insert_relationship(self, src_id: int, dst_id: int, rel_type: str, confidence: float = 1.0,
+                            src_column: str = None, dst_column: str = None, join_condition: str = None) -> bool:
         """
         relationships 테이블에 연관관계 저장 (중복 방지)
 
@@ -1459,6 +1470,9 @@ class DatabaseUtils:
             dst_id: 대상 컴포넌트 ID
             rel_type: 관계 타입
             confidence: 신뢰도 (기본값: 1.0)
+            src_column: 소스 컬럼명(조인/컬럼 관계일 때)
+            dst_column: 대상 컬럼명(조인/컬럼 관계일 때)
+            join_condition: 원본 조인 조건 문자열
 
         Returns:
             저장 성공 여부
@@ -1469,10 +1483,11 @@ class DatabaseUtils:
                 return False
 
             sql = """
-                INSERT OR IGNORE INTO relationships (src_id, dst_id, rel_type, confidence, del_yn)
-                VALUES (?, ?, ?, ?, 'N')
+                INSERT OR IGNORE INTO relationships 
+                    (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
+                VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
             """
-            result = self.execute_update(sql, (src_id, dst_id, rel_type, confidence)) # , conn=self.conn)
+            result = self.execute_update(sql, (src_id, dst_id, rel_type, confidence, src_column, dst_column, join_condition)) # , conn=self.conn)
             return result > 0
 
         except Exception as e:

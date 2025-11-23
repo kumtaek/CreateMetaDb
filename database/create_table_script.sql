@@ -165,6 +165,9 @@ CREATE TABLE IF NOT EXISTS relationships (
                                                      --  - CALL_METHOD: API_URL → METHOD, METHOD → METHOD
                                                      --  - CALL_QUERY : METHOD → SQL_xxx
                                                      --  - USE_TABLE  : SQL_xxx → TABLE
+    src_column      VARCHAR(200),                     -- 조인/컬럼 관계 시 소스 컬럼
+    dst_column      VARCHAR(200),                     -- 조인/컬럼 관계 시 대상 컬럼
+    join_condition  TEXT,                             -- 원본 조인 조건 문자열(존재할 경우)
     confidence      FLOAT DEFAULT 1.0,
     created_at      DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at      DATETIME DEFAULT (datetime('now', '+9 hours')),

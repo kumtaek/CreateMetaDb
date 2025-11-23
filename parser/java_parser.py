@@ -19,6 +19,7 @@ from util import (
 )
 from .sql_join_analyzer import SqlJoinAnalyzer
 from .sql_parser import SqlParser
+from util.sql_normalization_utils import normalize_sql_loose_with_config, DEFAULT_SQL_NORMALIZATION_CONFIG
 
 
 class JavaParser:
@@ -105,6 +106,8 @@ class JavaParser:
             }
 
             self.sql_join_analyzer = SqlJoinAnalyzer(self.config)
+            # JPA/Java 문자열 정규화 설정 (딕셔너리)
+            self.sql_normalize_config = DEFAULT_SQL_NORMALIZATION_CONFIG.copy()
 
         except Exception as e:
             handle_error(e, "Java 파서 컴포넌트 초기화 실패")
@@ -336,14 +339,12 @@ class JavaParser:
                     if any(full_query.strip().upper().startswith(keyword) for keyword in ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']):
 
                         # 분석용 쿼리 생성 (전처리 수행)
-                        clean_sql = sql_parser._preprocess_sql(full_query)
+                        clean_sql = normalize_sql_loose_with_config(full_query, self.sql_normalize_config)
                         query_type = sql_parser.determine_query_type(clean_sql)
 
                         # 2/3단계: 테이블 추출 및 조인 관계 분석
                         alias_map = sql_parser.extract_tables_and_aliases(clean_sql)
                         join_relationships = self.sql_join_analyzer.analyze_join_relationships(clean_sql, alias_map, java_file)
-
-
 
                         # 쿼리가 발견된 대략적인 라인 찾기
                         line_num = method_start_line
@@ -355,7 +356,7 @@ class JavaParser:
                         query_info = {
                             'query_id': f'{method_name}_{var_name}',
                             'query_type': query_type,
-                            'sql_content': full_query,  # DB 저장용 원본 쿼리
+                            'sql_content': clean_sql,  # 정규화된 쿼리 저장
                             'used_tables': list(alias_map.values()),
                             'join_relationships': join_relationships,
                             'is_dynamic': True,
@@ -442,6 +443,8 @@ class JavaParser:
                 if sql_content.strip():
                     # 3. JPA JPQL → SQL 변환 (간단한 경우만)
                     sql_content = self._convert_jpql_to_sql_simple(sql_content)
+                    # 3-1. 정규화 적용
+                    sql_content = normalize_sql_loose_with_config(sql_content, self.sql_normalize_config)
 
                     # 4. 쿼리 정보 생성
                     sql_parser = SqlParser()

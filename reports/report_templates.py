@@ -692,7 +692,12 @@ class ReportTemplates:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERD Report - {project_name}</title>
     <link rel="stylesheet" href="css/woori.css">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="js/mermaid.min.js"></script>
+    <script>
+        if (typeof mermaid === 'undefined') {{
+            document.write('<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"><\/script>');
+        }}
+    </script>
     <style>
         {self._get_erd_css()}
     </style>
@@ -845,17 +850,17 @@ class ReportTemplates:
             display: flex;
             justify-content: space-around;
             align-items: center;
-            gap: 4px;
-            padding: 2px 4px;
+            gap: 2px;
+            padding: 1px 4px;
             background: #f8f9fa;
             margin: 0;
             flex-shrink: 0;
-            height: 24px;
-            min-height: 24px;
+            height: 18px;
+            min-height: 18px;
         }
         .erd-stat-card {
             background: white;
-            padding: 2px 6px;
+            padding: 1px 4px;
             border-radius: 2px;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -960,6 +965,10 @@ class ReportTemplates:
             overflow: auto;
             cursor: grab;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
         }
         
         .mermaid {
@@ -968,9 +977,7 @@ class ReportTemplates:
             min-width: 100%;
             min-height: 100%;
             overflow: visible;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: block;
             position: relative;
         }
         
@@ -978,7 +985,7 @@ class ReportTemplates:
         .mermaid svg {
             width: auto !important;
             height: auto !important;
-            transform-origin: center center;
+            transform-origin: top left;
             display: block;
             position: relative;
         }
@@ -1058,9 +1065,90 @@ class ReportTemplates:
     def _get_erd_javascript(self) -> str:
         """ERD Report JavaScript"""
         return """
+        // 팬/줌 초기화 (Mermaid 렌더 완료 후 호출)
+        function initPanAndZoom() {
+            const container = document.getElementById('mermaid-container');
+            const svg = document.querySelector('#erd-diagram svg');
+            if (!container || !svg) return;
+
+            let currentScale = 1;
+            const minScale = 0.3;
+            const maxScale = 3.0;
+
+            const applyScale = (scale) => {
+                currentScale = Math.min(maxScale, Math.max(minScale, scale));
+                svg.style.transformOrigin = '0 0';
+                svg.style.transform = `scale(${currentScale})`;
+                applyZoom(currentScale);
+            };
+
+            // 드래그로 스크롤 이동
+            let isPanning = false;
+            let startX = 0;
+            let startY = 0;
+            let scrollLeft = 0;
+            let scrollTop = 0;
+
+            container.addEventListener('mousedown', (e) => {
+                isPanning = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                container.scrollLeft = scrollLeft - dx;
+                container.scrollTop = scrollTop - dy;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isPanning) {
+                    isPanning = false;
+                    container.style.cursor = 'grab';
+                }
+            });
+
+            // 휠로 줌 (컨테이너 안의 SVG만 확대/축소)
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = -e.deltaY * 0.001;
+                applyScale(currentScale * (1 + delta));
+            }, { passive: false });
+
+            applyScale(1);
+        }
+
+        function applyZoom(scale = 1) {
+            const indicator = document.getElementById('zoom-indicator');
+            if (indicator) {
+                indicator.textContent = Math.round(scale * 100) + '%';
+            }
+        }
+
+        // 클립보드 복사 함수
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('에러 정보가 클립보드에 복사되었습니다. 저에게 붙여넣어 주세요.');
+                }).catch(err => {
+                    // 클립보드 복사 실패 시, 원래 방식대로 alert
+                    alert('클립보드 복사 실패! 에러 메시지: ' + text);
+                });
+            } else {
+                // navigator.clipboard를 지원하지 않는 경우
+                alert('클립보드 복사 기능이 지원되지 않는 브라우저입니다. 에러 메시지: ' + text);
+            }
+        }
+
         // Mermaid 초기화 - 반응형 설정
         mermaid.initialize({
-            startOnLoad: true,
+            startOnLoad: false,
             theme: 'default',
             flowchart: {
                 useMaxWidth: true,
@@ -1081,341 +1169,27 @@ class ReportTemplates:
             fontSize: 16
         });
         
-        // 윈도우 크기 변경 시 다이어그램 재조정
-        window.addEventListener('resize', function() {
-            setTimeout(function() {
-                const diagram = document.getElementById('erd-diagram');
-                if (diagram && diagram.querySelector('svg')) {
-                    adjustDiagramSize();
-                }
-            }, 100);
-        });
-        
-        // 다이어그램 크기 자동 조정 함수 (초기 로드 시에만 사용)
-        function adjustDiagramSize() {
-            const container = document.getElementById('mermaid-container');
-            const diagram = document.getElementById('erd-diagram');
-            const svg = diagram ? diagram.querySelector('svg') : null;
-            
-            if (container && svg && currentZoom === 1) {
-                // 줌이 기본 상태일 때만 자동 조정
-                const containerRect = container.getBoundingClientRect();
-                const svgBBox = svg.getBBox();
-                
-                // 컨테이너 크기에 맞게 스케일 계산
-                const scaleX = (containerRect.width - 40) / svgBBox.width;
-                const scaleY = (containerRect.height - 40) / svgBBox.height;
-                const scale = Math.min(scaleX, scaleY, 1); // 1을 넘지 않도록 제한
-                
-                if (scale < 1) {
-                    currentZoom = scale;
-                }
-                
-                // 초기 다이어그램 크기 설정
-                const initialWidth = Math.max(svgBBox.width, containerRect.width);
-                const initialHeight = Math.max(svgBBox.height, containerRect.height);
-                diagram.style.width = initialWidth + 'px';
-                diagram.style.height = initialHeight + 'px';
-                
-                applyZoom();
-            }
-        }
-        
-        // 다이어그램 로드 완료 후 크기 조정
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(adjustDiagramSize, 500);
-        });
-        
-        // 줌 및 팬 컨트롤
-        let currentZoom = 1;
-        let isPanning = false;
-        let startX, startY, scrollLeft, scrollTop;
-        
-        function zoomIn() {
-            currentZoom = Math.min(currentZoom * 1.2, 3);
-            applyZoom();
-        }
-        
-        function zoomOut() {
-            currentZoom = Math.max(currentZoom / 1.2, 0.3);
-            applyZoom();
-        }
-        
-        function resetZoom() {
-            currentZoom = 1;
-            applyZoom();
-            // 스크롤도 초기화
-            const container = document.getElementById('mermaid-container');
-            if (container) {
-                container.scrollTop = 0;
-                container.scrollLeft = 0;
-            }
-        }
-        
-        function exportPng() {
-            try {
-                // Mermaid 다이어그램을 PNG로 내보내기
-                const diagram = document.getElementById('erd-diagram');
-                if (!diagram) {
-                    alert('다이어그램을 찾을 수 없습니다.');
-                    return;
-                }
-                
-                // html2canvas 라이브러리 사용
-                if (typeof html2canvas === 'undefined') {
-                    // html2canvas 라이브러리 동적 로드
-                    const script = document.createElement('script');
-                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                    script.onload = () => performPngExport();
-                    document.head.appendChild(script);
-                } else {
-                    performPngExport();
-                }
-                
-                function performPngExport() {
-                    // 전체 다이어그램을 캡처하기 위해 컨테이너 사용
-                    const container = document.getElementById('mermaid-container');
-                    if (!container) {
-                        alert('다이어그램 컨테이너를 찾을 수 없습니다.');
-                        return;
-                    }
-                    
-                    html2canvas(container, {
-                        backgroundColor: '#ffffff',
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: true,
-                        scrollX: 0,
-                        scrollY: 0,
-                        width: container.scrollWidth,
-                        height: container.scrollHeight
-                    }).then(canvas => {
-                        const link = document.createElement('a');
-                        link.download = '{project_name}_ERD_full.png';
-                        link.href = canvas.toDataURL();
-                        link.click();
-                    }).catch(err => {
-                        console.error('PNG 내보내기 실패:', err);
-                        alert('PNG 내보내기에 실패했습니다.');
-                    });
-                }
-            } catch (error) {
-                console.error('PNG 내보내기 오류:', error);
-                alert('PNG 내보내기 중 오류가 발생했습니다.');
-            }
-        }
-        
-        function exportSvg() {
-            try {
-                // Mermaid 다이어그램을 SVG로 내보내기
-                const diagram = document.getElementById('erd-diagram');
-                if (!diagram) {
-                    alert('다이어그램을 찾을 수 없습니다.');
-                    return;
-                }
-                
-                // SVG 요소 찾기
-                const svgElement = diagram.querySelector('svg');
-                if (!svgElement) {
-                    alert('SVG 요소를 찾을 수 없습니다.');
-                    return;
-                }
-                
-                // SVG의 전체 크기 정보 추가
-                const svgClone = svgElement.cloneNode(true);
-                const bbox = svgElement.getBBox();
-                svgClone.setAttribute('width', bbox.width + 100);
-                svgClone.setAttribute('height', bbox.height + 100);
-                svgClone.setAttribute('viewBox', `${bbox.x - 50} ${bbox.y - 50} ${bbox.width + 100} ${bbox.height + 100}`);
-                
-                // SVG 내용을 문자열로 변환
-                const svgData = new XMLSerializer().serializeToString(svgClone);
-                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-                const svgUrl = URL.createObjectURL(svgBlob);
-                
-                // 다운로드 링크 생성
-                const link = document.createElement('a');
-                link.href = svgUrl;
-                link.download = '{project_name}_ERD_full.svg';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(svgUrl);
-                
-            } catch (error) {
-                console.error('SVG 내보내기 오류:', error);
-                alert('SVG 내보내기 중 오류가 발생했습니다.');
-            }
-        }
-        
-        function applyZoom() {
-            const diagram = document.getElementById('erd-diagram');
-            const svg = diagram ? diagram.querySelector('svg') : null;
-            const indicator = document.getElementById('zoom-indicator');
-            const container = document.getElementById('mermaid-container');
-            
-            if (svg && container) {
-                // SVG 스케일만 적용 (position relative로 변경했으므로)
-                svg.style.transform = `scale(${currentZoom})`;
-                svg.style.transformOrigin = 'center center';
-                svg.style.transition = 'transform 0.2s ease';
-                
-                // 확대된 크기에 맞게 다이어그램 컨테이너 크기 동적 조정
-                const svgBBox = svg.getBBox();
-                const scaledWidth = svgBBox.width * currentZoom;
-                const scaledHeight = svgBBox.height * currentZoom;
-                const padding = 100; // 스크롤을 위한 여유 공간
-                
-                // 다이어그램 영역을 확대된 크기로 설정
-                diagram.style.width = (scaledWidth + padding) + 'px';
-                diagram.style.height = (scaledHeight + padding) + 'px';
-                
-                // 컨테이너가 스크롤을 인식하도록 강제 업데이트
-                container.style.overflow = 'hidden';
-                setTimeout(() => {
-                    container.style.overflow = 'auto';
-                }, 10);
-            }
-            
-            if (indicator) {
-                indicator.textContent = Math.round(currentZoom * 100) + '%';
-            }
-        }
-        
-        function downloadSVG() {
-            const svg = document.querySelector('#erd-diagram svg');
-            if (svg) {
-                const svgData = new XMLSerializer().serializeToString(svg);
-                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-                const svgUrl = URL.createObjectURL(svgBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = svgUrl;
-                downloadLink.download = '{project_name}_ERD.svg';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(svgUrl);
-            }
-        }
-        
-        // 드래그로 팬 기능 초기화
-        function initPanAndZoom() {
-            const container = document.getElementById('mermaid-container');
-            if (!container) return;
-            
-            // 마우스 드래그로 팬 (개선된 버전)
-            container.addEventListener('mousedown', function(e) {
-                if (e.button === 0) { // 왼쪽 마우스 버튼
-                    isPanning = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    scrollLeft = container.scrollLeft;
-                    scrollTop = container.scrollTop;
-                    container.style.cursor = 'grabbing';
-                    e.preventDefault();
-                }
-            });
-            
-            document.addEventListener('mouseleave', function() {
-                isPanning = false;
-                container.style.cursor = 'grab';
-            });
-            
-            document.addEventListener('mouseup', function() {
-                isPanning = false;
-                container.style.cursor = 'grab';
-            });
-            
-            document.addEventListener('mousemove', function(e) {
-                if (!isPanning) return;
-                e.preventDefault();
-                
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-                
-                // 스크롤 위치 업데이트
-                container.scrollLeft = scrollLeft - deltaX;
-                container.scrollTop = scrollTop - deltaY;
-            });
-            
-            // 마우스 휠로 줌 (Ctrl + 휠) - 마우스 커서 위치 중심으로 줌
-            container.addEventListener('wheel', function(e) {
-                if (e.ctrlKey) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // 마우스 커서 위치를 기준으로 줌 중심점 계산
-                    const rect = container.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-                    
-                    // 줌 전 스크롤 위치 저장
-                    const scrollLeft = container.scrollLeft;
-                    const scrollTop = container.scrollTop;
-                    
-                    // 줌 비율 계산
-                    const zoomFactor = 1.1;
-                    const oldZoom = currentZoom;
-                    
-                    if (e.deltaY < 0) {
-                        // 휠을 위로: 확대
-                        currentZoom = Math.min(currentZoom * zoomFactor, 3);
-                    } else {
-                        // 휠을 아래로: 축소
-                        currentZoom = Math.max(currentZoom / zoomFactor, 0.2);
-                    }
-                    
-                    // 줌 비율이 변경된 경우에만 적용
-                    if (oldZoom !== currentZoom) {
-                        // 새로운 스크롤 위치 계산 (마우스 커서 위치를 중심으로 유지)
-                        const zoomRatio = currentZoom / oldZoom;
-                        const newScrollLeft = mouseX * zoomRatio - mouseX + scrollLeft;
-                        const newScrollTop = mouseY * zoomRatio - mouseY + scrollTop;
-                        
-                        // 줌 적용
-                        applyZoom();
-                        
-                        // 스크롤 위치 조정 (마우스 커서 위치 중심 유지)
-                        container.scrollLeft = newScrollLeft;
-                        container.scrollTop = newScrollTop;
-                    }
-                }
-            }, { passive: false });
-            
-            // 기본 커서 설정
-            container.style.cursor = 'grab';
-        }
-        
-        // 키보드 단축키
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey) {
-                switch(e.key) {
-                    case '=':
-                    case '+':
-                        e.preventDefault();
-                        zoomIn();
-                        break;
-                    case '-':
-                        e.preventDefault();
-                        zoomOut();
-                        break;
-                    case '0':
-                        e.preventDefault();
-                        resetZoom();
-                        break;
-                }
-            }
-        });
-        
         // 페이지 로드 시 다이어그램 렌더링 및 기능 초기화
         window.addEventListener('load', function() {
-            mermaid.init(undefined, '.mermaid').then(function() {
+            mermaid.run({
+                querySelector: '.mermaid'
+            }).then(function() {
                 // 렌더링 완료 후 팬/줌 기능 초기화
                 setTimeout(initPanAndZoom, 500);
                 // 초기 줌 표시 업데이트
                 applyZoom();
+            }).catch(function(err) {
+                console.error('Mermaid 렌더링 실패', err);
+                // 에러 객체를 JSON 문자열로 변환하여 클립보드에 복사
+                const errorString = JSON.stringify(err, Object.getOwnPropertyNames(err));
+                copyToClipboard('Mermaid 렌더링 실패: ' + errorString);
+                const diagram = document.getElementById('erd-diagram');
+                if (diagram) {
+                    diagram.innerHTML = '<div style="color:#c0392b; padding:12px;">ERD를 렌더링할 수 없습니다. 메타데이터 형식을 확인하세요.</div>';
+                }
             });
         });
+        
         """
 
     def get_architecture_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 
@@ -3052,4 +2826,3 @@ if __name__ == '__main__':
         filter_options={'tables': ['USERS', 'PRODUCTS'], 'query_types': ['SELECT', 'INSERT']}
     )
     print(html[:500] + '...')
-

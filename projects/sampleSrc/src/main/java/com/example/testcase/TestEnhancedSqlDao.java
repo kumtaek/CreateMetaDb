@@ -348,6 +348,20 @@ public class TestEnhancedSqlDao {
     }
     
     /**
+     * INFERRED 테이블/컬럼 샘플
+     * CSV에 없는 INVENTORY_AUDIT, BRAND_ID 등을 조인하여 메타 INFERRED 노출 확인
+     */
+    public List<Map<String, Object>> testInferredTablesJoinSample() {
+        String sql = "SELECT u.user_id, ia.audit_id, ia.brand_id ";
+        sql += "FROM users u ";
+        sql += "JOIN orders o ON u.user_id = o.user_id ";
+        sql += "JOIN inventory_audit ia ON o.order_id = ia.order_ref ";
+        sql += "WHERE ia.audit_status = 'OPEN'";
+        System.out.println("Inferred Join SQL: " + sql);
+        return new ArrayList<>();
+    }
+    
+    /**
      * 테스트 10: 경계 케이스 - SQL이 아닌 문자열
      * 예상 결과: SQL로 인식되지 않아야 함
      */

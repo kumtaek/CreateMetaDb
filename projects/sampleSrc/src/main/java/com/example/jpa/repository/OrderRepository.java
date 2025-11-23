@@ -136,7 +136,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.orderId IN " +
            "(SELECT oi.order.orderId FROM OrderItem oi WHERE oi.product.category.categoryName = :categoryName)")
     List<Order> findOrdersContainingProductsFromCategory(@Param("categoryName") String categoryName);
-    
+
+    // INFERRED 테이블/컬럼 샘플: CSV에 없는 BRAND_METRICS 조인 (메타 INFERRED 확인용)
+    @Query(value = "SELECT o.* FROM ORDERS o " +
+                   "JOIN BRAND_METRICS bm ON o.ORDER_ID = bm.ORDER_REF " +
+                   "WHERE bm.SCORE > ?1",
+           nativeQuery = true)
+    List<Object[]> findOrdersWithInferredBrandMetric(int minScore);
+
     // 13. 동적 검색 쿼리
     @Query("SELECT o FROM Order o WHERE " +
            "(:userId IS NULL OR o.user.userId = :userId) AND " +

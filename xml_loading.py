@@ -59,6 +59,9 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 self.sql_content_manager = None
         else:
             self.sql_content_manager = None
+        # 파일 컨텍스트 관리자 (현재 처리 중인 파일 정보를 전역적으로 보관)
+        from util.file_context import get_file_context_manager
+        self.file_context = get_file_context_manager()
         
         self.stats = {
             'xml_files_processed': 0, 'sql_queries_extracted': 0,
@@ -101,6 +104,17 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     
                     file_id = file_results[0]['file_id']
                     self.xml_parser.current_file_id = file_id
+                    # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
+                    self.file_context.push(
+                        project_name=self.project_name,
+                        project_id=self._get_project_id(),
+                        file_id=file_id,
+                        file_path=file_dir,
+                        file_name=file_name,
+                        file_type='XML',
+                        source_type='XML',
+                        stage='XML'
+                    )
                     
                     analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
                     
@@ -109,8 +123,23 @@ class XmlLoadingEngine(BaseLoadingEngine):
                         continue
 
                     if analysis_result['sql_queries']:
-                        if self._save_sql_components_to_database(analysis_result['sql_queries'], file_id):
-                            self.stats['sql_components_created'] += len(analysis_result['sql_queries'])
+                        project_id = self._get_project_id()
+                        for sql_query in analysis_result['sql_queries']:
+                            # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
+                            saved = self.sql_content_manager.save_sql_content(
+                                sql_content=sql_query.get('sql_content', ''),
+                                project_id=project_id,
+                                conn=self.conn,
+                                query_id=sql_query.get('query_id'),
+                                file_id=file_id,
+                                file_path=unix_relative_path,
+                                file_name=file_name,
+                                query_type=sql_query.get('query_type'),
+                                hash_value=sql_query.get('hash_value'),
+                                component_name=sql_query.get('query_id'),
+                            )
+                            if saved:
+                                self.stats['sql_components_created'] += 1
 
                     # JOIN 관계 생성 통계 집계
                     join_stats = analysis_result.get('join_analysis_stats', {})
@@ -122,6 +151,9 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 except Exception as e:
                     self.stats['errors'] += 1
                     warning(f"XML 파일 처리 중 오류 발생: {xml_file} - {e}")
+                finally:
+                    # 항상 컨텍스트 복원
+                    self.file_context.pop()
             
             self._print_xml_loading_statistics()
             info("=== XML 로딩 완료 ===")

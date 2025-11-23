@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD Report - sampleSrc</title>
+    <link rel="stylesheet" href="css/woori.css">
+    <script src="js/mermaid.min.js"></script>
+    <script>
+        if (typeof mermaid === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"><\/script>');
+        }
+    </script>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body.erd-body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .erd-container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .erd-header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 4px 6px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin: 0;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+            min-height: 40px;
+        }
+        .erd-header .header-left {
+            text-align: left;
+        }
+        .erd-header h1 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 300;
+        }
+        .erd-header .subtitle {
+            margin: 1px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.7em;
+        }
+        .diagram-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .diagram-controls button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        .diagram-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7em;
+            opacity: 0.8;
+        }
+        .erd-stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 2px;
+            padding: 1px 4px;
+            background: #f8f9fa;
+            margin: 0;
+            flex-shrink: 0;
+            height: 18px;
+            min-height: 18px;
+        }
+        .erd-stat-card {
+            background: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
+        }
+        .erd-stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .erd-stat-number {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 0;
+        }
+        .erd-stat-label {
+            color: #7f8c8d;
+            font-size: 0.6em;
+        }
+        .erd-content {
+            flex: 1;
+            overflow: hidden;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .erd-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .diagram-controls {
+            margin-bottom: 5px;
+        }
+        .diagram-controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 0.8em;
+        }
+        .diagram-controls button:hover {
+            background: #2980b9;
+        }
+        .zoom-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-left: 8px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+            animation: pulse 2s infinite;
+        }
+        .hint-icon {
+            font-size: 16px;
+            animation: bounce 1.5s infinite;
+        }
+        .hint-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
+        }
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+                transform: scale(1.02);
+            }
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
+        }
+        .diagram-container {
+            flex: 1;
+            overflow: hidden;
+        }
+        .mermaid-container {
+            background: white;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: auto;
+            cursor: grab;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+        
+        .mermaid {
+            width: 100%;
+            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
+            overflow: visible;
+            display: block;
+            position: relative;
+        }
+        
+        /* Mermaid SVG 확대 시 스크롤 지원 - 새로운 방식 */
+        .mermaid svg {
+            width: auto !important;
+            height: auto !important;
+            transform-origin: top left;
+            display: block;
+            position: relative;
+        }
+        
+        /* 스크롤바 스타일링 */
+        .mermaid-container::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        
+        .mermaid-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* 줌 상태 표시 */
+        .zoom-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            z-index: 1000;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn.secondary {
+            background: #95a5a6;
+        }
+        
+        .btn.secondary:hover {
+            background: #7f8c8d;
+        }
+        @media (max-width: 768px) {
+            .erd-container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .erd-content {
+                padding: 20px;
+            }
+        }
+        
+    </style>
+</head>
+<body class="erd-body">
+    <div class="erd-container">
+        <div class="erd-header">
+            <div class="header-left">
+                <h1>ERD Report</h1>
+                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-23 11:41:40</div>
+            </div>
+            <div class="diagram-controls">
+                <button onclick="exportPng()">PNG 내보내기</button>
+                <button onclick="exportSvg()">SVG 내보내기</button>
+                <div class="zoom-hint">
+                    <span class="hint-icon">🔍</span>
+                    <span class="hint-text">CTRL+휠: 확대/축소 | 드래그: 이동</span>
+                </div>
+            </div>
+        </div>
+        <div class="erd-content">
+            <div class="erd-section">
+                <div class="diagram-container">
+                    
+        <div id="mermaid-container" class="mermaid-container">
+            <div id="zoom-indicator" class="zoom-indicator">100%</div>
+            <div id="erd-diagram" class="mermaid">
+                erDiagram
+    CATEGORIES {
+        NUMBER CATEGORY_ID PK "NOT NULL | 카테고리ID"
+        string CATEGORY_NAME "NOT NULL | 카테고리명"
+        NUMBER PARENT_ID "상위카테고리ID"
+        string DESCRIPTION "카테고리설명"
+        INFERRED IS_ACTIVE "[I]CATEGORY_STATISTICS"
+        INFERRED BRAND_ID "[I]PRODUCTS"
+    }
+    DEPARTMENTS {
+        NUMBER DEPT_ID PK "NOT NULL | 부서 고유 ID"
+        string DEPT_NAME "NOT NULL | 부서명"
+        NUMBER MANAGER_ID "부서장 ID"
+        string LOCATION "부서 위치"
+    }
+    ORDERS {
+        NUMBER ORDER_ID PK "NOT NULL | 주문ID"
+        NUMBER CUSTOMER_ID "NOT NULL | 고객ID"
+        date ORDER_DATE "NOT NULL | 주문일시"
+        NUMBER TOTAL_AMOUNT "총 주문금액"
+        string STATUS "주문상태"
+        INFERRED USER_ID "[I]USERS"
+        INFERRED PRODUCT_ID "[I]PRODUCTS"
+    }
+    ORDER_ITEMS {
+        NUMBER ITEM_ID PK "NOT NULL | 주문항목ID"
+        NUMBER ORDER_ID "NOT NULL | 주문ID"
+        NUMBER PRODUCT_ID "NOT NULL | 상품ID"
+        NUMBER QUANTITY "NOT NULL | 수량"
+        NUMBER UNIT_PRICE "NOT NULL | 단가"
+    }
+    PRODUCTS {
+        NUMBER PRODUCT_ID PK "NOT NULL | 상품ID"
+        string PRODUCT_NAME "NOT NULL | 상품명"
+        NUMBER CATEGORY_ID "카테고리ID"
+        NUMBER PRICE "NOT NULL | 가격"
+        NUMBER STOCK_QUANTITY "재고수량"
+        CLOB DESCRIPTION "상품설명"
+        INFERRED BRAND_NAME "[I]PRODUCT_INVENTORY"
+        INFERRED BRAND_ID "[I]BRANDS"
+        INFERRED SUPPLIER_ID "[I]SUPPLIERS"
+    }
+    USERS {
+        NUMBER ID PK "NOT NULL | 사용자 고유 식별자"
+        string USERNAME "NOT NULL | 사용자명 (유니크)"
+        string EMAIL "NOT NULL | 이메일 주소"
+        string PASSWORD "NOT NULL | 암호화된 비밀번호"
+        date CREATED_AT "계정 생성일시"
+        date UPDATED_AT "계정 수정일시"
+        string STATUS "계정 상태"
+        INFERRED DEPT_ID "[I]DEPARTMENTS"
+        INFERRED USER_ID "[I]USER_PROFILES"
+        INFERRED _0 "[I]USER_ACTIVITIES | 0"
+        INFERRED ROLE_ID "[I]USER_ROLES"
+    }
+    USER_PROFILES {
+        NUMBER PROFILE_ID PK "NOT NULL | 프로필 고유 ID"
+        NUMBER USER_ID "NOT NULL | 사용자 ID (외래키)"
+        string FIRST_NAME "이름"
+        string LAST_NAME "성"
+        string PHONE "전화번호"
+        CLOB ADDRESS "주소"
+    }
+    USER_ROLES {
+        NUMBER USER_ID PK "NOT NULL | 사용자 ID"
+        NUMBER ROLE_ID PK "NOT NULL | 역할 ID"
+        date ASSIGNED_AT "할당일시"
+    }
+    BRANDS {
+        INFERRED BRAND_ID "[I]PRODUCTS"
+    }
+    BRANDS_AUX {
+        INFERRED USER_REF "[I]USERS"
+    }
+    BRAND_METRICS {
+        INFERRED ORDER_REF "[I]ORDERS"
+    }
+    CATEGORY_STATISTICS {
+        INFERRED _1 "[I]CATEGORIES | 1"
+    }
+    INVENTORY {
+        INFERRED PRODUCT_ID "[I]PRODUCTS"
+    }
+    INVENTORY_AUDIT {
+        INFERRED ORDER_REF "[I]ORDERS"
+    }
+    PRODUCT_INVENTORY {
+        INFERRED BRAND_NAME "[I]PRODUCTS"
+    }
+    SUPPLIERS {
+        INFERRED SUPPLIER_ID "[I]PRODUCTS"
+    }
+    USER_ACTIVITIES {
+        INFERRED USER_ID "[I]USERS"
+        INFERRED ACTIVITY_COUNT "[I]USERS"
+    }
+    CATEGORIES ||--o{ PRODUCTS : "CATEGORY_ID"
+    ORDERS ||--o{ BRAND_METRICS : "ORDER_ID-ORDER_REF"
+    ORDERS ||--o{ INVENTORY_AUDIT : "ORDER_ID-ORDER_REF"
+    ORDERS ||--o{ ORDER_ITEMS : "ORDER_ID"
+    ORDERS ||--o{ PRODUCTS : "PRODUCT_ID"
+    ORDERS ||--o{ USERS : "USER_ID"
+    ORDER_ITEMS ||--o{ PRODUCTS : "PRODUCT_ID"
+    PRODUCTS ||--o{ BRANDS : "BRAND_ID"
+    PRODUCTS ||--o{ INVENTORY : "PRODUCT_ID"
+    PRODUCTS ||--o{ SUPPLIERS : "SUPPLIER_ID"
+    PRODUCT_INVENTORY ||--o{ PRODUCTS : "BRAND_NAME"
+    USERS ||--o{ BRANDS_AUX : "USER_ID-USER_REF"
+    USERS ||--o{ DEPARTMENTS : "DEPT_ID"
+    USERS ||--o{ USER_ACTIVITIES : "USER_ID"
+    USERS ||--o{ USER_PROFILES : "USER_ID"
+    USERS ||--o{ USER_ROLES : "ID-USER_ID"
+            </div>
+        </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="erd-stats">
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">23</div>
+                <div class="erd-stat-label">전체 테이블</div>
+            </div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">55</div>
+                <div class="erd-stat-label">전체 컬럼</div>
+            </div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">14</div>
+                <div class="erd-stat-label">Primary Key</div>
+            </div>
+            <div class="erd-stat-card">
+                <div class="erd-stat-number">26</div>
+                <div class="erd-stat-label">관계</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // 팬/줌 초기화 (Mermaid 렌더 완료 후 호출)
+        function initPanAndZoom() {
+            const container = document.getElementById('mermaid-container');
+            const svg = document.querySelector('#erd-diagram svg');
+            if (!container || !svg) return;
+
+            let currentScale = 1;
+            const minScale = 0.3;
+            const maxScale = 3.0;
+
+            const applyScale = (scale) => {
+                currentScale = Math.min(maxScale, Math.max(minScale, scale));
+                svg.style.transformOrigin = '0 0';
+                svg.style.transform = `scale(${currentScale})`;
+                applyZoom(currentScale);
+            };
+
+            // 드래그로 스크롤 이동
+            let isPanning = false;
+            let startX = 0;
+            let startY = 0;
+            let scrollLeft = 0;
+            let scrollTop = 0;
+
+            container.addEventListener('mousedown', (e) => {
+                isPanning = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                container.scrollLeft = scrollLeft - dx;
+                container.scrollTop = scrollTop - dy;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isPanning) {
+                    isPanning = false;
+                    container.style.cursor = 'grab';
+                }
+            });
+
+            // 휠로 줌 (컨테이너 안의 SVG만 확대/축소)
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = -e.deltaY * 0.001;
+                applyScale(currentScale * (1 + delta));
+            }, { passive: false });
+
+            applyScale(1);
+        }
+
+        function applyZoom(scale = 1) {
+            const indicator = document.getElementById('zoom-indicator');
+            if (indicator) {
+                indicator.textContent = Math.round(scale * 100) + '%';
+            }
+        }
+
+        // Mermaid 초기화 - 반응형 설정
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            er: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                diagramPadding: 20,
+                layoutDirection: 'TB'
+            },
+            // 반응형 설정
+            maxTextSize: 90000,
+            maxEdges: 200,
+            // 자동 크기 조정
+            wrap: true,
+            fontSize: 16
+        });
+        
+        // ... (중략) ...
+        
+        // 페이지 로드 시 다이어그램 렌더링 및 기능 초기화
+        window.addEventListener('load', function() {
+            mermaid.run({
+                querySelector: '.mermaid'
+            }).then(function() {
+                // 렌더링 완료 후 팬/줌 기능 초기화
+                setTimeout(initPanAndZoom, 500);
+                // 초기 줌 표시 업데이트
+                applyZoom();
+            }).catch(function(err) {
+                console.error('Mermaid 렌더링 실패', err);
+                const diagram = document.getElementById('erd-diagram');
+                if (diagram) {
+                    diagram.innerHTML = '<div style="color:#c0392b; padding:12px;">ERD를 렌더링할 수 없습니다. 메타데이터 형식을 확인하세요.</div>';
+                }
+            });
+        });
+        
+    </script>
+</body>
+</html>

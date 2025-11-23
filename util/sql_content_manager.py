@@ -14,6 +14,7 @@ from pathlib import Path
 from .logger import app_logger, handle_error
 from .database_utils import DatabaseUtils
 from .path_utils import PathUtils
+from .file_utils import FileUtils
 
 
 class SqlContentManager:
@@ -86,6 +87,20 @@ class SqlContentManager:
         try:
             # 프로젝트 정보 먼저 저장 (외래키 제약조건 대비)
             self._ensure_project_exists(project_id, kwargs.get('file_path', ''))
+
+            # 파일 컨텍스트 강제 확인: file_id 누락 시 즉시 중단
+            try:
+                from util.file_context import get_file_context_manager
+                ctx_mgr = get_file_context_manager()
+                # 외부에서 file_id를 안 넘겼으면 전역 컨텍스트를 반드시 요구
+                if not kwargs.get('file_id'):
+                    ctx = ctx_mgr.require_current_file()
+                    kwargs['file_id'] = ctx.file_id
+                    kwargs['file_path'] = kwargs.get('file_path') or ctx.file_path
+                    kwargs['file_name'] = kwargs.get('file_name') or ctx.file_name
+            except Exception:
+                # require_current_file가 이미 handle_error를 호출하므로 여기서는 재처리 없음
+                return False
             
             # 1. Component 등록 (metadata.db, 단일 연결 사용)
             component_id = self._register_sql_component(
@@ -95,7 +110,8 @@ class SqlContentManager:
                 query_id=kwargs.get('query_id', kwargs.get('component_name', '')),
                 file_path=kwargs.get('file_path', ''),
                 query_type=kwargs.get('query_type', 'SQL_QUERY'),
-                conn=conn
+                conn=conn,
+                file_name=kwargs.get('file_name')
             )
             
             if not component_id:
@@ -105,6 +121,7 @@ class SqlContentManager:
             # 2. gzip 압축
             compressed_content = self._compress_content(sql_content)
             # 공통부: SQL → TABLE 즉시 처리(USE_TABLE)
+            meta_conn_created = False
             try:
                 from parser.sql_parser import SqlParser
                 parser = SqlParser()
@@ -113,6 +130,7 @@ class SqlContentManager:
                     metadata_db_path = f'projects/{self.project_name}/metadata.db'
                     metadata_db_utils = DatabaseUtils(metadata_db_path)
                     meta_conn = conn if conn is not None else metadata_db_utils.get_persistent_connection()
+                    meta_conn_created = conn is None
                     for table_name in table_names:
                         try:
                             rows = metadata_db_utils.execute_query(
@@ -137,6 +155,12 @@ class SqlContentManager:
                             handle_error(e, f"USE_TABLE 관계 생성 실패: component_id={component_id}, table={table_name}")
             except Exception as e:
                 handle_error(e, "USE_TABLE 즉시 생성 처리 실패")
+            finally:
+                try:
+                    if meta_conn_created and meta_conn:
+                        meta_conn.close()
+                except Exception:
+                    pass
             
             # 3. SQL Content 저장 (SqlContent.db)
             sql_content_data = {
@@ -163,7 +187,7 @@ class SqlContentManager:
             handle_error(e, "SQL 내용 저장 실패")
     
     def _register_sql_component(self, sql_content: str, project_id: int, file_id: int, 
-                               query_id: str, file_path: str, query_type: str, conn=None) -> Optional[int]:
+                               query_id: str, file_path: str, query_type: str, conn=None, file_name: str = None) -> Optional[int]:
         """
         SQL Component를 metadata.db의 components 테이블에 등록 (공통부)
         
@@ -204,19 +228,20 @@ class SqlContentManager:
             # 데이터베이스 연결 설정은 트랜잭션 외부에서 이미 완료됨
             # 트랜잭션 내부에서는 PRAGMA 설정 변경 불가
             
-            # file_id 유효성 검증 (개별부에서 전달받은 file_id 사용)
+            # file_id 유효성 검증 및 보정
             try:
-                if file_id:
-                    file_check_query = "SELECT file_id FROM files WHERE file_id = ? AND project_id = ?"
-                    file_exists = metadata_db_utils.execute_query(file_check_query, (file_id, project_id), conn)
-                    if not file_exists:
-                        app_logger.warning(f"file_id {file_id}가 존재하지 않음. 기본값 1 사용")
-                        file_id = 1  # 기본값 사용
-                    else:
-                        app_logger.debug(f"file_id {file_id} 유효성 검증 통과")
-                else:
-                    app_logger.warning("file_id가 전달되지 않음. 기본값 1 사용")
-                    file_id = 1  # 기본값 사용
+                resolved_file_id = self._resolve_or_create_file_id(
+                    metadata_db_utils=metadata_db_utils,
+                    project_id=project_id,
+                    file_id=file_id,
+                    file_path=file_path,
+                    file_name=file_name or (Path(file_path).name if file_path else None),
+                    conn=conn
+                )
+                if not resolved_file_id:
+                    app_logger.error(f"유효한 file_id를 찾을 수 없음: {file_path or 'N/A'}")
+                    return None
+                file_id = resolved_file_id
             except Exception as e:
                 handle_error(e, f"file_id 유효성 검증 실패: {query_id}")
                 return None
@@ -265,6 +290,60 @@ class SqlContentManager:
             
         except Exception as e:
             handle_error(e, f"SQL Component 등록 실패: {query_id}")
+            return None
+    
+    def _resolve_or_create_file_id(self, metadata_db_utils: DatabaseUtils, project_id: int, file_id: Optional[int],
+                                   file_path: str, file_name: Optional[str], conn=None) -> Optional[int]:
+        """
+        file_id가 비거나 유효하지 않을 때 파일 경로/이름으로 보정하거나 신규 파일 메타를 생성한다.
+        크로스플랫폼 경로 정규화와 확장자 기반 타입 추출을 수행한다.
+        """
+        try:
+            # 전역 파일 컨텍스트 우선 사용 (현재 처리 중인 원본 파일 정보)
+            try:
+                from util.file_context import get_file_context_manager
+                ctx = get_file_context_manager().get_current()
+                if not file_id and ctx.file_id:
+                    file_id = ctx.file_id
+                    file_path = file_path or ctx.file_path or ''
+                    file_name = file_name or ctx.file_name
+            except Exception:
+                pass
+
+            path_utils = PathUtils()
+            # 1) 전달된 file_id가 유효하면 그대로 사용
+            if file_id:
+                rows = metadata_db_utils.execute_query(
+                    "SELECT file_id FROM files WHERE file_id = ? AND project_id = ? AND del_yn='N'",
+                    (file_id, project_id),
+                    conn=conn
+                )
+                if rows:
+                    return file_id
+                app_logger.warning(f"file_id {file_id}가 존재하지 않음. 경로 기반으로 재탐색 시도")
+            
+            # 2) 경로/파일명 기반 조회 (전역 컨텍스트 포함)
+            normalized_path = path_utils.normalize_path_separator(file_path or '', 'unix')
+            target_file_name = file_name or (Path(normalized_path).name if normalized_path else None)
+            target_dir = Path(normalized_path).parent.as_posix() if normalized_path else ''
+            if target_file_name:
+                lookup = metadata_db_utils.execute_query(
+                    """
+                    SELECT file_id FROM files 
+                    WHERE project_id = ? AND file_path = ? AND file_name = ? AND del_yn='N' 
+                    LIMIT 1
+                    """,
+                    (project_id, target_dir, target_file_name),
+                    conn=conn
+                )
+                if lookup:
+                    return lookup[0]['file_id']
+            
+            # 3) 여전히 없으면 에러로 중단 (INFERRED 파일 생성 금지)
+            handle_error(Exception("파일 메타를 찾지 못했습니다"), f"file_id 보정 실패: {target_dir}/{target_file_name or 'UNKNOWN'}")
+            return None
+        except Exception as e:
+            handle_error(e, f"file_id 보정 실패: {file_path}")
             return None
     
     def _determine_sql_component_type(self, sql_content: str, query_id: str = None) -> str:
@@ -325,6 +404,15 @@ class SqlContentManager:
             project_id = sql_content_data.get('project_id')
             component_id = sql_content_data.get('component_id')
             hash_value = sql_content_data.get('hash_value', '-')
+            # 파일 컨텍스트 강제 확인 (component_id 없이 저장하는 경우도 file_id 필요)
+            try:
+                from util.file_context import get_file_context_manager
+                ctx = get_file_context_manager().require_current_file()
+                if not sql_content_data.get('file_id'):
+                    handle_error(Exception("file_id 누락"), "SQL Content 저장 실패: file_id 누락")
+                    return False
+            except Exception:
+                return False
             
             # 기존 데이터 조회 (hash_value로 중복 체크)
             check_query = """

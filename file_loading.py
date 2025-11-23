@@ -603,11 +603,31 @@ class FileLoadingEngine(BaseLoadingEngine):
         try:
             # DB 초기화 및 프로젝트 정보 저장은 main에서 트랜잭션 시작 전에 수행
             db_path = get_project_metadata_db_path(self.project_name)
+            # SqlContent.db 경로 (메타와 함께 초기화해야 잔존 데이터로 오염되는 것을 방지)
+            sql_content_db_path = self.path_utils.join_path("projects", self.project_name, "SqlContent.db")
+
+            # 이미 열린 커넥션(self.conn)이 있는 상태에서 파일을 삭제하면 잠금이 발생하므로,
+            # clear_metadb가 요청되면 main에서 먼저 처리하도록 여기서는 삭제를 건너뛴다.
+            if clear_metadb and self.conn:
+                info("clear_metadb 요청 감지: 열린 커넥션으로 인한 잠금을 피하기 위해 삭제는 건너뜁니다 (main에서 사전 처리 필요)")
+                clear_metadb = False
             
             if clear_metadb:
                 if os.path.exists(db_path):
-                    os.remove(db_path)
-                    info(f"기존 메타데이터베이스 삭제: {db_path}")
+                    try:
+                        os.remove(db_path)
+                        info(f"기존 메타데이터베이스 삭제: {db_path}")
+                    except PermissionError as e:
+                        warning(f"메타데이터베이스 삭제 실패(잠금 추정, 계속 진행): {db_path} - {e}")
+                        # 잠금 상태라면 이후 단계에서 기존 파일을 재사용하도록 계속 진행
+                # SqlContent.db도 함께 초기화 (과거 잔존 SQL 콘텐츠가 파일 매핑을 왜곡하는 문제 예방)
+                if os.path.exists(sql_content_db_path):
+                    try:
+                        os.remove(sql_content_db_path)
+                        info(f"기존 SQL 콘텐츠 DB 삭제: {sql_content_db_path}")
+                    except PermissionError as e:
+                        warning(f"SQL 콘텐츠 DB 삭제 실패(잠금 추정, 계속 진행): {sql_content_db_path} - {e}")
+                        # 잠금 상태라면 이후 단계에서 기존 파일을 재사용하도록 계속 진행
             
             # 스키마가 존재하지 않으면 생성
             if not os.path.exists(db_path):

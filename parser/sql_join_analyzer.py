@@ -183,6 +183,9 @@ class SqlJoinAnalyzer:
             for pattern in dynamic_tag_patterns:
                 normalized_sql = re.sub(pattern, r'\1', normalized_sql, flags=re.DOTALL | re.IGNORECASE)
             
+            # 모든 XML/동적 태그 제거: <...> 패턴을 공백으로 치환하여 조인/테이블/컬럼 추출에 집중
+            normalized_sql = re.sub(r'<[^>]+>', ' ', normalized_sql, flags=re.IGNORECASE | re.DOTALL)
+            
             # 공백 정규화 및 대문자 변환
             normalized_sql = re.sub(r'\s+', ' ', normalized_sql).strip()
             return normalized_sql.upper()
@@ -315,12 +318,16 @@ class SqlJoinAnalyzer:
             # 기본 검증 규칙
             if not table_name or len(table_name) < 2:
                 return False
-            
-            # SQL 키워드 제외 (간단한 버전)
-            sql_keywords = {'SELECT', 'FROM', 'WHERE', 'JOIN', 'ON', 'AND', 'OR', 'NOT'}
-            if table_name.upper() in sql_keywords:
+
+            # 리터럴 값 체크 (YAML 설정 기반)
+            from util.oracle_keyword_manager import is_literal_value, is_oracle_keyword
+            if is_literal_value(table_name):
                 return False
-            
+
+            # Oracle 키워드 체크 (YAML 설정 기반)
+            if is_oracle_keyword(table_name):
+                return False
+
             return True
         except Exception as e:
             handle_error(e, "테이블명 유효성 검증 실패")

@@ -21,6 +21,7 @@ from util import (
     app_logger, info, error, debug, warning, handle_error,
     get_project_source_path, get_project_metadata_db_path
 )
+from util.file_context import get_file_context_manager
 from parser.frontend_parser import FrontendParser
 from util.base_loading_engine import BaseLoadingEngine
 
@@ -40,6 +41,7 @@ class FrontendLoadingEngine(BaseLoadingEngine):
         self.frontend_parser = FrontendParser(project_name=project_name)
         self.hash_utils = HashUtils()
         self.current_file_id = None
+        self.file_context = get_file_context_manager()
         self.stats = {
             'total_files': 0, 'processed_files': 0, 'error_files': 0,
             'jsp_files': 0, 'jsx_files': 0, 'vue_files': 0, 'ts_files': 0, 'tsx_files': 0,
@@ -102,6 +104,18 @@ class FrontendLoadingEngine(BaseLoadingEngine):
             warning(f"파일이 존재하지 않음: {full_file_path}")
             return
 
+        # 파일 컨텍스트 push (전역 추적)
+        self.file_context.push(
+            project_name=self.project_name,
+            project_id=project_id,
+            file_id=file_info['file_id'],
+            file_path=file_info.get('file_path', ''),
+            file_name=file_info.get('file_name', ''),
+            file_type=file_info.get('file_type', ''),
+            source_type='FRONTEND',
+            stage='Frontend'
+        )
+
         try:
             parse_result = self.frontend_parser.parse_frontend_file(full_file_path, file_info['file_type'])
             if parse_result.get('has_error') == 'Y':
@@ -119,6 +133,9 @@ class FrontendLoadingEngine(BaseLoadingEngine):
                 self._save_api_call_relationships_to_database(parse_result['api_calls'], project_id)
         except Exception as e:
             handle_error(e, f"프론트엔드 데이터 저장 실패: {file_info['file_name']}")
+        finally:
+            # 컨텍스트 복원
+            self.file_context.pop()
 
         self.stats['api_calls_found'] += len(parse_result.get('api_calls', []))
         self.stats['components_created'] += len(parse_result.get('components', []))

@@ -26,6 +26,8 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
         # Initialize engine with project and DB connection
         super().__init__(project_name, conn)
         self.db = self.db_utils  # Alias for compatibility
+        # 프로젝트 ID 캐시 (파일 재스캔 시 upsert에 사용)
+        self.project_id = self.db_utils.get_project_id(project_name)
         
         self.hash_utils = HashUtils()
         self.cache = get_global_cache()
@@ -114,8 +116,9 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
 
             java_files = self._get_java_files()
             if not java_files:
+                # 여전히 자바 파일이 없으면 근본 원인을 알리며 중단 (스킵 대신 실패로 처리)
                 handle_error(Exception("No Java files found to analyze."), "Backend entry loading")
-                return True
+                return False
 
             all_backend_entries = self._analyze_backend_entries(java_files)
             try:
@@ -139,7 +142,11 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
             self.stats.end_analysis()
 
     def _get_java_files(self) -> List[FileInfo]:
-        # Collect Java files to analyze
+        """
+        Java 파일을 수집합니다.
+        - 1차: files 테이블에서 JAVA 타입 조회
+        - 2차: 조회 실패 시 실제 파일 시스템을 스캔하여 보완하고, 누락된 파일을 files 테이블에 upsert
+        """
         query = (
             "SELECT f.file_id, f.file_path, f.file_name, f.file_type, f.hash_value "
             "FROM files f JOIN projects p ON f.project_id = p.project_id "
@@ -164,7 +171,52 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
                         line_count=len(content.splitlines()),
                     )
                 )
-        return java_files
+
+        if java_files:
+            return java_files
+
+        # files 테이블에 JAVA가 없으면 직접 스캔 (INFERRED만 있는 경우 대비)
+        app_logger.warning("files 테이블에 JAVA 타입이 없어 파일 시스템을 직접 스캔합니다.")
+        scanned: List[FileInfo] = []
+        for root, _, files in os.walk(self.project_source_path):
+            for fname in files:
+                if fname.lower().endswith('.java'):
+                    full_path = os.path.join(root, fname)
+                    content = self._read_file_content(full_path)
+                    if not content:
+                        continue
+                    rel_path = os.path.relpath(full_path, self.project_source_path)
+                    rel_unix = self.path_utils.normalize_path_separator(rel_path, 'unix')
+                    file_hash = self.hash_utils.generate_md5(content)
+                    file_info = FileInfo(
+                        file_id=None,
+                        file_path=os.path.dirname(rel_unix),
+                        file_name=fname,
+                        file_type='JAVA',
+                        content=content,
+                        hash_value=file_hash,
+                        line_count=len(content.splitlines()),
+                    )
+                    scanned.append(file_info)
+
+                    # files 테이블에 누락된 경우 upsert (프로젝트 ID 사용)
+                    try:
+                        proj_id = self.project_id or self.db.get_project_id(self.project_name)
+                        file_data = {
+                            'project_id': proj_id,
+                            'file_path': os.path.dirname(rel_unix),
+                            'file_name': fname,
+                            'file_type': 'JAVA',
+                            'hash_value': file_hash,
+                            'line_count': file_info.line_count,
+                            'frameworks': None,
+                            'del_yn': 'N'
+                        }
+                        self.db.upsert('files', file_data, ['file_name', 'file_path', 'project_id'], self.conn)
+                    except Exception as e:
+                        handle_error(e, f"파일 스캔 후 files upsert 실패: {rel_unix}")
+
+        return scanned
 
     def _read_file_content(self, file_path: str) -> Optional[str]:
         # Read file content as UTF-8

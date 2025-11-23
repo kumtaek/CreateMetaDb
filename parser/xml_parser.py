@@ -20,6 +20,7 @@ from util import (
 )
 from .sql_join_analyzer import SqlJoinAnalyzer
 from .sql_parser import SqlParser
+from util.sql_normalization_utils import normalize_sql_loose_with_config, DEFAULT_SQL_NORMALIZATION_CONFIG
 
 class XmlParser:
     """XML 파서 - 3~4단계 통합 처리 (단순화된 정규식 기반)"""
@@ -48,6 +49,8 @@ class XmlParser:
             self.config = self._load_config()
 
         self.sql_join_analyzer = SqlJoinAnalyzer(self.config)
+        # XML 정규화 설정 (딕셔너리 복사로 사용)
+        self.sql_normalize_config = DEFAULT_SQL_NORMALIZATION_CONFIG.copy()
 
         self.stats = {
             'files_processed': 0,
@@ -161,15 +164,17 @@ class XmlParser:
                 else:
                     query_type = 'QUERY'  # 알 수 없는 타입
 
+                cleaned_sql = normalize_sql_loose_with_config(sql_content, self.sql_normalize_config)
+
                 query_info = {
                     'tag_name': tag_name,
                     'query_id': query_id,
                     'query_type': query_type,
-                    'sql_content': sql_content,
+                    'sql_content': cleaned_sql,
                     'file_path': xml_file,
                     'line_start': 1,  # XML에서는 라인 번호를 정확히 계산하기 어려우므로 1로 설정
                     'line_end': 1,
-                    'hash_value': HashUtils().generate_md5(sql_content),
+                    'hash_value': HashUtils().generate_md5(cleaned_sql),
                     'used_tables': [],  # 이후 공통 처리에서 추출
                     'join_relationships': [],  # 이후 공통 처리에서 추출
                     'namespace': namespace  # namespace 정보 추가

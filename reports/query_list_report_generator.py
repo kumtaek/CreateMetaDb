@@ -273,19 +273,8 @@ class QueryListReportGenerator:
         """SQL 내용에서 테이블명 추출 (키워드 필터링 적용)"""
         try:
             import re
+            from util.oracle_keyword_manager import is_literal_value, is_oracle_keyword
             tables = set()
-            
-            # SQL 키워드 목록 (테이블명으로 잘못 인식되는 것들 제외)
-            sql_keywords = {
-                'SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER',
-                'ON', 'GROUP', 'BY', 'ORDER', 'HAVING', 'UNION', 'INSERT', 'UPDATE',
-                'DELETE', 'INTO', 'SET', 'VALUES', 'AND', 'OR', 'NOT', 'IN', 'EXISTS',
-                'BETWEEN', 'LIKE', 'IS', 'NULL', 'ASC', 'DESC', 'LIMIT', 'OFFSET',
-                'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'AS', 'DISTINCT', 'COUNT',
-                'SUM', 'AVG', 'MIN', 'MAX', 'IF', 'COALESCE', 'CAST', 'CONVERT',
-                'STATUS', 'PENDING', 'CONFIRMED', 'SHIPPED', 'ACTIVE', 'INACTIVE',
-                'TRUE', 'FALSE', 'YES', 'NO', 'Y', 'N', 'T', 'F'
-            }
             
             # SQL을 대문자로 변환하여 처리
             sql_upper = sql_content.upper()
@@ -315,10 +304,11 @@ class QueryListReportGenerator:
             delete_matches = re.findall(delete_pattern, sql_upper)
             tables.update(delete_matches)
             
-            # SQL 키워드 필터링
+            # SQL 키워드/리터럴 필터링 (YAML 설정 기반)
             filtered_tables = set()
             for table in tables:
-                if table not in sql_keywords:
+                # 리터럴 값이나 Oracle 키워드는 제외
+                if not is_literal_value(table) and not is_oracle_keyword(table):
                     filtered_tables.add(table)
             
             # 실제 테이블 오너 정보를 조회하여 접두사 추가

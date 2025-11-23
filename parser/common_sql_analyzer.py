@@ -8,6 +8,7 @@ import gzip
 import hashlib
 from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass
+from util.logger import error, handle_error
 
 @dataclass
 class TableInfo:
@@ -199,27 +200,60 @@ class CommonSqlAnalyzer:
     def _save_join_relationship(self, cursor, join: JoinCondition):
         """조인 관계 저장"""
         try:
-            # 소스와 대상 테이블 ID 찾기
-            cursor.execute("""
-                SELECT t.table_id FROM tables t
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE t.table_name = ? AND p.project_name = ?
-            """, (join.left_table, self.project_name))
-            left_table_id = cursor.fetchone()
+            # 테이블 컴포넌트 확보 (없으면 INFERRED로 생성)
+            cursor.execute("SELECT project_id FROM projects WHERE project_name = ?", (self.project_name,))
+            project_row = cursor.fetchone()
+            project_id = project_row[0] if project_row else None
+
+            def ensure_table_component(table_name: str):
+                """테이블 컴포넌트를 조회하거나 현재 파일 컨텍스트로 생성 (inferred 파일 생성 금지)."""
+                cursor.execute(
+                    """
+                    SELECT component_id FROM components 
+                    WHERE component_type='TABLE' 
+                      AND component_name=? 
+                      AND project_id=? 
+                      AND del_yn='N' 
+                    LIMIT 1
+                    """,
+                    (table_name, project_id)
+                )
+                row = cursor.fetchone()
+                if row:
+                    return row[0]
+
+                # 현재 파일 컨텍스트 기반으로 컴포넌트 생성
+                try:
+                    from util.file_context import get_file_context_manager
+                    ctx = get_file_context_manager().require_current_file()
+                    file_id = ctx.file_id
+                    if not file_id:
+                        msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 누락 및 file_id 없음: {table_name}"
+                        error(msg)
+                        raise RuntimeError(msg)
+                    comp_hash = hashlib.md5(table_name.encode()).hexdigest()
+                    cursor.execute(
+                        """
+                        INSERT INTO components (project_id, file_id, component_name, component_type, hash_value, del_yn)
+                        VALUES (?, ?, ?, 'TABLE', ?, 'N')
+                        """,
+                        (project_id, file_id, table_name, comp_hash)
+                    )
+                    return cursor.lastrowid
+                except Exception as e:
+                    msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 생성 실패: {table_name} (project_id={project_id})"
+                    error(msg)
+                    raise RuntimeError(msg) from e
+
+            src_comp_id = ensure_table_component(join.left_table)
+            dst_comp_id = ensure_table_component(join.right_table)
             
-            cursor.execute("""
-                SELECT t.table_id FROM tables t
-                JOIN projects p ON t.project_id = p.project_id
-                WHERE t.table_name = ? AND p.project_name = ?
-            """, (join.right_table, self.project_name))
-            right_table_id = cursor.fetchone()
-            
-            if left_table_id and right_table_id:
+            if src_comp_id and dst_comp_id:
                 # 조인 관계 저장
                 cursor.execute("""
-                    INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn)
-                    VALUES (?, ?, ?, ?, 'N')
-                """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}", 0.8))
+                    INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
+                    VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
+                """, (src_comp_id, dst_comp_id, f"JOIN_{join.join_type}", 0.8, join.left_column.upper(), join.right_column.upper(), f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"))
                 
         except Exception as e:
-            print(f"Error saving join relationship: {e}")
+            handle_error(e, "조인 관계 저장 실패 (inferred 파일 생성 금지 모드)")

@@ -17,6 +17,9 @@ if "%~1"=="" (
 d:
 cd /d "D:\Analyzer\CreateMetaDb"
 
+:: Guard: remove stray reserved-name file if present (causes git add failure)
+if exist "\\?\%CD%\nul" del "\\?\%CD%\nul"
+
 :: Add changes (excluding temp and backup directories)
 git add . -- ":!temp/" ":!backup/"
 

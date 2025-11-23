@@ -10,6 +10,7 @@ from util import (
     DatabaseUtils, info, warning, debug, handle_error,
     get_project_source_path, get_project_metadata_db_path, HashUtils
 )
+from util.file_context import get_file_context_manager
 from parser.simple_java_parser import SimpleJavaParser
 from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
@@ -26,6 +27,8 @@ class SimpleJavaLoader(BaseLoadingEngine):
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.conn)
         self.sql_content_manager = SqlContentManager(project_name)
+        # 파일 컨텍스트 (현재 처리 중인 파일/컴포넌트 정보 전역 보관)
+        self.file_context = get_file_context_manager()
 
         self.stats = {
             'java_files_processed': 0,
@@ -75,115 +78,142 @@ class SimpleJavaLoader(BaseLoadingEngine):
         file_id = self._get_file_id(java_file)
         if not file_id:
             handle_error(Exception("File ID not found"), f"File ID not found: {java_file}")
-
-        try:
-            debug(f"Parsing Java file: {java_file}")
-            parse_result = self.java_parser.parse_java_file(java_file)
-            debug(f"parse_result keys: {list(parse_result.keys())}")
-            debug(f"classes in parse_result: {parse_result.get('classes')}")
-            if not parse_result.get('classes'):
-                # Enum 파일인지 확인
-                with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-                    if 'enum ' in content:
-                        # Enum은 연관관계가 없어서 처리하지 않음
-                        debug(f"Enum file ignored (no relationships): {java_file}")
-                    else:
-                        warning(f"No classes extracted: {java_file}")
-        except Exception as e:
-            handle_error(e, f"Java file parse failed: {java_file}")
             return
 
-        class_id_map = {}
-        for cls in parse_result.get('classes', []):
-            class_id = self._upsert_class(cls, project_id, file_id)
-            if class_id:
-                class_id_map[cls['name']] = class_id
-                self.stats['classes_extracted'] += 1
+        # 파일 컨텍스트 스택에 현재 파일 정보 저장 (전역 추적)
+        path_utils = PathUtils()
+        rel = path_utils.get_relative_path(java_file, self.project_source_path)
+        rel_unix = path_utils.normalize_path_separator(rel, 'unix')
+        file_dir = os.path.dirname(rel_unix) if rel_unix else ''
+        if file_dir in ('', '.'):
+            file_dir = ''
+        else:
+            file_dir = path_utils.normalize_path_separator(file_dir, 'unix')
+        file_name = os.path.basename(rel_unix)
 
-        for method in parse_result.get('methods', []):
-            parent_class_id = class_id_map.get(method['class'])
-            method_comp = {
-                'project_id': project_id, 'file_id': file_id,
-                'component_name': method['name'],
-                'component_type': 'METHOD', 'parent_id': parent_class_id,
-                'hash_value': HashUtils().generate_content_hash(method['name'])
-            }
-            if self._upsert_component(method_comp):
-                self.stats['methods_extracted'] += 1
+        self.file_context.push(
+            project_name=self.project_name,
+            project_id=project_id,
+            file_id=file_id,
+            file_path=file_dir,
+            file_name=file_name,
+            file_type='JAVA',
+            source_type='JAVA',
+            stage='Java'
+        )
 
-        # Query extraction & collection
         try:
-            query_analysis = self.simple_query_analyzer.analyze_java_file(java_file, file_id)
-            if query_analysis and (query_analysis.get('java_queries') or query_analysis.get('jpa_queries')):
-                all_queries = query_analysis['java_queries'] + query_analysis['jpa_queries']
-                self.stats['sql_queries_extracted'] += len(all_queries)
-                class_name = os.path.splitext(os.path.basename(java_file))[0]
-                query_counter = {}
-                for query in all_queries:
-                    method_name = query.get('method_name', 'unknown')
-                    query_counter[method_name] = query_counter.get(method_name, 0) + 1
-                    formatted_query_id = f"{class_name}.{method_name}_Qry_{query_counter[method_name]}"
-                    self.collected_sql_queries.append({
-                        'sql_content': query.get('sql_content', ''), 'query_id': formatted_query_id,
-                        'file_id': file_id, 'project_id': project_id
-                    })
-        except Exception as e:
-            handle_error(e, f"Java query analysis failed: {java_file}")
+            try:
+                debug(f"Parsing Java file: {java_file}")
+                parse_result = self.java_parser.parse_java_file(java_file)
+                debug(f"parse_result keys: {list(parse_result.keys())}")
+                debug(f"classes in parse_result: {parse_result.get('classes')}")
+                if not parse_result.get('classes'):
+                    # Enum 파일인지 확인
+                    with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        if 'enum ' in content:
+                            # Enum은 연관관계가 없어서 처리하지 않음
+                            debug(f"Enum file ignored (no relationships): {java_file}")
+                        else:
+                            warning(f"No classes extracted: {java_file}")
+            except Exception as e:
+                handle_error(e, f"Java file parse failed: {java_file}")
+                return
 
-        # MyBatis FQMN 쿼리 추출 및 upsert 처리
-        try:
-            from parser.java_parser import JavaParser
-            java_parser = JavaParser()
-            
-            with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
-                java_content = f.read()
-            
-            # MyBatis FQMN 쿼리 추출
-            mybatis_fqmn_queries = java_parser._extract_mybatis_fqmn_queries(java_content, java_file)
-            
-            if mybatis_fqmn_queries:
-                debug(f"MyBatis FQMN 쿼리 {len(mybatis_fqmn_queries)}개 추출: {java_file}")
+            class_id_map = {}
+            for cls in parse_result.get('classes', []):
+                class_id = self._upsert_class(cls, project_id, file_id)
+                if class_id:
+                    class_id_map[cls['name']] = class_id
+                    self.stats['classes_extracted'] += 1
+
+            for method in parse_result.get('methods', []):
+                parent_class_id = class_id_map.get(method['class'])
+                method_comp = {
+                    'project_id': project_id, 'file_id': file_id,
+                    'component_name': method['name'],
+                    'component_type': 'METHOD', 'parent_id': parent_class_id,
+                    'hash_value': HashUtils().generate_content_hash(method['name'])
+                }
+                if self._upsert_component(method_comp):
+                    self.stats['methods_extracted'] += 1
+
+            # Query extraction & collection
+            try:
+                query_analysis = self.simple_query_analyzer.analyze_java_file(java_file, file_id)
+                if query_analysis and (query_analysis.get('java_queries') or query_analysis.get('jpa_queries')):
+                    all_queries = query_analysis['java_queries'] + query_analysis['jpa_queries']
+                    self.stats['sql_queries_extracted'] += len(all_queries)
+                    class_name = os.path.splitext(os.path.basename(java_file))[0]
+                    query_counter = {}
+                    for query in all_queries:
+                        method_name = query.get('method_name', 'unknown')
+                        query_counter[method_name] = query_counter.get(method_name, 0) + 1
+                        formatted_query_id = f"{class_name}.{method_name}_Qry_{query_counter[method_name]}"
+                        self.collected_sql_queries.append({
+                            'sql_content': query.get('sql_content', ''), 'query_id': formatted_query_id,
+                            'file_id': file_id, 'project_id': project_id
+                        })
+            except Exception as e:
+                handle_error(e, f"Java query analysis failed: {java_file}")
+
+            # MyBatis FQMN 쿼리 추출 및 upsert 처리
+            try:
+                from parser.java_parser import JavaParser
+                java_parser = JavaParser()
                 
-                for query in mybatis_fqmn_queries:
-                    fqmn = query['query_id']  # com.example.mapper.UserMapper.selectUserById
+                with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    java_content = f.read()
+                
+                # MyBatis FQMN 쿼리 추출
+                mybatis_fqmn_queries = java_parser._extract_mybatis_fqmn_queries(java_content, java_file)
+                
+                if mybatis_fqmn_queries:
+                    debug(f"MyBatis FQMN 쿼리 {len(mybatis_fqmn_queries)}개 추출: {java_file}")
                     
-                    # 기존 SQL 컴포넌트 확인 (XML에서 이미 등록되었을 수 있음)
-                    existing_component = self.db_utils.execute_query(
-                        "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? AND del_yn = 'N'",
-                        (fqmn, project_id)
-                    )
-                    
-                    if existing_component:
-                        # XML에서 이미 등록됨 → 관계만 생성
-                        debug(f"기존 SQL 컴포넌트 발견: {fqmn}")
-                    else:
-                        # XML에서 등록되지 않음 → INFERRED 쿼리로 등록
-                        # 메서드명에서 SQL 타입 추론
-                        inferred_type = self._infer_sql_type_from_method_name(fqmn)
-                        sql_component = {
-                            'project_id': project_id,
-                            'file_id': file_id,
-                            'component_name': fqmn,
-                            'component_type': inferred_type,
-                            'parent_id': None,
-                            'hash_value': HashUtils().generate_content_hash(fqmn)
-                        }
+                    for query in mybatis_fqmn_queries:
+                        fqmn = query['query_id']  # com.example.mapper.UserMapper.selectUserById
                         
-                        if self._upsert_component(sql_component):
-                            self.stats['sql_queries_extracted'] += 1
-                            debug(f"INFERRED 쿼리 컴포넌트 등록: {fqmn}")
-                            
-                            # SqlContent.db에도 저장
-                            self.collected_sql_queries.append({
-                                'sql_content': query['sql_content'],
-                                'query_id': fqmn,
+                        # 기존 SQL 컴포넌트 확인 (XML에서 이미 등록되었을 수 있음)
+                        existing_component = self.db_utils.execute_query(
+                            "SELECT component_id FROM components WHERE component_name = ? AND project_id = ? AND del_yn = 'N'",
+                            (fqmn, project_id)
+                        )
+                        
+                        if existing_component:
+                            # XML에서 이미 등록됨 → 관계만 생성
+                            debug(f"기존 SQL 컴포넌트 발견: {fqmn}")
+                        else:
+                            # XML에서 등록되지 않음 → INFERRED 쿼리로 등록
+                            # 메서드명에서 SQL 타입 추론
+                            inferred_type = self._infer_sql_type_from_method_name(fqmn)
+                            sql_component = {
+                                'project_id': project_id,
                                 'file_id': file_id,
-                                'project_id': project_id
-                            })
-                
-        except Exception as e:
-            handle_error(e, f"MyBatis FQMN 처리 실패: {java_file}")
+                                'component_name': fqmn,
+                                'component_type': inferred_type,
+                                'parent_id': None,
+                                'hash_value': HashUtils().generate_content_hash(fqmn)
+                            }
+                            
+                            if self._upsert_component(sql_component):
+                                self.stats['sql_queries_extracted'] += 1
+                                debug(f"INFERRED 쿼리 컴포넌트 등록: {fqmn}")
+                                
+                                # SqlContent.db에도 저장
+                                self.collected_sql_queries.append({
+                                    'sql_content': query['sql_content'],
+                                    'query_id': fqmn,
+                                    'file_id': file_id,
+                                    'project_id': project_id
+                                })
+                            
+            except Exception as e:
+                handle_error(e, f"MyBatis FQMN 처리 실패: {java_file}")
+        finally:
+            # 항상 컨텍스트 복원
+            self.file_context.pop()
 
     def _process_collected_queries(self, project_id: int):
         """Process all collected SQL queries by saving them to SqlContent.db"""
@@ -193,7 +223,38 @@ class SimpleJavaLoader(BaseLoadingEngine):
 
         try:
             for query_data in self.collected_sql_queries:
-                self.sql_content_manager.save_sql_content(conn=self.conn, **query_data)
+                # 파일 컨텍스트 세팅: 저장 대상 쿼리가 속한 파일 기준
+                file_id = query_data.get('file_id')
+                file_path = ''
+                file_name = ''
+                if file_id:
+                    rows = self.db_utils.execute_query(
+                        "SELECT file_path, file_name FROM files WHERE file_id = ? AND del_yn='N'",
+                        (file_id,),
+                        conn=self.conn
+                    )
+                    if rows:
+                        file_path = rows[0].get('file_path', '') or ''
+                        file_name = rows[0].get('file_name', '') or ''
+                # file_id가 없으면 전역 컨텍스트가 누락된 것이므로 즉시 중단
+                else:
+                    handle_error(Exception("file_id missing in collected query"), "SQL content save failed: file_id 누락")
+                    return
+                # 컨텍스트 push (없으면 저장 시 require_current_file에서 중단)
+                self.file_context.push(
+                    project_name=self.project_name,
+                    project_id=project_id,
+                    file_id=file_id,
+                    file_path=file_path,
+                    file_name=file_name,
+                    file_type='JAVA',
+                    source_type='JAVA',
+                    stage='Java-SQLSave'
+                )
+                try:
+                    self.sql_content_manager.save_sql_content(conn=self.conn, **query_data)
+                finally:
+                    self.file_context.pop()
         except Exception as e:
             handle_error(e, "SQL content save failed")
 

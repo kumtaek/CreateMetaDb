@@ -15,7 +15,8 @@ from util import (
 )
 
 # recursion limit 설정 (XML 파싱 오류 방지)  
-sys.setrecursionlimit(50)  # XML DOM parsing failure to activate SAX Fallback
+# 재귀 제한을 너무 낮추면 표준 라이브러리(import 시)에서 오류가 발생하므로 여유 있게 설정
+sys.setrecursionlimit(1000)
 info(f"Recursion limit set to: {sys.getrecursionlimit()}")
 
 
@@ -42,7 +43,27 @@ def main():
         project_name = arg_utils.get_project_name()
         info(f"분석 대상 프로젝트: {project_name}")
         
-        # 4. 프로젝트 존재 여부 확인
+        # 4. 프로젝트 존재 여부 확인 (대소문자 정확히 일치하는 프로젝트만 허용)
+        projects_root = path_utils.join_path('projects')
+        if os.path.exists(projects_root):
+            # 실제 디렉토리 목록 가져오기 (대소문자 구분)
+            real_projects = os.listdir(projects_root)
+            
+            # 프로젝트명이 정확히 일치하는지 확인 (문자열 비교)
+            if project_name not in real_projects:
+                # 대소문자만 다른 유사한 프로젝트명 찾기
+                similar_projects = [p for p in real_projects if p.lower() == project_name.lower()]
+                
+                if similar_projects:
+                    real_name = similar_projects[0]
+                    error(f"프로젝트명 대소문자가 일치하지 않습니다.")
+                    error(f"입력: '{project_name}' -> 실제: '{real_name}'")
+                    print_usage_and_exit(f"프로젝트명이 정확하지 않습니다. '{project_name}' 대신 '{real_name}'를 사용하세요.")
+                else:
+                    error(f"프로젝트가 존재하지 않습니다: '{project_name}'")
+                    print_usage_and_exit(f"프로젝트 '{project_name}'가 존재하지 않습니다.")
+        
+        # 프로젝트 디렉토리 존재 확인 (이중 검증)
         if not project_exists(project_name):
             error(f"프로젝트가 존재하지 않습니다: {project_name}")
             error(f"프로젝트 경로: {get_project_source_path(project_name)}")
@@ -55,6 +76,20 @@ def main():
         verbose = arg_utils.get_verbose()
 
         dry_run = arg_utils.get_dry_run()
+
+        # 5.1 메타데이터베이스 초기화 옵션 처리 (연결 전에 수행해야 잠금 회피)
+        if clear_metadb:
+            path_utils = PathUtils()
+            metadata_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "metadata.db")
+            sql_content_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "SqlContent.db")
+            for target_path, label in [(metadata_db_path, "메타데이터베이스"), (sql_content_db_path, "SQL 콘텐츠 DB")]:
+                if os.path.exists(target_path):
+                    try:
+                        os.remove(target_path)
+                        info(f"기존 {label} 삭제: {target_path}")
+                    except PermissionError as e:
+                        warning(f"{label} 삭제 실패(잠금 추정, 계속 진행): {target_path} - {e}")
+                        # 잠금 상태라면 이후 단계에서 기존 파일을 재사용하도록 계속 진행
 
 
         # 로거 레벨 설정

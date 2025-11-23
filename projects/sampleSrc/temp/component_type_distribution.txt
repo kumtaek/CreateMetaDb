@@ -1,6 +1,6 @@
-﻿sqlite3 : Error: unable to open database "projects/SampleSrc/metadata.db": unable to open database file
+﻿sqlite3 : Error: unable to open database "projects/sampleSrc/metadata.db": unable to open database file
 위치 C:\Users\kt_oh\AppData\Local\Temp\ps-script-e8779f8e-c411-496b-82f0-9cc2c16e761b.ps1:87 문자:1
-+ sqlite3 projects/SampleSrc/metadata.db "SELECT component_type, COUNT( ...
++ sqlite3 projects/sampleSrc/metadata.db "SELECT component_type, COUNT( ...
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : NotSpecified: (Error: unable t...n database file:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError

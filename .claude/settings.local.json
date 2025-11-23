@@ -18,7 +18,9 @@
       "Bash(/dev/null)",
       "Bash(tasklist)",
       "Bash(git add:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cmd /c del \"D:\\Analyzer\\CreateMetaDb\\config\\parser\\oracle_sql_keyword.yaml\")",
+      "Bash(cmd /c dir \"D:\\Analyzer\\CreateMetaDb\\config\\parser\\*.yaml\")"
     ],
     "deny": [],
     "ask": []
