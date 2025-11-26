@@ -11,6 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **인터넷불가 폐쇄망 사용 가능하도록 개발**: 인터넷망에서 개발하지만 운영은 폐쇄망에서도 실행 가능하도록 개발되어야 함
 - **Exception발생시 중지**: Exception 발생시 에러로그 후 중지 -> error_handle()호출
 
+## DDL 스키마 변경 절대 금지
+- **database/ 폴더의 DDL 파일은 읽기 전용**: `create_table_script.sql`, `create_sql_content_db.sql` 파일은 읽기 전용(Read-Only) 속성이며, 절대 수정하지 말 것
+- **스키마 변경 금지 이유**: 테이블 구조 변경은 기존 데이터 마이그레이션, 정규화 위배, 다른 모듈 영향도 분석이 필요하므로 반드시 별도 검토 후 진행
+- **읽기 전용 속성 해제 금지**: `attrib -R` 등으로 읽기 전용 속성을 임의로 해제하지 말 것
+- **리포트 생성기 원칙**: 리포트 생성 로직은 SQL 재파싱 없이 메타DB(metadata.db, SqlContent.db)에 저장된 데이터만 조회하여 사용할 것. 핵심 분석 로직은 메타DB 생성 단계에서 처리
+
 ## 프로젝트 개요
 
 SourceAnalyzer는 Java/Spring/MyBatis 기반 웹 애플리케이션의 소스코드를 분석하여 **프론트엔드 -> 백엔드 -> 데이터베이스**까지의 완전한 연관관계를 도출하는 메타데이터 분석 시스템입니다.

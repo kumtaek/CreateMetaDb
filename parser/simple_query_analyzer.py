@@ -38,9 +38,24 @@ class SimpleQueryAnalyzer:
             self.oracle_keyword_manager = get_oracle_keyword_manager()
             self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
             self.sql_start_patterns = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']
+
+            # JPA Entity-Table 매핑 딕셔너리 (외부에서 설정)
+            self.entity_table_mapping = {}
+
             info("SimpleQueryAnalyzer initialized")
         except Exception as e:
             handle_error(e, "SimpleQueryAnalyzer initialization failed")
+
+    def set_entity_table_mapping(self, mapping: Dict[str, str]):
+        """
+        Entity-Table 매핑 딕셔너리 설정.
+
+        Args:
+            mapping: {엔티티클래스명: 테이블명} 형태의 딕셔너리
+                     예: {'Order': 'ORDERS', 'User': 'USERS'}
+        """
+        self.entity_table_mapping = mapping or {}
+        info(f"Entity-Table 매핑 설정됨: {len(self.entity_table_mapping)}개")
 
     # ===== Java file analysis =====
 
@@ -86,12 +101,31 @@ class SimpleQueryAnalyzer:
             return {'java_queries': [], 'jpa_queries': [], 'methods': []}
 
     def _extract_java_methods(self, content: str) -> List[Dict]:
-        """Very simple method body extractor."""
+        """
+        메서드 추출 (중첩 블록 허용, 간단한 중괄호 카운팅 방식).
+        - 시그니처 위치를 찾은 뒤 '{'부터 중괄호 균형이 0이 될 때까지 본문을 잘라낸다.
+        """
         try:
             methods: List[Dict] = []
-            pattern = r'(public|private|protected)\s+[^{;]+?(\w+)\s*\([^)]*\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
-            for m in re.finditer(pattern, content, re.DOTALL | re.IGNORECASE):
-                methods.append({'name': m.group(2), 'content': m.group(3)})
+            sig_pattern = r'(public|private|protected)\s+[^{;]*?\b(\w+)\s*\([^)]*\)\s*(?:throws[^\\{]*)?\{'
+            for m in re.finditer(sig_pattern, content, re.DOTALL | re.IGNORECASE):
+                name = m.group(2)
+                brace_start = content.find('{', m.end(1))
+                if brace_start == -1:
+                    continue
+                depth = 0
+                i = brace_start
+                while i < len(content):
+                    ch = content[i]
+                    if ch == '{':
+                        depth += 1
+                    elif ch == '}':
+                        depth -= 1
+                        if depth == 0:
+                            body = content[brace_start + 1:i]
+                            methods.append({'name': name, 'content': body})
+                            break
+                    i += 1
             return methods
         except Exception as e:
             handle_error(e, "Java method extraction failed")
@@ -242,6 +276,10 @@ class SimpleQueryAnalyzer:
                         # nativeQuery 여부 확인
                         is_native = 'nativeQuery' in annotation_content and 'true' in annotation_content.lower()
 
+                        # JPQL인 경우 (nativeQuery=false) 엔티티명 → 테이블명 변환 + FROM 추가
+                        if not is_native:
+                            sql_content = self._normalize_jpql(sql_content)
+
                         queries.append({
                             'query_id': method_name,
                             'method_name': method_name,
@@ -339,6 +377,54 @@ class SimpleQueryAnalyzer:
             return ''
 
     # ===== Helpers =====
+
+    def _normalize_jpql(self, sql_content: str) -> str:
+        """
+        JPQL 쿼리를 정규화하여 테이블 추출이 가능하도록 변환.
+
+        변환 내용:
+        1. 엔티티명 → 테이블명 변환 (매핑 딕셔너리 사용)
+        2. UPDATE/DELETE 문에 FROM 키워드 추가
+
+        Args:
+            sql_content: 원본 JPQL 쿼리
+
+        Returns:
+            정규화된 SQL 쿼리
+
+        예시:
+            "UPDATE Order o SET o.status = :status"
+            → "UPDATE FROM ORDERS o SET o.status = :status"
+        """
+        try:
+            if not sql_content:
+                return sql_content
+
+            result = sql_content
+            upper = result.upper()
+
+            # 1단계: 엔티티명 → 테이블명 변환
+            if self.entity_table_mapping:
+                for entity_name, table_name in self.entity_table_mapping.items():
+                    # 엔티티명이 단어 경계에서 매칭되는 경우만 변환
+                    # 예: "FROM Order o" → "FROM ORDERS o"
+                    # 단, 필드명 (o.orderId)은 변환하지 않음
+                    pattern = rf'\b{re.escape(entity_name)}\b(?!\s*\.)'
+                    if re.search(pattern, result):
+                        result = re.sub(pattern, table_name, result)
+
+            # 2단계: UPDATE/DELETE에 FROM 추가
+            upper = result.upper().strip()
+            if ' FROM ' not in upper:
+                if upper.startswith('UPDATE '):
+                    result = re.sub(r'^UPDATE\s+', 'UPDATE FROM ', result, count=1, flags=re.IGNORECASE)
+                elif upper.startswith('DELETE '):
+                    result = re.sub(r'^DELETE\s+', 'DELETE FROM ', result, count=1, flags=re.IGNORECASE)
+
+            return result
+        except Exception as e:
+            handle_error(e, f"JPQL normalization failed: {sql_content[:50]}")
+            return sql_content
 
     def _is_sql_query(self, s: str) -> bool:
         head = (s or '').lstrip().upper()

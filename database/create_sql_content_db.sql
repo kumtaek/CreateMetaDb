@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS sql_contents (
     component_id INTEGER NOT NULL,                    -- 컴포넌트 ID (SQL_* 타입 또는 QUERY 타입)
     component_name VARCHAR(200) NOT NULL,             -- 컴포넌트명 (쿼리 ID)
     sql_content_compressed BLOB NOT NULL,    -- gzip 압축된 정제된 SQL 내용 (XML파싱결과 또는 Java소스에서 추출한 SQL)
-    file_path VARCHAR(500) NOT NULL,                  -- 파일 경로 (XML파일 또는 Java파일)
-    file_name VARCHAR(200) NOT NULL,                  -- 파일명 (XML파일 또는 Java파일)
+    file_path VARCHAR(500),                  -- 파일 경로 (XML파일 또는 Java파일)
+    file_name VARCHAR(200),                  -- 파일명 (XML파일 또는 Java파일)
     hash_value VARCHAR(64),                  -- SQL 내용 해시값
     created_at DATETIME DEFAULT (datetime('now', '+9 hours')),
     updated_at DATETIME DEFAULT (datetime('now', '+9 hours')),
@@ -32,4 +32,10 @@ CREATE TABLE IF NOT EXISTS sql_contents (
 CREATE UNIQUE INDEX IF NOT EXISTS ix_sql_contents_01 ON sql_contents(component_name, file_id, project_id);
 CREATE INDEX IF NOT EXISTS ix_sql_contents_02 ON sql_contents(component_id);
 CREATE INDEX IF NOT EXISTS ix_sql_contents_03 ON sql_contents(hash_value);
- 
+
+-- 데이터베이스 최적화 설정
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA cache_size = 10000;
+PRAGMA temp_store = MEMORY;
+PRAGMA foreign_keys = OFF;  -- 별도 데이터베이스이므로 외래키 제약조건 비활성화

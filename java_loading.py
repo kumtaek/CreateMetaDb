@@ -38,6 +38,8 @@ class SimpleJavaLoader(BaseLoadingEngine):
             'relationships_created': 0,
             'errors': 0
         }
+        # JPA Entity-Table 매핑 딕셔너리 (전역 수집)
+        self.entity_table_mapping = {}
 
     def execute_java_loading(self, project_id: int) -> bool:
         """Execute Java loading (pipeline-integrated)"""
@@ -67,6 +69,10 @@ class SimpleJavaLoader(BaseLoadingEngine):
                     self.stats['errors'] += 1
 
             if self.collected_sql_queries:
+                # Entity-Table 매핑을 쿼리 분석기에 설정 (JPQL 변환용)
+                if self.entity_table_mapping:
+                    info(f"Entity-Table 매핑 적용: {len(self.entity_table_mapping)}개")
+                    self.simple_query_analyzer.set_entity_table_mapping(self.entity_table_mapping)
                 self._process_collected_queries(project_id)
 
             info("=== Java loading done ===")
@@ -130,6 +136,12 @@ class SimpleJavaLoader(BaseLoadingEngine):
                     class_id_map[cls['name']] = class_id
                     self.stats['classes_extracted'] += 1
 
+            # Entity-Table 매핑 수집 (JPQL 변환용)
+            file_entity_mapping = parse_result.get('entity_table_mapping', {})
+            if file_entity_mapping:
+                self.entity_table_mapping.update(file_entity_mapping)
+                debug(f"Entity-Table 매핑 수집: {file_entity_mapping}")
+
             for method in parse_result.get('methods', []):
                 parent_class_id = class_id_map.get(method['class'])
                 method_comp = {
@@ -149,7 +161,21 @@ class SimpleJavaLoader(BaseLoadingEngine):
                     self.stats['sql_queries_extracted'] += len(all_queries)
                     for query in all_queries:
                         method_name = query.get('method_name', 'unknown')
-                        query_id = query.get('query_id') or query.get('variable_name') or method_name
+                        base_query_id = query.get('query_id') or query.get('variable_name') or method_name
+                        # 동일 파일 내 중복 query_id 방지를 위해 메서드명으로 네임스페이스 부여
+                        if not hasattr(self, "_query_ids_seen"):
+                            self._query_ids_seen = {}
+                        file_key = file_id
+                        seen_set = self._query_ids_seen.setdefault(file_key, set())
+                        query_id = base_query_id
+                        if query_id in seen_set:
+                            query_id = f"{method_name}.{base_query_id}"
+                        # 그래도 충돌 시 숫자 접미사 부여
+                        suffix = 2
+                        while query_id in seen_set:
+                            query_id = f"{method_name}.{base_query_id}_{suffix}"
+                            suffix += 1
+                        seen_set.add(query_id)
                         # ✅ file_path, file_name을 수집 시점에 포함 (이미 계산된 값 사용)
                         self.collected_sql_queries.append({
                             'sql_content': query.get('sql_content', ''), 
@@ -227,6 +253,19 @@ class SimpleJavaLoader(BaseLoadingEngine):
         info(f"Collected SQL queries: {len(self.collected_sql_queries)} → saving to SqlContent.db")
         if not self.sql_content_manager or not self.sql_content_manager.initialized:
             handle_error(Exception("SQL Content Manager not initialized"), "SQL Content Manager가 초기화되지 않아 쿼리 처리를 건너뜁니다.")
+
+        # Entity-Table 매핑이 있으면 저장 전에 JPQL 정규화 적용
+        if self.entity_table_mapping:
+            jpql_normalized_count = 0
+            for query_data in self.collected_sql_queries:
+                sql_content = query_data.get('sql_content', '')
+                if sql_content:
+                    normalized = self.simple_query_analyzer._normalize_jpql(sql_content)
+                    if normalized != sql_content:
+                        query_data['sql_content'] = normalized
+                        jpql_normalized_count += 1
+            if jpql_normalized_count > 0:
+                info(f"JPQL 정규화 적용: {jpql_normalized_count}개 쿼리")
 
         try:
             for query_data in self.collected_sql_queries:
@@ -346,5 +385,4 @@ def load_java_files_simple(project_name: str, project_id: int, conn: sqlite3.Con
     loader = SimpleJavaLoader(project_name, conn)
     success = loader.execute_java_loading(project_id)
     return success, loader.stats
-
 

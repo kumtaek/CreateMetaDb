@@ -33,30 +33,33 @@ class BackendMappingReportGenerator:
         conn = None
         try:
             app_logger.info(f"Backend Mapping Report 생성 시작: {self.project_name}")
-            
+
             # 1. 메타 데이터 로드 (USE_TABLE 기반)
             metadata_sql_map = self._load_metadata_use_tables()
-            
-            # 2. SqlContent 조회 (쿼리 원문 + 메타 테이블 매핑)
+
+            # 2. 조인 조건 로드 (metadata.db의 relationships 테이블에서)
+            metadata_join_map = self._load_metadata_join_conditions()
+
+            # 3. SqlContent 조회 (쿼리 원문 + 메타 테이블 매핑)
             conn = sqlite3.connect(self.sql_content_db_path)
             query_data = self._get_query_data(conn, metadata_sql_map)
             app_logger.info(f"조회된 쿼리 개수: {len(query_data)}")
-            
-            # 3. 데이터 분류
-            categorized_data = self._categorize_queries(query_data)
-            
-            # 4. HTML 생성
+
+            # 4. 데이터 분류 (조인 조건 맵 전달)
+            categorized_data = self._categorize_queries(query_data, metadata_join_map)
+
+            # 5. HTML 생성
             html_content = self._generate_html(categorized_data)
-            
-            # 5. 리소스 복사
+
+            # 6. 리소스 복사
             self.report_utils.copy_assets()
-            
-            # 6. 파일 저장
+
+            # 7. 파일 저장
             output_file = self.report_utils.save_report(html_content, "BackendMappingReport")
-            
+
             app_logger.info(f"Backend Mapping Report 생성 완료: {output_file}")
             return True
-            
+
         except Exception as e:
             handle_error(e, "Backend Mapping Report 생성 실패")
             return False
@@ -100,46 +103,64 @@ class BackendMappingReportGenerator:
         
         return data
     
-    def _categorize_queries(self, query_data: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-        """쿼리를 MyBatis, JPA, Java String으로 분류"""
+    def _categorize_queries(self, query_data: List[Dict[str, Any]], metadata_join_map: Dict[str, Dict[str, Any]] = None) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        쿼리를 MyBatis, JPA, Java String으로 분류
+
+        Args:
+            query_data: SqlContent.db에서 조회한 쿼리 데이터
+            metadata_join_map: metadata.db에서 조회한 조인 조건 맵 (component_name -> join_info)
+        """
+        if metadata_join_map is None:
+            metadata_join_map = {}
+
         categorized = {
             'MyBatis': [],
             'JPA': [],
             'JavaString': []
         }
-        
+
         for idx, item in enumerate(query_data, 1):
             file_path = item['file_path']
             file_name = item['file_name']
             component_name = item['component_name']
             sql_content = item['sql_content']
-            
+
             # 경로 정규화 (디렉터리만 표시)
             normalized_path = self._normalize_dir(file_path, file_name)
-            
-            # SQL 분석
-            sql_analysis = self._analyze_sql(sql_content)
+
+            # SQL 타입 분석 (간단한 키워드 기반)
+            sql_type = self._get_sql_type(sql_content)
+            notes = self._get_sql_notes(sql_content)
+
+            # 메타DB에서 테이블 목록 조회
             meta_tables = item.get('metadata_tables') or []
             if meta_tables:
                 table_list = meta_tables
             else:
-                table_list = [{'owner': 'UNKNOWN', 'table': t} for t in sql_analysis['tables']]
-            
+                table_list = []
+
+            # 메타DB에서 조인 정보 조회 (SQL 재파싱 없이)
+            comp_key = (component_name or '').upper()
+            join_info = metadata_join_map.get(comp_key, {})
+            join_type = join_info.get('join_type', '-')
+            join_conditions = join_info.get('join_conditions', '-')
+
             entry = {
                 'no': idx,
                 'path': normalized_path,
-                'path_href': '',  # 경로는 텍스트로만 표시
+                'path_href': self._build_folder_href(normalized_path),
                 'file': file_name,
                 'file_href': self._build_file_href(normalized_path, file_name),
                 'method': component_name.split('.')[-1] if '.' in component_name else component_name,
                 'query_id': component_name,
-                'sql_type': sql_analysis['sql_type'],
+                'sql_type': sql_type,
                 'tables': ', '.join(self._format_tables(table_list)) if table_list else '-',
-                'join_conditions': sql_analysis['join_conditions'],
-                'join_type': sql_analysis['join_type'],
-                'notes': sql_analysis['notes']
+                'join_conditions': join_conditions,
+                'join_type': join_type,
+                'notes': notes
             }
-            
+
             # 파일 경로 기반 분류
             lower_path = normalized_path.lower()
             lower_file = (file_name or '').lower()
@@ -151,7 +172,7 @@ class BackendMappingReportGenerator:
                 categorized['JPA'].append(entry)
             else:
                 categorized['JavaString'].append(entry)
-        
+
         return categorized
     
     def _normalize_dir(self, file_path: str, file_name: str) -> str:
@@ -168,101 +189,45 @@ class BackendMappingReportGenerator:
             return 'src/' + unix_path.split('src/', 1)[1]
         return unix_path
     
-    def _analyze_sql(self, sql: str) -> Dict[str, Any]:
-        """SQL 내용 분석 후 유형/테이블/조인 정보와 진단 메시지 반환"""
+    def _get_sql_type(self, sql: str) -> str:
+        """SQL 타입 추출 (간단한 키워드 기반)"""
         import re
-        
-        def _strip_comments(source: str) -> str:
-            """SQL 주석 제거"""
-            without_block = re.sub(r'/\*.*?\*/', ' ', source, flags=re.DOTALL)
-            lines = []
-            for line in without_block.splitlines():
-                stripped = line.strip()
-                if stripped.startswith('--'):
-                    continue
-                lines.append(stripped)
-            return ' '.join(lines).strip()
-        
-        cleaned_sql = _strip_comments(sql)
-        sql_upper = cleaned_sql.strip().upper()
-        notes = []
-        
-        if not cleaned_sql:
-            sql_type = 'SQL_EMPTY'
-            notes.append('SQL 본문이 비어있거나 주석만 존재')
-        elif sql_upper.startswith('SELECT') or sql_upper.startswith('WITH'):
-            sql_type = 'SQL_SELECT'
-        elif sql_upper.startswith('INSERT'):
-            sql_type = 'SQL_INSERT'
-        elif sql_upper.startswith('UPDATE'):
-            sql_type = 'SQL_UPDATE'
-        elif sql_upper.startswith('DELETE'):
-            sql_type = 'SQL_DELETE'
-        elif sql_upper.startswith('MERGE'):
-            sql_type = 'SQL_MERGE'
-        elif sql.strip().startswith('--'):
-            sql_type = 'SQL_REFERENCE'
-            notes.append('SQL 대신 MyBatis FQMN 주석만 수집됨')
-        else:
-            sql_type = 'SQL_UNKNOWN'
-            notes.append('선행 키워드를 인식하지 못함')
-        
-        join_type = self._get_join_type(cleaned_sql)
-        tables = self._extract_tables(cleaned_sql)
-        join_conditions = self._extract_join_conditions(sql)
-        
-        return {
-            'sql_type': sql_type,
-            'tables': tables,
-            'join_conditions': join_conditions,
-            'join_type': join_type,
-            'notes': '; '.join(notes) if notes else '-'
-        }
-    
-    def _get_join_type(self, sql: str) -> str:
-        """조인 타입 추출"""
-        sql_upper = sql.upper()
-        if 'MERGE INTO' in sql_upper:
-            return 'JOIN_MERGE'
-        elif 'JOIN' in sql_upper:
-            return 'JOIN_EXPLICIT'
-        elif ',' in sql_upper and 'FROM' in sql_upper:
-            return 'JOIN_IMPLICIT'
+        # 주석 제거
+        without_block = re.sub(r'/\*.*?\*/', ' ', sql, flags=re.DOTALL)
+        lines = [ln.strip() for ln in without_block.splitlines() if not ln.strip().startswith('--')]
+        cleaned = ' '.join(lines).strip().upper()
+
+        if not cleaned:
+            return 'SQL_EMPTY'
+        if cleaned.startswith('SELECT') or cleaned.startswith('WITH'):
+            return 'SQL_SELECT'
+        if cleaned.startswith('INSERT'):
+            return 'SQL_INSERT'
+        if cleaned.startswith('UPDATE'):
+            return 'SQL_UPDATE'
+        if cleaned.startswith('DELETE'):
+            return 'SQL_DELETE'
+        if cleaned.startswith('MERGE'):
+            return 'SQL_MERGE'
+        if sql.strip().startswith('--'):
+            return 'SQL_REFERENCE'
+        return 'SQL_UNKNOWN'
+
+    def _get_sql_notes(self, sql: str) -> str:
+        """SQL 진단 메시지 생성"""
+        import re
+        without_block = re.sub(r'/\*.*?\*/', ' ', sql, flags=re.DOTALL)
+        lines = [ln.strip() for ln in without_block.splitlines() if not ln.strip().startswith('--')]
+        cleaned = ' '.join(lines).strip()
+
+        if not cleaned:
+            return 'SQL 본문이 비어있거나 주석만 존재'
+        if sql.strip().startswith('--'):
+            return 'SQL 대신 MyBatis FQMN 주석만 수집됨'
+        sql_upper = cleaned.upper()
+        if not any(sql_upper.startswith(kw) for kw in ['SELECT', 'WITH', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']):
+            return '선행 키워드를 인식하지 못함'
         return '-'
-    
-    def _extract_tables(self, sql: str) -> List[str]:
-        """테이블 추출 (간단한 버전, OWNER/별칭이 있으면 테이블명만 사용)"""
-        import re
-        sql_upper = sql.upper()
-        tables = []
-        
-        # FROM 절에서 테이블 추출
-        if 'FROM' in sql_upper:
-            from_match = re.search(r'FROM\s+([A-Z0-9_,\s]+?)(?:\s+WHERE|\s+GROUP|\s+ORDER|\s+JOIN|$)', sql_upper)
-            if from_match:
-                table_part = from_match.group(1)
-                for table in table_part.split(','):
-                    table_stripped = table.strip()
-                    if table_stripped:
-                        parts = table_stripped.split()
-                        if parts:
-                            table_name = self._normalize_table_token(parts[0])
-                            if table_name and table_name not in ['SELECT', 'WHERE']:
-                                tables.append(table_name)
-        
-        # JOIN 절에서 테이블 추출
-        join_matches = re.findall(r'JOIN\s+([A-Z0-9_\.]+)', sql_upper)
-        tables.extend([self._normalize_table_token(t) for t in join_matches])
-
-        return list(set(tables))[:10]
-
-    def _normalize_table_token(self, token: str) -> str:
-        """OWNER.테이블 또는 alias.테이블 형태에서 테이블명만 추출"""
-        if not token:
-            return token
-        if '.' in token:
-            return token.split('.')[-1]
-        return token
 
     def _format_tables(self, tables: List[Dict[str, str]]) -> List[str]:
         """테이블 표시 시 owner가 있으면 OWNER.TABLE 형태로 표현"""
@@ -313,69 +278,120 @@ class BackendMappingReportGenerator:
         except Exception as e:
             handle_error(e, "metadata USE_TABLE 로드 실패")
         return meta_map
-    
-    def _extract_join_conditions(self, sql: str) -> str:
-        """JOIN 조건식 추출 (ON 절 + WHERE의 테이블 조인식)"""
-        import re
-        
-        normalized = ' '.join(sql.replace('\n', ' ').split())
-        if not normalized:
-            return '-'
-        
-        normalized_upper = normalized.upper()
-        conditions = []
-        boundary_keywords = [' JOIN ', ' WHERE ', ' GROUP ', ' ORDER ', ' HAVING ', ' UNION ', ' INTERSECT ', ' EXCEPT ']
-        
-        # ON 절 추출
-        search_pos = 0
-        while True:
-            on_pos = normalized_upper.find(' ON ', search_pos)
-            if on_pos == -1:
-                break
-            start = on_pos + 4
-            end_candidates = [normalized_upper.find(keyword, start) for keyword in boundary_keywords if normalized_upper.find(keyword, start) != -1]
-            end = min(end_candidates) if end_candidates else len(normalized_upper)
-            condition = normalized[start:end].strip()
-            if condition:
-                conditions.append(condition)
-            search_pos = end
-        
-        # WHERE 절에서 암묵적 조인 조건 추출
-        where_pos = normalized_upper.find(' WHERE ')
-        if where_pos != -1:
-            where_start = where_pos + len(' WHERE ')
-            where_end_candidates = [normalized_upper.find(keyword, where_start) for keyword in boundary_keywords[2:] if normalized_upper.find(keyword, where_start) != -1]
-            where_end = min(where_end_candidates) if where_end_candidates else len(normalized_upper)
-            where_clause = normalized[where_start:where_end]
-            for cond in re.split(r'\bAND\b|\bOR\b', where_clause, flags=re.IGNORECASE):
-                cond_stripped = cond.strip()
-                if cond_stripped and '.' in cond_stripped and '=' in cond_stripped and not re.search(r"['\"]", cond_stripped):
-                    conditions.append(cond_stripped)
-        
-        filtered = [c for c in conditions if self._looks_like_join_equality(c)]
-        return '; '.join(dict.fromkeys(filtered)) if filtered else '-'
 
-    def _looks_like_join_equality(self, condition: str) -> bool:
-        """조인 조건으로 볼 수 있는지 단순 검사 (컬럼=컬럼 형태만 인정)"""
-        import re
-        if '=' not in condition:
-            return False
-        
-        left, right = [part.strip().strip('()') for part in condition.split('=', 1)]
-        
-        # 숫자/상수 비교는 제외
-        numeric = re.compile(r'^[-+]?\d+(\.\d+)?$')
-        if numeric.match(left) or numeric.match(right):
-            return False
-        
-        # 파라미터/바인딩 제외 (:param, #{}, ${})
-        param_pattern = re.compile(r'[:#${]')
-        if param_pattern.search(left) or param_pattern.search(right):
-            return False
-        
-        col_pattern = re.compile(r'^[A-Z_][A-Z0-9_]*\.[A-Z_][A-Z0-9_]*$', re.IGNORECASE)
-        return bool(col_pattern.match(left) and col_pattern.match(right))
-    
+    def _load_metadata_join_conditions(self) -> Dict[str, Dict[str, Any]]:
+        """
+        metadata.db에서 SQL 컴포넌트별 조인 조건 및 조인 타입을 조회
+
+        Returns:
+            Dict[str, Dict]: component_name(대문자) -> {
+                'join_type': 'EXPLICIT'|'IMPLICIT'|'MERGE'|'-',
+                'join_conditions': 'A.col=B.col; ...'
+            }
+        """
+        join_map: Dict[str, Dict[str, Any]] = {}
+        if not os.path.exists(self.metadata_db_path):
+            return join_map
+        try:
+            conn = sqlite3.connect(self.metadata_db_path)
+            cursor = conn.cursor()
+            # SQL 컴포넌트가 사용하는 테이블 목록 조회
+            cursor.execute(
+                """
+                SELECT src.component_name AS sql_comp,
+                       GROUP_CONCAT(dst.component_name) AS table_list
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id AND src.del_yn = 'N'
+                JOIN components dst ON r.dst_id = dst.component_id AND dst.del_yn = 'N'
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND r.rel_type = 'USE_TABLE'
+                  AND r.del_yn = 'N'
+                  AND dst.component_type = 'TABLE'
+                GROUP BY src.component_name
+                """,
+                (self.project_name,)
+            )
+            sql_tables_map = {row[0].upper(): row[1].split(',') if row[1] else [] for row in cursor.fetchall()}
+
+            # 테이블 간 JOIN 관계 전체 조회
+            cursor.execute(
+                """
+                SELECT src.component_name AS src_table,
+                       dst.component_name AS dst_table,
+                       r.rel_type,
+                       r.join_condition
+                FROM relationships r
+                JOIN components src ON r.src_id = src.component_id AND src.del_yn = 'N'
+                JOIN components dst ON r.dst_id = dst.component_id AND dst.del_yn = 'N'
+                JOIN projects p ON src.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND r.rel_type LIKE 'JOIN_%'
+                  AND r.del_yn = 'N'
+                  AND src.component_type = 'TABLE'
+                  AND dst.component_type = 'TABLE'
+                """,
+                (self.project_name,)
+            )
+            # 테이블 쌍별 조인 정보 저장: (norm_key) -> {'rel_types': set, 'conditions': set}
+            table_joins = {}
+            for src_tbl, dst_tbl, rel_type, condition in cursor.fetchall():
+                # 정규화된 키 (알파벳순 정렬로 양방향 통일)
+                norm_key = tuple(sorted([src_tbl.upper(), dst_tbl.upper()]))
+                if norm_key not in table_joins:
+                    table_joins[norm_key] = {'rel_types': set(), 'conditions': set()}
+                table_joins[norm_key]['rel_types'].add(rel_type)
+                if condition:
+                    table_joins[norm_key]['conditions'].add(condition)
+
+            # 각 SQL 컴포넌트가 사용하는 테이블들 간의 조인 조건 수집
+            for sql_comp, tables in sql_tables_map.items():
+                conditions = set()
+                join_types = set()
+                tables_upper = [t.upper() for t in tables]
+
+                # 테이블 쌍별로 조인 조건 확인
+                for i, tbl1 in enumerate(tables_upper):
+                    for tbl2 in tables_upper[i+1:]:
+                        norm_key = tuple(sorted([tbl1, tbl2]))
+                        if norm_key in table_joins:
+                            join_info = table_joins[norm_key]
+                            conditions.update(join_info['conditions'])
+                            join_types.update(join_info['rel_types'])
+
+                # 조인 타입: 여러 개면 모두 표시 (JOIN_ 접두어 제거)
+                type_display = []
+                for jt in sorted(join_types):
+                    type_display.append(jt.replace('JOIN_', ''))
+                join_type_str = ', '.join(type_display) if type_display else '-'
+
+                # 조인 조건 중복 제거 (A=B와 B=A는 동일), 컬럼 없는 조건 필터링
+                normalized_conditions = set()
+                for cond in conditions:
+                    if '=' in cond:
+                        parts = [p.strip() for p in cond.split('=', 1)]
+                        if len(parts) == 2:
+                            # 컬럼이 빈 조건 필터링 (예: "TABLE. = TABLE2.")
+                            left_part, right_part = parts
+                            if left_part.endswith('.') or right_part.endswith('.'):
+                                continue
+                            norm_cond = ' = '.join(sorted(parts))
+                            normalized_conditions.add(norm_cond)
+                        else:
+                            normalized_conditions.add(cond)
+                    else:
+                        normalized_conditions.add(cond)
+
+                join_map[sql_comp] = {
+                    'join_type': join_type_str,
+                    'join_conditions': '; '.join(sorted(normalized_conditions)) if normalized_conditions else '-'
+                }
+
+            conn.close()
+        except Exception as e:
+            handle_error(e, "metadata JOIN 조건 로드 실패")
+        return join_map
+
     def _generate_html(self, data: Dict[str, List[Dict[str, Any]]]) -> str:
         """HTML 생성"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -437,7 +453,7 @@ class BackendMappingReportGenerator:
             rows_html += f"""
             <tr>
                 <td>{item['no']}</td>
-                <td>{item['path']}</td>
+                <td>{self._render_path(item)}</td>
                 <td>{self._render_file(item)}</td>
                 <td>{item['method']}</td>
                 <td>{item['query_id']}</td>
@@ -480,6 +496,14 @@ class BackendMappingReportGenerator:
             return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{file_name}</a>'
         return file_name
 
+    def _render_path(self, item: Dict[str, Any]) -> str:
+        """경로를 하이퍼링크로 출력 (폴더 열기)"""
+        path = item.get('path', '')
+        href = item.get('path_href', '')
+        if href and path:
+            return f'<a href="{href}" target="_blank" rel="noopener noreferrer" title="폴더 열기">{path}</a>'
+        return path
+
     def _build_file_href(self, normalized_path: str, file_name: str) -> str:
         """리포트 기준 상대 하이퍼링크 생성 (절대경로 fallback 없음)"""
         if not normalized_path:
@@ -496,4 +520,27 @@ class BackendMappingReportGenerator:
             return self.path_utils.normalize_path_separator(rel_path, 'unix')
         except Exception as e:
             handle_error(e, f"파일 링크 생성 실패: {normalized_path}/{file_name}")
+            return ''
+
+    def _build_folder_href(self, normalized_path: str) -> str:
+        """폴더를 여는 file:// 프로토콜 링크 생성"""
+        if not normalized_path:
+            return ''
+        try:
+            # 프로젝트 내부 경로로 절대 경로 생성
+            abs_path = self.path_utils.normalize_path(
+                self.path_utils.join_path("projects", self.project_name, normalized_path)
+            )
+            
+            # 절대 경로가 실제로 존재하는지 확인
+            if not os.path.exists(abs_path):
+                # 경로가 존재하지 않으면 빈 문자열 반환
+                return ''
+            
+            # Windows 경로를 file:// 프로토콜 형식으로 변환
+            # file:///D:/path/to/folder 형식
+            abs_path_normalized = os.path.abspath(abs_path).replace('\\', '/')
+            return f"file:///{abs_path_normalized}"
+        except Exception as e:
+            app_logger.warning(f"폴더 링크 생성 실패: {normalized_path} - {e}")
             return ''

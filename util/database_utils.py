@@ -1636,6 +1636,11 @@ class DatabaseUtils:
             생성된 컴포넌트 ID 또는 None
         """
         try:
+            # 4글자 이하 테이블명은 별칭 가능성이 높으므로 inferred 생성하지 않음
+            if not table_name or len(table_name.strip()) <= 4:
+                debug(f"4글자 이하 테이블명으로 inferred 테이블 생성 스킵: {table_name}")
+                return None
+
             # 기존 테이블 컴포넌트 확인
             existing_id = self.find_component_id(project_id, table_name, 'TABLE')
             if existing_id:
