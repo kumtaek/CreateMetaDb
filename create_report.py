@@ -35,6 +35,8 @@ def parse_arguments():
   python create_report.py --project-name <프로젝트명>
   python create_report.py --project-name <프로젝트명> --report-type callchain
   python create_report.py --project-name <프로젝트명> --report-type erd
+  python create_report.py --project-name <프로젝트명> --report-type erd-dagre
+  python create_report.py --project-name <프로젝트명> --report-type erd-dagre-no-attribute
   python create_report.py --project-name <프로젝트명> --report-type architecture
   python create_report.py --project-name <프로젝트명> --report-type sequence
   python create_report.py --project-name <프로젝트명> --report-type query-list
@@ -49,7 +51,7 @@ def parse_arguments():
     
     parser.add_argument(
         '--report-type', '-t',
-        choices=['callchain', 'erd', 'erd-dagre', 'architecture', 'architecture-layer', 'sequence', 'query-list', 'backend-mapping', 'all'],
+        choices=['callchain', 'erd', 'erd-dagre', 'erd-dagre-no-attribute', 'architecture', 'architecture-layer', 'sequence', 'query-list', 'backend-mapping', 'all'],
         default='all',
         help='생성할 리포트 타입 (기본값: all - 모든 리포트 생성)'
     )
@@ -198,10 +200,11 @@ def generate_erd_report(project_name: str, output_dir: str, include_orphan_table
 
 
 
-def generate_erd_dagre_report(project_name: str, output_dir: str, include_orphan_tables: bool = False) -> bool:
+def generate_erd_dagre_report(project_name: str, output_dir: str, include_orphan_tables: bool = False,
+                              show_attributes: bool = True) -> bool:
     """ERD(Dagre) Report 생성"""
     try:
-        generator = ERDDagreReportGenerator(project_name, output_dir, include_orphan_tables)
+        generator = ERDDagreReportGenerator(project_name, output_dir, include_orphan_tables, show_attributes)
         success = generator.generate_report()
         return success
             
@@ -325,14 +328,25 @@ def main():
         
         if args.report_type in ['erd-dagre', 'all']:
             app_logger.info("\n\n\n\n3단계 시작 ========================================")
-            app_logger.info("ERD(Dagre) Report 생성")
+            app_logger.info("ERD(Dagre) Report 생성 (컬럼 표시)")
             total_count += 1
-            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan):
+            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan, show_attributes=True):
                 success_count += 1
                 app_logger.info("성공: ERD(Dagre) Report 생성 완료")
             else:
                 failed_reports.append("ERD(Dagre) Report")
                 app_logger.info("실패: ERD(Dagre) Report 생성 실패")
+        
+        if args.report_type == 'erd-dagre-no-attribute':
+            app_logger.info("\n\n\n\n3단계 시작 ========================================")
+            app_logger.info("ERD(Dagre) Report 생성 (컬럼 미표시)")
+            total_count += 1
+            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan, show_attributes=False):
+                success_count += 1
+                app_logger.info("성공: ERD(Dagre-No-Attribute) Report 생성 완료")
+            else:
+                failed_reports.append("ERD(Dagre-No-Attribute) Report")
+                app_logger.info("실패: ERD(Dagre-No-Attribute) Report 생성 실패")
         
         if args.report_type in ['architecture', 'all']:
             app_logger.info("\n\n\n\n4단계 시작 ========================================")
@@ -412,4 +426,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

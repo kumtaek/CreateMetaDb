@@ -4,9 +4,11 @@ ERD 메타데이터 조회 서비스
 - ERDReportGenerator와 ERDDagreReportGenerator에서 공용으로 사용
 """
 
+import os
 from typing import List, Dict, Any, Tuple
 from util.logger import app_logger, handle_error
 from util.database_utils import DatabaseUtils
+from util.path_utils import PathUtils
 
 
 class ERDMetadataService:
@@ -22,6 +24,8 @@ class ERDMetadataService:
         """
         self.db_utils = db_utils
         self.project_name = project_name
+        self.path_utils = PathUtils()
+        self.erd_filter_tables = self._load_erd_filter_tables()
     
     def get_statistics(self) -> Dict[str, int]:
         """통계 정보 조회"""
@@ -427,7 +431,90 @@ class ERDMetadataService:
         except Exception as e:
             app_logger.error(f"빈 테이블의 관계 컬럼 추출 실패: {str(e)}")
             return {}
-    
+
+    def apply_table_filter(
+        self,
+        tables_data: Dict[str, Any],
+        relationships: List[Dict[str, Any]],
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        """
+        ERD_REPORT_TABLES.cfg 기반 테이블/관계 필터링
+        - 지정된 테이블 + 그 테이블과 직접 조인되는 1단계 인접 테이블만 남긴다.
+        - 필터 설정이 없거나 비어 있으면 원본 데이터를 그대로 반환.
+        """
+        if not self.erd_filter_tables:
+            return tables_data, relationships
+        if not tables_data:
+            return tables_data, relationships
+
+        base_set = self.erd_filter_tables
+        allowed_tables = set()
+
+        for table_name in tables_data.keys():
+            if self._normalize_table_name(table_name) in base_set:
+                allowed_tables.add(table_name)
+
+        filtered_relationships = []
+        for rel in relationships or []:
+            src_table = rel.get('src_table')
+            dst_table = rel.get('dst_table')
+            if not src_table or not dst_table:
+                continue
+
+            src_base = self._normalize_table_name(src_table)
+            dst_base = self._normalize_table_name(dst_table)
+
+            if src_base in base_set or dst_base in base_set:
+                filtered_relationships.append(rel)
+                allowed_tables.add(src_table)
+                allowed_tables.add(dst_table)
+
+        filtered_tables = {
+            name: data
+            for name, data in tables_data.items()
+            if name in allowed_tables
+        }
+
+        allowed_keys = set(filtered_tables.keys())
+        filtered_relationships = [
+            rel for rel in filtered_relationships
+            if rel.get('src_table') in allowed_keys and rel.get('dst_table') in allowed_keys
+        ]
+
+        return filtered_tables, filtered_relationships
+
+    def _normalize_table_name(self, table_name: str) -> str:
+        if not table_name:
+            return ''
+        name = table_name[3:] if table_name.startswith('[I]') else table_name
+        return name.upper()
+
+    def _load_erd_filter_tables(self) -> set:
+        """ERD_REPORT_TABLES.cfg에서 필터 테이블 목록을 로드"""
+        try:
+            cfg_path = self.path_utils.join_path(
+                'projects',
+                self.project_name,
+                'db_schema',
+                'ERD_REPORT_TABLES.cfg'
+            )
+            if not os.path.exists(cfg_path):
+                return set()
+
+            tables = set()
+            with open(cfg_path, 'r', encoding='utf-8') as cfg_file:
+                for line in cfg_file:
+                    cleaned = line.split('#', 1)[0].strip()
+                    if cleaned:
+                        tables.add(cleaned.upper())
+
+            if tables:
+                app_logger.info(f"ERD 테이블 필터 적용: {len(tables)}개 기준 테이블")
+            return tables
+        except Exception as e:
+            app_logger.error(f"ERD 필터 테이블 로드 실패: {str(e)}")
+            return set()
+
     def _extract_columns_from_relationships(self, table_name: str) -> set:
         """특정 테이블의 관계에서 사용된 컬럼들 추출 (순환 참조 방지)"""
         try:
@@ -519,7 +606,8 @@ class ERDMetadataService:
                 FROM tables t
                 JOIN columns c ON t.table_id = c.table_id
                 JOIN projects p ON t.project_id = p.project_id
-                LEFT JOIN files f ON t.file_id = f.file_id AND f.del_yn = 'N'
+                LEFT JOIN components comp ON t.component_id = comp.component_id
+                LEFT JOIN files f ON comp.file_id = f.file_id AND f.del_yn = 'N'
                 WHERE p.project_name = ? 
                   AND t.del_yn = 'N' 
                   AND c.del_yn = 'N'
@@ -550,7 +638,9 @@ class ERDMetadataService:
                     'column_comments': row['column_comments'],
                     'column_order': row['column_id'],
                     'data_length': row['data_length'],
-                    'data_default': row['data_default']
+                    'data_default': row['data_default'],
+                    'is_inferred': False,
+                    'inferred_from': None
                 })
             
             # 3. 컬럼이 없는 테이블들에 대해 조인 조건에서 컬럼 추가 (관계가 있는 테이블만)
@@ -577,7 +667,9 @@ class ERDMetadataService:
                                 'column_comments': '조인에서 추론된 컬럼',
                                 'column_order': 1,
                                 'data_length': 50,
-                                'data_default': None
+                                'data_default': None,
+                                'is_inferred': True,
+                                'inferred_from': table_name
                             })
             
             app_logger.debug(f"관계가 있는 상세 테이블 데이터 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 제외)")
@@ -634,7 +726,9 @@ class ERDMetadataService:
                         'column_comments': row['column_comments'],
                         'is_primary_key': row['is_primary_key'] == 'Y',
                         'is_foreign_key': row['is_foreign_key'] == 'Y',
-                        'data_default': row['data_default']
+                        'data_default': row['data_default'],
+                        'is_inferred': False,
+                        'inferred_from': None
                     })
             
             app_logger.debug(f"모든 상세 테이블 데이터 조회 완료: {len(tables_data)}개 테이블 (고아 테이블 포함)")

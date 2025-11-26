@@ -1172,10 +1172,14 @@ class ReportTemplates:
                 curve: 'basis'
             },
             er: {
-                useMaxWidth: true,
+                useMaxWidth: false,         // 최대 너비 제한 해제 (넓게 배치)
                 htmlLabels: true,
-                diagramPadding: 20,
-                layoutDirection: 'TB'
+                diagramPadding: 50,         // 20 → 50 (여백 증가로 겹침 방지)
+                layoutDirection: 'TB',      // Top-Bottom 유지
+                minEntityWidth: 200,        // 엔티티 최소 너비
+                minEntityHeight: 80,        // 엔티티 최소 높이  
+                entityPadding: 30,          // 엔티티 간 패딩 (겹침 방지)
+                fontSize: 14                // 폰트 크기
             },
             // 반응형 설정
             maxTextSize: 90000,

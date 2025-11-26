@@ -327,7 +327,7 @@
         <div class="erd-header">
             <div class="header-left">
                 <h1>ERD Report</h1>
-                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-26 11:34:38</div>
+                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-26 19:50:00</div>
             </div>
             <div class="diagram-controls">
                 <button onclick="exportPng()">PNG 내보내기</button>
@@ -346,135 +346,116 @@
             <div id="zoom-indicator" class="zoom-indicator">100%</div>
             <div id="erd-diagram" class="mermaid">
                 erDiagram
-    "CATEGORIES" {
-        NUMBER CATEGORY_ID PK "NOT NULL | 카테고리ID"
-        string CATEGORY_NAME "NOT NULL | 카테고리명"
-        NUMBER PARENT_ID "상위카테고리ID"
-        string DESCRIPTION "카테고리설명"
+    "CATEGORIES(카테고리)" {
+        CATEGORY_ID NUMBER PK "카테고리ID"
+        CATEGORY_NAME VARCHAR2 "카테고리명"
+        PARENT_ID NUMBER "상위카테고리ID"
+        DESCRIPTION VARCHAR2 "카테고리설명"
     }
-
-    "CUSTOMERS" {
-        NUMBER CUSTOMER_ID PK "NOT NULL | 고객ID"
-        string CUSTOMER_NAME "NOT NULL | 고객명"
-        string PHONE "전화번호"
-        string ADDRESS "주소"
-        string EMAIL "이메일"
-        date CREATED_AT "생성일시"
+    "CUSTOMERS(고객정보)" {
+        CUSTOMER_ID NUMBER PK "고객ID"
+        CUSTOMER_NAME VARCHAR2 "고객명"
+        PHONE VARCHAR2 "전화번호"
+        ADDRESS VARCHAR2 "주소"
+        EMAIL VARCHAR2 "이메일"
+        CREATED_AT DATE "생성일시"
     }
-
-    "DEPARTMENTS" {
-        NUMBER DEPT_ID PK "NOT NULL | 부서 고유 ID"
-        string DEPT_NAME "NOT NULL | 부서명"
-        NUMBER MANAGER_ID "부서장 ID"
-        string LOCATION "부서 위치"
+    "DEPARTMENTS(부서 정보)" {
+        DEPT_ID NUMBER PK "부서 고유 ID"
+        DEPT_NAME VARCHAR2 "부서명"
+        MANAGER_ID NUMBER "부서장 ID"
+        LOCATION VARCHAR2 "부서 위치"
     }
-
-    "ORDERS" {
-        NUMBER ORDER_ID PK "NOT NULL | 주문ID"
-        NUMBER CUSTOMER_ID "NOT NULL | 고객ID"
-        date ORDER_DATE "NOT NULL | 주문일시"
-        NUMBER TOTAL_AMOUNT "총 주문금액"
-        string STATUS "주문상태"
-        INFERRED USER_ID "[I]USERS"
-        INFERRED PRODUCT_ID "[I]PRODUCTS"
+    "ORDERS(주문)" {
+        ORDER_ID NUMBER PK "주문ID"
+        CUSTOMER_ID NUMBER "고객ID"
+        ORDER_DATE DATE "주문일시"
+        TOTAL_AMOUNT NUMBER "총 주문금액"
+        STATUS VARCHAR2 "주문상태"
+        USER_ID UNKNOWN "[I]USERS"
+        PRODUCT_ID UNKNOWN "[I]PRODUCTS"
     }
-
-    "ORDER_ITEMS" {
-        NUMBER ITEM_ID PK "NOT NULL | 주문항목ID"
-        NUMBER ORDER_ID "NOT NULL | 주문ID"
-        NUMBER PRODUCT_ID "NOT NULL | 상품ID"
-        NUMBER QUANTITY "NOT NULL | 수량"
-        NUMBER UNIT_PRICE "NOT NULL | 단가"
+    "ORDER_ITEMS(주문항목)" {
+        ITEM_ID NUMBER PK "주문항목ID"
+        ORDER_ID NUMBER "주문ID"
+        PRODUCT_ID NUMBER "상품ID"
+        QUANTITY NUMBER "수량"
+        UNIT_PRICE NUMBER "단가"
     }
-
-    "PRODUCTS" {
-        NUMBER PRODUCT_ID PK "NOT NULL | 상품ID"
-        string PRODUCT_NAME "NOT NULL | 상품명"
-        NUMBER CATEGORY_ID "카테고리ID"
-        NUMBER PRICE "NOT NULL | 가격"
-        NUMBER STOCK_QUANTITY "재고수량"
-        CLOB DESCRIPTION "상품설명"
-        INFERRED BRAND_ID "[I]BRANDS"
-        INFERRED SUPPLIER_ID "[I]SUPPLIERS"
+    "PRODUCTS(상품)" {
+        PRODUCT_ID NUMBER PK "상품ID"
+        PRODUCT_NAME VARCHAR2 "상품명"
+        CATEGORY_ID NUMBER "카테고리ID"
+        PRICE NUMBER "가격"
+        STOCK_QUANTITY NUMBER "재고수량"
+        DESCRIPTION CLOB "상품설명"
+        BRAND_ID UNKNOWN "[I]BRANDS"
+        SUPPLIER_ID UNKNOWN "[I]SUPPLIERS"
     }
-
-    "USERS" {
-        NUMBER ID PK "NOT NULL | 사용자 고유 식별자"
-        string USERNAME "NOT NULL | 사용자명 (유니크)"
-        string EMAIL "NOT NULL | 이메일 주소"
-        string PASSWORD "NOT NULL | 암호화된 비밀번호"
-        date CREATED_AT "계정 생성일시"
-        date UPDATED_AT "계정 수정일시"
-        string STATUS "계정 상태"
-        INFERRED DEPT_ID "[I]DEPARTMENTS"
-        INFERRED USER_ID "[I]USER_PROFILES"
+    "USERS(사용자 정보를 저장하)" {
+        USER_ID NUMBER PK "사용자 고유 식별자"
+        USERNAME VARCHAR2 "사용자명 (유니크)"
+        EMAIL VARCHAR2 "이메일 주소"
+        PASSWORD VARCHAR2 "암호화된 비밀번호"
+        CREATED_AT DATE "계정 생성일시"
+        UPDATED_AT DATE "계정 수정일시"
+        STATUS VARCHAR2 "계정 상태"
+        DEPT_ID UNKNOWN "[I]DEPARTMENTS"
     }
-
-    "USER_PROFILES" {
-        NUMBER PROFILE_ID PK "NOT NULL | 프로필 고유 ID"
-        NUMBER USER_ID "NOT NULL | 사용자 ID (외래키)"
-        string FIRST_NAME "이름"
-        string LAST_NAME "성"
-        string PHONE "전화번호"
-        CLOB ADDRESS "주소"
+    "USER_PROFILES(사용자 프로필)" {
+        PROFILE_ID NUMBER PK "프로필 고유 ID"
+        USER_ID NUMBER "사용자 ID (외래키)"
+        FIRST_NAME VARCHAR2 "이름"
+        LAST_NAME VARCHAR2 "성"
+        PHONE VARCHAR2 "전화번호"
+        ADDRESS CLOB "주소"
     }
-
-    "USER_ROLES" {
-        NUMBER USER_ID PK "NOT NULL | 사용자 ID"
-        NUMBER ROLE_ID PK "NOT NULL | 역할 ID"
-        date ASSIGNED_AT "할당일시"
+    "USER_ROLES(사용자 역할 매핑)" {
+        USER_ID NUMBER PK "사용자 ID"
+        ROLE_ID NUMBER PK "역할 ID"
+        ASSIGNED_AT DATE "할당일시"
     }
-
     "[I]BRANDS" {
-        INFERRED BRAND_ID "[I]PRODUCTS"
+        BRAND_ID UNKNOWN "[I]PRODUCTS"
     }
-
     "[I]BRANDS_AUX" {
-        INFERRED USER_REF "[I]USERS"
+        USER_REF UNKNOWN "[I]USERS"
     }
-
     "[I]BRAND_METRICS" {
-        INFERRED ORDER_REF "[I]ORDERS"
+        ORDER_REF UNKNOWN "[I]ORDERS"
     }
-
     "[I]INVENTORY" {
-        INFERRED PRODUCT_ID "[I]PRODUCTS"
+        PRODUCT_ID UNKNOWN "[I]PRODUCTS"
     }
-
     "[I]INVENTORY_AUDIT" {
-        INFERRED ORDER_REF "[I]ORDERS"
+        ORDER_REF UNKNOWN "[I]ORDERS"
     }
-
     "[I]PAYMENTS" {
-        INFERRED ORDER_ID "[I]ORDERS"
+        ORDER_ID UNKNOWN "[I]ORDERS"
     }
-
     "[I]SUPPLIERS" {
-        INFERRED SUPPLIER_ID "[I]PRODUCTS"
+        SUPPLIER_ID UNKNOWN "[I]PRODUCTS"
     }
-
     "[I]USER_ACTIVITIES" {
-        INFERRED USER_ID "[I]USERS"
+        USER_ID UNKNOWN "[I]USERS"
     }
-
-    "CATEGORIES" ||--o{ "PRODUCTS" : "CATEGORY_ID"
-    "CUSTOMERS" ||--o{ "ORDERS" : "CUSTOMER_ID"
-    "ORDERS" ||--o{ "[I]BRAND_METRICS" : "ORDERS.ORDER_ID = [I]BRAND_METRICS.ORDER_REF"
-    "ORDERS" ||--o{ "[I]INVENTORY_AUDIT" : "ORDERS.ORDER_ID = [I]INVENTORY_AUDIT.ORDER_REF"
-    "ORDERS" ||--o{ "ORDER_ITEMS" : "ORDER_ID"
-    "ORDERS" ||--o{ "[I]PAYMENTS" : "ORDER_ID"
-    "PRODUCTS" ||--o{ "ORDERS" : "PRODUCT_ID"
-    "USERS" ||--o{ "ORDERS" : "USER_ID"
-    "PRODUCTS" ||--o{ "ORDER_ITEMS" : "PRODUCT_ID"
-    "[I]BRANDS" ||--o{ "PRODUCTS" : "BRAND_ID"
-    "PRODUCTS" ||--o{ "[I]INVENTORY" : "PRODUCT_ID"
-    "[I]SUPPLIERS" ||--o{ "PRODUCTS" : "SUPPLIER_ID"
-    "USERS" ||--o{ "[I]BRANDS_AUX" : "USERS.USER_ID = [I]BRANDS_AUX.USER_REF"
-    "USERS" ||--o{ "DEPARTMENTS" : "DEPT_ID"
-    "USERS" ||--o{ "[I]USER_ACTIVITIES" : "USER_ID"
-    "USERS" ||--o{ "USER_PROFILES" : "USER_ID"
-    "USERS" ||--o{ "USER_ROLES" : "USERS.ID = USER_ROLES.USER_ID"
-    "USER_PROFILES" ||--o{ "ORDERS" : "USER_ID"
+    "CATEGORIES(카테고리)" ||--o{ "PRODUCTS(상품)" : "CATEGORY_ID"
+    "CUSTOMERS(고객정보)" ||--o{ "ORDERS(주문)" : "CUSTOMER_ID"
+    "ORDERS(주문)" ||--o{ "[I]BRAND_METRICS" : "ORDER_ID↔ORDER_REF"
+    "ORDERS(주문)" ||--o{ "[I]INVENTORY_AUDIT" : "ORDER_ID↔ORDER_REF"
+    "ORDERS(주문)" ||--o{ "ORDER_ITEMS(주문항목)" : "ORDER_ID"
+    "ORDERS(주문)" ||--o{ "[I]PAYMENTS" : "ORDER_ID"
+    "PRODUCTS(상품)" ||--o{ "ORDERS(주문)" : "PRODUCT_ID"
+    "USERS(사용자 정보를 저장하)" ||--o{ "ORDERS(주문)" : "USER_ID"
+    "PRODUCTS(상품)" ||--o{ "ORDER_ITEMS(주문항목)" : "PRODUCT_ID"
+    "[I]BRANDS" ||--o{ "PRODUCTS(상품)" : "BRAND_ID"
+    "PRODUCTS(상품)" ||--o{ "[I]INVENTORY" : "PRODUCT_ID"
+    "[I]SUPPLIERS" ||--o{ "PRODUCTS(상품)" : "SUPPLIER_ID"
+    "USERS(사용자 정보를 저장하)" ||--o{ "[I]BRANDS_AUX" : "USER_ID↔USER_REF"
+    "DEPARTMENTS(부서 정보)" ||--o{ "USERS(사용자 정보를 저장하)" : "DEPT_ID"
+    "USERS(사용자 정보를 저장하)" ||--o{ "[I]USER_ACTIVITIES" : "USER_ID"
+    "USERS(사용자 정보를 저장하)" ||--o{ "USER_PROFILES(사용자 프로필)" : "USER_ID"
+    "USERS(사용자 정보를 저장하)" ||--o{ "USER_ROLES(사용자 역할 매핑)" : "USER_ID"
             </div>
         </div>
                 </div>
@@ -495,7 +476,7 @@
                 <div class="erd-stat-label">Primary Key</div>
             </div>
             <div class="erd-stat-card">
-                <div class="erd-stat-number">27</div>
+                <div class="erd-stat-number">26</div>
                 <div class="erd-stat-label">관계</div>
             </div>
         </div>
@@ -594,10 +575,14 @@
                 curve: 'basis'
             },
             er: {
-                useMaxWidth: true,
+                useMaxWidth: false,         // 최대 너비 제한 해제 (넓게 배치)
                 htmlLabels: true,
-                diagramPadding: 20,
-                layoutDirection: 'TB'
+                diagramPadding: 50,         // 20 → 50 (여백 증가로 겹침 방지)
+                layoutDirection: 'TB',      // Top-Bottom 유지
+                minEntityWidth: 200,        // 엔티티 최소 너비
+                minEntityHeight: 80,        // 엔티티 최소 높이  
+                entityPadding: 30,          // 엔티티 간 패딩 (겹침 방지)
+                fontSize: 14                // 폰트 크기
             },
             // 반응형 설정
             maxTextSize: 90000,

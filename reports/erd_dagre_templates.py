@@ -10,7 +10,7 @@ class ERDDagreTemplates:
     """ERD(Dagre) Report 템플릿 관리 클래스"""
     
     def get_erd_dagre_template(self, project_name: str, timestamp: str, stats: Dict[str, int], 
-                              erd_data: Dict[str, Any]) -> str:
+                              erd_data: Dict[str, Any], show_attributes: bool = True) -> str:
         """ERD(Dagre) Report HTML 템플릿 생성"""
         
         # 통계 카드 HTML 생성
@@ -85,7 +85,7 @@ class ERDDagreTemplates:
     </div>
     
     <script>
-        {self._get_erd_dagre_javascript(project_name)}
+        {self._get_erd_dagre_javascript(project_name, show_attributes)}
     </script>
 </body>
 </html>"""
@@ -500,7 +500,7 @@ class ERDDagreTemplates:
         }
         """
     
-    def _get_erd_dagre_javascript(self, project_name: str) -> str:
+    def _get_erd_dagre_javascript(self, project_name: str, show_attributes: bool) -> str:
         """ERD(Dagre) Report JavaScript - 프로젝트명 동적 처리"""
         return f"""
         // ERD Dagre 초기화 및 이벤트 처리
@@ -510,6 +510,7 @@ class ERDDagreTemplates:
         let edgeTooltipTimeout;
         let isTooltipVisible = false;
         let isEdgeTooltipVisible = false;
+        const SHOW_ATTRIBUTES = {str(show_attributes).lower()};
         
         document.addEventListener('DOMContentLoaded', function() {{
             initCytoscape();
@@ -530,45 +531,84 @@ class ERDDagreTemplates:
                     {{
                         selector: 'node',
                         style: {{
-                            'background-color': '#4a90e2',
-                            'label': 'data(label)',
+                            'background-color': '#f5f7ff',
+                            'label': 'data(display_label)',
                             'text-valign': 'center',
                             'text-halign': 'center',
-                            'color': 'white',
-                            'font-size': '14px',
-                            'font-weight': 'bold',
-                            'width': '160px',
-                            'height': '80px',
+                            'color': '#0f172a',
+                            'font-size': '13px',
+                            'font-weight': '600',
+                            'text-outline-width': 0,
+                            'text-wrap': 'wrap',
+                            'text-max-width': '260px',
+                            'text-margin-y': 0,
+                            'text-margin-x': 0,
+                            'text-justification': 'center',
+                            'width': 'label',
+                            'height': 'label',
+                            'min-width': '220px',
+                            'min-height': '140px',
                             'border-width': 3,
-                            'border-color': '#1e40af',
-                            'shape': 'round-rectangle'
+                            'border-color': '#1e3a8a',
+                            'shape': 'round-rectangle',
+                            'padding': '18px',
+                            'shadow-blur': 12,
+                            'shadow-color': '#cbd5e1',
+                            'shadow-opacity': 0.7
                         }}
                     }},
                     {{
                         selector: 'edge',
                         style: {{
                             'width': 3,
-                            'line-color': '#7f8c8d',
-                            'target-arrow-color': '#7f8c8d',
+                            'line-color': '#5f6b7a',
+                            'target-arrow-color': '#0f172a',
                             'target-arrow-shape': 'triangle',
+                            'target-arrow-fill': 'filled',
+                            'arrow-scale': 1.8,
+                            'source-arrow-shape': 'none',
+                            'source-endpoint': 'outside-to-node',
+                            'target-endpoint': 'outside-to-node',
                             'curve-style': 'bezier',
                             'label': 'data(label)',
-                            'font-size': '10px',
-                            'text-rotation': 'autorotate',
-                            'text-margin-y': -10
+                            'font-size': '11px',
+                            'font-weight': 'bold',
+                            'color': '#1f2937',
+                            'text-rotation': 'none',
+                            'text-margin-y': -15,
+                            'text-background-color': '#ffffff',
+                            'text-background-opacity': 0.9,
+                            'text-background-padding': '3px',
+                            'text-background-shape': 'roundrectangle',
+                            'text-border-color': '#ddd',
+                            'text-border-width': 1,
+                            'text-border-opacity': 0.8
                         }}
                     }}
                 ],
                 layout: {{
-                    name: 'dagre',              // 초기 레이아웃을 dagre로 변경 (하단 레이아웃)
+                    name: 'dagre',              // 초기 레이아웃: dagre (계층형)
                     animate: true,
                     animationDuration: 1000,
-                    nodeSep: 80,                // 노드 간 간격 축소 (200 → 80)
-                    edgeSep: 50,                // 엣지 간 간격 축소 (120 → 50)
-                    rankSep: 120,               // 계층 간 간격 축소 (300 → 120)
+                    nodeSep: 150,               // 노드 간 간격 확대 (80 → 150) - 엔티티 겹침 방지
+                    edgeSep: 100,               // 엣지 간 간격 확대 (50 → 100) - 관계선 분리
+                    rankSep: 200,               // 계층 간 간격 확대 (120 → 200) - 수직 공간 확보
                     rankDir: 'TB',              // 위에서 아래로 배치
-                    align: 'DR'                 // 정렬 방식
+                    align: 'UL',                // 정렬 방식 변경 (DR → UL) - 좌상단 정렬로 겹침 최소화
+                    ranker: 'network-simplex'   // 최적 계층 배치 알고리즘
                 }}
+            }});
+            
+            applyNodeLabels();
+        }}
+        
+        function applyNodeLabels() {{
+            cy.nodes().forEach((node) => {{
+                const baseLabel = node.data('label');
+                const displayLabel = node.data('display_label') || baseLabel;
+                const finalLabel = SHOW_ATTRIBUTES ? displayLabel : baseLabel;
+                node.data('display_label', finalLabel);
+                node.style('label', finalLabel);
             }});
         }}
         
@@ -595,27 +635,32 @@ class ERDDagreTemplates:
             if (currentLayout === 'fcose') {{
                 layoutOptions = {{
                     ...layoutOptions,
-                    nodeRepulsion: 25000,       // 노드 간 반발력 극대화 (15000 → 25000)
-                    idealEdgeLength: 400,       // 이상적인 엣지 길이 더 증가 (300 → 400)
-                    edgeElasticity: 0.2,        // 엣지 탄성력 더 감소
+                    nodeRepulsion: 50000,       // 노드 간 반발력 극대화 (25000 → 50000) - 겹침 완전 방지
+                    idealEdgeLength: 500,       // 이상적인 엣지 길이 증가 (400 → 500)
+                    edgeElasticity: 0.1,        // 엣지 탄성력 최소화 (0.2 → 0.1)
                     nestingFactor: 0.01,        // 중첩 방지 극대화
-                    gravity: 0.05,              // 중력 극소화 (0.1 → 0.05)
-                    numIter: 4000,              // 반복 횟수 더 증가
+                    gravity: 0.02,              // 중력 더욱 감소 (0.05 → 0.02) - 노드 분산
+                    numIter: 5000,              // 반복 횟수 증가 (4000 → 5000)
                     tile: true,                 // 타일링 활성화
-                    tilingPaddingVertical: 150, // 수직 패딩 더 증가 (100 → 150)
-                    tilingPaddingHorizontal: 150, // 수평 패딩 더 증가 (100 → 150)
-                    initialTemp: 300,           // 초기 온도 더 증가
-                    coolingFactor: 0.98,        // 더 천천히 냉각
-                    minTemp: 0.5                // 최소 온도 감소
+                    tilingPaddingVertical: 200, // 수직 패딩 증가 (150 → 200)
+                    tilingPaddingHorizontal: 200, // 수평 패딩 증가 (150 → 200)
+                    initialTemp: 500,           // 초기 온도 증가 (300 → 500)
+                    coolingFactor: 0.99,        // 더욱 천천히 냉각 (0.98 → 0.99)
+                    minTemp: 0.3,               // 최소 온도 감소 (0.5 → 0.3)
+                    nodeSeparation: 200,        // 노드 최소 간격 추가
+                    spacingFactor: 2.0,         // 전체 간격 배율 추가
+                    avoidOverlap: true,         // 겹침 방지 활성화
+                    avoidOverlapPadding: 50     // 겹침 방지 패딩
                 }};
             }} else if (currentLayout === 'dagre') {{
                 layoutOptions = {{
                     ...layoutOptions,
-                    nodeSep: 80,                // 노드 간 간격 축소 (200 → 80)
-                    edgeSep: 50,                // 엣지 간 간격 축소 (120 → 50)
-                    rankSep: 120,               // 계층 간 간격 축소 (300 → 120)
+                    nodeSep: 150,               // 노드 간 간격 확대 (80 → 150)
+                    edgeSep: 100,               // 엣지 간 간격 확대 (50 → 100)
+                    rankSep: 200,               // 계층 간 간격 확대 (120 → 200)
                     rankDir: 'TB',              // 위에서 아래로 배치
-                    align: 'DR'                 // 정렬 방식
+                    align: 'UL',                // 좌상단 정렬
+                    ranker: 'network-simplex'   // 최적 계층 배치
                 }};
             }} else if (currentLayout === 'circle') {{
                 layoutOptions = {{

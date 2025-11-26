@@ -7,12 +7,12 @@ ERD(Dagre) Report 생성기
 
 import os
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 # 크로스플랫폼 경로 처리는 PathUtils 공통함수 사용
-
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
@@ -23,7 +23,8 @@ from reports.erd_metadata_service import ERDMetadataService
 class ERDDagreReportGenerator:
     """ERD(Dagre) Report 생성기 클래스"""
     
-    def __init__(self, project_name: str, output_dir: str, include_orphan_tables: bool = False):
+    def __init__(self, project_name: str, output_dir: str, include_orphan_tables: bool = False,
+                 show_attributes: bool = True):
         """
         초기화
         
@@ -31,10 +32,12 @@ class ERDDagreReportGenerator:
             project_name: 프로젝트명
             output_dir: 출력 디렉토리
             include_orphan_tables: 고아 테이블 포함 여부 (기본값: False)
+            show_attributes: 컬럼(속성) 표시 여부
         """
         self.project_name = project_name
         self.output_dir = output_dir
         self.include_orphan_tables = include_orphan_tables
+        self.show_attributes = show_attributes
         self.path_utils = PathUtils()
         self.templates = ERDDagreTemplates()
         
@@ -56,7 +59,7 @@ class ERDDagreReportGenerator:
             생성 성공 여부 (True/False)
         """
         try:
-            app_logger.info(f"ERD(Dagre) Report 생성 시작: {self.project_name}")
+            app_logger.info(f"ERD(Dagre) Report 생성 시작: {self.project_name} (컬럼 표시: {'Y' if self.show_attributes else 'N'})")
             
             # 1. 통계 정보 조회
             stats = self._get_statistics()
@@ -101,9 +104,15 @@ class ERDDagreReportGenerator:
             
             # 공용 서비스에서 관계 정보 조회
             relationships_data = self.metadata_service.get_relationships()
+
+            # ERD_REPORT_TABLES.cfg 기반 필터 적용
+            tables_data, relationships_data = self.metadata_service.apply_table_filter(tables_data, relationships_data)
+            
+            # INFERRED 컬럼 대상 테이블 맵 생성 (컬럼명 [I]상대테이블명 표기를 위해)
+            inferred_targets = self._build_inferred_column_targets(tables_data, relationships_data)
             
             # Cytoscape.js 노드 데이터 생성
-            nodes = self._generate_cytoscape_nodes(tables_data)
+            nodes = self._generate_cytoscape_nodes(tables_data, inferred_targets)
             
             # Cytoscape.js 엣지 데이터 생성 (노드 존재 여부 검증)
             edges = self._generate_cytoscape_edges(relationships_data, nodes)
@@ -123,270 +132,8 @@ class ERDDagreReportGenerator:
             return {'nodes': [], 'edges': [], 'tables_count': 0, 'relationships_count': 0}
     
     
-    def _get_relationships_detailed(self) -> List[Dict[str, Any]]:
-        """상세 관계 정보 조회"""
-        try:
-            # 먼저 테이블 간 관계만 조회 (컬럼 정보는 별도 처리)
-            query = """
-                SELECT 
-                    r.rel_type,
-                    r.confidence,
-                    src_table.table_name as src_table,
-                    src_table.table_owner as src_owner,
-                    dst_table.table_name as dst_table,
-                    dst_table.table_owner as dst_owner
-                FROM relationships r
-                JOIN components src_comp ON r.src_id = src_comp.component_id
-                JOIN components dst_comp ON r.dst_id = dst_comp.component_id
-                JOIN tables src_table ON src_comp.component_id = src_table.component_id
-                JOIN tables dst_table ON dst_comp.component_id = dst_table.component_id
-                JOIN projects p ON src_comp.project_id = p.project_id
-                WHERE p.project_name = ? 
-                  AND r.del_yn = 'N'
-                  AND src_comp.del_yn = 'N'
-                  AND dst_comp.del_yn = 'N'
-                  AND src_table.del_yn = 'N'
-                  AND dst_table.del_yn = 'N'
-                  AND r.rel_type LIKE '%JOIN%'
-                ORDER BY src_table.table_name, dst_table.table_name
-            """
-            
-            results = self.db_utils.execute_query(query, (self.project_name,))
-            
-            relationships = []
-            for row in results:
-                # 조인 조건에서 컬럼 정보 추출 (condition_expression 컬럼이 없으므로 기본값 사용)
-                src_column, dst_column = self._extract_join_columns(
-                    None, 
-                    row['src_table'], 
-                    row['dst_table']
-                )
-                
-                if src_column and dst_column:
-                    # 컬럼 데이터 타입 조회
-                    src_data_type, dst_data_type = self._get_column_data_types(
-                        row['src_table'], src_column, 
-                        row['dst_table'], dst_column
-                    )
-                    
-                    # PK-FK 관계 여부 확인
-                    is_pk_fk_relation = self._is_pk_fk_relation(
-                        row['src_table'], src_column, 
-                        row['dst_table'], dst_column
-                    )
-                    
-                    # 관계 불명확한 경우 필터링 (PK-FK 관계가 아니고 신뢰도가 낮은 경우)
-                    if not is_pk_fk_relation and (row['confidence'] or 0.8) < 0.7:
-                        app_logger.debug(f"관계 불명확하여 제외: {row['src_table']}.{src_column} -> {row['dst_table']}.{dst_column} (신뢰도: {row['confidence'] or 0.8})")
-                        continue
-                    
-                    relationships.append({
-                        'rel_type': row['rel_type'],
-                        'confidence': row['confidence'] or 0.8,
-                        'frequency': 1,  # 기본값
-                        'src_table': row['src_table'],
-                        'src_owner': row['src_owner'],
-                        'dst_table': row['dst_table'],
-                        'dst_owner': row['dst_owner'],
-                        'src_column': src_column,
-                        'dst_column': dst_column,
-                        'src_data_type': src_data_type,
-                        'dst_data_type': dst_data_type,
-                        'join_condition': None,  # condition_expression 컬럼이 존재하지 않음
-                        'rel_comment': '',
-                        'is_pk_fk': is_pk_fk_relation
-                    })
-            
-            app_logger.debug(f"관계 정보 조회 완료: {len(relationships)}개")
-            return relationships
-            
-        except Exception as e:
-            handle_error(e, "관계 정보 조회 실패")
-    
-    def _extract_join_columns(self, condition_expression: str, src_table: str, dst_table: str) -> tuple:
-        """조인 조건에서 소스와 대상 컬럼 추출"""
-        try:
-            if not condition_expression:
-                # 조건이 없으면 실제 데이터베이스 스키마 기반으로 추측
-                return self._find_foreign_key_columns(src_table, dst_table)
-            
-            # 조건에서 컬럼 추출 (예: "p.brand_id = b.brand_id")
-            import re
-            
-            # 테이블별칭.컬럼명 = 테이블별칭.컬럼명 패턴 매칭
-            pattern = r'(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
-            match = re.search(pattern, condition_expression, re.IGNORECASE)
-            
-            if match:
-                left_table_alias, left_column, right_table_alias, right_column = match.groups()
-                
-                # 실제 데이터베이스 스키마를 기반으로 컬럼 유효성 검증
-                if self._is_valid_column_pair(src_table, left_column, dst_table, right_column):
-                    return left_column, right_column
-                elif self._is_valid_column_pair(src_table, right_column, dst_table, left_column):
-                    return right_column, left_column
-                else:
-                    # 유효한 컬럼 쌍이 없으면 스키마 기반 추측
-                    return self._find_foreign_key_columns(src_table, dst_table)
-            
-            # 패턴 매칭 실패시 실제 데이터베이스 스키마 기반으로 추측
-            return self._find_foreign_key_columns(src_table, dst_table)
-            
-        except Exception as e:
-            handle_error(e, f"조인 컬럼 추출 실패: {condition_expression}")
-    
-    def _is_valid_column_pair(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
-        """실제 데이터베이스 스키마를 기반으로 컬럼 쌍의 유효성 검증"""
-        try:
-            query = """
-                SELECT COUNT(*) as count
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = ?
-                  AND dst_col.column_name = ?
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table.upper(), src_table.upper(), self.project_name, src_column, dst_column))
-            return result[0]['count'] > 0 if result else False
-            
-        except Exception as e:
-            handle_error(e, f"컬럼 쌍 유효성 검증 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
-    
-    def _find_foreign_key_columns(self, src_table: str, dst_table: str) -> tuple:
-        """CSV에서 업로드된 정확한 PK 정보를 기반으로 외래키 컬럼 찾기"""
-        try:
-            # 1. 먼저 PK-PK 매칭 시도 (동일한 PK 컬럼명)
-            query = """
-                SELECT 
-                    src_col.column_name as src_column,
-                    dst_col.column_name as dst_column
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = dst_col.column_name
-                  AND src_col.position_pk IS NOT NULL
-                  AND dst_col.position_pk IS NOT NULL
-                LIMIT 1
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
-            
-            if result:
-                column_name = result[0]['src_column']
-                return column_name, column_name
-            
-            # 2. FK-PK 매칭 시도 (소스는 PK가 아니고, 대상은 PK)
-            query = """
-                SELECT 
-                    src_col.column_name as src_column,
-                    dst_col.column_name as dst_column
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = dst_col.column_name
-                  AND src_col.position_pk IS NULL
-                  AND dst_col.position_pk IS NOT NULL
-                LIMIT 1
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
-            
-            if result:
-                column_name = result[0]['src_column']
-                return column_name, column_name
-            
-            # 3. 일반적인 컬럼명 매칭 시도 (ID로 끝나는 컬럼)
-            query = """
-                SELECT 
-                    src_col.column_name as src_column,
-                    dst_col.column_name as dst_column
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = dst_col.column_name
-                  AND src_col.column_name LIKE '%_ID'
-                LIMIT 1
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name))
-            
-            if result:
-                column_name = result[0]['src_column']
-                return column_name, column_name
-            
-            # 매칭되는 컬럼이 없으면 None 반환 (관계 제외)
-            app_logger.debug(f"외래키 컬럼 매칭 실패: {src_table} -> {dst_table}")
-            return None, None
-                
-        except Exception as e:
-            handle_error(e, f"외래키 컬럼 추측 실패: {src_table} -> {dst_table}")
-    
-    def _get_column_data_types(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> tuple:
-        """컬럼의 데이터 타입 조회"""
-        try:
-            query = """
-                SELECT 
-                    c1.data_type as src_data_type,
-                    c2.data_type as dst_data_type
-                FROM tables t1
-                JOIN columns c1 ON t1.table_id = c1.table_id
-                JOIN tables t2 ON t2.table_name = ?
-                JOIN columns c2 ON t2.table_id = c2.table_id
-                JOIN projects p ON t1.project_id = p.project_id
-                WHERE t1.table_name = ? 
-                  AND c1.column_name = ?
-                  AND c2.column_name = ?
-                  AND p.project_name = ?
-                  AND t1.del_yn = 'N' 
-                  AND t2.del_yn = 'N'
-                  AND c1.del_yn = 'N'
-                  AND c2.del_yn = 'N'
-            """
-            
-            result = self.db_utils.execute_query(query, (dst_table, src_table, src_column, dst_column, self.project_name))
-            
-            if result:
-                return result[0]['src_data_type'], result[0]['dst_data_type']
-            else:
-                return 'VARCHAR2', 'VARCHAR2'  # 기본값
-                
-        except Exception as e:
-            handle_error(e, f"컬럼 데이터 타입 조회 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
-    
-    def _generate_cytoscape_nodes(self, tables_data: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    def _generate_cytoscape_nodes(self, tables_data: Dict[str, List[Dict[str, Any]]],
+                                  inferred_targets: Optional[Dict[str, Dict[str, str]]]) -> List[Dict[str, Any]]:
         """Cytoscape.js 노드 데이터 생성"""
         try:
             nodes = []
@@ -401,7 +148,8 @@ class ERDDagreReportGenerator:
                     'data': {
                         'id': f"table:{table_name}",
                         'type': 'table',
-                        'label': table_name,
+                        'label': table_name,  # 검색 및 기본 라벨
+                        'display_label': '',  # 컬럼 처리 후 설정
                         'meta': {
                             'table_name': table_name,
                             'status': 'VALID',
@@ -413,19 +161,33 @@ class ERDDagreReportGenerator:
                 }
                 
                 # 컬럼 정보 추가
+                column_meta_list = []
                 for col in table_info['columns']:
+                    inferred_target = None
+                    if inferred_targets:
+                        inferred_target = inferred_targets.get(table_name, {}).get(col['column_name'])
+                    is_foreign_key = col.get('is_foreign_key', False) or bool(inferred_target)
                     column_data = {
                         'name': col['column_name'],
+                        'column_name': col['column_name'],  # 라벨 생성 시 사용
                         'data_type': col['data_type'],
                         'nullable': 'Y' if col['is_nullable'] else 'N',
                         'is_pk': col['is_primary_key'],
-                        'is_foreign_key': False,  # FK 정보는 별도 처리
-                        'fk_references': None,
+                        'is_foreign_key': is_foreign_key,
+                        'fk_references': inferred_target,
                         'comment': col['column_comments'] or '',
                         'data_length': col['data_length'],
-                        'data_default': col['data_default']
+                        'data_default': col['data_default'],
+                        'is_inferred': col.get('is_inferred', False),
+                        'inferred_from': col.get('inferred_from')
                     }
-                    node_data['data']['meta']['columns'].append(column_data)
+                    column_meta_list.append(column_data)
+                
+                node_data['data']['meta']['columns'] = column_meta_list
+                
+                # 컬럼 메타를 반영한 표시용 라벨 생성
+                display_label = self._build_node_label(table_name, column_meta_list)
+                node_data['data']['display_label'] = display_label
                 
                 nodes.append(node_data)
             
@@ -435,43 +197,163 @@ class ERDDagreReportGenerator:
         except Exception as e:
             handle_error(e, "Cytoscape 노드 생성 실패")
             return []
+
+    def _build_node_label(self, table_name: str, columns: List[Dict[str, Any]]) -> str:
+        """
+        테이블 노드 라벨 생성 (Mermaid ERD와 동일한 포맷)
+        
+        Args:
+            table_name: 테이블명
+            columns: 컬럼 정보 목록
+        
+        Returns:
+            Cytoscape 노드 라벨 문자열
+        """
+        try:
+            if not self.show_attributes:
+                # 속성 비표시 모드에서는 테이블명만 사용
+                return table_name
+
+            # 엔티티 박스 헤더 (테이블명 + 구분선)
+            separator = '-' * max(12, min(36, len(table_name) + 6))
+            lines = [table_name, separator]
+
+            for col in columns:
+                raw_name = col.get('column_name') or col.get('name') or ''
+                if not raw_name:
+                    continue
+
+                # 표시용 컬럼명: INFERRED 컬럼은 [I] 접두어 제거
+                display_name = raw_name[3:] if raw_name.startswith('[I]') else raw_name
+
+                fk_target = col.get('fk_references')
+                is_pk = bool(col.get('is_pk') or col.get('is_primary_key'))
+                comment = col.get('comment') or ''
+
+                if fk_target:
+                    # INFERRED 컬럼: "컬럼명 [I]상대테이블명" (주석 미표시)
+                    line = f"{display_name} {fk_target}"
+                else:
+                    # 일반/PK 컬럼
+                    name_part = f"{display_name}(PK)" if is_pk else display_name
+                    line = f"{name_part} {comment}" if comment else name_part
+
+                lines.append(line)
+
+            return "\n".join(lines)
+        except Exception as e:
+            handle_error(e, f"노드 라벨 생성 실패: {table_name}")
+            return table_name
+    
+    def _sanitize_identifier(self, name: str) -> str:
+        """
+        Mermaid 호환 식별자 생성
+        - 공백/특수문자 제거, 숫자로 시작하면 접두어 추가
+        """
+        try:
+            if not name:
+                return ""
+            sanitized = re.sub(r'[^A-Za-z0-9_]', '_', name)
+            if sanitized and sanitized[0].isdigit():
+                sanitized = f"_{sanitized}"
+            return sanitized
+        except Exception as e:
+            handle_error(e, f"Mermaid 식별자 정규화 실패: {name}")
+            return ""
+
+    def _escape_mermaid_text(self, text: str) -> str:
+        """Mermaid 문자열에서 따옴표 등 문제되는 문자를 이스케이프"""
+        try:
+            return (text or "").replace('"', "'")
+        except Exception as e:
+            handle_error(e, f"Mermaid 문자열 이스케이프 실패: {text}")
+            return ""
+    
+    def _is_valid_identifier(self, name: str) -> bool:
+        """Mermaid에서 허용하는 식별자 패턴 검증 (영문/언더스코어 시작, [I] 접두어 허용)"""
+        try:
+            if not name:
+                return False
+            # 리터럴 값은 유효한 식별자가 아님 (YAML 설정 기반)
+            from util.oracle_keyword_manager import is_literal_value
+            if is_literal_value(name):
+                return False
+            # [I] 접두어 제거 후 검증 (INFERRED 테이블 지원)
+            check_name = name[3:] if name.startswith('[I]') else name
+            return bool(re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', check_name))
+        except Exception as e:
+            handle_error(e, f"Mermaid 식별자 검증 실패: {name}")
+            return False
+
+    def _normalize_data_type(self, data_type: str) -> str:
+        """데이터 타입 정규화 (길이 정보 보존)"""
+        try:
+            if not data_type:
+                return "string"
+            
+            # 길이·정밀도 제거 후 타입만 추출
+            data_type_clean = re.sub(r'\s+', '', str(data_type))
+            data_type_clean = re.sub(r'\((.*?)\)', '', data_type_clean)
+            data_type_upper = data_type_clean.upper()
+
+            # VARCHAR, CHAR, TEXT 등 문자열 타입
+            if data_type_upper.startswith(('VARCHAR', 'CHAR', 'TEXT')):
+                return "string"
+            
+            # 숫자 타입
+            elif data_type_upper.startswith(('INT', 'INTEGER', 'BIGINT', 'SMALLINT')):
+                return "int"
+            elif data_type_upper.startswith(('DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE')):
+                return "float"
+            
+            # 날짜 타입
+            elif data_type_upper.startswith(('DATE', 'TIMESTAMP', 'DATETIME')):
+                return "date"
+            
+            # 기타
+            else:
+                return data_type
+            
+        except Exception as e:
+            handle_error(e, f"데이터 타입 정규화 실패: {data_type}")
+            return "string"
     
     def _generate_cytoscape_edges(self, relationships_data: List[Dict[str, Any]], nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Cytoscape.js 엣지 데이터 생성 - 노드 존재 여부 검증 및 중복 제거"""
         try:
             edges = []
-            processed_pairs = set()  # 처리된 테이블 쌍을 추적
+            processed_pairs = set()  # 처리된 테이블 쌍을 추적 (Mermaid ERD와 동일 방향성 유지)
             
             # 존재하는 노드 ID 목록 생성
             existing_node_ids = {node['data']['id'] for node in nodes}
             
             for rel in relationships_data:
-                # ERD 관계 방향 수정: PK(src) → FK(dst)를 FK(dst) → PK(src)로 반전
-                # 이유: ERD에서 1:N 관계는 1(PK) ||--o{ N(FK) 형태로 표시
-                src_id = f"table:{rel['dst_table']}"  # FK 테이블 (Many 쪽)
-                dst_id = f"table:{rel['src_table']}"  # PK 테이블 (One 쪽)
+                # PK/FK 기준으로 방향 결정 (Mermaid ERD와 동일 로직 사용)
+                orientation = self._decide_relationship_orientation(rel)
+                if not orientation:
+                    continue
+                one_table, many_table, one_column, many_column, rel_info = orientation
+                
+                src_id = f"table:{one_table}"   # 1 측
+                dst_id = f"table:{many_table}"  # N 측
                 
                 # 노드 존재 여부 검증
                 if src_id not in existing_node_ids or dst_id not in existing_node_ids:
                     app_logger.debug(f"엣지 제외 (노드 없음): {src_id} -> {dst_id}")
                     continue
                 
-                # 양방향 관계 중복 제거를 위한 키 생성 (정렬된 테이블명 + 컬럼명)
-                table_pair = tuple(sorted([rel['src_table'], rel['dst_table']]))
-                column_pair = tuple(sorted([rel['src_column'], rel['dst_column']]))
-                relation_key = (table_pair, column_pair)
-                
-                # 이미 처리된 관계라면 스킵
-                if relation_key in processed_pairs:
+                # Mermaid ERD와 동일하게 원본 순서 기반으로 중복 제거
+                relation_key = (rel['src_table'], rel['dst_table'])
+                reverse_key = (rel['dst_table'], rel['src_table'])
+                if relation_key in processed_pairs or reverse_key in processed_pairs:
                     continue
-                
                 processed_pairs.add(relation_key)
                 
                 # 엣지 데이터 생성 - 동일한 키로 조인되는 경우 중복 표시 제거
-                relationship_label = self._format_relationship_label_deduplicated(rel['src_column'], rel['dst_column'])
+                relationship_label = self._format_relationship_label_deduplicated(one_column, many_column)
                 
-                # PK-FK 관계 여부는 이미 관계 정보에서 가져옴
-                is_pk_fk_relation = rel.get('is_pk_fk', False)
+                # PK-FK 관계 여부: 메타데이터 판단값 사용
+                is_pk_fk_relation = rel_info.get('is_pk_fk', False)
                 
                 edge_data = {
                     'data': {
@@ -483,16 +365,16 @@ class ERDDagreReportGenerator:
                         'is_pk_fk': is_pk_fk_relation,  # PK-FK 관계 여부 추가
                         'meta': {
                             'rel_type': rel['rel_type'],
-                            'confidence': rel['confidence'],
-                            'frequency': rel['frequency'],
-                            'src_table': rel['dst_table'],  # ERD 표시용: FK 테이블 (Many)
-                            'dst_table': rel['src_table'],  # ERD 표시용: PK 테이블 (One)
-                            'src_column': rel['dst_column'],  # ERD 표시용: FK 컬럼
-                            'dst_column': rel['src_column'],  # ERD 표시용: PK 컬럼
-                            'src_data_type': rel['src_data_type'],
-                            'dst_data_type': rel['dst_data_type'],
-                            'join_condition': rel['join_condition'],
-                            'rel_comment': rel['rel_comment'],
+                            'confidence': rel.get('confidence'),
+                            'frequency': rel.get('frequency'),
+                            'src_table': one_table,        # 1 측 테이블
+                            'dst_table': many_table,       # N 측 테이블
+                            'src_column': one_column,      # 1 측 컬럼
+                            'dst_column': many_column,     # N 측 컬럼
+                            'src_data_type': rel.get('src_data_type'),
+                            'dst_data_type': rel.get('dst_data_type'),
+                            'join_condition': rel.get('join_condition'),
+                            'rel_comment': rel.get('rel_comment'),
                             'is_pk_fk': is_pk_fk_relation
                         }
                     }
@@ -506,45 +388,161 @@ class ERDDagreReportGenerator:
         except Exception as e:
             handle_error(e, "Cytoscape 엣지 생성 실패")
             return []
-    
-    def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
-        """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인"""
+
+    def _build_inferred_column_targets(
+        self,
+        tables_data: Dict[str, List[Dict[str, Any]]],
+        relationships_data: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, str]]:
+        """
+        INFERRED 컬럼의 상대 테이블 매핑 생성
+        - 예: [I]BRANDS.[I]BRAND_ID -> PRODUCTS  => BRAND_ID [I]PRODUCTS
+        """
+        inferred_map: Dict[str, Dict[str, str]] = {}
+
+        if not relationships_data:
+            return inferred_map
+
+        # 테이블 이름 매핑 (원본 이름 ↔ [I]접두어 이름)
+        table_keys = set(tables_data.keys())
+
+        def resolve_table_key(table_name: str) -> Optional[str]:
+            if table_name in table_keys:
+                return table_name
+            inferred_key = f"[I]{table_name}"
+            if inferred_key in table_keys:
+                return inferred_key
+            return None
+
+        for rel in relationships_data:
+            for side in ("src", "dst"):
+                tbl = rel.get(f"{side}_table")
+                other = rel.get("dst_table") if side == "src" else rel.get("src_table")
+                col = rel.get(f"{side}_column")
+
+                if not tbl or not other or not col:
+                    continue
+
+                table_key = resolve_table_key(tbl)
+                if not table_key or table_key not in tables_data:
+                    continue
+
+                # 대상 테이블의 INFERRED 컬럼들 중에서 컬럼명 매칭
+                for col_meta in tables_data[table_key]["columns"]:
+                    raw_name = col_meta.get("column_name") or ""
+                    base_name = raw_name[3:] if raw_name.startswith("[I]") else raw_name
+                    # INFERRED 컬럼 후보: 조인에서 추론된 컬럼 코멘트
+                    if base_name == col and col_meta.get("column_comments") == "조인에서 추론된 컬럼":
+                        inferred_map.setdefault(table_key, {})[raw_name] = f"[I]{other}"
+                        break
+
+        return inferred_map
+
+    def _decide_relationship_orientation(self, rel: Dict[str, Any]) -> Optional[Tuple[str, str, str, str, Dict[str, Any]]]:
+        """
+        PK/FK 정보를 기반으로 1측(One)과 N측(Many)을 결정
+        
+        Returns:
+            (one_table, many_table, one_column, many_column, rel_info)
+        """
         try:
-            # 소스 컬럼과 대상 컬럼의 PK 여부 확인
-            query = """
-                SELECT 
-                    src_col.position_pk as src_is_pk,
-                    dst_col.position_pk as dst_is_pk
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
-                  AND p.project_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
-                  AND src_col.column_name = ?
-                  AND dst_col.column_name = ?
-            """
+            raw_src_table = rel['src_table']
+            raw_dst_table = rel['dst_table']
+            src_column = rel['src_column']
+            dst_column = rel['dst_column']
             
-            result = self.db_utils.execute_query(query, (dst_table, src_table, self.project_name, src_column, dst_column))
-            
-            if result:
-                src_is_pk = result[0]['src_is_pk'] is not None
-                dst_is_pk = result[0]['dst_is_pk'] is not None
-                
-                # PK-FK 관계 판단: 한쪽은 PK이고 다른 쪽은 PK가 아닌 경우
-                # 1. 소스가 PK이고 대상이 PK가 아닌 경우 (PK -> FK)
-                # 2. 소스가 PK가 아니고 대상이 PK인 경우 (FK -> PK)
-                return (src_is_pk and not dst_is_pk) or (not src_is_pk and dst_is_pk)
-            
-            return False
-                
+            rel_info = self._get_relationship_info_aligned(raw_src_table, src_column, raw_dst_table, dst_column)
+
+            # 관계 신뢰도/PK-FK 판단 기반 필터링 (Mermaid ERD와 동일)
+            if not rel_info.get('is_pk_fk', False) and rel.get('confidence', 0.8) < 0.7:
+                app_logger.debug(f"Dagre ERD에서 관계 제외 (PK-FK 아님, 신뢰도 낮음): {raw_src_table}.{src_column} -> {raw_dst_table}.{dst_column}")
+                return None
+
+            # 방향 결정: PK가 있는 쪽을 1로 설정 (Mermaid와 동일)
+            if rel_info.get('src_is_pk') and not rel_info.get('dst_is_pk'):
+                one_table, many_table = raw_src_table, raw_dst_table
+                one_column, many_column = src_column, dst_column
+            elif not rel_info.get('src_is_pk') and rel_info.get('dst_is_pk'):
+                one_table, many_table = raw_dst_table, raw_src_table
+                one_column, many_column = dst_column, src_column
+            else:
+                # PK 판단이 모호하면 원본 방향 유지
+                one_table, many_table = raw_src_table, raw_dst_table
+                one_column, many_column = src_column, dst_column
+
+            return one_table, many_table, one_column, many_column, rel_info
         except Exception as e:
-            handle_error(e, f"PK-FK 관계 확인 실패: {src_table}.{src_column} -> {dst_table}.{dst_column}")
+            handle_error(e, f"Dagre 관계 방향 결정 실패: {rel}")
+            return None
+
+    def _get_relationship_info_aligned(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> Dict[str, Any]:
+        """
+        Mermaid ERD와 동일한 PK/FK 판단 로직 적용
+        """
+        # [I] 접두어 제거 (INFERRED 테이블 처리)
+        src_clean = src_table[3:] if src_table.startswith('[I]') else src_table
+        dst_clean = dst_table[3:] if dst_table.startswith('[I]') else dst_table
+
+        rel_info = self.metadata_service.get_relationship_info(src_clean, src_column, dst_clean, dst_column)
+        src_is_pk = rel_info.get('src_is_pk', False)
+        dst_is_pk = rel_info.get('dst_is_pk', False)
+        src_nullable = rel_info.get('src_nullable', True)
+        dst_nullable = rel_info.get('dst_nullable', True)
+
+        # 우선순위 1: PK가 한쪽에만 있는 경우 그대로 사용
+        # 우선순위 2: 두 쪽 모두 PK 아니거나 둘 다 PK가 아닌 경우 다른 PK 존재 여부로 판단
+        if not src_is_pk and not dst_is_pk:
+            src_other_pk = self._has_other_pk(src_clean, src_column)
+            dst_other_pk = self._has_other_pk(dst_clean, dst_column)
+            src_inferred = src_table.startswith('[I]')
+            dst_inferred = dst_table.startswith('[I]')
+
+            if src_other_pk and not dst_other_pk:
+                src_is_pk = False
+                dst_is_pk = True
+            elif not src_other_pk and dst_other_pk:
+                src_is_pk = True
+                dst_is_pk = False
+            else:
+                # 우선순위 3: INFERRED 여부로 판단
+                if src_inferred and not dst_inferred:
+                    src_is_pk = True
+                    dst_is_pk = False
+                elif not src_inferred and dst_inferred:
+                    src_is_pk = False
+                    dst_is_pk = True
+
+        is_pk_fk = (src_is_pk and not dst_is_pk) or (dst_is_pk and not src_is_pk)
+
+        return {
+            'is_pk_fk': is_pk_fk,
+            'src_nullable': src_nullable,
+            'dst_nullable': dst_nullable,
+            'src_is_pk': src_is_pk,
+            'dst_is_pk': dst_is_pk
+        }
+
+    def _has_other_pk(self, table_name: str, exclude_column: str) -> bool:
+        """테이블에 조인 컬럼이 아닌 다른 PK 존재 여부 확인 (Mermaid ERD 로직 정합성)"""
+        try:
+            query = """
+                SELECT c.column_name
+                FROM columns c
+                JOIN tables t ON c.table_id = t.table_id
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ?
+                  AND p.project_name = ?
+                  AND c.position_pk IS NOT NULL
+                  AND c.column_name != ?
+                  AND t.del_yn = 'N'
+                  AND c.del_yn = 'N'
+                LIMIT 1
+            """
+            result = self.db_utils.execute_query(query, (table_name.upper(), self.project_name, exclude_column.upper()))
+            return bool(result)
+        except Exception as e:
+            handle_error(e, f"다른 PK 존재 여부 확인 실패: {table_name}")
+            return False
 
     def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
         """관계 라벨 포맷팅 - 양방향 관계에서 글자 겹침 방지"""
@@ -609,7 +607,8 @@ class ERDDagreReportGenerator:
                 project_name=self.project_name,
                 timestamp=timestamp,
                 stats=stats,
-                erd_data=erd_data
+                erd_data=erd_data,
+                show_attributes=self.show_attributes
             )
             
             app_logger.debug("ERD(Dagre) HTML 생성 완료")

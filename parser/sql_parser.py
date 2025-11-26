@@ -70,7 +70,7 @@ class SqlParser:
         try:
             processed_sql = self._preprocess_sql(sql_content)
             patterns = [
-                r"\bFROM\s+(.*?)(?=\bWHERE|\bGROUP|\bORDER|\bUNION|\bHAVING|\bFOR|\bLIMIT|\bFETCH|\bCONNECT|\bMODEL|\bPIVOT|\s*,\s*\(|;|$)",
+                r"\bFROM\s+(.*?)(?=\bWHERE\b|\bGROUP\b|\bORDER\b|\bUNION\b|\bHAVING\b|\bFOR\b|\bLIMIT\b|\bFETCH\b|\bCONNECT\b|\bMODEL\b|\bPIVOT\b|,\s*\(\s*SELECT|;|$)",
                 r"\bUPDATE\s+(.*?)(?=\bSET)",
                 r"\bDELETE\s+FROM\s+(.*?)(?=\bWHERE|;|$)",
                 r"\bINSERT\s+INTO\s+(.*?)(?=\s*\(|\bSELECT)",

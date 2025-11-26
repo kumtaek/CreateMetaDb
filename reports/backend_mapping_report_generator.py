@@ -399,22 +399,23 @@ class BackendMappingReportGenerator:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Backend Mapping Report - {self.project_name}</title>
     <style>
-        body {{ font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+        body {{ font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; font-size: 9pt; font-weight: normal; }}
+        strong {{ font-weight: normal; }}
         .container {{ max-width: 1800px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-        h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }}
-        h2 {{ color: #2980b9; margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px; background: #ecf0f1; padding: 10px; }}
+        h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; font-size: 1.2em; font-weight: normal; }}
+        h2 {{ color: #2980b9; margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px; background: #ecf0f1; padding: 10px; font-weight: normal; font-size: 1.05em; }}
         .info {{ color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }}
         table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        th {{ background-color: #3498db; color: white; font-weight: bold; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: normal; font-size: 9pt; }}
+        th {{ background-color: #3498db; color: white; font-weight: normal; }}
         tr:nth-child(even) {{ background-color: #f2f2f2; }}
         tr:hover {{ background-color: #e8f4f8; }}
         a {{ color: #3498db; text-decoration: none; }}
         a:hover {{ text-decoration: underline; }}
-        .sql-type {{ font-weight: bold; color: #27ae60; }}
+        .sql-type {{ font-weight: normal; color: #27ae60; }}
         .tables {{ color: #8e44ad; }}
         .conditions {{ font-family: monospace; font-size: 0.9em; }}
-        .join-type {{ font-weight: bold; color: #e67e22; }}
+        .join-type {{ font-weight: normal; color: #e67e22; }}
     </style>
 </head>
 <body>
@@ -433,10 +434,22 @@ class BackendMappingReportGenerator:
     def _generate_section_html(self, title: str, items: List[Dict[str, Any]]) -> str:
         """섹션 HTML 생성"""
         rows_html = ""
-        for item in items:
+        sorted_items = sorted(
+            items,
+            key=lambda item: (
+                self._sort_key(item.get('path')),
+                self._sort_key(item.get('file')),
+                self._sort_key(item.get('method')),
+                self._sort_key(item.get('query_id')),
+                self._sort_key(item.get('sql_type')),
+                self._sort_key(item.get('tables')),
+            )
+        )
+
+        for idx, item in enumerate(sorted_items, 1):
             rows_html += f"""
             <tr>
-                <td>{item['no']}</td>
+                <td>{idx}</td>
                 <td>{self._render_path(item)}</td>
                 <td>{self._render_file(item)}</td>
                 <td>{item['method']}</td>
@@ -477,6 +490,11 @@ class BackendMappingReportGenerator:
         if href and file_name:
             return f'<a href="{href}" target="_blank" rel="noopener noreferrer">{file_name}</a>'
         return file_name
+
+    @staticmethod
+    def _sort_key(value: Any) -> str:
+        """정렬용 키 (None/공백 대응)"""
+        return (str(value) if value is not None else '').lower()
 
     def _render_path(self, item: Dict[str, Any]) -> str:
         """경로를 하이퍼링크로 출력 (폴더 열기)"""
