@@ -810,58 +810,57 @@ class ERDMetadataService:
             return src_table.lower() + '_id', dst_table.lower() + '_id'
     
     def get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> Dict[str, Any]:
-        """관계 정보 상세 조회 (PK-FK 여부, nullable 여부 등)"""
+        """관계 정보 상세 조회 (PK-FK 여부, nullable 여부 등) - 각 컬럼 별도 조회"""
         try:
-            # 소스 컬럼과 대상 컬럼의 PK 여부와 nullable 여부 확인
-            query = """
-                SELECT 
-                    src_col.position_pk as src_is_pk,
-                    src_col.nullable as src_nullable,
-                    dst_col.position_pk as dst_is_pk,
-                    dst_col.nullable as dst_nullable,
-                    src_col.data_type as src_data_type,
-                    dst_col.data_type as dst_data_type
-                FROM tables src_t
-                JOIN columns src_col ON src_t.table_id = src_col.table_id
-                JOIN tables dst_t ON dst_t.table_name = ?
-                JOIN columns dst_col ON dst_t.table_id = dst_col.table_id
-                JOIN projects p ON src_t.project_id = p.project_id
-                WHERE src_t.table_name = ? 
+            # 소스 컬럼 정보 조회
+            src_query = """
+                SELECT
+                    c.position_pk as is_pk,
+                    c.nullable,
+                    c.data_type
+                FROM tables t
+                JOIN columns c ON t.table_id = c.table_id
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ?
                   AND p.project_name = ?
-                  AND src_col.column_name = ?
-                  AND dst_col.column_name = ?
-                  AND src_t.del_yn = 'N' 
-                  AND dst_t.del_yn = 'N'
-                  AND src_col.del_yn = 'N'
-                  AND dst_col.del_yn = 'N'
+                  AND c.column_name = ?
+                  AND t.del_yn = 'N'
+                  AND c.del_yn = 'N'
             """
-            
-            result = self.db_utils.execute_query(query, (
-                dst_table.upper(), src_table.upper(), self.project_name, 
-                src_column.upper(), dst_column.upper()
-            ))
-            
-            if result:
-                row = result[0]
-                return {
-                    'src_is_pk': bool(row['src_is_pk']),
-                    'src_nullable': row['src_nullable'] == 'Y',
-                    'dst_is_pk': bool(row['dst_is_pk']),
-                    'dst_nullable': row['dst_nullable'] == 'Y',
-                    'src_data_type': row['src_data_type'],
-                    'dst_data_type': row['dst_data_type']
-                }
-            else:
-                # 기본값 반환
-                return {
-                    'src_is_pk': False,
-                    'src_nullable': True,
-                    'dst_is_pk': False,
-                    'dst_nullable': True,
-                    'src_data_type': 'VARCHAR',
-                    'dst_data_type': 'VARCHAR'
-                }
-                
+
+            src_result = self.db_utils.execute_query(src_query, (src_table.upper(), self.project_name, src_column.upper()))
+
+            # 대상 컬럼 정보 조회
+            dst_query = """
+                SELECT
+                    c.position_pk as is_pk,
+                    c.nullable,
+                    c.data_type
+                FROM tables t
+                JOIN columns c ON t.table_id = c.table_id
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ?
+                  AND p.project_name = ?
+                  AND c.column_name = ?
+                  AND t.del_yn = 'N'
+                  AND c.del_yn = 'N'
+            """
+
+            dst_result = self.db_utils.execute_query(dst_query, (dst_table.upper(), self.project_name, dst_column.upper()))
+
+            # 결과 조합
+            src_info = src_result[0] if src_result else None
+            dst_info = dst_result[0] if dst_result else None
+
+            return {
+                'src_is_pk': bool(src_info['is_pk']) if src_info else False,
+                'src_nullable': (src_info['nullable'] == 'Y') if src_info else True,
+                'dst_is_pk': bool(dst_info['is_pk']) if dst_info else False,
+                'dst_nullable': (dst_info['nullable'] == 'Y') if dst_info else True,
+                'src_data_type': src_info['data_type'] if src_info else 'VARCHAR',
+                'dst_data_type': dst_info['data_type'] if dst_info else 'VARCHAR'
+            }
+
         except Exception as e:
             app_logger.error(f"관계 정보 상세 조회 실패: {str(e)}")
             return {
@@ -872,4 +871,5 @@ class ERDMetadataService:
                 'src_data_type': 'VARCHAR',
                 'dst_data_type': 'VARCHAR'
             }
+    
     

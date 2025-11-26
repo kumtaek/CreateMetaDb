@@ -768,7 +768,7 @@ class ReportTemplates:
         </div>"""
     
     def _get_erd_css(self) -> str:
-        """ERD Report CSS 스타일 - 콜체인리포트와 동일한 구조 적용"""
+        """ERD Report CSS 스타일 - 반응형 레이아웃 (빈 공간 제거, 헤더/통계 최소화)"""
         return """
         * {
             margin: 0;
@@ -781,30 +781,34 @@ class ReportTemplates:
             padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
+            position: fixed;
         }
         .erd-container {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             margin: 0;
             padding: 0;
             background: white;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         .erd-header {
             background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
             color: white;
-            padding: 4px 6px;
-            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            padding: 4px 12px;
+            box-shadow: 0 1px 3px rgba(25, 118, 210, 0.12);
             margin: 0;
             flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 40px;
             min-height: 40px;
+            max-height: 40px;
+            z-index: 10;
         }
         .erd-header .header-left {
             text-align: left;
@@ -812,76 +816,97 @@ class ReportTemplates:
         .erd-header h1 {
             margin: 0;
             font-size: 1.1em;
-            font-weight: 300;
+            font-weight: 400;
+            line-height: 1.2;
         }
         .erd-header .subtitle {
-            margin: 1px 0 0 0;
-            opacity: 0.9;
+            margin: 2px 0 0 0;
+            opacity: 0.85;
             font-size: 0.7em;
+            line-height: 1;
         }
         .diagram-controls {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         .diagram-controls button {
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 0.8em;
+            font-size: 0.75em;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
         .diagram-controls button:hover {
             background: rgba(255, 255, 255, 0.3);
             border-color: rgba(255, 255, 255, 0.5);
         }
         .zoom-hint {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 4px;
-            font-size: 0.7em;
-            opacity: 0.8;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 3px 8px;
+            margin-left: 6px;
+            box-shadow: 0 1px 4px rgba(33, 150, 243, 0.15);
+        }
+        .hint-icon {
+            font-size: 12px;
+        }
+        .hint-text {
+            font-size: 10px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
         }
         .erd-stats {
             display: flex;
             justify-content: space-around;
             align-items: center;
-            gap: 2px;
-            padding: 1px 4px;
+            gap: 6px;
+            padding: 4px 12px;
             background: #f8f9fa;
             margin: 0;
             flex-shrink: 0;
-            height: 18px;
-            min-height: 18px;
+            min-height: 35px;
+            max-height: 35px;
+            border-top: 1px solid #e0e0e0;
+            z-index: 10;
         }
         .erd-stat-card {
             background: white;
-            padding: 1px 4px;
-            border-radius: 2px;
+            padding: 4px 10px;
+            border-radius: 4px;
             text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
             display: flex;
+            flex-direction: row;
             align-items: center;
-            gap: 2px;
+            gap: 6px;
             white-space: nowrap;
+            flex: 1;
         }
         .erd-stat-card:hover {
             transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
         .erd-stat-number {
-            font-size: 0.9em;
+            font-size: 1.1em;
             font-weight: bold;
             color: #3498db;
             margin: 0;
         }
         .erd-stat-label {
             color: #7f8c8d;
-            font-size: 0.6em;
+            font-size: 0.7em;
         }
         .erd-content {
             flex: 1;
@@ -890,69 +915,23 @@ class ReportTemplates:
             display: flex;
             flex-direction: column;
             min-height: 0;
+            position: relative;
         }
         .erd-section {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
-        }
-        .diagram-controls {
-            margin-bottom: 5px;
-        }
-        .diagram-controls button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin: 2px;
-            font-size: 0.8em;
-        }
-        .diagram-controls button:hover {
-            background: #2980b9;
-        }
-        .zoom-hint {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border: 2px solid #2196f3;
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin-left: 8px;
-            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-            animation: pulse 2s infinite;
-        }
-        .hint-icon {
-            font-size: 16px;
-            animation: bounce 1.5s infinite;
-        }
-        .hint-text {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1976d2;
-            white-space: nowrap;
-        }
-        @keyframes pulse {
-            0%, 100% { 
-                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-                transform: scale(1);
-            }
-            50% { 
-                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
-                transform: scale(1.02);
-            }
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-3px); }
-            60% { transform: translateY(-2px); }
+            height: 100%;
+            overflow: hidden;
         }
         .diagram-container {
             flex: 1;
             overflow: hidden;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
         .mermaid-container {
             background: white;
@@ -961,6 +940,7 @@ class ReportTemplates:
             position: relative;
             flex: 1;
             width: 100%;
+            height: 100%;
             box-sizing: border-box;
             overflow: auto;
             cursor: grab;
@@ -981,7 +961,7 @@ class ReportTemplates:
             position: relative;
         }
         
-        /* Mermaid SVG 확대 시 스크롤 지원 - 새로운 방식 */
+        /* Mermaid SVG 확대 시 스크롤 지원 */
         .mermaid svg {
             width: auto !important;
             height: auto !important;
@@ -992,18 +972,18 @@ class ReportTemplates:
         
         /* 스크롤바 스타일링 */
         .mermaid-container::-webkit-scrollbar {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
         }
         
         .mermaid-container::-webkit-scrollbar-track {
             background: #f1f1f1;
-            border-radius: 6px;
+            border-radius: 5px;
         }
         
         .mermaid-container::-webkit-scrollbar-thumb {
             background: #888;
-            border-radius: 6px;
+            border-radius: 5px;
         }
         
         .mermaid-container::-webkit-scrollbar-thumb:hover {
@@ -1013,14 +993,15 @@ class ReportTemplates:
         /* 줌 상태 표시 */
         .zoom-indicator {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             background: rgba(0,0,0,0.7);
             color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
             z-index: 1000;
+            font-weight: 600;
         }
         
         .controls {
@@ -1051,13 +1032,48 @@ class ReportTemplates:
         .btn.secondary:hover {
             background: #7f8c8d;
         }
+        
+        /* 반응형 디자인 */
         @media (max-width: 768px) {
-            .erd-container {
-                margin: 10px;
-                border-radius: 10px;
+            .erd-header {
+                padding: 3px 8px;
+                min-height: 35px;
+                max-height: 35px;
             }
-            .erd-content {
-                padding: 20px;
+            .erd-header h1 {
+                font-size: 1em;
+            }
+            .erd-header .subtitle {
+                font-size: 0.65em;
+            }
+            .diagram-controls {
+                gap: 4px;
+            }
+            .diagram-controls button {
+                padding: 3px 6px;
+                font-size: 0.7em;
+            }
+            .zoom-hint {
+                padding: 2px 6px;
+            }
+            .hint-text {
+                font-size: 9px;
+            }
+            .erd-stats {
+                padding: 3px 8px;
+                gap: 4px;
+                min-height: 30px;
+                max-height: 30px;
+            }
+            .erd-stat-card {
+                padding: 3px 6px;
+                gap: 4px;
+            }
+            .erd-stat-number {
+                font-size: 1em;
+            }
+            .erd-stat-label {
+                font-size: 0.65em;
             }
         }
         """

@@ -131,7 +131,6 @@ class BackendMappingReportGenerator:
 
             # SQL 타입 분석 (간단한 키워드 기반)
             sql_type = self._get_sql_type(sql_content)
-            notes = self._get_sql_notes(sql_content)
 
             # 메타DB에서 테이블 목록 조회
             meta_tables = item.get('metadata_tables') or []
@@ -157,8 +156,7 @@ class BackendMappingReportGenerator:
                 'sql_type': sql_type,
                 'tables': ', '.join(self._format_tables(table_list)) if table_list else '-',
                 'join_conditions': join_conditions,
-                'join_type': join_type,
-                'notes': notes
+                'join_type': join_type
             }
 
             # 파일 경로 기반 분류
@@ -212,22 +210,6 @@ class BackendMappingReportGenerator:
         if sql.strip().startswith('--'):
             return 'SQL_REFERENCE'
         return 'SQL_UNKNOWN'
-
-    def _get_sql_notes(self, sql: str) -> str:
-        """SQL 진단 메시지 생성"""
-        import re
-        without_block = re.sub(r'/\*.*?\*/', ' ', sql, flags=re.DOTALL)
-        lines = [ln.strip() for ln in without_block.splitlines() if not ln.strip().startswith('--')]
-        cleaned = ' '.join(lines).strip()
-
-        if not cleaned:
-            return 'SQL 본문이 비어있거나 주석만 존재'
-        if sql.strip().startswith('--'):
-            return 'SQL 대신 MyBatis FQMN 주석만 수집됨'
-        sql_upper = cleaned.upper()
-        if not any(sql_upper.startswith(kw) for kw in ['SELECT', 'WITH', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']):
-            return '선행 키워드를 인식하지 못함'
-        return '-'
 
     def _format_tables(self, tables: List[Dict[str, str]]) -> List[str]:
         """테이블 표시 시 owner가 있으면 OWNER.TABLE 형태로 표현"""
@@ -422,20 +404,22 @@ class BackendMappingReportGenerator:
         h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }}
         h2 {{ color: #2980b9; margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px; background: #ecf0f1; padding: 10px; }}
         .info {{ color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }}
-        th {{ background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; }}
-        tr:nth-child(even) {{ background-color: #f9f9f9; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #3498db; color: white; font-weight: bold; }}
+        tr:nth-child(even) {{ background-color: #f2f2f2; }}
         tr:hover {{ background-color: #e8f4f8; }}
+        a {{ color: #3498db; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
         .sql-type {{ font-weight: bold; color: #27ae60; }}
-        .join-type {{ font-style: italic; color: #8e44ad; font-weight: bold; }}
-        .tables {{ color: #c0392b; font-size: 0.9em; }}
-        .conditions {{ font-family: 'Courier New', monospace; color: #d35400; font-size: 0.85em; }}
+        .tables {{ color: #8e44ad; }}
+        .conditions {{ font-family: monospace; font-size: 0.9em; }}
+        .join-type {{ font-weight: bold; color: #e67e22; }}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Backend Mapping Report</h1>
+        <h1>Backend Mapping Report</h1>
         <div class="info">
             <strong>프로젝트:</strong> {self.project_name}<br>
             <strong>생성일시:</strong> {timestamp}
@@ -461,7 +445,6 @@ class BackendMappingReportGenerator:
                 <td class="tables">{item['tables']}</td>
                 <td class="conditions">{item['join_conditions']}</td>
                 <td class="join-type">{item['join_type']}</td>
-                <td>{item['notes']}</td>
             </tr>
             """
         
@@ -479,7 +462,6 @@ class BackendMappingReportGenerator:
                     <th style="width: 200px;">Tables</th>
                     <th>Join Conditions</th>
                     <th style="width: 120px;">JOIN_Type</th>
-                    <th style="width: 200px;">Notes</th>
                 </tr>
             </thead>
             <tbody>

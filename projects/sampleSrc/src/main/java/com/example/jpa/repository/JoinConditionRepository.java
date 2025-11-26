@@ -25,7 +25,7 @@ public interface JoinConditionRepository extends JpaRepository<Object, Long> {
         INSERT INTO USER_PROFILES (PROFILE_ID, USER_ID, FIRST_NAME, LAST_NAME, PHONE, ADDRESS)
         SELECT 
             USER_PROFILES_SEQ.NEXTVAL,
-            u.ID,
+            u.USER_ID,
             :firstName,
             :lastName,
             :phone,
@@ -74,7 +74,7 @@ public interface JoinConditionRepository extends JpaRepository<Object, Long> {
         WHERE EXISTS (
             SELECT 'X' 
             FROM USER_ROLES ur, ROLES r
-            WHERE u.ID = ur.USER_ID 
+            WHERE u.USER_ID = ur.USER_ID 
             AND ur.ROLE_ID = r.ROLE_ID
             AND u.STATUS = 'INACTIVE'
             AND r.ROLE_NAME = :roleName
@@ -122,7 +122,7 @@ public interface JoinConditionRepository extends JpaRepository<Object, Long> {
         WHERE EXISTS (
             SELECT 'X' 
             FROM USER_PROFILES up, DEPARTMENTS d
-            WHERE u.ID = up.USER_ID 
+            WHERE u.USER_ID = up.USER_ID 
             AND up.ADDRESS LIKE '%' || d.LOCATION || '%'
             AND d.DEPT_NAME = :departmentName
             AND u.STATUS = :currentStatus
@@ -190,8 +190,8 @@ public interface JoinConditionRepository extends JpaRepository<Object, Long> {
         WHERE EXISTS (
             SELECT 'X' 
             FROM USER_PROFILES up, USER_ROLES ur, ROLES r
-            WHERE u.ID = up.USER_ID 
-            AND u.ID = ur.USER_ID
+            WHERE u.USER_ID = up.USER_ID 
+            AND u.USER_ID = ur.USER_ID
             AND ur.ROLE_ID = r.ROLE_ID
             AND up.FIRST_NAME = :firstName
             AND up.LAST_NAME = :lastName

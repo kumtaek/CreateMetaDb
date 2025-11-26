@@ -15,7 +15,17 @@
       "Bash(attrib:*)",
       "Bash(attrib +R \"D:\\Analyzer\\CreateMetaDb\\database\\create_table_script.sql\")",
       "Bash(python create_report.py:*)",
-      "Bash(python main.py:*)"
+      "Bash(python main.py:*)",
+      "Bash(python:*)",
+      "Bash(dir /B /O-D D:AnalyzerCreateMetaDbprojectssampleSrcreport[sampleSrc]_ERD_*.html 2)",
+      "Bash(nul)",
+      "Bash(findstr:*)",
+      "Bash(D:/Analyzer/CreateMetaDb/temp/from_pattern_analysis.txt)",
+      "Bash(cat:*)",
+      "Bash(D:/Analyzer/CreateMetaDb/temp/impact_analysis.txt)",
+      "Bash(D:/Analyzer/CreateMetaDb/temp/impact_detail.txt)",
+      "Bash(D:/Analyzer/CreateMetaDb/temp/pattern_safety_check.txt)",
+      "Bash(D:/Analyzer/CreateMetaDb/temp/pattern_comparison.txt)"
     ],
     "deny": [],
     "ask": []

@@ -10,23 +10,25 @@
         h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
         h2 { color: #2980b9; margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px; background: #ecf0f1; padding: 10px; }
         .info { color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
-        th { background-color: #34495e; color: white; font-weight: bold; position: sticky; top: 0; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #3498db; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
         tr:hover { background-color: #e8f4f8; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
         .sql-type { font-weight: bold; color: #27ae60; }
-        .join-type { font-style: italic; color: #8e44ad; font-weight: bold; }
-        .tables { color: #c0392b; font-size: 0.9em; }
-        .conditions { font-family: 'Courier New', monospace; color: #d35400; font-size: 0.85em; }
+        .tables { color: #8e44ad; }
+        .conditions { font-family: monospace; font-size: 0.9em; }
+        .join-type { font-weight: bold; color: #e67e22; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Backend Mapping Report</h1>
+        <h1>Backend Mapping Report</h1>
         <div class="info">
             <strong>프로젝트:</strong> sampleSrc<br>
-            <strong>생성일시:</strong> 2025-11-24 18:51:23
+            <strong>생성일시:</strong> 2025-11-26 10:40:24
         </div>
         
         
@@ -43,7 +45,6 @@
                     <th style="width: 200px;">Tables</th>
                     <th>Join Conditions</th>
                     <th style="width: 120px;">JOIN_Type</th>
-                    <th style="width: 200px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,10 +56,9 @@
                 <td>analyzeProductSalesPerformance</td>
                 <td>analyzeProductSalesPerformance</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS, BRANDS</td>
-                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, BRANDS</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -71,7 +71,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -84,7 +83,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -97,7 +95,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -110,7 +107,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -123,7 +119,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -136,7 +131,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -149,7 +143,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -162,7 +155,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -174,8 +166,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -187,8 +178,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -198,10 +188,9 @@
                 <td>findUsersByComplexSearch</td>
                 <td>findUsersByComplexSearch</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">U.USER_ID = O.USER_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -213,8 +202,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -226,8 +214,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -237,10 +224,9 @@
                 <td>findUsersWithOrderInfo</td>
                 <td>findUsersWithOrderInfo</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -253,7 +239,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -265,8 +250,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -279,7 +263,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -292,7 +275,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -303,9 +285,8 @@
                 <td>getProductStatsByCategory</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -318,7 +299,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -330,8 +310,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -343,8 +322,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -357,7 +335,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -370,7 +347,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -383,7 +359,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -396,7 +371,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -406,10 +380,9 @@
                 <td>mergeCategoryStatistics</td>
                 <td>mergeCategoryStatistics</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
-                <td class="conditions">C.CATEGORY_ID = P.CATEGORY_ID</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, CATEGORY_STATISTICS</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = CATEGORY_STATISTICS.CATEGORY_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -420,9 +393,8 @@
                 <td>mergeOrderSummary</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.USER_ID = ORDER_SUMMARY.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -432,10 +404,9 @@
                 <td>mergeProductInventory</td>
                 <td>mergeProductInventory</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, PRODUCT_INVENTORY, BRANDS</td>
-                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; BRANDS.BRAND_NAME = PRODUCT_INVENTORY.BRAND_NAME; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; CATEGORIES.CATEGORY_NAME = PRODUCT_INVENTORY.CATEGORY_NAME; PRODUCTS.PRICE = PRODUCT_INVENTORY.CURRENT_PRICE</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -445,10 +416,9 @@
                 <td>mergeUserActivityLog</td>
                 <td>mergeUserActivityLog</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; USERS.USER_ID = USER_ACTIVITY_LOG.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -458,10 +428,9 @@
                 <td>mergeUserStatistics</td>
                 <td>mergeUserStatistics</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_STATISTICS</td>
-                <td class="conditions">U.USER_ID = O.USER_ID</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_STATISTICS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; ORDERS.USER_ID = USER_STATISTICS.USER_ID; USERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -472,9 +441,8 @@
                 <td>selectLowStockProducts</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.PRODUCTS, INVENTORY, SUPPLIERS</td>
-                <td class="conditions">P.SUPPLIER_ID = S.SUPPLIER_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">INVENTORY.PRODUCT_ID = PRODUCTS.PRODUCT_ID; PRODUCTS.SUPPLIER_ID = SUPPLIERS.SUPPLIER_ID</td>
+                <td class="join-type">EXPLICIT</td>
             </tr>
             
             <tr>
@@ -487,7 +455,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -497,10 +464,9 @@
                 <td>selectProductsByAdvancedCondition</td>
                 <td>selectProductsByAdvancedCondition</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, BRANDS</td>
-                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, BRANDS</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -511,9 +477,8 @@
                 <td>selectProductsByBrand</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.PRODUCTS, BRANDS</td>
-                <td class="conditions">P.BRAND_ID = B.BRAND_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID</td>
+                <td class="join-type">EXPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -526,7 +491,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -539,7 +503,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -550,9 +513,8 @@
                 <td>selectUserById</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
-                <td class="conditions">U.USER_ID = UP.USER_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -564,8 +526,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -577,8 +538,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -588,10 +548,9 @@
                 <td>selectUsersWithActiveOrders</td>
                 <td>selectUsersWithActiveOrders</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -602,9 +561,8 @@
                 <td>selectUsersWithOrderDetails</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
-                <td class="conditions">U.USER_ID = O.USER_ID; O.ORDER_ID = OI.ORDER_ID; OI.PRODUCT_ID = P.PRODUCT_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -615,9 +573,8 @@
                 <td>selectUsersWithOrderStatistics</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
-                <td class="conditions">U.USER_ID = O.USER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -628,9 +585,8 @@
                 <td>selectUsersWithOrders</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
-                <td class="conditions">U.USER_ID = O.USER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -640,10 +596,9 @@
                 <td>selectUsersWithRecentOrders</td>
                 <td>selectUsersWithRecentOrders</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -656,7 +611,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -669,7 +623,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -682,7 +635,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -695,7 +647,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -708,7 +659,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             </tbody>
@@ -727,7 +677,6 @@
                     <th style="width: 200px;">Tables</th>
                     <th>Join Conditions</th>
                     <th style="width: 120px;">JOIN_Type</th>
-                    <th style="width: 200px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -740,9 +689,8 @@
                 <td>deleteInactiveUsersWithExists</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.USERS, USER_ACTIVITIES</td>
-                <td class="conditions">-</td>
-                <td class="join-type">-</td>
-                <td>-</td>
+                <td class="conditions">USERS.USER_ID = USER_ACTIVITIES.USER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -755,7 +703,6 @@
                 <td class="tables">USERACTIVITY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -766,9 +713,8 @@
                 <td>deleteOldOrderItemsWithJoin</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
-                <td class="conditions">o.user_id = u.user_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -779,9 +725,8 @@
                 <td>insertProductRecommendationsWithJoin</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.USERS, PRODUCT_RECOMMENDATIONS</td>
-                <td class="conditions">u.user_id = o.user_id; o.order_id = oi.order_id; oi.product_id = p.product_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -792,9 +737,8 @@
                 <td>insertUserOrderStatisticsWithJoin</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.USERS, USER_ORDER_STATISTICS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -806,8 +750,7 @@
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.ORDERS, USERSTATISTICS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -818,9 +761,8 @@
                 <td>updateProductPricesWithJoin</td>
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -830,10 +772,9 @@
                 <td>updateUserStatusWithExists</td>
                 <td>updateUserStatusWithExists</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -843,10 +784,9 @@
                 <td>updateUserStatusWithJpql</td>
                 <td>updateUserStatusWithJpql</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -856,10 +796,9 @@
                 <td>addStock</td>
                 <td>addStock</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -869,10 +808,9 @@
                 <td>cancelOrder</td>
                 <td>cancelOrder</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">-</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -882,10 +820,9 @@
                 <td>countUserOrdersByStatus</td>
                 <td>countUserOrdersByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -898,7 +835,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -909,9 +845,8 @@
                 <td>deleteCustomerWithOrders</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.CUSTOMERS, SAMPLE.ORDERS</td>
-                <td class="conditions">o.ORDER_ID = oi.ORDER_ID; oi.PRODUCT_ID = p.PRODUCT_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CUSTOMERS.CUSTOMER_ID = ORDERS.CUSTOMER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -922,9 +857,8 @@
                 <td>deleteInactiveUsersWithRoles</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_ROLES</td>
-                <td class="conditions">ur.ROLE_ID = r.ROLE_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_ROLES.USER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -935,9 +869,8 @@
                 <td>deleteProductWithCategory</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">p.PRODUCT_ID = oi.PRODUCT_ID; oi.ORDER_ID = o.ORDER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -950,7 +883,6 @@
                 <td class="tables">SAMPLE.CATEGORIES</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -963,7 +895,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -973,10 +904,9 @@
                 <td>findActiveUsersFromDate</td>
                 <td>findActiveUsersFromDate</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -986,10 +916,9 @@
                 <td>findByCategoryName</td>
                 <td>findByCategoryName</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -999,10 +928,9 @@
                 <td>findByEmailDomain</td>
                 <td>findByEmailDomain</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1012,10 +940,9 @@
                 <td>findByIdWithOrderItems</td>
                 <td>findByIdWithOrderItems</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">FETCH, ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1025,10 +952,9 @@
                 <td>findByIdWithOrders</td>
                 <td>findByIdWithOrders</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">FETCH, USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1040,8 +966,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1054,7 +979,6 @@
                 <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1064,10 +988,9 @@
                 <td>findByOrderNumberWithDetails</td>
                 <td>findByOrderNumberWithDetails</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">FETCH, ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1077,10 +1000,9 @@
                 <td>findByOrderStatusWithUser</td>
                 <td>findByOrderStatusWithUser</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">FETCH, ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1093,7 +1015,6 @@
                 <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1103,10 +1024,9 @@
                 <td>findByStatusWithCategory</td>
                 <td>findByStatusWithCategory</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1117,9 +1037,8 @@
                 <td>findByStatusWithCategoryNameNative</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">p.CATEGORY_ID = c.CATEGORY_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1129,10 +1048,9 @@
                 <td>findByStatusWithProfile</td>
                 <td>findByStatusWithProfile</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">FETCH, USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1145,7 +1063,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1157,8 +1074,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.PRODUCTS, CATEGORY</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1171,7 +1087,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1184,7 +1099,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1197,7 +1111,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1210,7 +1123,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1220,10 +1132,9 @@
                 <td>findExpensiveProductsWithStock</td>
                 <td>findExpensiveProductsWithStock</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1233,10 +1144,9 @@
                 <td>findLowStockProducts</td>
                 <td>findLowStockProducts</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1246,10 +1156,9 @@
                 <td>findNeverOrderedProducts</td>
                 <td>findNeverOrderedProducts</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1259,10 +1168,9 @@
                 <td>findOrderSummariesByStatus</td>
                 <td>findOrderSummariesByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1272,10 +1180,9 @@
                 <td>findOrdersByDynamicCriteria</td>
                 <td>findOrdersByDynamicCriteria</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1285,10 +1192,9 @@
                 <td>findOrdersByPremiumUsers</td>
                 <td>findOrdersByPremiumUsers</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1298,10 +1204,9 @@
                 <td>findOrdersContainingProduct</td>
                 <td>findOrdersContainingProduct</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERITEMS, ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1311,10 +1216,9 @@
                 <td>findOrdersContainingProductsFromCategory</td>
                 <td>findOrdersContainingProductsFromCategory</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERITEM</td>
-                <td class="conditions">-</td>
-                <td class="join-type">-</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -1324,10 +1228,9 @@
                 <td>findOrdersWithInconsistentTotals</td>
                 <td>findOrdersWithInconsistentTotals</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERITEMS, ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1338,9 +1241,8 @@
                 <td>findOrdersWithInferredBrandMetric</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.ORDERS, BRAND_METRICS</td>
-                <td class="conditions">o.ORDER_ID = bm.ORDER_REF</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">BRAND_METRICS.ORDER_REF = ORDERS.ORDER_ID</td>
+                <td class="join-type">EXPLICIT</td>
             </tr>
             
             <tr>
@@ -1350,10 +1252,9 @@
                 <td>findOrdersWithMinimumItems</td>
                 <td>findOrdersWithMinimumItems</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1363,10 +1264,9 @@
                 <td>findOrdersWithUserInDateRangeNative</td>
                 <td>findOrdersWithUserInDateRangeNative</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">o.USER_ID = u.USER_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1376,10 +1276,9 @@
                 <td>findOutOfStockProducts</td>
                 <td>findOutOfStockProducts</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1389,10 +1288,9 @@
                 <td>findPopularProducts</td>
                 <td>findPopularProducts</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1402,10 +1300,9 @@
                 <td>findProductSummariesByCategoryId</td>
                 <td>findProductSummariesByCategoryId</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1415,10 +1312,9 @@
                 <td>findProductsByDynamicCriteria</td>
                 <td>findProductsByDynamicCriteria</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1428,10 +1324,9 @@
                 <td>findProductsInActiveCategories</td>
                 <td>findProductsInActiveCategories</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">CATEGORY, PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS, CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1441,10 +1336,9 @@
                 <td>findProductsOrderedAfterDate</td>
                 <td>findProductsOrderedAfterDate</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERITEM, PRODUCT</td>
-                <td class="conditions">-</td>
-                <td class="join-type">-</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.PRODUCTS</td>
+                <td class="conditions">ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT</td>
             </tr>
             
             <tr>
@@ -1454,10 +1348,9 @@
                 <td>findRecentOrdersByStatuses</td>
                 <td>findRecentOrdersByStatuses</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1467,10 +1360,9 @@
                 <td>findRecentOrdersByUserId</td>
                 <td>findRecentOrdersByUserId</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1482,8 +1374,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1496,7 +1387,6 @@
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1506,10 +1396,9 @@
                 <td>findUserSummariesByStatus</td>
                 <td>findUserSummariesByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1519,10 +1408,9 @@
                 <td>findUsersByCityOrNoProfile</td>
                 <td>findUsersByCityOrNoProfile</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USERPROFILE, USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1532,10 +1420,9 @@
                 <td>findUsersByDynamicCriteria</td>
                 <td>findUsersByDynamicCriteria</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1547,8 +1434,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1558,10 +1444,9 @@
                 <td>findUsersWithOrdersAfterDate</td>
                 <td>findUsersWithOrdersAfterDate</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1571,10 +1456,9 @@
                 <td>findUsersWithoutCompletedOrders</td>
                 <td>findUsersWithoutCompletedOrders</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1586,8 +1470,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">CATEGORY</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1597,10 +1480,9 @@
                 <td>getAverageOrderAmountByStatus</td>
                 <td>getAverageOrderAmountByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1610,10 +1492,9 @@
                 <td>getAveragePriceByStatus</td>
                 <td>getAveragePriceByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1625,8 +1506,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.PRODUCTS, CATEGORY</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1636,10 +1516,9 @@
                 <td>getDailyOrderCount</td>
                 <td>getDailyOrderCount</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1649,10 +1528,9 @@
                 <td>getMaxPriceByCategoryId</td>
                 <td>getMaxPriceByCategoryId</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1662,10 +1540,9 @@
                 <td>getOrderCountByStatus</td>
                 <td>getOrderCountByStatus</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1675,10 +1552,9 @@
                 <td>getProductCountByCategory</td>
                 <td>getProductCountByCategory</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1688,10 +1564,9 @@
                 <td>getTopCustomersByTotalAmount</td>
                 <td>getTopCustomersByTotalAmount</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1701,10 +1576,9 @@
                 <td>getTotalActiveStock</td>
                 <td>getTotalActiveStock</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1714,10 +1588,9 @@
                 <td>getTotalAmountByUserId</td>
                 <td>getTotalAmountByUserId</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDER</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1727,10 +1600,9 @@
                 <td>getUserStatusStatistics</td>
                 <td>getUserStatusStatistics</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1740,10 +1612,9 @@
                 <td>getUserTypeStatistics</td>
                 <td>getUserTypeStatistics</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">USER</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -1754,9 +1625,8 @@
                 <td>insertOrderItemWithProduct</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
-                <td class="conditions">o.CUSTOMER_ID = c.CUSTOMER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -1767,9 +1637,8 @@
                 <td>insertProductWithCategory</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">c.CATEGORY_ID = d.DEPT_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1780,9 +1649,8 @@
                 <td>insertUserProfileWithUserType</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
-                <td class="conditions">u.ID = ut.TYPE_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -1792,10 +1660,9 @@
                 <td>mergeCategoryStatisticsWithJpa</td>
                 <td>mergeCategoryStatisticsWithJpa</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
-                <td class="conditions">c.category_id = p.category_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, CATEGORY_STATISTICS</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = CATEGORY_STATISTICS.CATEGORY_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1806,9 +1673,8 @@
                 <td>mergeOrderSummaryWithJpa</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.USER_ID = ORDER_SUMMARY.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -1818,10 +1684,9 @@
                 <td>mergeProductInventoryWithJpa</td>
                 <td>mergeProductInventoryWithJpa</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, PRODUCT_INVENTORY, BRANDS</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; BRANDS.BRAND_NAME = PRODUCT_INVENTORY.BRAND_NAME; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; CATEGORIES.CATEGORY_NAME = PRODUCT_INVENTORY.CATEGORY_NAME; PRODUCTS.PRICE = PRODUCT_INVENTORY.CURRENT_PRICE</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1831,10 +1696,9 @@
                 <td>mergeUserActivityLogWithJpa</td>
                 <td>mergeUserActivityLogWithJpa</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; USERS.USER_ID = USER_ACTIVITY_LOG.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1844,10 +1708,9 @@
                 <td>mergeUserStatisticsWithJpa</td>
                 <td>mergeUserStatisticsWithJpa</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_STATISTICS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_STATISTICS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; ORDERS.USER_ID = USER_STATISTICS.USER_ID; USERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -1857,10 +1720,9 @@
                 <td>reduceStock</td>
                 <td>reduceStock</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1873,7 +1735,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1883,10 +1744,9 @@
                 <td>updateOrderStatusByDateAndStatus</td>
                 <td>updateOrderStatusByDateAndStatus</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">-</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1897,9 +1757,8 @@
                 <td>updateOrderStatusWithCustomer</td>
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.CUSTOMERS, SAMPLE.ORDERS</td>
-                <td class="conditions">o.ORDER_ID = oi.ORDER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CUSTOMERS.CUSTOMER_ID = ORDERS.CUSTOMER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -1909,10 +1768,9 @@
                 <td>updateOutOfStockProducts</td>
                 <td>updateOutOfStockProducts</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1922,10 +1780,9 @@
                 <td>updateProductStatus</td>
                 <td>updateProductStatus</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">PRODUCT</td>
+                <td class="tables">SAMPLE.PRODUCTS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1935,10 +1792,9 @@
                 <td>updateShippingAddress</td>
                 <td>updateShippingAddress</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">-</td>
+                <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1951,7 +1807,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -1962,9 +1817,8 @@
                 <td>updateUserWithDepartment</td>
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -1975,9 +1829,8 @@
                 <td>updateUserWithProfile</td>
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
-                <td class="conditions">u.ID = ur.USER_ID; ur.ROLE_ID = r.ROLE_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             </tbody>
@@ -1996,7 +1849,6 @@
                     <th style="width: 200px;">Tables</th>
                     <th>Join Conditions</th>
                     <th style="width: 120px;">JOIN_Type</th>
-                    <th style="width: 200px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -2009,9 +1861,8 @@
                 <td>findComplexJoins</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.ORDERS</td>
-                <td class="conditions">O.CUSTOMER_ID = C.CUSTOMER_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2022,9 +1873,8 @@
                 <td>findComplexScatteredJoins</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, USER_ACTIVITY_LOG</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.USER_ID = USER_ACTIVITY_LOG.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -2036,8 +1886,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.ORDERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2048,9 +1897,8 @@
                 <td>findUsers</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
-                <td class="conditions">U.DEPT_ID = D.DEPT_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2062,8 +1910,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2073,10 +1920,9 @@
                 <td>findUsersWithAnsiJoin</td>
                 <td>findUsersWithAnsiJoin</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES, SAMPLE.DEPARTMENTS</td>
-                <td class="conditions">U.USER_ID = P.USER_ID</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.DEPARTMENTS, SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
+                <td class="conditions">DEPARTMENTS.DEPT_ID = USERS.DEPT_ID; USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -2087,9 +1933,8 @@
                 <td>findUsersWithInferredBrand</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, BRANDS_AUX</td>
-                <td class="conditions">U.USER_ID = B.USER_REF</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">BRANDS_AUX.USER_REF = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT</td>
             </tr>
             
             <tr>
@@ -2100,9 +1945,8 @@
                 <td>findUsersWithMixedJoins</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
-                <td class="conditions">U.DEPT_ID = D.DEPT_ID</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2114,8 +1958,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2127,8 +1970,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">ORDERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2141,7 +1983,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2153,8 +1994,7 @@
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2166,8 +2006,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2180,7 +2019,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2192,8 +2030,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2204,9 +2041,8 @@
                 <td>deleteOldOrderItems.deleteQuery</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
-                <td class="conditions">o.user_id = u.user_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -2217,9 +2053,8 @@
                 <td>deleteQuery</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.USERS, USER_ACTIVITIES</td>
-                <td class="conditions">-</td>
-                <td class="join-type">-</td>
-                <td>-</td>
+                <td class="conditions">USERS.USER_ID = USER_ACTIVITIES.USER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -2230,9 +2065,8 @@
                 <td>deleteQuery</td>
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SAMPLE.USERS, USER_ACTIVITIES</td>
-                <td class="conditions">-</td>
-                <td class="join-type">-</td>
-                <td>-</td>
+                <td class="conditions">USERS.USER_ID = USER_ACTIVITIES.USER_ID</td>
+                <td class="join-type">IMPLICIT</td>
             </tr>
             
             <tr>
@@ -2245,7 +2079,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2258,7 +2091,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2271,7 +2103,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2281,10 +2112,9 @@
                 <td>dwQuery</td>
                 <td>dwQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">CATEGORIES_, USERS_, ORDERS_, PRODUCTS_</td>
-                <td class="conditions">o.order_id = oi.order_id; oi.product_id = p.product_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">USERS_, CATEGORIES_, ORDERS_, PRODUCTS_</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2296,8 +2126,7 @@
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2310,7 +2139,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2323,7 +2151,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2336,7 +2163,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2349,7 +2175,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2362,7 +2187,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2374,8 +2198,7 @@
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2387,8 +2210,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, USERS_, USERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2400,8 +2222,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, USERS_, USERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2414,7 +2235,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2426,8 +2246,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2438,9 +2257,8 @@
                 <td>insertProductRecommendations.insertQuery</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.USERS, PRODUCT_RECOMMENDATIONS</td>
-                <td class="conditions">u.user_id = o.user_id; o.order_id = oi.order_id; oi.product_id = p.product_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2453,7 +2271,6 @@
                 <td class="tables">SAMPLE.USERS, USER_ORDER_STATISTICS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2464,9 +2281,8 @@
                 <td>insertQuery</td>
                 <td class="sql-type">SQL_INSERT</td>
                 <td class="tables">SAMPLE.USERS, USER_ORDER_STATISTICS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2479,7 +2295,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2489,10 +2304,9 @@
                 <td>mergeQuery</td>
                 <td>mergeCategoryStatistics.mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, CATEGORY_STATISTICS</td>
-                <td class="conditions">c.category_id = p.category_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, CATEGORY_STATISTICS</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = CATEGORY_STATISTICS.CATEGORY_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2503,9 +2317,8 @@
                 <td>mergeOrderSummary.mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.ORDERS, ORDER_SUMMARY</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.USER_ID = ORDER_SUMMARY.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -2515,10 +2328,9 @@
                 <td>mergeQuery</td>
                 <td>mergeProductInventory.mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, PRODUCT_INVENTORY, BRANDS</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, PRODUCT_INVENTORY, BRANDS</td>
+                <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; BRANDS.BRAND_NAME = PRODUCT_INVENTORY.BRAND_NAME; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; CATEGORIES.CATEGORY_NAME = PRODUCT_INVENTORY.CATEGORY_NAME; PRODUCTS.PRICE = PRODUCT_INVENTORY.CURRENT_PRICE</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2528,10 +2340,9 @@
                 <td>mergeQuery</td>
                 <td>mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, T, USER_STATISTICS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_STATISTICS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; ORDERS.USER_ID = USER_STATISTICS.USER_ID; USERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2541,10 +2352,9 @@
                 <td>mergeQuery</td>
                 <td>mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, T, USER_STATISTICS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_STATISTICS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; ORDERS.USER_ID = USER_STATISTICS.USER_ID; USERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2554,10 +2364,9 @@
                 <td>mergeQuery</td>
                 <td>mergeUserActivityLog.mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, USER_ACTIVITY_LOG</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, USER_ACTIVITY_LOG</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; USERS.USER_ID = USER_ACTIVITY_LOG.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2567,10 +2376,9 @@
                 <td>finalQuery</td>
                 <td>mergeWithPlusOperator.finalQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
-                <td class="tables">T, S</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2581,9 +2389,8 @@
                 <td>mergeWithStringFormat.mergeQuery</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">-</td>
-                <td class="conditions">(t.id = s.id)</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2593,10 +2400,9 @@
                 <td>query</td>
                 <td>query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USERS, _</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2609,7 +2415,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2620,9 +2425,8 @@
                 <td>selectQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">o.order_id = pm.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2632,10 +2436,9 @@
                 <td>finalQuery</td>
                 <td>selectWithConditionalJoin.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, SAMPLE.ORDERS, PAYMENTS, B</td>
-                <td class="conditions">o.order_id = pm.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.USERS, PAYMENTS</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = PAYMENTS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2648,7 +2451,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2659,9 +2461,8 @@
                 <td>selectWithStringFormat.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">o.order_id = pm.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2673,8 +2474,7 @@
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2686,8 +2486,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2699,8 +2498,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2712,8 +2510,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2723,10 +2520,9 @@
                 <td>updateClause</td>
                 <td>updateClause</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">M</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2737,9 +2533,8 @@
                 <td>updateProductPricesBasedOnAnalysis.updateQuery</td>
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2749,10 +2544,9 @@
                 <td>updateQuery</td>
                 <td>updateQuery</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, REAL_TIME_EVENTS_</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, REAL_TIME_EVENTS_</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2762,10 +2556,9 @@
                 <td>updateQuery</td>
                 <td>updateQuery</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, REAL_TIME_EVENTS_</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, REAL_TIME_EVENTS_</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -2775,10 +2568,9 @@
                 <td>finalQuery</td>
                 <td>updateWithPlusOperatorJoin.finalQuery</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">J, M</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2791,7 +2583,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2804,7 +2595,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2815,9 +2605,8 @@
                 <td>activityQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">u.user_id = a.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2829,8 +2618,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">ORDERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2841,9 +2629,8 @@
                 <td>analyzeComplexOrderPatterns.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">ORDERS_</td>
-                <td class="conditions">o.order_id = pay.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2853,10 +2640,9 @@
                 <td>finalQuery</td>
                 <td>analyzeCustomerOrderPaymentFlow.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PAYMENTS_, SHIPMENTS_</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2867,9 +2653,8 @@
                 <td>baseCase</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">DEPARTMENTS_</td>
-                <td class="conditions">d.manager_id = u.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2882,7 +2667,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2895,7 +2679,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2906,9 +2689,8 @@
                 <td>catalogQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PRODUCTS_</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2920,8 +2702,7 @@
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">USER_ACTIVITIES_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2933,8 +2714,7 @@
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">SYSTEM_LOGS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2946,8 +2726,7 @@
                 <td class="sql-type">SQL_DELETE</td>
                 <td class="tables">TEMP_PROCESSING_DATA_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2958,9 +2737,8 @@
                 <td>deptQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">DEPARTMENTS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2973,7 +2751,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -2985,8 +2762,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, USERS_, USERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -2997,9 +2773,8 @@
                 <td>finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, USERS_, USERS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3010,9 +2785,8 @@
                 <td>financialQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PAYMENTS_</td>
-                <td class="conditions">p.order_id = o.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3022,10 +2796,9 @@
                 <td>finalQuery</td>
                 <td>generateDepartmentPerformanceMatrix.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">PROJECT_ASSIGNMENTS_, PROJECTS_</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3038,7 +2811,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3049,9 +2821,8 @@
                 <td>integrityQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">ORDER_ITEMS_, ORDERS_</td>
-                <td class="conditions">o.user_id = u.user_id; oi.order_id = o.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3062,9 +2833,8 @@
                 <td>inventoryQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PRODUCTS_, PRODUCTS_</td>
-                <td class="conditions">oi.order_id = o.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3075,9 +2845,8 @@
                 <td>inventoryQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PRODUCTS_, PRODUCTS_</td>
-                <td class="conditions">oi.order_id = o.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3088,9 +2857,8 @@
                 <td>lifecycleQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">CUSTOMERS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3101,9 +2869,8 @@
                 <td>mainQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">DEPT_HIERARCHY</td>
-                <td class="conditions">rp.permission_id = p.permission_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3113,10 +2880,9 @@
                 <td>markEventsAsProcessed_FMT_1</td>
                 <td>markEventsAsProcessed_FMT_1</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">-</td>
+                <td class="tables">REAL_TIME_EVENTS_</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3128,8 +2894,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PERFORMANCE_METRICS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3140,9 +2905,8 @@
                 <td>offset</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3153,9 +2917,8 @@
                 <td>productAnalysisQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">PRODUCTS_</td>
-                <td class="conditions">p.brand_id = b.brand_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3168,7 +2931,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3178,10 +2940,9 @@
                 <td>qualityQuery</td>
                 <td>qualityQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERS_, USERS_, PRODUCTS_</td>
+                <td class="tables">USERS_, ORDERS_, PRODUCTS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3191,10 +2952,9 @@
                 <td>query</td>
                 <td>query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USERS, _</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3205,9 +2965,8 @@
                 <td>queryBuilder</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_, USERS_</td>
-                <td class="conditions">p.category_id = c.category_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3218,9 +2977,8 @@
                 <td>queryBuilder</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_, USERS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3231,9 +2989,8 @@
                 <td>recursiveCase</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">DEPARTMENTS_, DEPT_HIERARCHY</td>
-                <td class="conditions">d.parent_dept_id = dh.dept_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3245,8 +3002,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3259,7 +3015,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3272,7 +3027,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3283,9 +3037,8 @@
                 <td>shippingQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SHIPMENTS_</td>
-                <td class="conditions">s.order_id = o.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3296,9 +3049,8 @@
                 <td>streamQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">REAL_TIME_EVENTS_</td>
-                <td class="conditions">e.event_id = m.event_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3309,9 +3061,8 @@
                 <td>trendsQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">ORDERS_</td>
-                <td class="conditions">oi.product_id = p.product_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3321,10 +3072,9 @@
                 <td>updateQuery</td>
                 <td>updateQuery</td>
                 <td class="sql-type">SQL_UPDATE</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, REAL_TIME_EVENTS_</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, REAL_TIME_EVENTS_</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3337,7 +3087,6 @@
                 <td class="tables">ORDERS_</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3349,8 +3098,7 @@
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">ORDER_ITEMS_</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3361,9 +3109,8 @@
                 <td>userActivityQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">u.user_id = a.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3376,7 +3123,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3389,7 +3135,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3402,7 +3147,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3415,7 +3159,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3428,7 +3171,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3441,7 +3183,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3454,7 +3195,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3467,7 +3207,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3480,7 +3219,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3493,7 +3231,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3506,7 +3243,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3519,7 +3255,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3532,7 +3267,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3545,7 +3279,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3558,7 +3291,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3571,7 +3303,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3584,7 +3315,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3597,7 +3327,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3610,7 +3339,6 @@
                 <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>SQL 본문이 비어있거나 주석만 존재</td>
             </tr>
             
             <tr>
@@ -3623,7 +3351,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3633,10 +3360,9 @@
                 <td>query</td>
                 <td>query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USERS, _</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3646,10 +3372,9 @@
                 <td>query</td>
                 <td>queryComplexDataDirectly.query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3659,10 +3384,9 @@
                 <td>query</td>
                 <td>queryOrdersDirectly.query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS</td>
-                <td class="conditions">o.user_id = u.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3673,9 +3397,8 @@
                 <td>queryProductsDirectly.query</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS</td>
-                <td class="conditions">p.category_id = c.category_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3686,9 +3409,8 @@
                 <td>complexSQL</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
-                <td class="conditions">u.user_id = up.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
             
             <tr>
@@ -3701,7 +3423,6 @@
                 <td class="tables">SAMPLE.USER_SESSIONS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3711,10 +3432,9 @@
                 <td>falsePositive1</td>
                 <td>falsePositive1</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">THE</td>
+                <td class="tables">-</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3727,7 +3447,6 @@
                 <td class="tables">USER_AUDIT_LOGS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3738,9 +3457,8 @@
                 <td>mergeSQL</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.USERS, USER_STATISTICS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">USERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -3752,8 +3470,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3763,10 +3480,9 @@
                 <td>sql</td>
                 <td>sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.USERS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3776,10 +3492,9 @@
                 <td>sql</td>
                 <td>sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.USERS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.USERS</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3789,10 +3504,9 @@
                 <td>sql</td>
                 <td>testComplexConditionalQuery.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS, PAYMENTS</td>
-                <td class="conditions">o.order_id = pay.order_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, SAMPLE.PRODUCTS, SAMPLE.USERS, PAYMENTS</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.ORDER_ID = PAYMENTS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3802,10 +3516,9 @@
                 <td>sql</td>
                 <td>testComplexSubqueryConcatenation.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS</td>
-                <td class="conditions">oi.product_id = p.product_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS</td>
+                <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3815,10 +3528,9 @@
                 <td>sql</td>
                 <td>testConditionalConcatenation.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.PRODUCTS</td>
-                <td class="conditions">o.product_id = p.product_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.PRODUCTS</td>
+                <td class="conditions">ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3831,7 +3543,6 @@
                 <td class="tables">SAMPLE.USER_SESSIONS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3841,10 +3552,9 @@
                 <td>sql</td>
                 <td>testInferredTablesJoinSample.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, INVENTORY_AUDIT</td>
-                <td class="conditions">u.user_id = o.user_id; o.order_id = ia.order_ref</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, INVENTORY_AUDIT</td>
+                <td class="conditions">INVENTORY_AUDIT.ORDER_REF = ORDERS.ORDER_ID; ORDERS.USER_ID = USERS.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3857,7 +3567,6 @@
                 <td class="tables">USER_AUDIT_LOGS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3870,7 +3579,6 @@
                 <td class="tables">USER_AUDIT_LOGS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             <tr>
@@ -3882,8 +3590,7 @@
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">MAIN_TABLE, TABLE</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3893,10 +3600,9 @@
                 <td>sql</td>
                 <td>testLoopConcatenation.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, T</td>
-                <td class="conditions">u.user_id = t.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.USERS</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3907,9 +3613,8 @@
                 <td>testMergeConcatenation.sql</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.ORDERS, USER_STATISTICS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -3920,9 +3625,8 @@
                 <td>testMergeStringLiteral.sql</td>
                 <td class="sql-type">SQL_MERGE</td>
                 <td class="tables">SAMPLE.ORDERS, USER_STATISTICS</td>
-                <td class="conditions">-</td>
-                <td class="join-type">JOIN_MERGE</td>
-                <td>-</td>
+                <td class="conditions">ORDERS.USER_ID = USER_STATISTICS.USER_ID</td>
+                <td class="join-type">MERGE</td>
             </tr>
             
             <tr>
@@ -3933,9 +3637,8 @@
                 <td>testMixedPattern.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3945,10 +3648,9 @@
                 <td>sql</td>
                 <td>testMultiLineStringLiteral.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.CATEGORIES, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
-                <td class="conditions">p.category_id = c.category_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.USERS</td>
+                <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3958,10 +3660,9 @@
                 <td>sql</td>
                 <td>testPlusEqualsPattern.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES, SAMPLE.ORDERS</td>
-                <td class="conditions">u.user_id = o.user_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="tables">SAMPLE.ORDERS, SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
+                <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; ORDERS.USER_ID = USER_PROFILES.USER_ID; USERS.ID = USER_PROFILES.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
+                <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
             
             <tr>
@@ -3972,9 +3673,8 @@
                 <td>testStringFormatPattern.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
                 <td class="tables">USERS_</td>
-                <td class="conditions">o.product_id = p.product_id</td>
-                <td class="join-type">JOIN_EXPLICIT</td>
-                <td>-</td>
+                <td class="conditions">-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3986,8 +3686,7 @@
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -3999,8 +3698,7 @@
                 <td class="sql-type">SQL_UPDATE</td>
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
-                <td class="join-type">JOIN_IMPLICIT</td>
-                <td>-</td>
+                <td class="join-type">-</td>
             </tr>
             
             <tr>
@@ -4013,7 +3711,6 @@
                 <td class="tables">SAMPLE.USERS</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
-                <td>-</td>
             </tr>
             
             </tbody>

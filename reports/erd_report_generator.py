@@ -315,10 +315,24 @@ class ERDReportGenerator:
                     app_logger.debug(f"Mermaid ERD에서 관계 불명확하여 제외: {rel['src_table']}.{rel['src_column']} -> {rel['dst_table']}.{rel['dst_column']} (신뢰도: {rel.get('confidence', 0.8)})")
                     continue
                 
+                # ERD 관계 방향 결정: PK가 있는 쪽이 1(왼쪽), FK가 있는 쪽이 N(오른쪽)
+                # Mermaid 문법: A ||--o{ B 는 A(1) : B(N) 관계를 의미
+                if rel_info['src_is_pk'] and not rel_info['dst_is_pk']:
+                    # src가 PK, dst가 FK → src(1) : dst(N)
+                    one_side = src_table
+                    many_side = dst_table
+                elif not rel_info['src_is_pk'] and rel_info['dst_is_pk']:
+                    # src가 FK, dst가 PK → dst(1) : src(N)
+                    one_side = dst_table
+                    many_side = src_table
+                else:
+                    # PK-FK 관계가 명확하지 않은 경우, 기본적으로 src → dst 방향 사용
+                    one_side = src_table
+                    many_side = dst_table
+
                 # ERD는 단순 문법만 지원: A ||--o{ B : has 형태만 사용
-                # PK-FK 관계든 JOIN 관계든 동일한 문법 사용
-                mermaid_lines.append(f'    "{src_table}" ||--o{{ "{dst_table}" : {relationship_label}')
-                
+                mermaid_lines.append(f'    "{one_side}" ||--o{{ "{many_side}" : {relationship_label}')
+
                 relationship_count += 1
             
             mermaid_code = '\n'.join(mermaid_lines)
@@ -330,13 +344,70 @@ class ERDReportGenerator:
             return ""
     
     def _get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> dict:
-        """관계 정보 확인 - 공용 서비스 사용"""
-        rel_info = self.metadata_service.get_relationship_info(src_table, src_column, dst_table, dst_column)
+        """관계 정보 확인 - 3단계 우선순위 로직으로 PK-FK 판단"""
+        # [I] 접두어 제거 (INFERRED 테이블 처리)
+        src_table_clean = src_table[3:] if src_table.startswith('[I]') else src_table
+        dst_table_clean = dst_table[3:] if dst_table.startswith('[I]') else dst_table
+        src_is_inferred = src_table.startswith('[I]')
+        dst_is_inferred = dst_table.startswith('[I]')
+
+        rel_info = self.metadata_service.get_relationship_info(src_table_clean, src_column, dst_table_clean, dst_column)
+
+        # 우선순위 1: 조인 컬럼의 PK 여부 (이미 rel_info에서 확인됨)
+        if not (rel_info['src_is_pk'] or rel_info['dst_is_pk']):
+            # 우선순위 2: 조인 컬럼이 둘 다 PK가 아닌 경우 - 각 테이블의 다른 PK 존재 여부 확인
+            src_other_pk = self._has_other_pk(src_table_clean, src_column)
+            dst_other_pk = self._has_other_pk(dst_table_clean, dst_column)
+
+            if src_other_pk and not dst_other_pk:
+                # src 테이블에만 다른 PK 존재 → src는 N(many), dst는 1(one)
+                rel_info['src_is_pk'] = False
+                rel_info['dst_is_pk'] = True
+            elif not src_other_pk and dst_other_pk:
+                # dst 테이블에만 다른 PK 존재 → dst는 N(many), src는 1(one)
+                rel_info['src_is_pk'] = True
+                rel_info['dst_is_pk'] = False
+            else:
+                # 우선순위 3: 둘 다 다른 PK가 없거나 둘 다 있는 경우 - INFERRED 여부로 판단
+                if src_is_inferred and not dst_is_inferred:
+                    # src가 INFERRED → src는 1(one), dst는 N(many)
+                    rel_info['src_is_pk'] = True
+                    rel_info['dst_is_pk'] = False
+                elif not src_is_inferred and dst_is_inferred:
+                    # dst가 INFERRED → dst는 1(one), src는 N(many)
+                    rel_info['src_is_pk'] = False
+                    rel_info['dst_is_pk'] = True
+                # 둘 다 INFERRED이거나 둘 다 실제 테이블이면 기본값 유지
+
         return {
             'is_pk_fk': (rel_info['src_is_pk'] and not rel_info['dst_is_pk']) or (not rel_info['src_is_pk'] and rel_info['dst_is_pk']),
             'src_nullable': rel_info['src_nullable'],
-            'dst_nullable': rel_info['dst_nullable']
+            'dst_nullable': rel_info['dst_nullable'],
+            'src_is_pk': rel_info['src_is_pk'],
+            'dst_is_pk': rel_info['dst_is_pk']
         }
+
+    def _has_other_pk(self, table_name: str, exclude_column: str) -> bool:
+        """테이블에 조인 컬럼이 아닌 다른 PK가 존재하는지 확인"""
+        try:
+            query = """
+                SELECT c.column_name
+                FROM columns c
+                JOIN tables t ON c.table_id = t.table_id
+                JOIN projects p ON t.project_id = p.project_id
+                WHERE t.table_name = ?
+                  AND p.project_name = ?
+                  AND c.position_pk IS NOT NULL
+                  AND c.column_name != ?
+                  AND t.del_yn = 'N'
+                  AND c.del_yn = 'N'
+                LIMIT 1
+            """
+            result = self.db_utils.execute_query(query, (table_name.upper(), self.project_name, exclude_column.upper()))
+            return len(result) > 0 if result else False
+        except Exception as e:
+            app_logger.error(f"다른 PK 존재 여부 확인 실패: {table_name}, {str(e)}")
+            return False
 
     def _is_pk_fk_relation(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> bool:
         """CSV에서 업로드된 PK 정보를 기반으로 PK-FK 관계인지 확인 (하위 호환성)"""

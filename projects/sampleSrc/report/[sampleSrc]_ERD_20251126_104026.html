@@ -311,7 +311,7 @@
         <div class="erd-header">
             <div class="header-left">
                 <h1>ERD Report</h1>
-                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-24 21:18:24</div>
+                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-26 10:40:26</div>
             </div>
             <div class="diagram-controls">
                 <button onclick="exportPng()">PNG 내보내기</button>
@@ -360,7 +360,6 @@
         NUMBER TOTAL_AMOUNT "총 주문금액"
         string STATUS "주문상태"
         INFERRED USER_ID "[I]USERS"
-        INFERRED USERID "[I]U"
         INFERRED PRODUCT_ID "[I]PRODUCTS"
     }
 
@@ -391,8 +390,8 @@
         date CREATED_AT "계정 생성일시"
         date UPDATED_AT "계정 수정일시"
         string STATUS "계정 상태"
-        INFERRED DEPT_ID "[I]D"
-        INFERRED USER_ID "[I]P"
+        INFERRED DEPT_ID "[I]DEPARTMENTS"
+        INFERRED USER_ID "[I]USER_PROFILES"
     }
 
     "USER_PROFILES" {
@@ -410,17 +409,6 @@
         date ASSIGNED_AT "할당일시"
     }
 
-    "[I]A" {
-        INFERRED USER_ID "[I]E"
-    }
-
-    "[I]B" {
-        INFERRED USER_ID "[I]USERS"
-        INFERRED PRODUCT_ID "[I]PRODUCTS"
-        INFERRED ORDER_ID "[I]ORDERS"
-        INFERRED BRAND_ID "[I]PRODUCTS"
-    }
-
     "[I]BRANDS" {
         INFERRED BRAND_ID "[I]PRODUCTS"
     }
@@ -433,44 +421,6 @@
         INFERRED ORDER_REF "[I]ORDERS"
     }
 
-    "[I]C" {
-        INFERRED CUSTOMER_ID "[I]ORDERS"
-        INFERRED CATEGORY_ID "[I]FACT_DATA"
-    }
-
-    "[I]CAT" {
-        INFERRED CATEGORY_ID "[I]P"
-    }
-
-    "[I]D" {
-        INFERRED DEPT_ID "[I]USERS"
-        INFERRED PARENT_DEPT_ID "[I]DEPT_HIERARCHY"
-    }
-
-    "[I]DEPT_HIERARCHY" {
-        INFERRED DEPT_ID "[I]D"
-        INFERRED USER_ID "[I]UR"
-    }
-
-    "[I]E" {
-        INFERRED USER_ID "[I]A"
-        INFERRED EVENT_ID "[I]M"
-    }
-
-    "[I]EMP" {
-        INFERRED DEPT_ID "[I]DEPT_HIERARCHY"
-    }
-
-    "[I]FACT_DATA" {
-        INFERRED USER_ID "[I]U"
-        INFERRED PRODUCT_ID "[I]PR"
-        INFERRED CATEGORY_ID "[I]C"
-    }
-
-    "[I]I" {
-        INFERRED PRODUCT_ID "[I]P"
-    }
-
     "[I]INVENTORY" {
         INFERRED PRODUCT_ID "[I]PRODUCTS"
     }
@@ -479,150 +429,36 @@
         INFERRED ORDER_REF "[I]ORDERS"
     }
 
-    "[I]M" {
-        INFERRED EVENT_ID "[I]E"
-    }
-
-    "[I]O" {
-        INFERRED USER_ID "[I]USERS"
-        INFERRED ORDER_ID "[I]OI"
-        INFERRED PRODUCT_ID "[I]P"
-    }
-
-    "[I]OI" {
-        INFERRED ORDER_ID "[I]O"
-        INFERRED PRODUCT_ID "[I]P"
-    }
-
-    "[I]P" {
-        INFERRED USER_ID "[I]USERS"
-        INFERRED PRODUCT_ID "[I]OI"
-        INFERRED CATEGORY_ID "[I]C"
-        INFERRED SUPPLIER_ID "[I]S"
-        INFERRED PERMISSION_ID "[I]RP"
-        INFERRED BRAND_ID "[I]B"
-        INFERRED ORDER_ID "[I]O"
-    }
-
-    "[I]PA" {
-        INFERRED USER_ID "[I]U"
-        INFERRED PROJECT_ID "[I]PR"
-    }
-
-    "[I]PAY" {
-        INFERRED ORDER_ID "[I]O"
-    }
-
     "[I]PAYMENTS" {
         INFERRED ORDER_ID "[I]ORDERS"
-    }
-
-    "[I]PM" {
-        INFERRED ORDER_ID "[I]O"
-    }
-
-    "[I]PR" {
-        INFERRED SUPPLIER_ID "[I]S"
-        INFERRED PRODUCT_ID "[I]FACT_DATA"
-        INFERRED PROJECT_ID "[I]PA"
-    }
-
-    "[I]R" {
-        INFERRED ROLE_ID "[I]USER_ROLES"
-    }
-
-    "[I]RP" {
-        INFERRED ROLE_ID "[I]R"
-        INFERRED PERMISSION_ID "[I]P"
-    }
-
-    "[I]S" {
-        INFERRED SUPPLIER_ID "[I]PR"
-        INFERRED ORDER_ID "[I]O"
     }
 
     "[I]SUPPLIERS" {
         INFERRED SUPPLIER_ID "[I]PRODUCTS"
     }
 
-    "[I]T" {
-        INFERRED USER_ID "[I]USERS"
-    }
-
-    "[I]U" {
-        INFERRED USER_ID "[I]P"
-        INFERRED USERID "[I]ORDERS"
-        INFERRED DEPT_ID "[I]D"
-        INFERRED CUSTOMER_ID "[I]C"
-    }
-
-    "[I]UR" {
-        INFERRED USER_ID "[I]USERS"
-        INFERRED ROLE_ID "[I]R"
-    }
-
-    "[I]USERACTIVITY" {
-        INFERRED USERID "[I]U"
-    }
-
     "[I]USER_ACTIVITIES" {
         INFERRED USER_ID "[I]USERS"
     }
 
-    "[I]UT" {
-        INFERRED TYPE_ID "[I]USERS"
-    }
-
-    "[I]B" ||--o{ "ORDERS" : "ORDER_ID"
-    "[I]B" ||--o{ "PRODUCTS" : "PRODUCT_ID"
-    "[I]B" ||--o{ "USERS" : "USER_ID"
-    "[I]C" ||--o{ "[I]U" : "CUSTOMER_ID"
-    "CATEGORIES" ||--o{ "[I]D" : "CATEGORIES.CATEGORY_ID = [I]D.DEPT_ID"
     "CATEGORIES" ||--o{ "PRODUCTS" : "CATEGORY_ID"
     "CUSTOMERS" ||--o{ "ORDERS" : "CUSTOMER_ID"
-    "[I]D" ||--o{ "[I]DEPT_HIERARCHY" : "[I]D.PARENT_DEPT_ID = [I]DEPT_HIERARCHY.DEPT_ID"
-    "[I]D" ||--o{ "[I]U" : "DEPT_ID"
-    "[I]DEPT_HIERARCHY" ||--o{ "[I]EMP" : "DEPT_ID"
-    "[I]DEPT_HIERARCHY" ||--o{ "[I]UR" : "USER_ID"
-    "[I]E" ||--o{ "[I]A" : "USER_ID"
-    "[I]E" ||--o{ "[I]M" : "EVENT_ID"
-    "[I]E" ||--o{ "[I]U" : "USER_ID"
-    "[I]FACT_DATA" ||--o{ "[I]C" : "CATEGORY_ID"
-    "[I]FACT_DATA" ||--o{ "[I]PR" : "PRODUCT_ID"
-    "[I]FACT_DATA" ||--o{ "[I]U" : "USER_ID"
-    "[I]O" ||--o{ "[I]OI" : "ORDER_ID"
-    "[I]O" ||--o{ "[I]P" : "PRODUCT_ID"
-    "[I]O" ||--o{ "[I]PAY" : "ORDER_ID"
-    "[I]O" ||--o{ "[I]PM" : "ORDER_ID"
-    "[I]O" ||--o{ "[I]S" : "ORDER_ID"
-    "[I]O" ||--o{ "[I]U" : "USER_ID"
-    "[I]OI" ||--o{ "[I]P" : "PRODUCT_ID"
     "ORDERS" ||--o{ "[I]BRAND_METRICS" : "ORDERS.ORDER_ID = [I]BRAND_METRICS.ORDER_REF"
-    "ORDERS" ||--o{ "[I]C" : "CUSTOMER_ID"
     "ORDERS" ||--o{ "[I]INVENTORY_AUDIT" : "ORDERS.ORDER_ID = [I]INVENTORY_AUDIT.ORDER_REF"
-    "ORDERS" ||--o{ "[I]OI" : "ORDER_ID"
     "ORDERS" ||--o{ "ORDER_ITEMS" : "ORDER_ID"
     "ORDERS" ||--o{ "[I]PAYMENTS" : "ORDER_ID"
     "ORDERS" ||--o{ "PRODUCTS" : "PRODUCT_ID"
-    "ORDERS" ||--o{ "[I]U" : "USER_ID"
     "ORDERS" ||--o{ "USERS" : "USER_ID"
     "ORDER_ITEMS" ||--o{ "PRODUCTS" : "PRODUCT_ID"
-    "[I]P" ||--o{ "[I]B" : "BRAND_ID"
-    "[I]P" ||--o{ "[I]C" : "CATEGORY_ID"
-    "[I]P" ||--o{ "[I]CAT" : "CATEGORY_ID"
-    "[I]P" ||--o{ "[I]I" : "PRODUCT_ID"
-    "[I]P" ||--o{ "[I]S" : "SUPPLIER_ID"
-    "[I]PA" ||--o{ "[I]PR" : "PROJECT_ID"
-    "[I]PR" ||--o{ "[I]S" : "SUPPLIER_ID"
     "PRODUCTS" ||--o{ "[I]BRANDS" : "BRAND_ID"
     "PRODUCTS" ||--o{ "[I]INVENTORY" : "PRODUCT_ID"
-    "PRODUCTS" ||--o{ "[I]OI" : "PRODUCT_ID"
     "PRODUCTS" ||--o{ "[I]SUPPLIERS" : "SUPPLIER_ID"
-    "[I]R" ||--o{ "[I]RP" : "ROLE_ID"
-    "[I]RP" ||--o{ "[I]P" : "PERMISSION_ID"
-    "[I]U" ||--o{ "[I]A" : "USER_ID"
-    "[I]U" ||--o{ "[I]P" : "USER_ID"
-    "[I]U" ||--o{ "[I]PA" : "USER_ID"
+    "USERS" ||--o{ "[I]BRANDS_AUX" : "USERS.USER_ID = [I]BRANDS_AUX.USER_REF"
+    "USERS" ||--o{ "DEPARTMENTS" : "DEPT_ID"
+    "USERS" ||--o{ "[I]USER_ACTIVITIES" : "USER_ID"
+    "USERS" ||--o{ "USER_PROFILES" : "USER_ID"
+    "USERS" ||--o{ "USER_ROLES" : "USERS.ID = USER_ROLES.USER_ID"
+    "USER_PROFILES" ||--o{ "ORDERS" : "USER_ID"
             </div>
         </div>
                 </div>
@@ -643,7 +479,7 @@
                 <div class="erd-stat-label">Primary Key</div>
             </div>
             <div class="erd-stat-card">
-                <div class="erd-stat-number">89</div>
+                <div class="erd-stat-number">27</div>
                 <div class="erd-stat-label">관계</div>
             </div>
         </div>
