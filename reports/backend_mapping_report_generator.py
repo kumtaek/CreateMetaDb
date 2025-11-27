@@ -145,6 +145,9 @@ class BackendMappingReportGenerator:
             join_type = join_info.get('join_type', '-')
             join_conditions = join_info.get('join_conditions', '-')
 
+            formatted_tables = self._format_tables(table_list)
+            tables_display = ', '.join(formatted_tables) if formatted_tables else '-'
+
             entry = {
                 'no': idx,
                 'path': normalized_path,
@@ -153,15 +156,49 @@ class BackendMappingReportGenerator:
                 'file_href': self._build_file_href(normalized_path, file_name),
                 'method': component_name.split('.')[-1] if '.' in component_name else component_name,
                 'query_id': component_name,
+                'sql_type': sql_type,
+                'tables': tables_display,
+                'join_conditions': join_conditions,
+                'join_type': join_type
+            }
+
+            # 파일 경로 기반 분류
+            lower_path = (normalized_path or '').lower()
+            lower_file = (file_name or '').lower()
+            lower_component = (component_name or '').lower()
+            is_repository_ctx = (
+                'repository' in lower_path or
+                'repository' in lower_file or
+                'repository' in lower_component
+            )
+            is_java_file = lower_path.endswith('.java') or lower_file.endswith('.java')
+
+            # MyBatis XML 파일 확장자: .xml, .dbio
+            is_mybatis_file = (
+                lower_path.endswith('.xml') or lower_path.endswith('.dbio') or
+                lower_file.endswith('.xml') or lower_file.endswith('.dbio') or
+                'mybatis' in lower_path
+            )
+
+            if is_mybatis_file:
+                categorized['MyBatis'].append(entry)
+            elif is_repository_ctx and (is_java_file or lower_file.endswith('.java')):
+                categorized['JPA'].append(entry)
+            else:
+                categorized['JavaString'].append(entry)
+
+        return categorized
+
+    def _normalize_dir(self, file_path: str, file_name: str) -> str:
         """경로 정규화 (디렉터리만)"""
         if not file_path and not file_name:
             return ''
-        
+
         clean_path = file_path or ''
         unix_path = self.path_utils.normalize_path_separator(clean_path, 'unix')
         if file_name and (unix_path.endswith('/' + file_name) or unix_path == file_name):
             unix_path = os.path.dirname(unix_path)
-        
+
         if 'src/' in unix_path:
             return 'src/' + unix_path.split('src/', 1)[1]
         return unix_path
