@@ -153,27 +153,6 @@ class BackendMappingReportGenerator:
                 'file_href': self._build_file_href(normalized_path, file_name),
                 'method': component_name.split('.')[-1] if '.' in component_name else component_name,
                 'query_id': component_name,
-                'sql_type': sql_type,
-                'tables': ', '.join(self._format_tables(table_list)) if table_list else '-',
-                'join_conditions': join_conditions,
-                'join_type': join_type
-            }
-
-            # 파일 경로 기반 분류
-            lower_path = normalized_path.lower()
-            lower_file = (file_name or '').lower()
-            is_repository_ctx = 'repository' in lower_path or 'repository' in lower_file or 'repository' in component_name.lower()
-            is_java_file = lower_path.endswith('.java') or lower_file.endswith('.java')
-            if lower_path.endswith('.xml') or 'mybatis' in lower_path:
-                categorized['MyBatis'].append(entry)
-            elif is_repository_ctx and (is_java_file or lower_file.endswith('.java')):
-                categorized['JPA'].append(entry)
-            else:
-                categorized['JavaString'].append(entry)
-
-        return categorized
-    
-    def _normalize_dir(self, file_path: str, file_name: str) -> str:
         """경로 정규화 (디렉터리만)"""
         if not file_path and not file_name:
             return ''

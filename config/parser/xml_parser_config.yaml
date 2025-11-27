@@ -3,11 +3,20 @@
 
 # XML 파일 필터링 설정
 xml_file_filtering:
+  # MyBatis XML 파일로 인식할 확장자 목록 (프로젝트별 설정 우선)
+  # 운영 환경에서는 .dbio 등 다양한 확장자 사용 가능
+  mybatis_file_extensions:
+    - ".xml"
+    - ".dbio"  # 운영 환경용 확장자
+  
   # 포함할 XML 파일 패턴
   include_patterns:
     - "**/*Mapper.xml"
     - "**/*mapper.xml"
     - "**/*.xml"
+    - "**/*Mapper.dbio"
+    - "**/*mapper.dbio"
+    - "**/*.dbio"
   
   # 제외할 XML 파일 패턴
   exclude_patterns:

@@ -9,6 +9,7 @@ include_patterns:
   - "**/*.java"
   - "**/*.jsp"
   - "**/*.xml"
+  - "**/*.dbio"  # 운영 환경의 MyBatis XML 파일 확장자
   - "**/*.sql"
   - "**/*.properties"
   - "**/*.jar"
@@ -75,6 +76,7 @@ supported_extensions:
   - ".java"
   - ".jsp"
   - ".xml"
+  - ".dbio"  # 운영 환경의 MyBatis XML 파일 확장자
   - ".sql"
   - ".properties"
   - ".jar"

@@ -200,86 +200,93 @@ class SourceAnalyzerLogger:
             custom_message: 추가 메시지
             exit_code: 종료 코드 (기본값: 1)
         """
-        # error가 문자열인 경우 현재 호출 스택에서 실제 호출 위치 찾기
+        filename = "unknown"
+        line_number = 0
+        function_name = "unknown"
+        code_line = ""
+        error_message = ""
+        stack_trace = ""
+        
+        # 1. 에러 위치 및 메시지 추출
         if isinstance(error, str):
             error_message = error
-            custom_message = custom_message or error_message
             
-            # 현재 호출 스택에서 handle_error를 호출한 위치 찾기
+            # 현재 호출 스택에서 handle_error를 호출한 위치 찾기 (logger.py 외부)
             try:
                 current_stack = traceback.extract_stack()
-                # handle_error 호출한 프레임 찾기 (마지막에서 2번째)
-                if len(current_stack) >= 2:
-                    caller_frame = current_stack[-2]  # handle_error를 호출한 위치
+                # 뒤에서부터 탐색하여 logger.py가 아닌 첫 번째 프레임을 찾음
+                caller_frame = None
+                # current_stack[:-1] : 현재 handle_error 프레임 제외
+                for frame in reversed(current_stack[:-1]):
+                    # logger.py 내부 호출이 아닌 첫 번째 프레임을 찾음
+                    if os.path.basename(frame.filename) != "logger.py":
+                        caller_frame = frame
+                        break
+                
+                if caller_frame:
                     filename = caller_frame.filename
                     line_number = caller_frame.lineno
                     function_name = caller_frame.name
                     code_line = caller_frame.line
-                    
-                    # 에러 메시지 구성
-                    error_msg = f"FATAL ERROR at {filename}:{line_number} in {function_name}()"
-                    if code_line:
-                        error_msg += f"\nCode: {code_line.strip()}"
-                    
-                    if custom_message:
-                        error_msg += f"\nMessage: {custom_message}"
-                    
-                    error_msg += f"\nException: {error_message}"
-                    
-                    self.logger.error(error_msg)
-                    sys.exit(exit_code)
-                    return
-                    
+                else:
+                    # fallback: 스택이 너무 얕거나 찾지 못한 경우
+                    if len(current_stack) >= 2:
+                        caller_frame = current_stack[-2]
+                        filename = caller_frame.filename
+                        line_number = caller_frame.lineno
+                        function_name = caller_frame.name
             except Exception:
-                # 스택 추출 실패시 단순 메시지만 출력
-                self.logger.error(f"FATAL ERROR: {error_message}")
-                if custom_message:
-                    self.logger.error(f"Message: {custom_message}")
-                sys.exit(exit_code)
-                return
-        
-        # Exception 객체인 경우 기존 방식으로 처리
-        try:
-            tb = traceback.extract_tb(error.__traceback__)
-        except (AttributeError, RecursionError):
-            # traceback 처리에서 오류 발생시 fallback
-            self.logger.error(f"[ERROR] Traceback processing failed")
-            tb = None
-        if tb:
-            # 가장 최근 프레임 (에러 발생 위치)
-            frame = tb[-1]
-            filename = frame.filename
-            line_number = frame.lineno
-            function_name = frame.name
-            code_line = frame.line
-            
-            # 에러 메시지 구성
-            error_msg = f"FATAL ERROR at {filename}:{line_number} in {function_name}()"
-            if code_line:
-                error_msg += f"\nCode: {code_line.strip()}"
-            
-            if custom_message:
-                error_msg += f"\nMessage: {custom_message}"
-            
-            error_msg += f"\nException: {type(error).__name__}: {str(error)}"
-            
-            # 스택 트레이스 추가
-            error_msg += f"\nStack Trace:\n{traceback.format_exc()}"
-            
+                pass
+
         else:
-            # 스택 트레이스가 없는 경우
-            error_msg = f"FATAL ERROR: {type(error).__name__}: {str(error)}"
-            if custom_message:
-                error_msg += f"\nMessage: {custom_message}"
+            # Exception 객체인 경우
+            error_message = f"{type(error).__name__}: {str(error)}"
+            stack_trace = traceback.format_exc()
+            
+            try:
+                tb = traceback.extract_tb(error.__traceback__)
+                if tb:
+                    # 가장 최근 프레임 (에러 발생 위치)
+                    frame = tb[-1]
+                    filename = frame.filename
+                    line_number = frame.lineno
+                    function_name = frame.name
+                    code_line = frame.line
+                else:
+                    # Traceback이 없는 경우 (예: 이미 처리된 예외), 호출 스택 사용
+                    current_stack = traceback.extract_stack()
+                    for frame in reversed(current_stack[:-1]):
+                        if os.path.basename(frame.filename) != "logger.py":
+                            filename = frame.filename
+                            line_number = frame.lineno
+                            function_name = frame.name
+                            break
+            except Exception:
+                pass
+
+        # 2. 에러 메시지 구성
+        log_msg = f"FATAL ERROR at {filename}:{line_number} in {function_name}()"
+        if code_line:
+            log_msg += f"\nCode: {code_line.strip()}"
         
-        # 에러 로그 기록
-        self.logger.error(error_msg)
+        if custom_message:
+            log_msg += f"\nMessage: {custom_message}"
+        
+        log_msg += f"\nError: {error_message}"
+        
+        if stack_trace:
+            log_msg += f"\nStack Trace:\n{stack_trace}"
+        
+        # 3. 에러 로그 기록
+        # stacklevel=2를 사용하여 logger.error 호출 위치가 아닌 handle_error 호출 위치가 로그에 기록되도록 시도
+        # 하지만 이미 메시지에 상세 위치를 포함시켰으므로, 로거 자체의 위치 정보는 덜 중요함
+        self.logger.error(log_msg)
         
         # 로그 파일에 쓰기 완료를 보장하기 위해 잠시 대기
         import time
         time.sleep(0.2)  # 200ms 대기
         
-        # 프로그램 종료
+        # 4. 프로그램 종료
         self.logger.error(f"\n[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: {exit_code})")
         self.logger.error(f"자세한 내용은 로그 파일을 확인하세요: {self.log_file_path}")
         

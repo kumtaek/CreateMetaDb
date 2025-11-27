@@ -73,13 +73,25 @@ class XmlParser:
             return {}
 
     def get_filtered_xml_files(self, project_path: str) -> List[str]:
+        """
+        프로젝트 경로에서 MyBatis XML 파일 목록을 수집합니다.
+        설정 파일의 mybatis_file_extensions를 사용하여 확장자를 동적으로 처리합니다.
+        """
         try:
             file_utils = FileUtils()
             xml_files = []
             
+            # 설정에서 MyBatis 파일 확장자 목록 가져오기 (하드코딩 금지)
+            mybatis_extensions = self.config.get('xml_file_filtering', {}).get('mybatis_file_extensions', ['.xml'])
+            if not mybatis_extensions:
+                mybatis_extensions = ['.xml']  # 기본값
+            
+            info(f"MyBatis 파일 확장자: {mybatis_extensions}")
+            
             for root, dirs, files in os.walk(project_path):
                 for file in files:
-                    if file.endswith('.xml'):
+                    # 설정된 확장자 중 하나라도 매칭되면 포함
+                    if any(file.endswith(ext) for ext in mybatis_extensions):
                         file_path = self.path_utils.normalize_path(os.path.join(root, file))
                         if self._is_mybatis_xml_file(file_path):
                             xml_files.append(file_path)
@@ -216,8 +228,8 @@ class XmlParser:
                 (r'</\s*where\s*>', ' '),
                 (r'<\s*set[^>]*>', ' SET '),
                 (r'</\s*set\s*>', ' '),
-                (r'<\s*trim[^>]*prefix=\"WHERE\"[^>]*>', ' WHERE '),
-                (r'<\s*trim[^>]*prefix=\"SET\"[^>]*>', ' SET '),
+                (r'<\s*trim[^>]*prefix="WHERE"[^>]*>', ' WHERE '),
+                (r'<\s*trim[^>]*prefix="SET"[^>]*>', ' SET '),
                 (r'</\s*trim\s*>', ' '),
             ]
 

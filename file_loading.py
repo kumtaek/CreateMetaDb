@@ -203,7 +203,7 @@ class FileLoadingEngine(BaseLoadingEngine):
             
             # db_schema의 특정 CSV 파일만 포함 (하드코딩)
             if normalized_path.startswith('db_schema/'):
-                if normalized_path in ['db_schema/ALL_TABLES.csv', 'db_schema/ALL_TAB_COLUMNS.csv']:
+                if normalized_path in ['db_schema/ALL_TABLES.sch', 'db_schema/ALL_TAB_COLUMNS.sch']:
                     return True
                 else:
                     return False
@@ -436,9 +436,9 @@ class FileLoadingEngine(BaseLoadingEngine):
             if not project_id:
                 raise Exception("프로젝트 ID를 찾을 수 없습니다")
 
-            all_tables_file_id = self._get_csv_file_id("ALL_TABLES.csv")
+            all_tables_file_id = self._get_csv_file_id("ALL_TABLES.sch")
             if not all_tables_file_id:
-                raise Exception("ALL_TABLES.csv 파일 ID를 찾을 수 없습니다")
+                raise Exception("ALL_TABLES.sch 파일 ID를 찾을 수 없습니다")
 
             table_data_list = []
             for table_info in tables_data:
@@ -505,9 +505,9 @@ class FileLoadingEngine(BaseLoadingEngine):
             if not project_id:
                 raise Exception("프로젝트 ID를 찾을 수 없습니다")
 
-            all_tables_file_id = self._get_csv_file_id("ALL_TABLES.csv")
+            all_tables_file_id = self._get_csv_file_id("ALL_TABLES.sch")
             if not all_tables_file_id:
-                raise Exception("ALL_TABLES.csv 파일 ID를 찾을 수 없습니다")
+                raise Exception("ALL_TABLES.sch 파일 ID를 찾을 수 없습니다")
 
             tables = self.db_utils.execute_query("SELECT table_id, table_name, hash_value FROM tables WHERE project_id = ? AND del_yn = 'N'", (project_id,), self.conn)
             if not tables:
@@ -532,9 +532,9 @@ class FileLoadingEngine(BaseLoadingEngine):
             if not project_id:
                 raise Exception("프로젝트 ID를 찾을 수 없습니다")
 
-            all_columns_file_id = self._get_csv_file_id("ALL_TAB_COLUMNS.csv")
+            all_columns_file_id = self._get_csv_file_id("ALL_TAB_COLUMNS.sch")
             if not all_columns_file_id:
-                raise Exception("ALL_TAB_COLUMNS.csv 파일 ID를 찾을 수 없습니다")
+                raise Exception("ALL_TAB_COLUMNS.sch 파일 ID를 찾을 수 없습니다")
 
             query = """SELECT c.column_name, c.hash_value, t.table_name, t.table_owner FROM columns c JOIN tables t ON c.table_id = t.table_id WHERE t.project_id = ? AND c.del_yn = 'N' AND t.del_yn = 'N'"""
             columns = self.db_utils.execute_query(query, (project_id,), self.conn)
@@ -659,14 +659,14 @@ class FileLoadingEngine(BaseLoadingEngine):
     def execute_db_loading(self) -> bool:
         """데이터베이스 로딩 실행 (외부 트랜잭션 내에서 실행)"""
         try:
-            # 1. ALL_TABLES.csv 로드 및 저장
-            all_tables_path = os.path.join(self.project_db_schema_path, "ALL_TABLES.csv")
+            # 1. ALL_TABLES.sch 로드 및 저장
+            all_tables_path = os.path.join(self.project_db_schema_path, "ALL_TABLES.sch")
             tables_data = self.load_csv_file(all_tables_path)
             if not self.save_tables_to_database(tables_data):
                 return False
             
-            # 2. ALL_TAB_COLUMNS.csv 로드 및 저장
-            all_columns_path = os.path.join(self.project_db_schema_path, "ALL_TAB_COLUMNS.csv")
+            # 2. ALL_TAB_COLUMNS.sch 로드 및 저장
+            all_columns_path = os.path.join(self.project_db_schema_path, "ALL_TAB_COLUMNS.sch")
             columns_data = self.load_csv_file(all_columns_path)
             if not self.save_columns_to_database(columns_data):
                 return False

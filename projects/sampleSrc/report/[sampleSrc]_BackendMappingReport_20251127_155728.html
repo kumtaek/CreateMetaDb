@@ -29,7 +29,7 @@
         <h1>Backend Mapping Report</h1>
         <div class="info">
             <strong>프로젝트:</strong> sampleSrc<br>
-            <strong>생성일시:</strong> 2025-11-26 19:58:10
+            <strong>생성일시:</strong> 2025-11-27 15:57:28
         </div>
         
         
@@ -177,7 +177,7 @@
                 <td>analyzeProductSalesPerformance</td>
                 <td>analyzeProductSalesPerformance</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, BRANDS</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.ORDERS, BRANDS</td>
                 <td class="conditions">BRANDS.BRAND_ID = PRODUCTS.BRAND_ID; CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -713,7 +713,7 @@
                 <td>deleteOldOrderItemsWithJoin</td>
                 <td>deleteOldOrderItemsWithJoin</td>
                 <td class="sql-type">SQL_DELETE</td>
-                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
                 <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
@@ -953,7 +953,7 @@
                 <td>deleteInactiveUsersWithRoles</td>
                 <td>deleteInactiveUsersWithRoles</td>
                 <td class="sql-type">SQL_DELETE</td>
-                <td class="tables">SAMPLE.USER_ROLES, SAMPLE.USERS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.USER_ROLES</td>
                 <td class="conditions">USERS.USER_ID = USER_ROLES.USER_ID</td>
                 <td class="join-type">IMPLICIT</td>
             </tr>
@@ -1921,7 +1921,7 @@
                 <td>findUsersWithAnsiJoin</td>
                 <td>findUsersWithAnsiJoin</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.DEPARTMENTS, SAMPLE.USER_PROFILES</td>
+                <td class="tables">SAMPLE.DEPARTMENTS, SAMPLE.USERS, SAMPLE.USER_PROFILES</td>
                 <td class="conditions">DEPARTMENTS.DEPT_ID = USERS.DEPT_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
@@ -2173,7 +2173,7 @@
                 <td>finalQuery</td>
                 <td>selectWithConditionalJoin.finalQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.CATEGORIES, SAMPLE.ORDERS, SAMPLE.PRODUCTS, PAYMENTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.ORDERS, PAYMENTS</td>
                 <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = PAYMENTS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -2353,7 +2353,7 @@
                 <td>deleteQuery</td>
                 <td>deleteOldOrderItems.deleteQuery</td>
                 <td class="sql-type">SQL_DELETE</td>
-                <td class="tables">SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS</td>
+                <td class="tables">SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
                 <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT</td>
             </tr>
@@ -2893,7 +2893,7 @@
                 <td>integrityQuery</td>
                 <td>integrityQuery</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">ORDERS_, ORDER_ITEMS_</td>
+                <td class="tables">ORDER_ITEMS_, ORDERS_</td>
                 <td class="conditions">-</td>
                 <td class="join-type">-</td>
             </tr>
@@ -3373,7 +3373,7 @@
                 <td>query</td>
                 <td>queryComplexDataDirectly.query</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS, SAMPLE.PRODUCTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
                 <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -3457,7 +3457,7 @@
                 <td>sql</td>
                 <td>testMultiLineStringLiteral.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.CATEGORIES, SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, SAMPLE.PRODUCTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDER_ITEMS, SAMPLE.CATEGORIES, SAMPLE.PRODUCTS, SAMPLE.ORDERS</td>
                 <td class="conditions">CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID; ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -3469,7 +3469,7 @@
                 <td>sql</td>
                 <td>testPlusEqualsPattern.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.USER_PROFILES, SAMPLE.ORDERS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.USER_PROFILES</td>
                 <td class="conditions">ORDERS.USER_ID = USERS.USER_ID; USERS.USER_ID = USER_PROFILES.USER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -3577,7 +3577,7 @@
                 <td>sql</td>
                 <td>testComplexConditionalQuery.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.ORDER_ITEMS, SAMPLE.PRODUCTS, PAYMENTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.ORDER_ITEMS, SAMPLE.PRODUCTS, SAMPLE.ORDERS, PAYMENTS</td>
                 <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.ORDER_ID = PAYMENTS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -3589,7 +3589,7 @@
                 <td>sql</td>
                 <td>testComplexSubqueryConcatenation.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS, SAMPLE.PRODUCTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDER_ITEMS, SAMPLE.ORDERS</td>
                 <td class="conditions">ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID; ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID; ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>
@@ -3601,7 +3601,7 @@
                 <td>sql</td>
                 <td>testConditionalConcatenation.sql</td>
                 <td class="sql-type">SQL_SELECT</td>
-                <td class="tables">SAMPLE.USERS, SAMPLE.ORDERS, SAMPLE.PRODUCTS</td>
+                <td class="tables">SAMPLE.USERS, SAMPLE.PRODUCTS, SAMPLE.ORDERS</td>
                 <td class="conditions">ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID; ORDERS.USER_ID = USERS.USER_ID</td>
                 <td class="join-type">EXPLICIT, IMPLICIT, MERGE</td>
             </tr>

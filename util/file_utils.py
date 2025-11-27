@@ -21,10 +21,10 @@ class FileUtils:
     # 지원하는 파일 타입 정의
     SUPPORTED_EXTENSIONS = {
         'java': ['.java'],
-        'xml': ['.xml'],
+        'xml': ['.xml', '.dbio'],  # .dbio는 운영 환경의 MyBatis XML 파일 확장자
         'jsp': ['.jsp'],
         'sql': ['.sql'],
-        'csv': ['.csv'],
+        'csv': ['.csv', '.sch'],
         'yaml': ['.yaml', '.yml'],
         'properties': ['.properties'],
         'txt': ['.txt'],
