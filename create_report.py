@@ -67,11 +67,6 @@ def parse_arguments():
         help='상세 로그 출력'
     )
     
-    parser.add_argument(
-        '--include-orphan',
-        action='store_true',
-        help='ERD 생성 시 고아 테이블(관계가 없는 테이블)도 포함'
-    )
     
     return parser.parse_args()
 
@@ -186,13 +181,14 @@ def generate_callchain_report(project_name: str, output_dir: str) -> bool:
         return False
 
 
-def generate_erd_report(project_name: str, output_dir: str, include_orphan_tables: bool = False) -> bool:
-    """ERD Report 생성"""
+def generate_erd_report(project_name: str, output_dir: str) -> bool:
+    """ERD Report 생성 (고아 테이블 자동 제외)"""
     try:
-        generator = ERDReportGenerator(project_name, output_dir, include_orphan_tables)
+        # 고아 테이블은 무조건 제외 (include_orphan_tables=False 고정)
+        generator = ERDReportGenerator(project_name, output_dir, include_orphan_tables=False)
         success = generator.generate_report()
         return success
-            
+
     except Exception as e:
         handle_error(e, "ERD Report 생성 중 오류 발생")
         return False
@@ -200,14 +196,14 @@ def generate_erd_report(project_name: str, output_dir: str, include_orphan_table
 
 
 
-def generate_erd_dagre_report(project_name: str, output_dir: str, include_orphan_tables: bool = False,
-                              show_attributes: bool = True) -> bool:
-    """ERD(Dagre) Report 생성"""
+def generate_erd_dagre_report(project_name: str, output_dir: str, show_attributes: bool = True) -> bool:
+    """ERD(Dagre) Report 생성 (고아 테이블 자동 제외)"""
     try:
-        generator = ERDDagreReportGenerator(project_name, output_dir, include_orphan_tables, show_attributes)
+        # 고아 테이블은 무조건 제외 (include_orphan_tables=False 고정)
+        generator = ERDDagreReportGenerator(project_name, output_dir, include_orphan_tables=False, show_attributes=show_attributes)
         success = generator.generate_report()
         return success
-            
+
     except Exception as e:
         handle_error(e, "ERD(Dagre) Report 생성 중 오류 발생")
         return False
@@ -317,9 +313,9 @@ def main():
         
         if args.report_type in ['erd', 'all']:
             app_logger.info("\n\n\n\n2단계 시작 ========================================")
-            app_logger.info("ERD Report 생성")
+            app_logger.info("ERD Report 생성 (고아 테이블 자동 제외)")
             total_count += 1
-            if generate_erd_report(args.project_name, output_dir, args.include_orphan):
+            if generate_erd_report(args.project_name, output_dir):
                 success_count += 1
                 app_logger.info("성공: ERD Report 생성 완료")
             else:
@@ -328,20 +324,20 @@ def main():
         
         if args.report_type in ['erd-dagre', 'all']:
             app_logger.info("\n\n\n\n3단계 시작 ========================================")
-            app_logger.info("ERD(Dagre) Report 생성 (컬럼 표시)")
+            app_logger.info("ERD(Dagre) Report 생성 (컬럼 표시, 고아 테이블 자동 제외)")
             total_count += 1
-            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan, show_attributes=True):
+            if generate_erd_dagre_report(args.project_name, output_dir, show_attributes=True):
                 success_count += 1
                 app_logger.info("성공: ERD(Dagre) Report 생성 완료")
             else:
                 failed_reports.append("ERD(Dagre) Report")
                 app_logger.info("실패: ERD(Dagre) Report 생성 실패")
-        
+
         if args.report_type == 'erd-dagre-no-attribute':
             app_logger.info("\n\n\n\n3단계 시작 ========================================")
-            app_logger.info("ERD(Dagre) Report 생성 (컬럼 미표시)")
+            app_logger.info("ERD(Dagre) Report 생성 (컬럼 미표시, 고아 테이블 자동 제외)")
             total_count += 1
-            if generate_erd_dagre_report(args.project_name, output_dir, args.include_orphan, show_attributes=False):
+            if generate_erd_dagre_report(args.project_name, output_dir, show_attributes=False):
                 success_count += 1
                 app_logger.info("성공: ERD(Dagre-No-Attribute) Report 생성 완료")
             else:

@@ -33,7 +33,7 @@ class XmlLoadingEngine(BaseLoadingEngine):
     def __init__(self, project_name: str, conn: Optional[sqlite3.Connection], sql_content_enabled: bool = False):
         """
         XML 로딩 엔진 초기화
-        
+
         Args:
             project_name: 프로젝트명
             conn: 외부에서 주입된 데이터베이스 연결 객체
@@ -41,17 +41,26 @@ class XmlLoadingEngine(BaseLoadingEngine):
         """
         super().__init__(project_name, conn)
         self.sql_content_enabled = sql_content_enabled
-        
+
         self.xml_parser = XmlParser()
         # SimpleQueryAnalyzer도 주입된 conn을 사용하도록 수정 필요
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, conn)
-        
+
         from util.common_sql_processor import CommonSqlAnalyzer
         self.common_sql_processor = CommonSqlAnalyzer(project_name)
-        
+
         if self.sql_content_enabled:
             try:
-                self.sql_content_manager = SqlContentManager(project_name)
+                # 설정 파일에서 enable_brute_force_table_search 옵션 읽기
+                from util.config_utils import ConfigUtils
+                config_utils = ConfigUtils()
+                config = config_utils.load_target_source_config(project_name)
+                enable_brute_force = True  # 기본값
+                if config:
+                    enable_brute_force = config.get('sql_analysis', {}).get('enable_brute_force_table_search', True)
+                    app_logger.info(f"단순 테이블 매칭 설정: {enable_brute_force}")
+
+                self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force)
                 if not self.sql_content_manager.initialized:
                     raise Exception("SQL Content Manager 초기화 실패")
             except Exception as e:

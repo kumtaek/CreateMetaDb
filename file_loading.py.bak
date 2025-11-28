@@ -471,11 +471,10 @@ class FileLoadingEngine(BaseLoadingEngine):
 
             column_data_list = []
             for col_info in columns_data:
-                table_name = col_info.get('TABLE_NAME', '')
-                column_name = col_info.get('COLUMN_NAME', '')
-                if not table_name or not column_name: continue
-                table_name = table_name.strip()
-                column_name = column_name.strip()
+                table_name = col_info.get('TABLE_NAME', '').strip()
+                column_name = col_info.get('COLUMN_NAME', '').strip()
+                if not table_name or not column_name:
+                    continue
 
                 table_owner = col_info.get('OWNER', '').strip() or 'UNKNOWN'
                 table_id = self._get_table_id(table_owner, table_name)

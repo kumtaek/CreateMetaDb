@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>ERD Dagre Report - sampleSrc</title>
+    <link rel="stylesheet" href="css/woori.css">
+    <style>
+        
+        body.erd-dagre-body { 
+            margin: 0; 
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            background: white;
+            overflow: hidden;
+        }
+        .erd-dagre-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+        }
+        .erd-dagre-header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+            flex-shrink: 0;
+        }
+        .erd-dagre-header h1 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 300;
+        }
+        .erd-dagre-header .subtitle {
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
+        }
+        .erd-dagre-stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 4px;
+            background: #f8f9fa;
+            margin: 0;
+            flex-shrink: 0;
+            height: 24px;
+            min-height: 24px;
+        }
+        .erd-dagre-stat-card {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 2px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
+        }
+        .erd-dagre-stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .erd-dagre-stat-number {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #3498db;
+            margin: 0;
+        }
+        .erd-dagre-stat-label {
+            color: #7f8c8d;
+            font-size: 0.6em;
+        }
+        .erd-dagre-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #toolbar { 
+            padding: 4px; 
+            border-bottom: 1px solid #ddd; 
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+        #cy { 
+            width: 100%; 
+            height: calc(100vh - 120px);
+            background: white;
+            overflow: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        button {
+            background: #007bff;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        
+        #search {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        
+        .zoom-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-left: 8px;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+            animation: pulse 2s infinite;
+        }
+        .hint-icon {
+            font-size: 16px;
+            animation: bounce 1.5s infinite;
+        }
+        .hint-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1976d2;
+            white-space: nowrap;
+        }
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+                transform: scale(1.02);
+            }
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
+        }
+        
+        /* 향상된 툴팁 스타일 */
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 2000;
+            font-size: 12px;
+        }
+        
+        .tooltip-header {
+            background: #f8f9fa;
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .tooltip-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+        
+        .tooltip-subtitle {
+            font-size: 11px;
+            color: #6c757d;
+        }
+        
+        .tooltip-content {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .columns-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .column-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .column-item:last-child {
+            border-bottom: none;
+        }
+        
+        .column-name {
+            font-weight: 500;
+            color: #212529;
+        }
+        
+        .column-type {
+            font-size: 10px;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        
+        .column-pk {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .column-fk {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .column-nullable {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* 관계선 툴팁 스타일 */
+        .edge-tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 0;
+            max-width: 380px;
+            min-width: 200px;
+            box-shadow: 0 8px 25px rgba(0,123,255,0.15), 0 3px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 2100;
+            font-size: 12px;
+            pointer-events: none;
+            animation: fadeInTooltip 0.2s ease-out;
+        }
+        
+        @keyframes fadeInTooltip {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .edge-tooltip-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 10px 12px;
+            margin: 0;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .edge-tooltip-type {
+            font-size: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .edge-tooltip-content {
+            color: #495057;
+            padding: 12px;
+        }
+        
+        .join-condition {
+            background: linear-gradient(135deg, #e8f4fd 0%, #f1f8ff 100%);
+            border: 1px solid #b3d9ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: #0056b3;
+            position: relative;
+        }
+        
+        .join-condition::before {
+            content: '🔗';
+            position: absolute;
+            left: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+        }
+        
+        .edge-metadata {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 10px;
+            padding: 8px 0;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .confidence-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(40,167,69,0.3);
+        }
+        
+        .frequency-info {
+            color: #6c757d;
+            font-size: 10px;
+        }
+        
+        .relation-detail {
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-left: 3px solid #007bff;
+            border-radius: 0 4px 4px 0;
+            font-size: 11px;
+        }
+        
+        .relation-detail strong {
+            color: #495057;
+        }
+        
+        @media (max-width: 768px) {
+            #toolbar {
+                padding: 8px;
+                gap: 5px;
+            }
+            #search {
+                min-width: 150px;
+            }
+        }
+        
+    </style>
+    <!-- Offline assets -->
+    <script src="./js/cytoscape.min.js"></script>
+    <script src="./js/dagre.min.js"></script>
+    <script src="./js/cytoscape-dagre.js"></script>
+    <script src="./js/cytoscape-fcose.js"></script>
+    <script>
+        const DATA = {
+  "nodes": [
+    {
+      "data": {
+        "id": "table:CATEGORIES",
+        "type": "table",
+        "label": "CATEGORIES",
+        "display_label": "CATEGORIES\n----------------\nCATEGORY_ID(PK) 카테고리ID\nCATEGORY_NAME 카테고리명\nPARENT_ID 상위카테고리ID\nDESCRIPTION 카테고리설명",
+        "meta": {
+          "table_name": "CATEGORIES",
+          "status": "VALID",
+          "pk_columns": [
+            "CATEGORY_ID"
+          ],
+          "comment": "카테고리",
+          "columns": [
+            {
+              "name": "CATEGORY_ID",
+              "column_name": "CATEGORY_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "카테고리ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CATEGORY_NAME",
+              "column_name": "CATEGORY_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "카테고리명",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PARENT_ID",
+              "column_name": "PARENT_ID",
+              "data_type": "NUMBER",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "상위카테고리ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "DESCRIPTION",
+              "column_name": "DESCRIPTION",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "카테고리설명",
+              "data_length": 200,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:CUSTOMERS",
+        "type": "table",
+        "label": "CUSTOMERS",
+        "display_label": "CUSTOMERS\n---------------\nCUSTOMER_ID(PK) 고객ID\nCUSTOMER_NAME 고객명\nPHONE 전화번호\nADDRESS 주소\nEMAIL 이메일\nCREATED_AT 생성일시",
+        "meta": {
+          "table_name": "CUSTOMERS",
+          "status": "VALID",
+          "pk_columns": [
+            "CUSTOMER_ID"
+          ],
+          "comment": "고객정보",
+          "columns": [
+            {
+              "name": "CUSTOMER_ID",
+              "column_name": "CUSTOMER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "고객ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CUSTOMER_NAME",
+              "column_name": "CUSTOMER_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "고객명",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PHONE",
+              "column_name": "PHONE",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "전화번호",
+              "data_length": 20,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ADDRESS",
+              "column_name": "ADDRESS",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주소",
+              "data_length": 200,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "EMAIL",
+              "column_name": "EMAIL",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "이메일",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CREATED_AT",
+              "column_name": "CREATED_AT",
+              "data_type": "DATE",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "생성일시",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:DEPARTMENTS",
+        "type": "table",
+        "label": "DEPARTMENTS",
+        "display_label": "DEPARTMENTS\n-----------------\nDEPT_ID(PK) 부서 고유 ID\nDEPT_NAME 부서명\nMANAGER_ID 부서장 ID\nLOCATION 부서 위치",
+        "meta": {
+          "table_name": "DEPARTMENTS",
+          "status": "VALID",
+          "pk_columns": [
+            "DEPT_ID"
+          ],
+          "comment": "부서 정보",
+          "columns": [
+            {
+              "name": "DEPT_ID",
+              "column_name": "DEPT_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "부서 고유 ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "DEPT_NAME",
+              "column_name": "DEPT_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "부서명",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "MANAGER_ID",
+              "column_name": "MANAGER_ID",
+              "data_type": "NUMBER",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "부서장 ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "LOCATION",
+              "column_name": "LOCATION",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "부서 위치",
+              "data_length": 200,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:ORDERS",
+        "type": "table",
+        "label": "ORDERS",
+        "display_label": "ORDERS\n------------\nORDER_ID(PK) 주문ID\nCUSTOMER_ID 고객ID\nORDER_DATE 주문일시\nTOTAL_AMOUNT 총 주문금액\nSTATUS 주문상태",
+        "meta": {
+          "table_name": "ORDERS",
+          "status": "VALID",
+          "pk_columns": [
+            "ORDER_ID"
+          ],
+          "comment": "주문",
+          "columns": [
+            {
+              "name": "ORDER_ID",
+              "column_name": "ORDER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주문ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CUSTOMER_ID",
+              "column_name": "CUSTOMER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "고객ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ORDER_DATE",
+              "column_name": "ORDER_DATE",
+              "data_type": "DATE",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주문일시",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "TOTAL_AMOUNT",
+              "column_name": "TOTAL_AMOUNT",
+              "data_type": "NUMBER",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "총 주문금액",
+              "data_length": 10,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "STATUS",
+              "column_name": "STATUS",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주문상태",
+              "data_length": 20,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:ORDER_ITEMS",
+        "type": "table",
+        "label": "ORDER_ITEMS",
+        "display_label": "ORDER_ITEMS\n-----------------\nITEM_ID(PK) 주문항목ID\nORDER_ID 주문ID\nPRODUCT_ID 상품ID\nQUANTITY 수량\nUNIT_PRICE 단가",
+        "meta": {
+          "table_name": "ORDER_ITEMS",
+          "status": "VALID",
+          "pk_columns": [
+            "ITEM_ID"
+          ],
+          "comment": "주문항목",
+          "columns": [
+            {
+              "name": "ITEM_ID",
+              "column_name": "ITEM_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주문항목ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ORDER_ID",
+              "column_name": "ORDER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주문ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PRODUCT_ID",
+              "column_name": "PRODUCT_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "상품ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "QUANTITY",
+              "column_name": "QUANTITY",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "수량",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "UNIT_PRICE",
+              "column_name": "UNIT_PRICE",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "단가",
+              "data_length": 10,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:PRODUCTS",
+        "type": "table",
+        "label": "PRODUCTS",
+        "display_label": "PRODUCTS\n--------------\nPRODUCT_ID(PK) 상품ID\nPRODUCT_NAME 상품명\nCATEGORY_ID 카테고리ID\nPRICE 가격\nSTOCK_QUANTITY 재고수량\nDESCRIPTION 상품설명",
+        "meta": {
+          "table_name": "PRODUCTS",
+          "status": "VALID",
+          "pk_columns": [
+            "PRODUCT_ID"
+          ],
+          "comment": "상품",
+          "columns": [
+            {
+              "name": "PRODUCT_ID",
+              "column_name": "PRODUCT_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "상품ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PRODUCT_NAME",
+              "column_name": "PRODUCT_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "상품명",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CATEGORY_ID",
+              "column_name": "CATEGORY_ID",
+              "data_type": "NUMBER",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "카테고리ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PRICE",
+              "column_name": "PRICE",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "가격",
+              "data_length": 10,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "STOCK_QUANTITY",
+              "column_name": "STOCK_QUANTITY",
+              "data_type": "NUMBER",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "재고수량",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "DESCRIPTION",
+              "column_name": "DESCRIPTION",
+              "data_type": "CLOB",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "상품설명",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:USERS",
+        "type": "table",
+        "label": "USERS",
+        "display_label": "USERS\n------------\nUSER_ID(PK) 사용자 고유 식별자\nUSERNAME 사용자명 (유니크)\nEMAIL 이메일 주소\nPASSWORD 암호화된 비밀번호\nCREATED_AT 계정 생성일시\nUPDATED_AT 계정 수정일시\nSTATUS 계정 상태\nDEPT_ID Inferred from SQL analysis",
+        "meta": {
+          "table_name": "USERS",
+          "status": "VALID",
+          "pk_columns": [
+            "USER_ID"
+          ],
+          "comment": "사용자 정보를 저장하는 테이블",
+          "columns": [
+            {
+              "name": "USER_ID",
+              "column_name": "USER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "사용자 고유 식별자",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "USERNAME",
+              "column_name": "USERNAME",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "사용자명 (유니크)",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "EMAIL",
+              "column_name": "EMAIL",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "이메일 주소",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PASSWORD",
+              "column_name": "PASSWORD",
+              "data_type": "VARCHAR2",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "암호화된 비밀번호",
+              "data_length": 100,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "CREATED_AT",
+              "column_name": "CREATED_AT",
+              "data_type": "DATE",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "계정 생성일시",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "UPDATED_AT",
+              "column_name": "UPDATED_AT",
+              "data_type": "DATE",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "계정 수정일시",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "STATUS",
+              "column_name": "STATUS",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "계정 상태",
+              "data_length": 10,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "DEPT_ID",
+              "column_name": "DEPT_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "Inferred from SQL analysis",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:USER_PROFILES",
+        "type": "table",
+        "label": "USER_PROFILES",
+        "display_label": "USER_PROFILES\n-------------------\nPROFILE_ID(PK) 프로필 고유 ID\nUSER_ID 사용자 ID (외래키)\nFIRST_NAME 이름\nLAST_NAME 성\nPHONE 전화번호\nADDRESS 주소",
+        "meta": {
+          "table_name": "USER_PROFILES",
+          "status": "VALID",
+          "pk_columns": [
+            "PROFILE_ID"
+          ],
+          "comment": "사용자 프로필",
+          "columns": [
+            {
+              "name": "PROFILE_ID",
+              "column_name": "PROFILE_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "프로필 고유 ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "USER_ID",
+              "column_name": "USER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "사용자 ID (외래키)",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "FIRST_NAME",
+              "column_name": "FIRST_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "이름",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "LAST_NAME",
+              "column_name": "LAST_NAME",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "성",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "PHONE",
+              "column_name": "PHONE",
+              "data_type": "VARCHAR2",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "전화번호",
+              "data_length": 20,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ADDRESS",
+              "column_name": "ADDRESS",
+              "data_type": "CLOB",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "주소",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:USER_ROLES",
+        "type": "table",
+        "label": "USER_ROLES",
+        "display_label": "USER_ROLES\n----------------\nUSER_ID(PK) 사용자 ID\nROLE_ID(PK) 역할 ID\nASSIGNED_AT 할당일시",
+        "meta": {
+          "table_name": "USER_ROLES",
+          "status": "VALID",
+          "pk_columns": [
+            "USER_ID",
+            "ROLE_ID"
+          ],
+          "comment": "사용자 역할 매핑",
+          "columns": [
+            {
+              "name": "USER_ID",
+              "column_name": "USER_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "사용자 ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ROLE_ID",
+              "column_name": "ROLE_ID",
+              "data_type": "NUMBER",
+              "nullable": "N",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "역할 ID",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            },
+            {
+              "name": "ASSIGNED_AT",
+              "column_name": "ASSIGNED_AT",
+              "data_type": "DATE",
+              "nullable": "Y",
+              "is_pk": false,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "할당일시",
+              "data_length": null,
+              "data_default": null,
+              "is_inferred": false,
+              "inferred_from": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]BRANDS",
+        "type": "table",
+        "label": "[I]BRANDS",
+        "display_label": "[I]BRANDS\n---------------\nID(PK) 조인에서 추론된 컬럼\nBRAND_ID [I]PRODUCTS",
+        "meta": {
+          "table_name": "[I]BRANDS",
+          "status": "VALID",
+          "pk_columns": [
+            "ID",
+            "[I]BRAND_ID"
+          ],
+          "comment": "[I]BRANDS 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRANDS"
+            },
+            {
+              "name": "[I]BRAND_ID",
+              "column_name": "[I]BRAND_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": true,
+              "fk_references": "[I]PRODUCTS",
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRANDS"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]BRANDS_AUX",
+        "type": "table",
+        "label": "[I]BRANDS_AUX",
+        "display_label": "[I]BRANDS_AUX\n-------------------\nBRANDS_AUX_ID(PK) 조인에서 추론된 컬럼\nID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]BRANDS_AUX",
+          "status": "VALID",
+          "pk_columns": [
+            "[I]BRANDS_AUX_ID",
+            "ID"
+          ],
+          "comment": "[I]BRANDS_AUX 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "[I]BRANDS_AUX_ID",
+              "column_name": "[I]BRANDS_AUX_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRANDS_AUX"
+            },
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRANDS_AUX"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]BRAND_METRICS",
+        "type": "table",
+        "label": "[I]BRAND_METRICS",
+        "display_label": "[I]BRAND_METRICS\n----------------------\nBRAND_METRIC_ID(PK) 조인에서 추론된 컬럼\nID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]BRAND_METRICS",
+          "status": "VALID",
+          "pk_columns": [
+            "[I]BRAND_METRIC_ID",
+            "ID"
+          ],
+          "comment": "[I]BRAND_METRICS 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "[I]BRAND_METRIC_ID",
+              "column_name": "[I]BRAND_METRIC_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRAND_METRICS"
+            },
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]BRAND_METRICS"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]INVENTORY",
+        "type": "table",
+        "label": "[I]INVENTORY",
+        "display_label": "[I]INVENTORY\n------------------\nINVENTORY_ID(PK) 조인에서 추론된 컬럼\nID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]INVENTORY",
+          "status": "VALID",
+          "pk_columns": [
+            "[I]INVENTORY_ID",
+            "ID"
+          ],
+          "comment": "[I]INVENTORY 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "[I]INVENTORY_ID",
+              "column_name": "[I]INVENTORY_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]INVENTORY"
+            },
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]INVENTORY"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]INVENTORY_AUDIT",
+        "type": "table",
+        "label": "[I]INVENTORY_AUDIT",
+        "display_label": "[I]INVENTORY_AUDIT\n------------------------\nID(PK) 조인에서 추론된 컬럼\nINVENTORY_AUDIT_ID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]INVENTORY_AUDIT",
+          "status": "VALID",
+          "pk_columns": [
+            "ID",
+            "[I]INVENTORY_AUDIT_ID"
+          ],
+          "comment": "[I]INVENTORY_AUDIT 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]INVENTORY_AUDIT"
+            },
+            {
+              "name": "[I]INVENTORY_AUDIT_ID",
+              "column_name": "[I]INVENTORY_AUDIT_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]INVENTORY_AUDIT"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]PAYMENTS",
+        "type": "table",
+        "label": "[I]PAYMENTS",
+        "display_label": "[I]PAYMENTS\n-----------------\nID(PK) 조인에서 추론된 컬럼\nPAYMENT_ID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]PAYMENTS",
+          "status": "VALID",
+          "pk_columns": [
+            "ID",
+            "[I]PAYMENT_ID"
+          ],
+          "comment": "[I]PAYMENTS 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]PAYMENTS"
+            },
+            {
+              "name": "[I]PAYMENT_ID",
+              "column_name": "[I]PAYMENT_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]PAYMENTS"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]SUPPLIERS",
+        "type": "table",
+        "label": "[I]SUPPLIERS",
+        "display_label": "[I]SUPPLIERS\n------------------\nSUPPLIER_ID [I]PRODUCTS\nID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]SUPPLIERS",
+          "status": "VALID",
+          "pk_columns": [
+            "[I]SUPPLIER_ID",
+            "ID"
+          ],
+          "comment": "[I]SUPPLIERS 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "[I]SUPPLIER_ID",
+              "column_name": "[I]SUPPLIER_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": true,
+              "fk_references": "[I]PRODUCTS",
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]SUPPLIERS"
+            },
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]SUPPLIERS"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "table:[I]USER_ACTIVITIES",
+        "type": "table",
+        "label": "[I]USER_ACTIVITIES",
+        "display_label": "[I]USER_ACTIVITIES\n------------------------\nUSER_ACTIVITIE_ID(PK) 조인에서 추론된 컬럼\nID(PK) 조인에서 추론된 컬럼",
+        "meta": {
+          "table_name": "[I]USER_ACTIVITIES",
+          "status": "VALID",
+          "pk_columns": [
+            "[I]USER_ACTIVITIE_ID",
+            "ID"
+          ],
+          "comment": "[I]USER_ACTIVITIES 테이블 (조인에서 추론)",
+          "columns": [
+            {
+              "name": "[I]USER_ACTIVITIE_ID",
+              "column_name": "[I]USER_ACTIVITIE_ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]USER_ACTIVITIES"
+            },
+            {
+              "name": "ID",
+              "column_name": "ID",
+              "data_type": "VARCHAR2(50)",
+              "nullable": "Y",
+              "is_pk": true,
+              "is_foreign_key": false,
+              "fk_references": null,
+              "comment": "조인에서 추론된 컬럼",
+              "data_length": 50,
+              "data_default": null,
+              "is_inferred": true,
+              "inferred_from": "[I]USER_ACTIVITIES"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "id": "edge:table:CATEGORIES->table:PRODUCTS",
+        "source": "table:CATEGORIES",
+        "target": "table:PRODUCTS",
+        "type": "JOIN_EXPLICIT",
+        "label": "CATEGORY_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "CATEGORIES",
+          "dst_table": "PRODUCTS",
+          "src_column": "CATEGORY_ID",
+          "dst_column": "CATEGORY_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "CATEGORIES.CATEGORY_ID = PRODUCTS.CATEGORY_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:CUSTOMERS->table:ORDERS",
+        "source": "table:CUSTOMERS",
+        "target": "table:ORDERS",
+        "type": "JOIN_IMPLICIT",
+        "label": "CUSTOMER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_IMPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "CUSTOMERS",
+          "dst_table": "ORDERS",
+          "src_column": "CUSTOMER_ID",
+          "dst_column": "CUSTOMER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "CUSTOMERS.CUSTOMER_ID = ORDERS.CUSTOMER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:ORDERS->table:[I]BRAND_METRICS",
+        "source": "table:ORDERS",
+        "target": "table:[I]BRAND_METRICS",
+        "type": "JOIN_EXPLICIT",
+        "label": "ORDER_ID↔ORDER_REF",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "ORDERS",
+          "dst_table": "[I]BRAND_METRICS",
+          "src_column": "ORDER_ID",
+          "dst_column": "ORDER_REF",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.ORDER_ID = BRAND_METRICS.ORDER_REF",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:ORDERS->table:[I]INVENTORY_AUDIT",
+        "source": "table:ORDERS",
+        "target": "table:[I]INVENTORY_AUDIT",
+        "type": "JOIN_EXPLICIT",
+        "label": "ORDER_ID↔ORDER_REF",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "ORDERS",
+          "dst_table": "[I]INVENTORY_AUDIT",
+          "src_column": "ORDER_ID",
+          "dst_column": "ORDER_REF",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.ORDER_ID = INVENTORY_AUDIT.ORDER_REF",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:ORDERS->table:ORDER_ITEMS",
+        "source": "table:ORDERS",
+        "target": "table:ORDER_ITEMS",
+        "type": "JOIN_EXPLICIT",
+        "label": "ORDER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "ORDERS",
+          "dst_table": "ORDER_ITEMS",
+          "src_column": "ORDER_ID",
+          "dst_column": "ORDER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.ORDER_ID = ORDER_ITEMS.ORDER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:ORDERS->table:[I]PAYMENTS",
+        "source": "table:ORDERS",
+        "target": "table:[I]PAYMENTS",
+        "type": "JOIN_EXPLICIT",
+        "label": "ORDER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "ORDERS",
+          "dst_table": "[I]PAYMENTS",
+          "src_column": "ORDER_ID",
+          "dst_column": "ORDER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.ORDER_ID = PAYMENTS.ORDER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:PRODUCTS->table:ORDERS",
+        "source": "table:PRODUCTS",
+        "target": "table:ORDERS",
+        "type": "JOIN_EXPLICIT",
+        "label": "PRODUCT_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "PRODUCTS",
+          "dst_table": "ORDERS",
+          "src_column": "PRODUCT_ID",
+          "dst_column": "PRODUCT_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.PRODUCT_ID = PRODUCTS.PRODUCT_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:USERS->table:ORDERS",
+        "source": "table:USERS",
+        "target": "table:ORDERS",
+        "type": "JOIN_EXPLICIT",
+        "label": "USER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "USERS",
+          "dst_table": "ORDERS",
+          "src_column": "USER_ID",
+          "dst_column": "USER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDERS.USER_ID = USERS.USER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:PRODUCTS->table:ORDER_ITEMS",
+        "source": "table:PRODUCTS",
+        "target": "table:ORDER_ITEMS",
+        "type": "JOIN_EXPLICIT",
+        "label": "PRODUCT_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "PRODUCTS",
+          "dst_table": "ORDER_ITEMS",
+          "src_column": "PRODUCT_ID",
+          "dst_column": "PRODUCT_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "ORDER_ITEMS.PRODUCT_ID = PRODUCTS.PRODUCT_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:[I]BRANDS->table:PRODUCTS",
+        "source": "table:[I]BRANDS",
+        "target": "table:PRODUCTS",
+        "type": "JOIN_EXPLICIT",
+        "label": "BRAND_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "[I]BRANDS",
+          "dst_table": "PRODUCTS",
+          "src_column": "BRAND_ID",
+          "dst_column": "BRAND_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "PRODUCTS.BRAND_ID = BRANDS.BRAND_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:PRODUCTS->table:[I]INVENTORY",
+        "source": "table:PRODUCTS",
+        "target": "table:[I]INVENTORY",
+        "type": "JOIN_EXPLICIT",
+        "label": "PRODUCT_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "PRODUCTS",
+          "dst_table": "[I]INVENTORY",
+          "src_column": "PRODUCT_ID",
+          "dst_column": "PRODUCT_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "PRODUCTS.PRODUCT_ID = INVENTORY.PRODUCT_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:[I]SUPPLIERS->table:PRODUCTS",
+        "source": "table:[I]SUPPLIERS",
+        "target": "table:PRODUCTS",
+        "type": "JOIN_EXPLICIT",
+        "label": "SUPPLIER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "[I]SUPPLIERS",
+          "dst_table": "PRODUCTS",
+          "src_column": "SUPPLIER_ID",
+          "dst_column": "SUPPLIER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "PRODUCTS.SUPPLIER_ID = SUPPLIERS.SUPPLIER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:USERS->table:[I]BRANDS_AUX",
+        "source": "table:USERS",
+        "target": "table:[I]BRANDS_AUX",
+        "type": "JOIN_EXPLICIT",
+        "label": "USER_ID↔USER_REF",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "USERS",
+          "dst_table": "[I]BRANDS_AUX",
+          "src_column": "USER_ID",
+          "dst_column": "USER_REF",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "USERS.USER_ID = BRANDS_AUX.USER_REF",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:DEPARTMENTS->table:USERS",
+        "source": "table:DEPARTMENTS",
+        "target": "table:USERS",
+        "type": "JOIN_EXPLICIT",
+        "label": "DEPT_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "DEPARTMENTS",
+          "dst_table": "USERS",
+          "src_column": "DEPT_ID",
+          "dst_column": "DEPT_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "USERS.DEPT_ID = DEPARTMENTS.DEPT_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:USERS->table:[I]USER_ACTIVITIES",
+        "source": "table:USERS",
+        "target": "table:[I]USER_ACTIVITIES",
+        "type": "JOIN_IMPLICIT",
+        "label": "USER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_IMPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "USERS",
+          "dst_table": "[I]USER_ACTIVITIES",
+          "src_column": "USER_ID",
+          "dst_column": "USER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "USERS.USER_ID = USER_ACTIVITIES.USER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:USERS->table:USER_PROFILES",
+        "source": "table:USERS",
+        "target": "table:USER_PROFILES",
+        "type": "JOIN_EXPLICIT",
+        "label": "USER_ID",
+        "is_pk_fk": true,
+        "meta": {
+          "rel_type": "JOIN_EXPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "USERS",
+          "dst_table": "USER_PROFILES",
+          "src_column": "USER_ID",
+          "dst_column": "USER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "USERS.USER_ID = USER_PROFILES.USER_ID",
+          "rel_comment": "",
+          "is_pk_fk": true
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "edge:table:USERS->table:USER_ROLES",
+        "source": "table:USERS",
+        "target": "table:USER_ROLES",
+        "type": "JOIN_IMPLICIT",
+        "label": "USER_ID",
+        "is_pk_fk": false,
+        "meta": {
+          "rel_type": "JOIN_IMPLICIT",
+          "confidence": 0.9,
+          "frequency": 1,
+          "src_table": "USERS",
+          "dst_table": "USER_ROLES",
+          "src_column": "USER_ID",
+          "dst_column": "USER_ID",
+          "src_data_type": "VARCHAR",
+          "dst_data_type": "VARCHAR",
+          "join_condition": "USERS.USER_ID = USER_ROLES.USER_ID",
+          "rel_comment": "",
+          "is_pk_fk": false
+        }
+      }
+    }
+  ]
+};
+    </script>
+</head>
+<body class="erd-dagre-body">
+    <div class="erd-dagre-container">
+        <div class="erd-dagre-header">
+            <h1>ERD Dagre Report</h1>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2025-11-27 17:17:46</div>
+            <div id="toolbar">
+                <button onclick="resetView()">초기화</button>
+                <button onclick="toggleLayout()">레이아웃 전환</button>
+                <button onclick="exportPng()">PNG 내보내기</button>
+                <button onclick="exportSvg()">SVG 내보내기</button>
+                <input type="text" id="search" placeholder="테이블명으로 검색..." />
+                <span id="current-layout">dagre</span>
+            </div>
+        </div>
+        <div class="erd-dagre-content">
+            <div id="cy"></div>
+        </div>
+        
+        <!-- 툴팁 -->
+        <div id="tooltip" class="tooltip">
+            <div class="tooltip-header">
+                <div class="tooltip-title"></div>
+                <div class="tooltip-subtitle"></div>
+            </div>
+            <div class="tooltip-content">
+                <ul class="columns-list"></ul>
+            </div>
+        </div>
+        
+        <!-- 관계선 툴팁 -->
+        <div id="edge-tooltip" class="edge-tooltip">
+            <div class="edge-tooltip-header">
+                <span class="edge-tooltip-title"></span>
+                <span class="edge-tooltip-type"></span>
+            </div>
+            <div class="edge-tooltip-content">
+                <div class="join-condition"></div>
+                <div class="relation-detail"></div>
+                <div class="edge-metadata">
+                    <span class="confidence-badge"></span>
+                    <span class="frequency-info"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="erd-dagre-stats">
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">23</div>
+                <div class="erd-dagre-stat-label">전체 테이블</div>
+            </div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">56</div>
+                <div class="erd-dagre-stat-label">전체 컬럼</div>
+            </div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">14</div>
+                <div class="erd-dagre-stat-label">Primary Key</div>
+            </div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">0</div>
+                <div class="erd-dagre-stat-label">Foreign Key</div>
+            </div>
+            <div class="erd-dagre-stat-card">
+                <div class="erd-dagre-stat-number">26</div>
+                <div class="erd-dagre-stat-label">관계</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // ERD Dagre 초기화 및 이벤트 처리
+        let cy;
+        let currentLayout = 'dagre';
+        let tooltipTimeout;
+        let edgeTooltipTimeout;
+        let isTooltipVisible = false;
+        let isEdgeTooltipVisible = false;
+        const SHOW_ATTRIBUTES = true;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initCytoscape();
+            setupEventListeners();
+        });
+        
+        function initCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: DATA,
+                minZoom: 0.1,
+                maxZoom: 3,
+                wheelSensitivity: 0.1,  // 마우스 휠 줌 민감도를 0.1으로 설정 (더 둔감하게 조정)
+                // 마우스 커서 위치 중심 줌 활성화
+                zoomingEnabled: true,
+                userZoomingEnabled: true,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#f5f7ff',
+                            'label': 'data(display_label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': '#0f172a',
+                            'font-size': '13px',
+                            'font-weight': '600',
+                            'text-outline-width': 0,
+                            'text-wrap': 'wrap',
+                            'text-max-width': '260px',
+                            'text-margin-y': 0,
+                            'text-margin-x': 0,
+                            'text-justification': 'center',
+                            'width': 'label',
+                            'height': 'label',
+                            'min-width': '220px',
+                            'min-height': '140px',
+                            'border-width': 3,
+                            'border-color': '#1e3a8a',
+                            'shape': 'round-rectangle',
+                            'padding': '18px',
+                            'shadow-blur': 12,
+                            'shadow-color': '#cbd5e1',
+                            'shadow-opacity': 0.7
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': '#5f6b7a',
+                            'target-arrow-color': '#0f172a',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-fill': 'filled',
+                            'arrow-scale': 1.8,
+                            'source-arrow-shape': 'none',
+                            'source-endpoint': 'outside-to-node',
+                            'target-endpoint': 'outside-to-node',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '11px',
+                            'font-weight': 'bold',
+                            'color': '#1f2937',
+                            'text-rotation': 'none',
+                            'text-margin-y': -15,
+                            'text-background-color': '#ffffff',
+                            'text-background-opacity': 0.9,
+                            'text-background-padding': '3px',
+                            'text-background-shape': 'roundrectangle',
+                            'text-border-color': '#ddd',
+                            'text-border-width': 1,
+                            'text-border-opacity': 0.8
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'dagre',              // 초기 레이아웃: dagre (계층형)
+                    animate: true,
+                    animationDuration: 1000,
+                    nodeSep: 150,               // 노드 간 간격 확대 (80 → 150) - 엔티티 겹침 방지
+                    edgeSep: 100,               // 엣지 간 간격 확대 (50 → 100) - 관계선 분리
+                    rankSep: 200,               // 계층 간 간격 확대 (120 → 200) - 수직 공간 확보
+                    rankDir: 'TB',              // 위에서 아래로 배치
+                    align: 'UL',                // 정렬 방식 변경 (DR → UL) - 좌상단 정렬로 겹침 최소화
+                    ranker: 'network-simplex'   // 최적 계층 배치 알고리즘
+                }
+            });
+            
+            applyNodeLabels();
+        }
+        
+        function applyNodeLabels() {
+            cy.nodes().forEach((node) => {
+                const baseLabel = node.data('label');
+                const displayLabel = node.data('display_label') || baseLabel;
+                const finalLabel = SHOW_ATTRIBUTES ? displayLabel : baseLabel;
+                node.data('display_label', finalLabel);
+                node.style('label', finalLabel);
+            });
+        }
+        
+        function resetView() {
+            cy.fit();
+            cy.center();
+        }
+        
+        function toggleLayout() {
+            const layouts = ['fcose', 'dagre', 'circle', 'grid'];
+            const currentIndex = layouts.indexOf(currentLayout);
+            const nextIndex = (currentIndex + 1) % layouts.length;
+            currentLayout = layouts[nextIndex];
+            
+            document.getElementById('current-layout').textContent = currentLayout;
+            
+            // 레이아웃별 상세 설정 (더 넓게 퍼지도록)
+            let layoutOptions = {
+                name: currentLayout,
+                animate: true,
+                animationDuration: 1000
+            };
+            
+            if (currentLayout === 'fcose') {
+                layoutOptions = {
+                    ...layoutOptions,
+                    nodeRepulsion: 50000,       // 노드 간 반발력 극대화 (25000 → 50000) - 겹침 완전 방지
+                    idealEdgeLength: 500,       // 이상적인 엣지 길이 증가 (400 → 500)
+                    edgeElasticity: 0.1,        // 엣지 탄성력 최소화 (0.2 → 0.1)
+                    nestingFactor: 0.01,        // 중첩 방지 극대화
+                    gravity: 0.02,              // 중력 더욱 감소 (0.05 → 0.02) - 노드 분산
+                    numIter: 5000,              // 반복 횟수 증가 (4000 → 5000)
+                    tile: true,                 // 타일링 활성화
+                    tilingPaddingVertical: 200, // 수직 패딩 증가 (150 → 200)
+                    tilingPaddingHorizontal: 200, // 수평 패딩 증가 (150 → 200)
+                    initialTemp: 500,           // 초기 온도 증가 (300 → 500)
+                    coolingFactor: 0.99,        // 더욱 천천히 냉각 (0.98 → 0.99)
+                    minTemp: 0.3,               // 최소 온도 감소 (0.5 → 0.3)
+                    nodeSeparation: 200,        // 노드 최소 간격 추가
+                    spacingFactor: 2.0,         // 전체 간격 배율 추가
+                    avoidOverlap: true,         // 겹침 방지 활성화
+                    avoidOverlapPadding: 50     // 겹침 방지 패딩
+                };
+            } else if (currentLayout === 'dagre') {
+                layoutOptions = {
+                    ...layoutOptions,
+                    nodeSep: 150,               // 노드 간 간격 확대 (80 → 150)
+                    edgeSep: 100,               // 엣지 간 간격 확대 (50 → 100)
+                    rankSep: 200,               // 계층 간 간격 확대 (120 → 200)
+                    rankDir: 'TB',              // 위에서 아래로 배치
+                    align: 'UL',                // 좌상단 정렬
+                    ranker: 'network-simplex'   // 최적 계층 배치
+                };
+            } else if (currentLayout === 'circle') {
+                layoutOptions = {
+                    ...layoutOptions,
+                    radius: 600,                // 원의 반지름 더 확대
+                    padding: 150,               // 원 주변 패딩 증가
+                    startAngle: 0,              // 시작 각도
+                    sweep: Math.PI * 2,         // 전체 원 (360도)
+                    clockwise: true,            // 시계 방향
+                    sort: function(a, b) {     // 노드 정렬 (이름순)
+                        return a.data('label').localeCompare(b.data('label'));
+                    },
+                    spacingFactor: 1.5          // 노드 간 간격 조정
+                };
+            } else if (currentLayout === 'grid') {
+                layoutOptions = {
+                    ...layoutOptions,
+                    rows: 5,                    // 5행
+                    cols: 5,                    // 5열
+                    padding: 100                // 그리드 패딩 증가
+                };
+            }
+            
+            cy.layout(layoutOptions).run();
+        }
+        
+        function exportPng() {
+            const png = cy.png({
+                scale: 2,
+                full: true,
+                bg: 'white'
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'sampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
+            link.href = png;
+            link.click();
+        }
+        
+        function exportSvg() {
+            try {
+                const svgData = cy.svg({
+                    full: true,
+                    scale: 1,
+                    quality: 1
+                });
+                
+                if (svgData) {
+                    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                    const svgUrl = URL.createObjectURL(svgBlob);
+                    
+                    const link = document.createElement('a');
+                    link.href = svgUrl;
+                    link.download = 'sampleSrc_ERD_Dagre_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.svg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(svgUrl);
+                } else {
+                    alert('SVG 내보내기에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('SVG 내보내기 오류:', error);
+                alert('SVG 내보내기 중 오류가 발생했습니다.');
+            }
+        }
+        
+        function setupEventListeners() {
+            // 검색 기능
+            const searchInput = document.getElementById('search');
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                if (query === '') {
+                    cy.elements().style('opacity', 1);
+                } else {
+                    cy.elements().style('opacity', 0.3);
+                    cy.elements().filter(function(ele) {
+                        return ele.data('label').toLowerCase().includes(query);
+                    }).style('opacity', 1);
+                }
+            });
+            
+            // 마우스 휠 줌 이벤트 커스터마이징 (Ctrl + 휠)
+            cy.container().addEventListener('wheel', function(e) {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 마우스 커서 위치를 기준으로 줌 중심점 계산
+                    const rect = cy.container().getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    // 현재 줌 레벨과 포지션 저장
+                    const currentZoom = cy.zoom();
+                    const currentPan = cy.pan();
+                    
+                    // 줌 비율 계산
+                    const zoomFactor = 1.1;
+                    let newZoom = currentZoom;
+                    
+                    if (e.deltaY < 0) {
+                        // 휠을 위로: 확대
+                        newZoom = Math.min(currentZoom * zoomFactor, 3);
+                    } else {
+                        // 휠을 아래로: 축소
+                        newZoom = Math.max(currentZoom / zoomFactor, 0.1);
+                    }
+                    
+                    // 줌 비율이 변경된 경우에만 적용
+                    if (newZoom !== currentZoom) {
+                        // 마우스 커서 위치를 Cytoscape 좌표계로 변환
+                        const mousePos = cy.renderer().projectIntoViewport(mouseX, mouseY);
+                        
+                        // 줌 중심점 계산
+                        const zoomCenter = {
+                            x: mousePos.x,
+                            y: mousePos.y
+                        };
+                        
+                        // 줌 적용 (마우스 커서 위치 중심)
+                        cy.zoom({
+                            level: newZoom,
+                            renderedPosition: zoomCenter
+                        });
+                    }
+                }
+            }, { passive: false });
+        }
+        
+    </script>
+</body>
+</html>

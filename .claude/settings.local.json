@@ -29,7 +29,11 @@
       "Bash(git checkout:*)",
       "Bash(while read line)",
       "Bash(do echo \"$line\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(dir /B /S D:AnalyzerCreateMetaDbprojectssampleSrcconfig)",
+      "Bash(tee:*)",
+      "Bash(iconv:*)"
     ],
     "deny": [],
     "ask": []

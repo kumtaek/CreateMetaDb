@@ -26,7 +26,18 @@ class SimpleJavaLoader(BaseLoadingEngine):
 
         self.java_parser = SimpleJavaParser()
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, self.conn)
-        self.sql_content_manager = SqlContentManager(project_name)
+
+        # 설정 파일에서 enable_brute_force_table_search 옵션 읽기
+        from util.config_utils import ConfigUtils
+        from util.logger import app_logger
+        config_utils = ConfigUtils()
+        config = config_utils.load_target_source_config(project_name)
+        enable_brute_force = True  # 기본값
+        if config:
+            enable_brute_force = config.get('sql_analysis', {}).get('enable_brute_force_table_search', True)
+            app_logger.info(f"단순 테이블 매칭 설정: {enable_brute_force}")
+
+        self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force)
         # 파일 컨텍스트 (현재 처리 중인 파일/컴포넌트 정보 전역 보관)
         self.file_context = get_file_context_manager()
 

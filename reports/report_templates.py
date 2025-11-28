@@ -693,11 +693,6 @@ class ReportTemplates:
     <title>ERD Report - {project_name}</title>
     <link rel="stylesheet" href="css/woori.css">
     <script src="js/mermaid.min.js"></script>
-    <script>
-        if (typeof mermaid === 'undefined') {{
-            document.write('<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"><\/script>');
-        }}
-    </script>
     <style>
         {self._get_erd_css()}
     </style>
@@ -1831,19 +1826,8 @@ class ReportTemplates:
                     return;
                 }
                 
-                // html2canvas 라이브러리 동적 로드 및 사용
-                if (typeof html2canvas === 'undefined') {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                    script.onload = () => performPNGExport(diagramContainer);
-                    script.onerror = () => {
-                        // 오프라인 환경에서는 캔버스 기반 대안 사용
-                        performCanvasPNGExport(diagramContainer);
-                    };
-                    document.head.appendChild(script);
-                } else {
-                    performPNGExport(diagramContainer);
-                }
+                // 폐쇄망 환경: 캔버스 기반 PNG 내보내기만 사용
+                performCanvasPNGExport(diagramContainer);
             } catch (error) {
                 console.error('PNG 내보내기 오류:', error);
                 alert('PNG 내보내기 중 오류가 발생했습니다.');
@@ -1968,7 +1952,7 @@ class ReportTemplates:
             const svgHeight = Math.max(rect.height, 800);
             
             let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+<svg width="${svgWidth}" height="${svgHeight}" >
     <defs>
         <style>
             .layer-box { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }

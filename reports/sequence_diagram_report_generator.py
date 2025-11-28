@@ -643,7 +643,7 @@ class SequenceDiagramReportGenerator:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sequence Diagram Report - {self.project_name}</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="js/mermaid.min.js"></script>
     <link rel="stylesheet" href="css/woori.css">
     <style>
         /* === Sequence Diagram 전용 스타일 === */

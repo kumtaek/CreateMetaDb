@@ -20,16 +20,19 @@ from .file_utils import FileUtils
 class SqlContentManager:
     """정제된 SQL 내용 관리 클래스"""
     
-    def __init__(self, project_name: str):
+    def __init__(self, project_name: str, enable_brute_force_search: bool = True):
         """
         SqlContentManager 초기화
         
         Args:
             project_name: 프로젝트명
+            enable_brute_force_search: 단순 문자열 매칭을 통한 테이블 검색 활성화 여부 (기본값: True)
         """
         self.project_name = project_name
         self.db_utils = None
         self.initialized = False
+        self.enable_brute_force_search = enable_brute_force_search
+        self._cached_table_names = None  # 테이블 목록 캐싱 (Lazy Loading)
         self.initialized = self._initialize_database()
     
     def _initialize_database(self) -> bool:
@@ -134,6 +137,33 @@ class SqlContentManager:
                 from parser.sql_parser import SqlParser
                 parser = SqlParser()
                 table_names = parser.extract_table_names(sql_content) or set()
+                
+                # [NEW] 단순 문자열 매칭을 통한 테이블 검색 (누락 방지)
+                if self.enable_brute_force_search:
+                    try:
+                        # 1. 전체 테이블 목록 로드 (Lazy Loading)
+                        if self._cached_table_names is None:
+                            self._cached_table_names = self._load_all_tables(project_id, conn)
+                        
+                        if self._cached_table_names:
+                            # 2. SQL 전처리 (주석 제거 등)
+                            cleaned_sql = self._remove_comments_simple(sql_content).upper()
+                            
+                            # 3. 단순 매칭 검색 (Word Boundary)
+                            import re
+                            for known_table in self._cached_table_names:
+                                # 이미 찾은 테이블은 건너뜀
+                                if known_table in table_names:
+                                    continue
+                                    
+                                # 단어 경계로 검색 (부분 일치 방지)
+                                if re.search(r'\b' + re.escape(known_table) + r'\b', cleaned_sql):
+                                    table_names.add(known_table)
+                                    app_logger.debug(f"단순 매칭으로 테이블 발견: {known_table} (in {kwargs.get('query_id', 'unknown')})")
+                    except Exception as e:
+                        # 단순 매칭 실패해도 기존 로직은 계속 수행
+                        app_logger.warning(f"단순 테이블 매칭 중 오류 (무시): {e}")
+
                 if table_names:
                     metadata_db_path = f'projects/{self.project_name}/metadata.db'
                     metadata_db_utils = DatabaseUtils(metadata_db_path)
@@ -684,3 +714,78 @@ class SqlContentManager:
         if self.db_utils:
             self.db_utils.disconnect()
             app_logger.info("SQL Content 데이터베이스 연결 해제")
+
+    def _load_all_tables(self, project_id: int, conn=None) -> set:
+        """
+        프로젝트의 모든 테이블 목록을 로드 (캐싱용)
+        
+        Args:
+            project_id: 프로젝트 ID
+            conn: DB 연결 객체
+            
+        Returns:
+            테이블명 집합 (대문자)
+        """
+        try:
+            metadata_db_path = f'projects/{self.project_name}/metadata.db'
+            metadata_db_utils = DatabaseUtils(metadata_db_path)
+            
+            # 연결 관리: 전달받은 conn이 있으면 사용, 없으면 임시 연결 생성
+            temp_conn = None
+            use_conn = conn
+            
+            if use_conn is None:
+                temp_conn = metadata_db_utils.get_connection()
+                use_conn = temp_conn
+                
+            try:
+                # 테이블 목록 조회 (Owner 무시, 테이블명만)
+                query = "SELECT table_name FROM tables WHERE project_id = ? AND del_yn = 'N'"
+                rows = metadata_db_utils.execute_query(query, (project_id,), conn=use_conn)
+                
+                table_names = set()
+                if rows:
+                    for row in rows:
+                        t_name = row.get('table_name')
+                        if t_name:
+                            table_names.add(t_name.upper())
+                            
+                app_logger.info(f"전체 테이블 목록 로드 완료: {len(table_names)}개")
+                return table_names
+                
+            finally:
+                if temp_conn:
+                    temp_conn.close()
+                    
+        except Exception as e:
+            app_logger.error(f"전체 테이블 목록 로드 실패: {e}")
+            return set()
+
+    def _remove_comments_simple(self, sql: str) -> str:
+        """
+        SQL에서 주석 및 태그를 제거하는 간단한 전처리
+        
+        Args:
+            sql: 원본 SQL
+            
+        Returns:
+            정제된 SQL
+        """
+        try:
+            import re
+            # 1. MyBatis 태그 제거 (간단히 태그만 제거하고 내용은 남김, 혹은 공백 처리)
+            # 여기서는 태그 자체를 공백으로 치환하여 단어 경계 유지
+            sql = re.sub(r'<[^>]+>', ' ', sql)
+            
+            # 2. 라인 주석 제거 (-- ...)
+            sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
+            
+            # 3. 블록 주석 제거 (/* ... */)
+            sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
+            
+            # 4. 공백 정규화
+            sql = re.sub(r'\s+', ' ', sql).strip()
+            
+            return sql
+        except Exception:
+            return sql
