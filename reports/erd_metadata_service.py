@@ -255,7 +255,8 @@ class ERDMetadataService:
             query = """
                 SELECT DISTINCT
                     src.component_name as table_name,
-                    CASE WHEN f.file_type != 'CSV' THEN 1 ELSE 0 END as is_inferred
+                    CASE WHEN f.file_type IS NOT NULL AND f.file_type != 'CSV' THEN 1 ELSE 0 END as is_inferred,
+                    COALESCE(f.file_type, '') as file_type
                 FROM relationships r
                 JOIN components src ON r.src_id = src.component_id
                 JOIN components dst ON r.dst_id = dst.component_id
@@ -272,7 +273,8 @@ class ERDMetadataService:
 
                 SELECT DISTINCT
                     dst.component_name as table_name,
-                    CASE WHEN f.file_type != 'CSV' THEN 1 ELSE 0 END as is_inferred
+                    CASE WHEN f.file_type IS NOT NULL AND f.file_type != 'CSV' THEN 1 ELSE 0 END as is_inferred,
+                    COALESCE(f.file_type, '') as file_type
                 FROM relationships r
                 JOIN components src ON r.src_id = src.component_id
                 JOIN components dst ON r.dst_id = dst.component_id
@@ -293,8 +295,22 @@ class ERDMetadataService:
             table_names = []
             for row in results:
                 table_name = row['table_name']
+                file_type = row.get('file_type')
                 if row['is_inferred']:
+                    # 특정 테이블명에서 inferred 표기가 붙는지 추적
+                    upper_name = (table_name or '').upper()
+                    if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS'):
+                        app_logger.info(
+                            f"[ERD DEBUG] inferred 플래그 테이블 감지: {table_name} "
+                            f"(file_type={file_type})"
+                        )
                     table_name = f"[I]{table_name}"
+                else:
+                    upper_name = (table_name or '').upper()
+                    if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS'):
+                        app_logger.info(
+                            f"[ERD DEBUG] CSV 테이블 감지: {table_name} (file_type={file_type})"
+                        )
                 table_names.append(table_name)
 
             app_logger.debug(f"관계가 있는 테이블 조회 완료: {len(table_names)}개 테이블")

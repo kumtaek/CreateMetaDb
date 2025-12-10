@@ -119,6 +119,7 @@ class BackendMappingReportGenerator:
             'JPA': [],
             'JavaString': []
         }
+        seen_entries = set()
 
         for idx, item in enumerate(query_data, 1):
             file_path = item['file_path']
@@ -161,6 +162,18 @@ class BackendMappingReportGenerator:
                 'join_conditions': join_conditions,
                 'join_type': join_type
             }
+            entry_key = (
+                entry['path'],
+                entry['file'],
+                (entry['query_id'] or '').upper(),
+                entry['tables'],
+                entry['join_conditions'],
+                entry['join_type'],
+                entry['sql_type']
+            )
+            if entry_key in seen_entries:
+                continue
+            seen_entries.add(entry_key)
 
             # 파일 경로 기반 분류
             lower_path = (normalized_path or '').lower()
@@ -228,21 +241,27 @@ class BackendMappingReportGenerator:
         return 'SQL_UNKNOWN'
 
     def _format_tables(self, tables: List[Dict[str, str]]) -> List[str]:
-        """테이블 표시 시 owner가 있으면 OWNER.TABLE 형태로 표현"""
+        """테이블 표시 시 owner가 있으면 OWNER.TABLE 형태로 표현 (중복 제거)"""
         formatted = []
+        seen = set()  # 중복 방지용 set
         for tbl in tables:
-            owner = tbl.get('owner', 'UNKNOWN')
-            name = tbl.get('table', '')
+            owner = (tbl.get('owner', 'UNKNOWN') or 'UNKNOWN').strip().upper()
+            name = (tbl.get('table', '') or '').strip().upper()
             if not name:
                 continue
             if owner and owner != 'UNKNOWN':
-                formatted.append(f"{owner}.{name}")
+                table_str = f"{owner}.{name}"
             else:
-                formatted.append(name)
+                table_str = name
+
+            # 중복 체크: 이미 추가된 테이블이면 스킵
+            if table_str not in seen:
+                formatted.append(table_str)
+                seen.add(table_str)
         return formatted
 
     def _load_metadata_use_tables(self) -> Dict[str, List[Dict[str, str]]]:
-        """metadata.db의 USE_TABLE 관계를 component_name 기준으로 맵으로 적재"""
+        """metadata.db의 USE_TABLE 관계를 component_name 기준으로 맵으로 적재 (중복 제거)"""
         meta_map: Dict[str, List[Dict[str, str]]] = {}
         if not os.path.exists(self.metadata_db_path):
             return meta_map
@@ -251,7 +270,8 @@ class BackendMappingReportGenerator:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT src.component_name AS sql_comp,
+                SELECT DISTINCT
+                       src.component_name AS sql_comp,
                        dst.component_name AS table_name,
                        COALESCE(t.table_owner, 'UNKNOWN') AS table_owner
                 FROM relationships r
@@ -268,13 +288,47 @@ class BackendMappingReportGenerator:
             )
             for comp_name, table_name, table_owner in cursor.fetchall():
                 key = (comp_name or '').upper()
-                meta_map.setdefault(key, []).append({
-                    'owner': table_owner or 'UNKNOWN',
-                    'table': table_name or ''
-                })
+                # 중복 방지: 이미 같은 owner+table 조합이 있는지 확인
+                existing_tables = meta_map.setdefault(key, [])
+                owner_name = (table_owner or 'UNKNOWN').strip().upper()
+                normalized_table = (table_name or '').strip().upper()
+                if not normalized_table:
+                    continue
+                table_info = {
+                    'owner': owner_name,
+                    'table': normalized_table
+                }
+                # 동일한 테이블이 이미 있는지 확인
+                if not any(t['owner'] == table_info['owner'] and t['table'] == table_info['table'] for t in existing_tables):
+                    existing_tables.append(table_info)
             conn.close()
         except Exception as e:
             handle_error(e, "metadata USE_TABLE 로드 실패")
+
+        # 디버깅용 요약: 메타DB USE_TABLE 관계에서 중복된 (owner, table) 여부를 컴포넌트 단위로 로깅
+        try:
+            for comp_key, tables in meta_map.items():
+                seen = set()
+                dup = set()
+                for tbl in tables:
+                    owner = (tbl.get('owner', 'UNKNOWN') or 'UNKNOWN').strip().upper()
+                    name = (tbl.get('table', '') or '').strip().upper()
+                    if not name:
+                        continue
+                    key = f"{owner}.{name}"
+                    if key in seen:
+                        dup.add(key)
+                    else:
+                        seen.add(key)
+                if dup:
+                    app_logger.info(
+                        "[BackendMapping][USE_TABLE 중복 요약] "
+                        f"component={comp_key}, duplicate_tables={sorted(dup)}"
+                    )
+        except Exception:
+            # 디버깅용 요약 처리에서 예외가 나더라도 전체 리포트 생성 로직은 그대로 진행한다.
+            pass
+
         return meta_map
 
     def _load_metadata_join_conditions(self) -> Dict[str, Dict[str, Any]]:
@@ -297,7 +351,7 @@ class BackendMappingReportGenerator:
             cursor.execute(
                 """
                 SELECT src.component_name AS sql_comp,
-                       GROUP_CONCAT(dst.component_name) AS table_list
+                       GROUP_CONCAT(DISTINCT dst.component_name) AS table_list
                 FROM relationships r
                 JOIN components src ON r.src_id = src.component_id AND src.del_yn = 'N'
                 JOIN components dst ON r.dst_id = dst.component_id AND dst.del_yn = 'N'

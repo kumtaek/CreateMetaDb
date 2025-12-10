@@ -231,11 +231,12 @@ class CommonSqlAnalyzer:
                     msg = f"[CommonSqlAnalyzer] 테이블 컴포넌트 생성 실패: {table_name}"
                     error(msg)
                     raise RuntimeError(msg) from e
+            linked_tables = set()
             for table_name, owner in tables:
                 rows = db.execute_query(
-                    """SELECT component_id FROM components 
-                       WHERE component_type='TABLE' 
-                         AND component_name=? 
+                    """SELECT component_id FROM components
+                       WHERE component_type='TABLE'
+                         AND component_name=?
                          AND project_id=(SELECT project_id FROM projects WHERE project_name=?)
                          AND del_yn='N' LIMIT 1""",
                     (table_name, self.project_name), conn=conn)
@@ -243,6 +244,9 @@ class CommonSqlAnalyzer:
                     table_component_id = ensure_table_component(table_name, owner)
                 else:
                     table_component_id = rows[0]['component_id']
+                if not table_component_id or table_component_id in linked_tables:
+                    continue
+                linked_tables.add(table_component_id)
                 rel_data = {
                     'src_id': sql_component_id,
                     'dst_id': table_component_id,

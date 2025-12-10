@@ -158,8 +158,9 @@ class XmlParser:
                 # 3. HTML 엔티티 디코딩
                 cleaned_content = html.unescape(cleaned_content)
 
-                # 4. 공백 정리
-                sql_content = ' '.join(cleaned_content.split())
+                # 4. 공백/개행은 유지한 채로 normalize 단계에서 정리하도록 전달
+                #    (한 줄 주석이 전체 쿼리를 덮어쓰는 문제 방지)
+                sql_content = cleaned_content.strip()
 
                 if not sql_content.strip():
                     continue

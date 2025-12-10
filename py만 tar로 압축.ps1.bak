@@ -1,7 +1,10 @@
-pause
 cd D:\Analyzer\CreateMetaDb
 Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
+Get-ChildItem -Recurse -Filter *.yaml | Select-Object -Expand FullName >> list.txt
+Get-ChildItem -Recurse -Filter *.sql | Select-Object -Expand FullName >> list.txt
+Get-ChildItem -Recurse -Filter *.js | Select-Object -Expand FullName >> list.txt
+Get-ChildItem -Recurse -Filter *.css | Select-Object -Expand FullName >> list.txt
 tar -czvf pys.tar.gz -T list.txt
 certutil -encode pys.tar.gz pys.log
+del ../pys*.*
 move pys*.* ../
-pause

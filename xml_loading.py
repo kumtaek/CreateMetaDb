@@ -91,6 +91,8 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 warning("분석할 MyBatis XML 파일이 없습니다.")
                 return True
 
+            project_id_cache = self._get_project_id()
+
             for xml_file in xml_files:
                 try:
                     from util.path_utils import PathUtils
@@ -113,10 +115,16 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     
                     file_id = file_results[0]['file_id']
                     self.xml_parser.current_file_id = file_id
+
+                    # 대상 디버깅 파일 여부 (UbcRgstTgtPopDbio.dbio)
+                    is_target_dbio = (file_name == 'UbcRgstTgtPopDbio.dbio')
+                    if is_target_dbio:
+                        info(f"[DBIO DEBUG] 대상 파일 처리 시작: {unix_relative_path} (file_id={file_id})")
+
                     # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
                     self.file_context.push(
                         project_name=self.project_name,
-                        project_id=self._get_project_id(),
+                        project_id=project_id_cache,
                         file_id=file_id,
                         file_path=file_dir,
                         file_name=file_name,
@@ -132,23 +140,43 @@ class XmlLoadingEngine(BaseLoadingEngine):
                         continue
 
                     if analysis_result['sql_queries']:
-                            project_id = self._get_project_id()
-                            for sql_query in analysis_result['sql_queries']:
-                                # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
-                                saved = self.sql_content_manager.save_sql_content(
-                                    sql_content=sql_query.get('sql_content', ''),
-                                    project_id=project_id,
-                                    conn=self.conn,
-                                    query_id=sql_query.get('query_id'),
-                                    file_id=file_id,
-                                    file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
-                                    file_name=file_name,
-                                    query_type=sql_query.get('query_type'),
-                                    hash_value=sql_query.get('hash_value'),
-                                    component_name=sql_query.get('query_id'),
-                                )
-                            if saved:
-                                self.stats['sql_components_created'] += 1
+                        project_id = project_id_cache
+                        saved_any = False
+                        for sql_query in analysis_result['sql_queries']:
+                            query_id = sql_query.get('query_id')
+                            query_type = sql_query.get('query_type')
+
+                            # 대상 쿼리 디버깅 플래그 (selectListUbcRgstTgt in UbcRgstTgtPopDbio.dbio)
+                            is_target_query = is_target_dbio and (query_id == 'selectListUbcRgstTgt')
+                            if is_target_query:
+                                info(f"[DBIO DEBUG] 쿼리 추출: query_id={query_id}, type={query_type}, file_id={file_id}, path={unix_relative_path}")
+
+                            # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
+                            saved = self.sql_content_manager.save_sql_content(
+                                sql_content=sql_query.get('sql_content', ''),
+                                project_id=project_id,
+                                conn=self.conn,
+                                query_id=query_id,
+                                file_id=file_id,
+                                file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
+                                file_name=file_name,
+                                query_type=query_type,
+                                hash_value=sql_query.get('hash_value'),
+                                component_name=query_id,
+                                debug_source_file=file_name,
+                                debug_source_path=unix_relative_path,
+                                debug_hint="DBIO_TARGET" if is_target_query else None,
+                            )
+                            saved_any = saved_any or bool(saved)
+
+                            if is_target_query:
+                                info(f"[DBIO DEBUG] SqlContent 저장 결과: query_id={query_id}, saved={saved}")
+
+                        if saved_any:
+                            self.stats['sql_components_created'] += 1
+
+                    if 'is_target_dbio' in locals() and is_target_dbio:
+                        info(f"[DBIO DEBUG] 파일 처리 완료: {unix_relative_path}, sql_queries={len(analysis_result.get('sql_queries', []))}, join_created={analysis_result.get('join_analysis_stats', {}).get('relationships_created', 0)}")
 
                     # JOIN 관계 생성 통계 집계
                     join_stats = analysis_result.get('join_analysis_stats', {})
@@ -594,6 +622,9 @@ class XmlLoadingEngine(BaseLoadingEngine):
             컴포넌트 ID
         """
         try:
+            normalized_name = (table_name or '').strip().upper()
+            log_inferred_issue = normalized_name.startswith('PLAR_') or normalized_name.startswith('PLAF_') or normalized_name.endswith('PAFF_BAS')
+
             # 4글자 이하 테이블명은 별칭일 가능성이 높으므로 inferred 생성하지 않음
             if not table_name or len(table_name.strip()) <= 4:
                 debug(f"4글자 이하 테이블명으로 inferred 생성 스킵: {table_name}")
@@ -606,7 +637,10 @@ class XmlLoadingEngine(BaseLoadingEngine):
             """
             existing_result = self.db_utils.execute_query(existing_query, (project_id, table_name))
             if existing_result:
-                info(f"기존 테이블 컴포넌트 발견: {table_name} (ID: {existing_result[0]['component_id']})")
+                if log_inferred_issue:
+                    info(f"[INFERRED DEBUG] 기존 테이블 컴포넌트 발견, inferred 생성 생략: {table_name} (ID: {existing_result[0]['component_id']})")
+                else:
+                    info(f"기존 테이블 컴포넌트 발견: {table_name} (ID: {existing_result[0]['component_id']})")
                 return existing_result[0]['component_id']
 
             # inferred 테이블용 file_id 찾기 (XML 파일 중 하나 선택)
@@ -673,10 +707,13 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 self.stats['inferred_columns_created'] += inferred_columns_created
                 if inferred_columns_created > 0:
                     info(f"inferred 컬럼 생성 완료: {table_name}, {inferred_columns_created}개")
-            
-            debug(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
+
+            if log_inferred_issue:
+                info(f"[INFERRED DEBUG] inferred 테이블 생성 완료: {table_name}, component_id: {component_id}, join_count={len(join_relationships) if join_relationships else 0}")
+            else:
+                debug(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
             return component_id
-            
+
         except Exception as e:
             # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
             handle_error(e, f"inferred 테이블 생성 실패: {table_name}")
@@ -1036,4 +1073,3 @@ class XmlLoadingEngine(BaseLoadingEngine):
             'inferred_columns_created': 0,
             'errors': 0
         }
-

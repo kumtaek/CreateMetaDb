@@ -172,9 +172,10 @@ class SqlJoinAnalyzer:
         try:
             normalized_sql = sql_content
             
-            # SQL 주석 제거 - 한 줄 주석 (-- ...)
-            normalized_sql = re.sub(r'--.*$', '', normalized_sql, flags=re.MULTILINE)
-            
+            # SQL 주석 제거 - 한 줄 주석 (-- ... / // ...)
+            normalized_sql = re.sub(r'--[^\r\n]*', '', normalized_sql)
+            normalized_sql = re.sub(r'//[^\r\n]*', '', normalized_sql)
+
             # SQL 주석 제거 - 블록 주석 (/* ... */)
             normalized_sql = re.sub(r'/\*.*?\*/', '', normalized_sql, flags=re.DOTALL)
             

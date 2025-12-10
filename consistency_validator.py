@@ -15,6 +15,7 @@
 
 import sys
 import os
+import re
 import sqlite3
 from typing import Dict, List, Any, Optional
 
@@ -22,8 +23,8 @@ from typing import Dict, List, Any, Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from util.database_utils import DatabaseUtils
-from util.path_utils import get_project_metadata_db_path
-from util.logger import app_logger, handle_error, info, warning, error
+from util.path_utils import get_project_metadata_db_path, PathUtils
+from util.logger import app_logger, handle_error, info, warning, error, debug
 
 
 class ConsistencyValidator:
@@ -44,7 +45,7 @@ class ConsistencyValidator:
         if not self.project_id:
             handle_error(Exception("프로젝트 ID 조회 실패"), f"프로젝트 '{project_name}'을 찾을 수 없습니다")
         
-        # CSV 파일 ID 동적 조회
+        # DB 스키마 레이아웃 파일(csv/sch) ID 조회
         self.all_tables_file_id = self._get_csv_file_id('ALL_TABLES.csv')
         self.all_columns_file_id = self._get_csv_file_id('ALL_TAB_COLUMNS.csv')
     
@@ -70,24 +71,52 @@ class ConsistencyValidator:
             return None
     
     def _get_csv_file_id(self, file_name: str) -> Optional[int]:
-        """CSV 파일의 file_id 동적 조회"""
+        """
+        CSV/스키마 파일의 file_id 동적 조회 (csv/sch 공통 처리)
+
+        Args:
+            file_name: 파일명 또는 기본 이름 (예: 'ALL_TABLES.csv', 'ALL_TABLES')
+
+        Returns:
+            files.file_id 또는 None
+        """
         try:
-            result = self.db_utils.execute_query("""
-                SELECT file_id FROM files 
-                WHERE file_name = ? AND file_type = 'CSV' AND del_yn = 'N'
+            # 기본 이름 및 후보 파일명 계산
+            name_without_ext, ext = os.path.splitext(file_name)
+            if ext.lower() in ['.csv', '.sch']:
+                base_name = name_without_ext
+            else:
+                base_name = file_name
+
+            candidate_names = [f"{base_name}.sch", f"{base_name}.csv"]
+
+            result = self.db_utils.execute_query(
+                """
+                SELECT file_id, file_name FROM files
+                WHERE file_name IN (?, ?) AND file_type = 'CSV' AND del_yn = 'N'
+                ORDER BY
+                  CASE
+                    WHEN file_name LIKE '%.sch' THEN 0
+                    WHEN file_name LIKE '%.csv' THEN 1
+                    ELSE 2
+                  END,
+                  file_id
                 LIMIT 1
-            """, (file_name,))
-            
+                """,
+                (candidate_names[0], candidate_names[1])
+            )
+
             if result:
                 file_id = result[0]['file_id']
-                info(f"CSV 파일 ID 조회: {file_name} -> file_id {file_id}")
+                found_name = result[0]['file_name']
+                info(f"CSV/스키마 파일 ID 조회: {found_name} -> file_id {file_id}")
                 return file_id
             else:
-                warning(f"CSV 파일을 찾을 수 없음: {file_name}")
+                warning(f"CSV/스키마 파일을 찾을 수 없음: {base_name}.sch / {base_name}.csv")
                 return None
-                
+
         except Exception as e:
-            warning(f"CSV 파일 ID 조회 실패: {file_name} - {e}")
+            warning(f"CSV/스키마 파일 ID 조회 실패: {file_name} - {e}")
             return None
     
     def close(self):
@@ -397,9 +426,363 @@ class ConsistencyValidator:
                     'description': f"COLUMN 컴포넌트 '{violation['component_name']}'의 file_id가 ALL_TAB_COLUMNS.csv({self.all_columns_file_id})가 아님 (현재: {violation['file_id']})"
                 })
     
+    def _remove_duplicate_relationships(self):
+        """중복 관계 제거 (같은 src_id, dst_id, rel_type의 관계 중복 제거 + 하위 정보 병합)"""
+        try:
+            # 같은 src_id, dst_id, rel_type을 가진 중복 관계 조회
+            duplicate_relationships = self.db_utils.execute_query("""
+                SELECT
+                    src_id,
+                    dst_id,
+                    rel_type,
+                    COUNT(*) as count,
+                    GROUP_CONCAT(relationship_id) as relationship_ids,
+                    MIN(relationship_id) as keep_id
+                FROM relationships
+                WHERE del_yn = 'N'
+                GROUP BY src_id, dst_id, rel_type
+                HAVING COUNT(*) > 1
+                ORDER BY count DESC
+            """)
+
+            if duplicate_relationships:
+                info(f"중복 관계 발견: {len(duplicate_relationships)}개 그룹")
+
+                total_removed = 0
+                total_merged = 0
+
+                for dup in duplicate_relationships:
+                    relationship_ids = [int(id_str) for id_str in dup['relationship_ids'].split(',')]
+                    keep_id = dup['keep_id']
+
+                    # 최소 ID를 제외한 나머지 ID들
+                    remove_ids = [rid for rid in relationship_ids if rid != keep_id]
+
+                    for remove_id in remove_ids:
+                        try:
+                            # [Step 1] 삭제 전 하위 정보 병합
+                            # 1-1. 이 relationship_id를 parent_id로 가진 컴포넌트들을 keep_id로 이동
+                            merge_count = 0
+                            components_to_merge = self.db_utils.execute_query("""
+                                SELECT component_id, component_type, component_name
+                                FROM components
+                                WHERE parent_id = ? AND del_yn = 'N'
+                            """, (remove_id,))
+
+                            if components_to_merge:
+                                for comp in components_to_merge:
+                                    self.db_utils.execute_query("""
+                                        UPDATE components
+                                        SET parent_id = ?, updated_at = CURRENT_TIMESTAMP
+                                        WHERE component_id = ?
+                                    """, (keep_id, comp['component_id']))
+                                    merge_count += 1
+                                    info(f"  병합: {comp['component_type']}({comp['component_name']}) parent_id {remove_id} → {keep_id}")
+
+                            # 1-2. 이 relationship_id를 src_id로 가진 다른 관계들을 keep_id로 이동
+                            related_as_src = self.db_utils.execute_query("""
+                                SELECT relationship_id, rel_type, dst_id
+                                FROM relationships
+                                WHERE src_id = ? AND del_yn = 'N'
+                            """, (remove_id,))
+
+                            if related_as_src:
+                                for rel in related_as_src:
+                                    # 중복 방지: 이미 동일한 (keep_id, dst_id, rel_type) 관계가 있는지 확인
+                                    existing = self.db_utils.execute_query("""
+                                        SELECT relationship_id
+                                        FROM relationships
+                                        WHERE src_id = ? AND dst_id = ? AND rel_type = ? AND del_yn = 'N'
+                                        LIMIT 1
+                                    """, (keep_id, rel['dst_id'], rel['rel_type']))
+
+                                    if not existing:
+                                        self.db_utils.execute_query("""
+                                            UPDATE relationships
+                                            SET src_id = ?, updated_at = CURRENT_TIMESTAMP
+                                            WHERE relationship_id = ?
+                                        """, (keep_id, rel['relationship_id']))
+                                        merge_count += 1
+                                        info(f"  병합: 관계 src_id {remove_id} → {keep_id} ({rel['rel_type']})")
+                                    else:
+                                        # 중복이므로 이 관계는 삭제
+                                        self.db_utils.execute_query("""
+                                            UPDATE relationships
+                                            SET del_yn = 'Y', updated_at = CURRENT_TIMESTAMP
+                                            WHERE relationship_id = ?
+                                        """, (rel['relationship_id'],))
+                                        info(f"  중복 관계 삭제: relationship_id {rel['relationship_id']} (이미 존재)")
+
+                            # 1-3. 이 relationship_id를 dst_id로 가진 다른 관계들을 keep_id로 이동
+                            related_as_dst = self.db_utils.execute_query("""
+                                SELECT relationship_id, rel_type, src_id
+                                FROM relationships
+                                WHERE dst_id = ? AND del_yn = 'N'
+                            """, (remove_id,))
+
+                            if related_as_dst:
+                                for rel in related_as_dst:
+                                    # 중복 방지
+                                    existing = self.db_utils.execute_query("""
+                                        SELECT relationship_id
+                                        FROM relationships
+                                        WHERE src_id = ? AND dst_id = ? AND rel_type = ? AND del_yn = 'N'
+                                        LIMIT 1
+                                    """, (rel['src_id'], keep_id, rel['rel_type']))
+
+                                    if not existing:
+                                        self.db_utils.execute_query("""
+                                            UPDATE relationships
+                                            SET dst_id = ?, updated_at = CURRENT_TIMESTAMP
+                                            WHERE relationship_id = ?
+                                        """, (keep_id, rel['relationship_id']))
+                                        merge_count += 1
+                                        info(f"  병합: 관계 dst_id {remove_id} → {keep_id} ({rel['rel_type']})")
+                                    else:
+                                        # 중복이므로 이 관계는 삭제
+                                        self.db_utils.execute_query("""
+                                            UPDATE relationships
+                                            SET del_yn = 'Y', updated_at = CURRENT_TIMESTAMP
+                                            WHERE relationship_id = ?
+                                        """, (rel['relationship_id'],))
+                                        info(f"  중복 관계 삭제: relationship_id {rel['relationship_id']} (이미 존재)")
+
+                            total_merged += merge_count
+
+                            # [Step 2] 병합 완료 후 안전하게 삭제
+                            self.db_utils.execute_query("""
+                                UPDATE relationships
+                                SET del_yn = 'Y', updated_at = CURRENT_TIMESTAMP
+                                WHERE relationship_id = ?
+                            """, (remove_id,))
+                            total_removed += 1
+
+                            if merge_count > 0:
+                                info(f"중복 관계 제거 (병합 {merge_count}건): relationship_id {remove_id} 삭제, {keep_id}로 통합")
+
+                        except Exception as e:
+                            warning(f"관계 삭제 실패 (relationship_id: {remove_id}): {e}")
+
+                info(f"중복 관계 제거 완료: {total_removed}개 제거됨, {total_merged}개 하위 정보 병합 (중복 그룹: {len(duplicate_relationships)}개)")
+            else:
+                info("중복 관계 없음")
+
+        except Exception as e:
+            warning(f"중복 관계 제거 중 오류: {e}")
+
+    def _fallback_table_relationship_builder(self):
+        """
+        단순 테이블명 매칭으로 USE_TABLE 관계 보완
+        - MyBatis XML 파일을 직접 읽어서 테이블명 검색
+        - 누락된 USE_TABLE 관계 추가 (기존 관계는 skip)
+        """
+        try:
+            info("=== 단순 테이블명 매칭 시작 ===")
+
+            # 1. MyBatis XML 파일 목록 가져오기
+            from parser.xml_parser import XmlParser
+            xml_parser = XmlParser(project_name=self.project_name)
+
+            path_utils = PathUtils()
+            project_source_path = path_utils.join_path(path_utils.project_root, "projects", self.project_name, "src")
+            xml_files = xml_parser.get_filtered_xml_files(project_source_path)
+
+            if not xml_files:
+                info("분석할 MyBatis XML 파일이 없습니다.")
+                return
+
+            info(f"MyBatis XML 파일 {len(xml_files)}개 발견")
+
+            # 2. tables 테이블에서 모든 테이블명 조회
+            all_tables = self.db_utils.execute_query("""
+                SELECT DISTINCT table_name
+                FROM tables
+                WHERE project_id = ? AND del_yn = 'N'
+                ORDER BY LENGTH(table_name) DESC
+            """, (self.project_id,))
+
+            if not all_tables:
+                warning("테이블 정보가 없습니다.")
+                return
+
+            table_names = [row['table_name'] for row in all_tables]
+            info(f"테이블 {len(table_names)}개 로드")
+
+            total_relationships_added = 0
+            total_queries_processed = 0
+
+            # 3. 각 XML 파일 처리
+            for xml_file in xml_files:
+                try:
+                    # 파일 내용 읽기 (UTF-8 + 에러 무시)
+                    with open(xml_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        xml_content = f.read()
+
+                    # namespace 추출
+                    namespace_match = re.search(r'<mapper\s+namespace\s*=\s*["\']([^"\']+)["\']', xml_content, re.IGNORECASE)
+                    if not namespace_match:
+                        debug(f"namespace를 찾을 수 없음: {xml_file}")
+                        continue
+
+                    namespace = namespace_match.group(1)
+
+                    # 쿼리 ID 추출 (select, insert, update, delete 태그의 id 속성)
+                    query_pattern = r'<(?:select|insert|update|delete)\s+[^>]*id\s*=\s*["\']([^"\']+)["\']'
+                    query_ids = re.findall(query_pattern, xml_content, re.IGNORECASE)
+
+                    if not query_ids:
+                        debug(f"쿼리 ID를 찾을 수 없음: {xml_file}")
+                        continue
+
+                    # 4. 각 쿼리 태그와 내용 추출 (단순 문자열 파싱)
+                    for query_id in query_ids:
+                        total_queries_processed += 1
+
+                        # SQL 컴포넌트 조회 (query ID로만 검색)
+                        sql_component = self.db_utils.execute_query("""
+                            SELECT component_id
+                            FROM components
+                            WHERE component_name = ?
+                              AND component_type LIKE 'SQL_%'
+                              AND del_yn = 'N'
+                            LIMIT 1
+                        """, (query_id,))
+
+                        if not sql_component:
+                            continue
+
+                        sql_component_id = sql_component[0]['component_id']
+
+                        # 이미 등록된 USE_TABLE 관계 조회
+                        existing_tables = self.db_utils.execute_query("""
+                            SELECT t.table_name
+                            FROM relationships r
+                            JOIN components c ON r.dst_id = c.component_id
+                            JOIN tables t ON c.component_id = t.component_id
+                            WHERE r.src_id = ?
+                              AND r.rel_type = 'USE_TABLE'
+                              AND r.del_yn = 'N'
+                              AND c.del_yn = 'N'
+                              AND t.del_yn = 'N'
+                        """, (sql_component_id,))
+
+                        existing_table_names = {row['table_name'] for row in existing_tables}
+
+                        # 5. 쿼리 ID에 해당하는 태그 찾기 (단순 검색)
+                        # 형식: <select id="queryId"> ... </select>
+                        query_start_pattern = f'id="{query_id}"'
+                        query_start_idx = xml_content.find(query_start_pattern)
+
+                        if query_start_idx == -1:
+                            # 작은따옴표로도 시도
+                            query_start_pattern = f"id='{query_id}'"
+                            query_start_idx = xml_content.find(query_start_pattern)
+
+                        if query_start_idx == -1:
+                            continue
+
+                        # 태그 시작부터 닫는 태그까지 추출
+                        # select, insert, update, delete 닫는 태그 찾기
+                        for tag in ['select', 'insert', 'update', 'delete']:
+                            close_tag = f'</{tag}>'
+                            query_end_idx = xml_content.find(close_tag, query_start_idx)
+                            if query_end_idx != -1:
+                                break
+
+                        if query_end_idx == -1:
+                            continue
+
+                        # 쿼리 내용 추출
+                        query_content = xml_content[query_start_idx:query_end_idx]
+
+                        # 주석 제거
+                        # 1) /* */ 블록 주석 제거
+                        query_content = re.sub(r'/\*.*?\*/', ' ', query_content, flags=re.DOTALL)
+                        # 2) -- 라인 주석 제거
+                        query_content = re.sub(r'--[^\n]*', ' ', query_content)
+                        query_content = re.sub(r'//[^\n]*', ' ', query_content)
+
+                        query_content_upper = query_content.upper()
+
+                        # 6. 쿼리 내용에서 테이블명 단순 검색
+                        found_tables = []
+
+                        for table_name in table_names:
+                            # 이미 등록된 테이블은 스킵
+                            if table_name in existing_table_names:
+                                continue
+
+                            # 단순 문자열 검색 (대소문자 무시)
+                            if table_name in query_content_upper:
+                                found_tables.append(table_name)
+
+                        # 7. 누락된 테이블 관계 등록
+                        for table_name in found_tables:
+                            # 테이블 컴포넌트 ID 조회
+                            table_component = self.db_utils.execute_query("""
+                                SELECT component_id
+                                FROM components
+                                WHERE component_name = ?
+                                  AND component_type = 'TABLE'
+                                  AND project_id = ?
+                                  AND del_yn = 'N'
+                                LIMIT 1
+                            """, (table_name, self.project_id))
+
+                            if not table_component:
+                                debug(f"테이블 컴포넌트를 찾을 수 없음: {table_name}")
+                                continue
+
+                            table_component_id = table_component[0]['component_id']
+
+                            # 중복 확인: 이미 등록된 관계인지 확인 (src_id, dst_id, rel_type)
+                            existing_relationship = self.db_utils.execute_query("""
+                                SELECT relationship_id
+                                FROM relationships
+                                WHERE src_id = ?
+                                  AND dst_id = ?
+                                  AND rel_type = 'USE_TABLE'
+                                  AND del_yn = 'N'
+                                LIMIT 1
+                            """, (sql_component_id, table_component_id))
+
+                            if existing_relationship:
+                                debug(f"이미 등록된 USE_TABLE 관계 스킵: {query_id} -> {table_name}")
+                                continue
+
+                            # USE_TABLE 관계 등록
+                            relationship_data = {
+                                'src_id': sql_component_id,
+                                'dst_id': table_component_id,
+                                'rel_type': 'USE_TABLE',
+                                'del_yn': 'N'
+                            }
+
+                            relationship_id = self.db_utils.insert_or_replace_with_id('relationships', relationship_data)
+
+                            if relationship_id:
+                                total_relationships_added += 1
+                                debug(f"USE_TABLE 추가: {query_id} -> {table_name}")
+
+                except Exception as e:
+                    handle_error(e, f"XML 파일 처리 중 오류: {xml_file}")
+
+            info(f"=== 단순 테이블명 매칭 완료 ===")
+            info(f"처리된 쿼리: {total_queries_processed}개")
+            info(f"추가된 USE_TABLE 관계: {total_relationships_added}개")
+
+        except Exception as e:
+            handle_error(e, "단순 테이블명 매칭 중 오류")
+
     def _check_warning_cases(self):
         """경고성 검사 (정상적이지만 확인 필요)"""
-        
+
+        # 중복 관계 제거 로직 실행
+        self._remove_duplicate_relationships()
+
+        # 단순 테이블명 매칭으로 누락된 USE_TABLE 관계 보완
+        self._fallback_table_relationship_builder()
+
         # 1. 프론트엔드 API 크로스 파일 사용량 (정보성)
         frontend_cross_file_apis = self.db_utils.execute_query("""
             SELECT 

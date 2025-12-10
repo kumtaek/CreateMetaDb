@@ -28,7 +28,8 @@ class SqlParser:
     # ===== 전처리 =====
 
     def _remove_comments(self, sql: str) -> str:
-        sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
+        sql = re.sub(r'--[^\r\n]*', '', sql)
+        sql = re.sub(r'//[^\r\n]*', '', sql)
         sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
         return sql
 
@@ -205,4 +206,3 @@ class SqlParser:
             return joins
         except Exception:
             return []
-

@@ -131,7 +131,6 @@ class FileLoadingEngine(BaseLoadingEngine):
                 raw_file_type = FileUtils.get_file_type(file_path)
                 file_type = raw_file_type.upper()
                 debug(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}")
-                print(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}") # Added print statement
                 return {
                     'file_path': relative_dir,
                     'file_name': file_name,
@@ -144,7 +143,6 @@ class FileLoadingEngine(BaseLoadingEngine):
             raw_file_type = file_info['file_type']
             file_type = raw_file_type.upper()
             debug(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}")
-            print(f"DEBUG: _get_file_info processing {file_name}: raw={raw_file_type}, upper={file_type}") # Added print statement
             return {
                 'file_path': relative_dir,
                 'file_name': file_name,
@@ -201,12 +199,13 @@ class FileLoadingEngine(BaseLoadingEngine):
             if normalized_path.startswith('config' + os.sep) or normalized_path.startswith('config/'):
                 return False
             
-            # db_schema의 특정 CSV 파일만 포함 (하드코딩)
+            # db_schema의 스키마 파일만 포함 (ALL_TABLES/ALL_TAB_COLUMNS, 확장자 csv/sch 허용)
             if normalized_path.startswith('db_schema/'):
-                if normalized_path in ['db_schema/ALL_TABLES.sch', 'db_schema/ALL_TAB_COLUMNS.sch']:
+                filename = os.path.basename(normalized_path)
+                name_without_ext, ext = os.path.splitext(filename)
+                if name_without_ext in ['ALL_TABLES', 'ALL_TAB_COLUMNS'] and ext.lower() in ['.csv', '.sch']:
                     return True
-                else:
-                    return False
+                return False
             
             # src/ 하위 파일들은 target_source_config.yaml 설정 적용
             if normalized_path.startswith('src/'):
@@ -352,10 +351,10 @@ class FileLoadingEngine(BaseLoadingEngine):
     
     def load_csv_file(self, csv_path: str) -> List[Dict[str, str]]:
         """
-        CSV 파일을 읽어서 딕셔너리 리스트로 변환
+        CSV/스키마 파일을 읽어서 딕셔너리 리스트로 변환
 
         Args:
-            csv_path: CSV 파일 경로
+            csv_path: CSV 또는 SCH 파일 경로
 
         Returns:
             딕셔너리 리스트
@@ -371,13 +370,13 @@ class FileLoadingEngine(BaseLoadingEngine):
                     reader = csv.DictReader(file)
                     return [row for row in reader]
             except Exception as e:
-                handle_error(e, f"CSV 파일 처리 실패 (cp949): {csv_path}")
+                handle_error(e, f"CSV/SCH 파일 처리 실패 (cp949): {csv_path}")
                 return []
         except FileNotFoundError:
-            handle_error(Exception(f"CSV 파일을 찾을 수 없습니다: {csv_path}"), f"CSV 파일 읽기 실패: {csv_path}")
+            handle_error(Exception(f"CSV/SCH 파일을 찾을 수 없습니다: {csv_path}"), f"CSV/SCH 파일 읽기 실패: {csv_path}")
             return []
         except Exception as e:
-            handle_error(e, f"CSV 파일 처리 실패: {csv_path}")
+            handle_error(e, f"CSV/SCH 파일 처리 실패: {csv_path}")
             return []
 
     def save_files_to_database(self, files: List[Dict[str, Any]]) -> bool:
@@ -444,8 +443,8 @@ class FileLoadingEngine(BaseLoadingEngine):
             for table_info in tables_data:
                 table_name = table_info.get('TABLE_NAME', '')
                 if not table_name: continue
-                table_name = table_name.strip()
-                table_owner = table_info.get('OWNER', '').strip() or 'UNKNOWN'
+                table_name = table_name.strip().upper()
+                table_owner = (table_info.get('OWNER', '').strip() or 'UNKNOWN').upper()
                 table_hash = HashUtils.generate_content_hash(f"{table_owner}{table_name}{table_info.get('COMMENTS', '')}")
                 table_data_list.append({
                     'project_id': project_id, 'component_id': None,
@@ -474,10 +473,10 @@ class FileLoadingEngine(BaseLoadingEngine):
                 table_name = col_info.get('TABLE_NAME', '')
                 column_name = col_info.get('COLUMN_NAME', '')
                 if not table_name or not column_name: continue
-                table_name = table_name.strip()
-                column_name = column_name.strip()
+                table_name = table_name.strip().upper()
+                column_name = column_name.strip().upper()
 
-                table_owner = col_info.get('OWNER', '').strip() or 'UNKNOWN'
+                table_owner = (col_info.get('OWNER', '').strip() or 'UNKNOWN').upper()
                 table_id = self._get_table_id(table_owner, table_name)
                 data_type, data_length = self._parse_data_type(col_info.get('DATA_TYPE', ''))
                 column_hash = HashUtils.generate_content_hash(f"{table_owner}{table_name}{column_name}{data_type}")
@@ -508,7 +507,7 @@ class FileLoadingEngine(BaseLoadingEngine):
 
             all_tables_file_id = self._get_csv_file_id("ALL_TABLES.sch")
             if not all_tables_file_id:
-                raise Exception("ALL_TABLES.sch 파일 ID를 찾을 수 없습니다")
+                raise Exception("ALL_TABLES.sch/ALL_TABLES.csv 파일 ID를 찾을 수 없습니다")
 
             tables = self.db_utils.execute_query("SELECT table_id, table_name, hash_value FROM tables WHERE project_id = ? AND del_yn = 'N'", (project_id,), self.conn)
             if not tables:
@@ -535,7 +534,7 @@ class FileLoadingEngine(BaseLoadingEngine):
 
             all_columns_file_id = self._get_csv_file_id("ALL_TAB_COLUMNS.sch")
             if not all_columns_file_id:
-                raise Exception("ALL_TAB_COLUMNS.sch 파일 ID를 찾을 수 없습니다")
+                raise Exception("ALL_TAB_COLUMNS.sch/ALL_TAB_COLUMNS.csv 파일 ID를 찾을 수 없습니다")
 
             query = """SELECT c.column_name, c.hash_value, t.table_name, t.table_owner FROM columns c JOIN tables t ON c.table_id = t.table_id WHERE t.project_id = ? AND c.del_yn = 'N' AND t.del_yn = 'N'"""
             columns = self.db_utils.execute_query(query, (project_id,), self.conn)
@@ -561,9 +560,46 @@ class FileLoadingEngine(BaseLoadingEngine):
             return False
 
     def _get_csv_file_id(self, filename: str) -> Optional[int]:
-        """CSV 파일의 file_id 조회 (주입된 연결 사용)"""
-        query = "SELECT f.file_id FROM files f JOIN projects p ON f.project_id = p.project_id WHERE p.project_name = ? AND f.file_name = ? AND f.del_yn = 'N'"
-        results = self.db_utils.execute_query(query, (self.project_name, filename), self.conn)
+        """
+        CSV/스키마 파일의 file_id 조회 (주입된 연결 사용, csv/sch 공통 처리)
+
+        Args:
+            filename: 파일명 또는 기본 이름 (예: 'ALL_TABLES.sch', 'ALL_TABLES')
+
+        Returns:
+            files.file_id 또는 None
+        """
+        # 확장자를 분리하여 기본 이름 계산
+        name_without_ext, ext = os.path.splitext(filename)
+        if ext.lower() in ['.csv', '.sch']:
+            base_name = name_without_ext
+        else:
+            base_name = filename
+
+        # csv/sch 두 종류 모두 허용, sch를 우선 사용
+        candidate_names = [f"{base_name}.sch", f"{base_name}.csv"]
+
+        query = """
+            SELECT f.file_id, f.file_name
+            FROM files f
+            JOIN projects p ON f.project_id = p.project_id
+            WHERE p.project_name = ?
+              AND f.file_name IN (?, ?)
+              AND f.del_yn = 'N'
+            ORDER BY
+              CASE
+                WHEN f.file_name LIKE '%.sch' THEN 0
+                WHEN f.file_name LIKE '%.csv' THEN 1
+                ELSE 2
+              END,
+              f.file_id
+            LIMIT 1
+        """
+        results = self.db_utils.execute_query(
+            query,
+            (self.project_name, candidate_names[0], candidate_names[1]),
+            self.conn
+        )
         return results[0]['file_id'] if results else None
 
     def _get_table_id(self, owner: str, table_name: str) -> Optional[int]:
@@ -660,14 +696,32 @@ class FileLoadingEngine(BaseLoadingEngine):
     def execute_db_loading(self) -> bool:
         """데이터베이스 로딩 실행 (외부 트랜잭션 내에서 실행)"""
         try:
-            # 1. ALL_TABLES.sch 로드 및 저장
-            all_tables_path = os.path.join(self.project_db_schema_path, "ALL_TABLES.sch")
+            # 1. ALL_TABLES.* (sch/csv) 로드 및 저장
+            all_tables_path = None
+            for ext in ['.sch', '.csv']:
+                candidate = os.path.join(self.project_db_schema_path, f"ALL_TABLES{ext}")
+                if validate_file_exists(candidate):
+                    all_tables_path = candidate
+                    break
+            if not all_tables_path:
+                handle_error(Exception("DB 스키마 파일 없음"), "ALL_TABLES.sch/ALL_TABLES.csv 파일을 찾을 수 없습니다")
+                return False
+
             tables_data = self.load_csv_file(all_tables_path)
             if not self.save_tables_to_database(tables_data):
                 return False
-            
-            # 2. ALL_TAB_COLUMNS.sch 로드 및 저장
-            all_columns_path = os.path.join(self.project_db_schema_path, "ALL_TAB_COLUMNS.sch")
+
+            # 2. ALL_TAB_COLUMNS.* (sch/csv) 로드 및 저장
+            all_columns_path = None
+            for ext in ['.sch', '.csv']:
+                candidate = os.path.join(self.project_db_schema_path, f"ALL_TAB_COLUMNS{ext}")
+                if validate_file_exists(candidate):
+                    all_columns_path = candidate
+                    break
+            if not all_columns_path:
+                handle_error(Exception("DB 스키마 파일 없음"), "ALL_TAB_COLUMNS.sch/ALL_TAB_COLUMNS.csv 파일을 찾을 수 없습니다")
+                return False
+
             columns_data = self.load_csv_file(all_columns_path)
             if not self.save_columns_to_database(columns_data):
                 return False

@@ -53,7 +53,9 @@ def normalize_sql_loose(
 
     # 주석 제거
     if remove_comments:
-        sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
+        # 한 줄 주석 (--, // ... CR/LF까지)
+        sql = re.sub(r"--[^\r\n]*", "", sql)
+        sql = re.sub(r"//[^\r\n]*", "", sql)
         sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
 
     # 바인딩 파라미터 단순화

@@ -8,6 +8,7 @@ SQL Content Manager - 정제된 SQL 내용 관리 모듈
 import gzip
 import sqlite3
 import os
+import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pathlib import Path
@@ -19,11 +20,11 @@ from .file_utils import FileUtils
 
 class SqlContentManager:
     """정제된 SQL 내용 관리 클래스"""
-    
+
     def __init__(self, project_name: str, enable_brute_force_search: bool = True):
         """
         SqlContentManager 초기화
-        
+
         Args:
             project_name: 프로젝트명
             enable_brute_force_search: 단순 문자열 매칭을 통한 테이블 검색 활성화 여부 (기본값: True)
@@ -33,6 +34,8 @@ class SqlContentManager:
         self.initialized = False
         self.enable_brute_force_search = enable_brute_force_search
         self._cached_table_names = None  # 테이블 목록 캐싱 (Lazy Loading)
+        self._compiled_regex_patterns = None  # 정규식 패턴 사전 컴파일 캐싱
+        self._cleaned_sql_cache = {}  # SQL 전처리 결과 캐싱 (쿼리 해시 -> 정제된 SQL)
         self.initialized = self._initialize_database()
     
     def _initialize_database(self) -> bool:
@@ -134,9 +137,51 @@ class SqlContentManager:
             # 공통부: SQL → TABLE 즉시 처리(USE_TABLE)
             meta_conn_created = False
             try:
+                # 디버깅 대상 쿼리/파일 필터 (config + 특정 파일/쿼리)
+                debug_target_query_id = None
+                try:
+                    from util.config_loader import ConfigLoader  # 기존 공통 설정 로더 사용
+                    config = ConfigLoader().load_target_source_config(self.project_name)
+                    # 예: target_source_config.yaml에 debug: { query_id: "MY_QUERY_ID" } 형태로 정의
+                    debug_cfg = (config or {}).get('debug', {})
+                    debug_target_query_id = (debug_cfg.get('query_id') or "").strip()
+                except Exception:
+                    # 설정 로딩 실패 시 디버그 필터 미적용 (전체 쿼리 동일 동작)
+                    debug_target_query_id = None
+
+                debug_source_file = kwargs.get('debug_source_file') or kwargs.get('file_name')
+                debug_source_path = kwargs.get('debug_source_path') or kwargs.get('file_path')
+                debug_hint = kwargs.get('debug_hint')
+
+                current_query_id = kwargs.get('query_id', kwargs.get('component_name', ''))
+                is_debug_target = bool(debug_target_query_id) and current_query_id == debug_target_query_id
+                # 특정 파일/쿼리 조합(UbcRgstTgtPopDbio.dbio + selectListUbcRgstTgt)도 디버깅 강제
+                if (debug_source_file == 'UbcRgstTgtPopDbio.dbio' and current_query_id == 'selectListUbcRgstTgt') or debug_hint:
+                    is_debug_target = True
+
                 from parser.sql_parser import SqlParser
                 parser = SqlParser()
                 table_names = parser.extract_table_names(sql_content) or set()
+
+                if is_debug_target:
+                    preview = (sql_content or '')[:500]
+                    app_logger.info(
+                        f"[USE_TABLE][TARGET][SQL_RAW] query_id={current_query_id} "
+                        f"len={len(sql_content or '')} preview={preview}"
+                    )
+
+                # 디버깅용: 파서 단계에서 추출된 테이블 로그
+                if is_debug_target:
+                    app_logger.info(
+                        f"[USE_TABLE][TARGET][PARSE] query_id={current_query_id} "
+                        f"component_id={component_id} file={debug_source_file} "
+                        f"path={debug_source_path} tables={sorted(list(table_names)) if table_names else []}"
+                    )
+                elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                    app_logger.debug(
+                        f"[USE_TABLE][PARSE] query_id={current_query_id} "
+                        f"component_id={component_id} tables={len(table_names)}"
+                    )
                 
                 # [NEW] 단순 문자열 매칭을 통한 테이블 검색 (누락 방지)
                 if self.enable_brute_force_search:
@@ -144,41 +189,102 @@ class SqlContentManager:
                         # 1. 전체 테이블 목록 로드 (Lazy Loading)
                         if self._cached_table_names is None:
                             self._cached_table_names = self._load_all_tables(project_id, conn)
-                        
+
                         if self._cached_table_names:
-                            # 2. SQL 전처리 (주석 제거 등)
+                            # 2. SQL 전처리 (주석 제거 등) - 캐싱 적용
                             cleaned_sql = self._remove_comments_simple(sql_content).upper()
-                            
-                            # 3. 단순 매칭 검색 (Word Boundary)
-                            import re
-                            for known_table in self._cached_table_names:
-                                # 이미 찾은 테이블은 건너뜀
-                                if known_table in table_names:
-                                    continue
-                                    
-                                # 단어 경계로 검색 (부분 일치 방지)
-                                if re.search(r'\b' + re.escape(known_table) + r'\b', cleaned_sql):
-                                    table_names.add(known_table)
-                                    app_logger.debug(f"단순 매칭으로 테이블 발견: {known_table} (in {kwargs.get('query_id', 'unknown')})")
+
+                            # 디버깅용: 전처리된 SQL 일부 로그 (길이 제한)
+                            if is_debug_target:
+                                preview = cleaned_sql[:300]
+                                app_logger.info(
+                                    f"[USE_TABLE][TARGET][CLEANED_SQL] query_id={current_query_id} "
+                                    f"len={len(cleaned_sql)} preview={preview}"
+                                )
+                            elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                                app_logger.debug(
+                                    f"[USE_TABLE][CLEANED_SQL] query_id={current_query_id} "
+                                    f"len={len(cleaned_sql)}"
+                                )
+
+                            # 3. 단순 매칭 검색 (사전 컴파일된 정규식 패턴 사용)
+                            if self._compiled_regex_patterns:
+                                # 정규식 패턴이 컴파일되어 있으면 재사용
+                                for known_table in self._cached_table_names:
+                                    # 이미 찾은 테이블은 건너뜀
+                                    if known_table in table_names:
+                                        continue
+
+                                    # 사전 컴파일된 패턴으로 검색 (성능 개선)
+                                    pattern = self._compiled_regex_patterns.get(known_table)
+                                    if pattern and pattern.search(cleaned_sql):
+                                        table_names.add(known_table)
+                                        if is_debug_target:
+                                            app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
+                                        elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                                            app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
+                            else:
+                                # 정규식 패턴이 없으면 기존 방식 사용 (Fallback)
+                                import re
+                                for known_table in self._cached_table_names:
+                                    # 이미 찾은 테이블은 건너뜀
+                                    if known_table in table_names:
+                                        continue
+
+                                    # 단어 경계로 검색 (부분 일치 방지)
+                                    if re.search(r'\b' + re.escape(known_table) + r'\b', cleaned_sql):
+                                        table_names.add(known_table)
+                                        if is_debug_target:
+                                            app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
+                                        elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                                            app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
                     except Exception as e:
                         # 단순 매칭 실패해도 기존 로직은 계속 수행
                         app_logger.warning(f"단순 테이블 매칭 중 오류 (무시): {e}")
+
+                # 디버깅용: 파서 + 단순검색 이후 최종 테이블 목록 로그
+                if is_debug_target:
+                    app_logger.info(
+                        f"[USE_TABLE][TARGET][FINAL] query_id={current_query_id} "
+                        f"component_id={component_id} tables={sorted(list(table_names)) if table_names else []}"
+                    )
+                elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                    app_logger.debug(
+                        f"[USE_TABLE][FINAL] query_id={current_query_id} "
+                        f"component_id={component_id} tables={len(table_names)}"
+                    )
+
+                if is_debug_target and not table_names:
+                    app_logger.info(f"[USE_TABLE][TARGET][EMPTY] query_id={current_query_id} file={debug_source_file} path={debug_source_path}")
 
                 if table_names:
                     metadata_db_path = f'projects/{self.project_name}/metadata.db'
                     metadata_db_utils = DatabaseUtils(metadata_db_path)
                     meta_conn = conn if conn is not None else metadata_db_utils.get_persistent_connection()
                     meta_conn_created = conn is None
+                    linked_tables = set()
                     for table_name in table_names:
                         try:
+                            normalized_table = (table_name or '').strip().upper()
+                            if not normalized_table or normalized_table in linked_tables:
+                                continue
                             rows = metadata_db_utils.execute_query(
                                 "SELECT component_id FROM components WHERE component_type='TABLE' AND component_name=? AND del_yn='N' LIMIT 1",
-                                (table_name,),
+                                (normalized_table,),
                                 conn=meta_conn,
                             )
                             if not rows:
+                                # 디버깅용: 테이블은 찾았지만 TABLE 컴포넌트가 없는 경우
+                                if is_debug_target and app_logger.logger.isEnabledFor(logging.DEBUG):
+                                    app_logger.debug(
+                                        f"[USE_TABLE][NO_COMPONENT] query_id={current_query_id} "
+                                        f"component_id={component_id} table_name={normalized_table}"
+                                    )
                                 continue
                             table_component_id = rows[0]['component_id']
+                            if table_component_id in linked_tables:
+                                continue
+                            linked_tables.add(table_component_id)
                             rel_data = {
                                 'src_id': component_id,
                                 'dst_id': table_component_id,
@@ -191,6 +297,13 @@ class SqlContentManager:
                             metadata_db_utils.insert_or_replace_with_id('relationships', rel_data, conn=meta_conn)
                         except Exception as e:
                             handle_error(e, f"USE_TABLE 관계 생성 실패: component_id={component_id}, table={table_name}")
+                else:
+                    # 디버깅용: 어떤 방식으로도 테이블을 찾지 못한 경우
+                    if is_debug_target and app_logger.logger.isEnabledFor(logging.DEBUG):
+                        app_logger.debug(
+                            f"[USE_TABLE][EMPTY] query_id={current_query_id} "
+                            f"component_id={component_id} - 테이블 미검출"
+                        )
             except Exception as e:
                 handle_error(e, "USE_TABLE 즉시 생성 처리 실패")
             finally:
@@ -718,74 +831,113 @@ class SqlContentManager:
     def _load_all_tables(self, project_id: int, conn=None) -> set:
         """
         프로젝트의 모든 테이블 목록을 로드 (캐싱용)
-        
+
         Args:
             project_id: 프로젝트 ID
             conn: DB 연결 객체
-            
+
         Returns:
             테이블명 집합 (대문자)
         """
         try:
             metadata_db_path = f'projects/{self.project_name}/metadata.db'
             metadata_db_utils = DatabaseUtils(metadata_db_path)
-            
+
             # 연결 관리: 전달받은 conn이 있으면 사용, 없으면 임시 연결 생성
             temp_conn = None
             use_conn = conn
-            
+
             if use_conn is None:
                 temp_conn = metadata_db_utils.get_connection()
                 use_conn = temp_conn
-                
+
             try:
                 # 테이블 목록 조회 (Owner 무시, 테이블명만)
                 query = "SELECT table_name FROM tables WHERE project_id = ? AND del_yn = 'N'"
                 rows = metadata_db_utils.execute_query(query, (project_id,), conn=use_conn)
-                
+
                 table_names = set()
                 if rows:
                     for row in rows:
                         t_name = row.get('table_name')
                         if t_name:
                             table_names.add(t_name.upper())
-                            
+
                 app_logger.info(f"전체 테이블 목록 로드 완료: {len(table_names)}개")
+
+                # 정규식 패턴 사전 컴파일 (성능 최적화)
+                self._compile_regex_patterns(table_names)
+
                 return table_names
-                
+
             finally:
                 if temp_conn:
                     temp_conn.close()
-                    
+
         except Exception as e:
             app_logger.error(f"전체 테이블 목록 로드 실패: {e}")
             return set()
 
+    def _compile_regex_patterns(self, table_names: set):
+        """
+        테이블명에 대한 정규식 패턴을 사전 컴파일 (성능 최적화)
+
+        Args:
+            table_names: 테이블명 집합
+        """
+        try:
+            import re
+            self._compiled_regex_patterns = {}
+
+            for table_name in table_names:
+                # 단어 경계로 검색하는 패턴 사전 컴파일
+                pattern = re.compile(r'\b' + re.escape(table_name) + r'\b')
+                self._compiled_regex_patterns[table_name] = pattern
+
+            app_logger.info(f"정규식 패턴 사전 컴파일 완료: {len(self._compiled_regex_patterns)}개")
+        except Exception as e:
+            app_logger.warning(f"정규식 패턴 컴파일 실패 (무시): {e}")
+            self._compiled_regex_patterns = None
+
     def _remove_comments_simple(self, sql: str) -> str:
         """
-        SQL에서 주석 및 태그를 제거하는 간단한 전처리
-        
+        SQL에서 주석 및 태그를 제거하는 간단한 전처리 (캐싱 적용)
+
         Args:
             sql: 원본 SQL
-            
+
         Returns:
             정제된 SQL
         """
         try:
+            import hashlib
+
+            # SQL 해시 생성 (캐시 키)
+            sql_hash = hashlib.md5(sql.encode('utf-8')).hexdigest()
+
+            # 캐시 확인
+            if sql_hash in self._cleaned_sql_cache:
+                return self._cleaned_sql_cache[sql_hash]
+
             import re
             # 1. MyBatis 태그 제거 (간단히 태그만 제거하고 내용은 남김, 혹은 공백 처리)
             # 여기서는 태그 자체를 공백으로 치환하여 단어 경계 유지
-            sql = re.sub(r'<[^>]+>', ' ', sql)
-            
-            # 2. 라인 주석 제거 (-- ...)
-            sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
-            
+            cleaned = re.sub(r'<[^>]+>', ' ', sql)
+
+            # 2. 라인 주석 제거 (-- ... 한 줄)
+            cleaned = re.sub(r'--[^\r\n]*', '', cleaned)
+            cleaned = re.sub(r'//[^\r\n]*', '', cleaned)
+
             # 3. 블록 주석 제거 (/* ... */)
-            sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
-            
+            cleaned = re.sub(r'/\*.*?\*/', '', cleaned, flags=re.DOTALL)
+
             # 4. 공백 정규화
-            sql = re.sub(r'\s+', ' ', sql).strip()
-            
-            return sql
+            cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+            # 캐시 저장 (메모리 제한: 최대 1만 개)
+            if len(self._cleaned_sql_cache) < 10000:
+                self._cleaned_sql_cache[sql_hash] = cleaned
+
+            return cleaned
         except Exception:
             return sql

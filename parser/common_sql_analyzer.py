@@ -78,7 +78,8 @@ class CommonSqlAnalyzer:
     def _remove_comments(self, sql: str) -> str:
         """SQL 주석 제거"""
         # -- 주석 제거
-        sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
+        sql = re.sub(r'--[^\r\n]*', '', sql)
+        sql = re.sub(r'//[^\r\n]*', '', sql)
         # /* */ 주석 제거
         sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
         return sql.strip()

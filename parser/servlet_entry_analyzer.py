@@ -79,8 +79,7 @@ class ServletEntryAnalyzer(BaseEntryAnalyzer):
     
     def analyze_backend_entry(self, java_file: FileInfo, stats: 'StatisticsCollector') -> List[BackendEntryInfo]:
         """
-        Servlet 진입점 분석 (Fallback 전략 포함)
-        AST -> 정규식 순서로 시도합니다.
+        Servlet 진입점 분석 (정규식 기반)
         
         Args:
             java_file: 분석할 Java 파일 정보
@@ -92,10 +91,12 @@ class ServletEntryAnalyzer(BaseEntryAnalyzer):
         start_time = time.time()
         
         try:
-            # 1. 정규식 기반 파싱을 우선 실행 (안정성 확보)
+            # 정규식 기반 파싱 실행
             regex_results = self._parse_with_regex(java_file.content, java_file.file_path, java_file.file_id)
+            
+            processing_time = time.time() - start_time
+            
             if regex_results:
-                processing_time = time.time() - start_time
                 if stats:
                     stats.log_file_result(
                         framework=self.framework_name,
@@ -106,27 +107,9 @@ class ServletEntryAnalyzer(BaseEntryAnalyzer):
                         entries_found=len(regex_results)
                     )
                 return regex_results
-
-            # 2. AST 기반 파싱으로 Fallback
-            ast_results = self._parse_with_ast(java_file.content, java_file.file_path, java_file.file_id)
-            if ast_results is not None:  # None이 아니면 성공 또는 복구 불가능한 오류
-                processing_time = time.time() - start_time
-                if stats:
-                    stats.log_file_result(
-                        framework=self.framework_name,
-                        file_path=java_file.file_path,
-                        success=True,
-                        stage='ast_fallback',
-                        processing_time=processing_time,
-                        entries_found=len(ast_results)
-                    )
-                return ast_results
-
-            # 모든 파싱 실패
-            # USER 승인: 파싱 실패시 has_error 처리 (승인받은 예외 케이스)
-            # 승인받지 않은 경우를 제외하고는 모든 에러는 handle_error() 처리 해야함
-            processing_time = time.time() - start_time
-            error_message = f"모든 파싱 방법으로 Servlet 진입점을 찾지 못했습니다: {java_file.file_path}"
+            
+            # 파싱 실패
+            error_message = f"정규식 파싱으로 Servlet 진입점을 찾지 못했습니다: {java_file.file_path}"
             
             if stats:
                 stats.log_file_result(
@@ -147,165 +130,6 @@ class ServletEntryAnalyzer(BaseEntryAnalyzer):
             handle_error(e, error_message)
             return []  # 이 라인은 실행되지 않음 (handle_error에서 exit)
     
-    def _parse_with_ast(self, content: str, file_path: str = '', file_id: int = 0) -> Optional[List[BackendEntryInfo]]:
-        """
-        AST 기반 Servlet 파싱. 실패 시 None 반환.
-        
-        Args:
-            content: Java 파일 내용
-            file_path: 파일 경로
-            file_id: 파일 ID
-            
-        Returns:
-            분석 결과 리스트 또는 None (실패시)
-        """
-        try:
-            # javalang 라이브러리 사용 시도
-            try:
-                import javalang
-                from javalang.tokenizer import LexerError
-                from javalang.parser import JavaSyntaxError
-            except ImportError:
-                # USER RULE: 필수 라이브러리 누락은 handle_error()로 즉시 종료
-                handle_error(ImportError("javalang 라이브러리가 설치되지 않음"), 
-                           "Servlet AST 파싱을 위한 필수 라이브러리 누락")
-            
-            try:
-                tree = javalang.parse.parse(content)
-                return self._extract_from_ast_tree(tree, content, file_path, file_id)
-            except (LexerError, JavaSyntaxError, RecursionError) as e:
-                # USER RULE: 파싱 문법 오류 및 재귀 오류는 Fallback을 위해 None 반환
-                app_logger.debug(f"AST 파싱 오류, 정규식 파싱으로 Fallback: {str(e)}")
-                return None
-            except Exception as e:
-                # USER RULE: 기타 예외는 handle_error()로 즉시 종료
-                handle_error(e, f"AST 파싱 중 예외 발생")
-                
-        except Exception as e:
-            # USER RULE: AST 파싱 초기화 실패는 handle_error()로 즉시 종료
-            handle_error(e, f"AST 파싱 초기화 실패")
-    
-    def _extract_from_ast_tree(self, tree, content: str, file_path: str = '', file_id: int = 0) -> List[BackendEntryInfo]:
-        """
-        AST 트리에서 Servlet 진입점 추출
-        
-        Args:
-            tree: javalang AST 트리
-            content: 원본 파일 내용
-            file_path: 파일 경로
-            file_id: 파일 ID
-            
-        Returns:
-            백엔드 진입점 정보 리스트
-        """
-        entries = []
-        lines = content.split('\n')
-        
-        try:
-            import javalang
-            # 클래스 순회
-            for path, node in tree:
-                if isinstance(node, javalang.tree.ClassDeclaration):
-                    class_info = self._extract_class_info_ast(node, lines, file_path, file_id)
-                    if class_info:
-                        # 클래스 내부의 메서드들을 직접 찾기
-                        if hasattr(node, 'body') and node.body:
-                            for body_item in node.body:
-                                if isinstance(body_item, javalang.tree.MethodDeclaration):
-                                    method_entries = self._extract_method_info_ast(body_item, class_info, lines)
-                                    entries.extend(method_entries)
-            
-            return entries
-            
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"AST 트리 추출 중 오류")
-    
-    def _extract_class_info_ast(self, class_node, lines: List[str], file_path: str = '', file_id: int = 0) -> Optional[Dict[str, Any]]:
-        """AST로 클래스 정보 추출"""
-        try:
-            # 클래스 어노테이션 확인
-            class_annotations = []
-            url_patterns = []
-            
-            if hasattr(class_node, 'annotations') and class_node.annotations:
-                for annotation in class_node.annotations:
-                    annotation_name = annotation.name
-                    class_annotations.append(f"@{annotation_name}")
-                    
-            # @WebServlet 어노테이션에서 URL 패턴 추출
-            if annotation_name == 'WebServlet':
-                extracted_patterns = self._extract_url_patterns_from_annotation(annotation)
-                url_patterns.extend(extracted_patterns)
-                app_logger.debug(f"@WebServlet 어노테이션에서 URL 패턴 추출: {extracted_patterns}")
-            
-            # @WebServlet 어노테이션이 없으면 web.xml 맵에서 확인
-            if not url_patterns:
-                class_full_name = self._get_full_class_name(class_node.name, content='\n'.join(lines))
-                if class_full_name in self.servlet_url_map:
-                    url_patterns.append(self.servlet_url_map[class_full_name])
-            
-            # Servlet 클래스인지 확인 (상속 관계 또는 어노테이션)
-            is_servlet = (
-                any('@WebServlet' in ann for ann in class_annotations) or
-                self._is_servlet_class(class_node, lines)
-            )
-            
-            if not is_servlet:
-                return None
-            
-            return {
-                'name': class_node.name,
-                'annotations': class_annotations,
-                'url_patterns': url_patterns,
-                'line_start': class_node.position.line if hasattr(class_node, 'position') else 0,
-                'file_path': file_path,
-                'file_id': file_id
-            }
-            
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"클래스 정보 추출 실패")
-    
-    def _extract_method_info_ast(self, method_node, class_info: Dict[str, Any], lines: List[str]) -> List[BackendEntryInfo]:
-        """AST로 메서드 정보 추출"""
-        entries = []
-        
-        try:
-            method_name = method_node.name
-            
-            # doXXX 메서드나 service 메서드인지 확인
-            http_methods = self._get_http_methods_from_method_name(method_name)
-            if not http_methods:
-                return entries
-            
-            # 메서드 시그니처 검증
-            if not self._is_valid_servlet_method_signature(method_node.parameters, method_name):
-                return entries
-            
-            # 클래스의 URL 패턴들에 대해 엔트리 생성
-            for url_pattern in class_info.get('url_patterns', ['/']):
-                for http_method in http_methods:
-                    entry = self.create_backend_entry_info(
-                        class_name=class_info['name'],
-                        method_name=method_name,
-                        url_pattern=url_pattern,
-                        http_method=http_method,
-                        file_path=class_info.get('file_path', ''),
-                        file_id=class_info.get('file_id', 0),
-                        line_start=method_node.position.line if hasattr(method_node, 'position') else 0,
-                        line_end=method_node.position.line if hasattr(method_node, 'position') else 0,
-                        parameters=self._extract_method_parameters(method_node),
-                        return_type=method_node.return_type.name if (hasattr(method_node, 'return_type') and method_node.return_type is not None) else 'void',
-                        annotations=[f"@{method_name}"]
-                    )
-                    entries.append(entry)
-            
-            return entries
-            
-        except Exception as e:
-            # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-            handle_error(e, f"메서드 정보 추출 실패")
     
     def _parse_with_regex(self, content: str, file_path: str, file_id: int = 0) -> List[BackendEntryInfo]:
         """
