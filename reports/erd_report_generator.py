@@ -109,7 +109,10 @@ class ERDReportGenerator:
             # 데이터 유효성 검증 (빈 리포트 생성 방지)
             if not tables_data or not relationships:
                 # 관계가 없거나 관계 기반 테이블 조회가 비어 있으면 전체 테이블로 대체
-                app_logger.warning("관계 데이터가 없거나 테이블 조회 결과가 비어 전체 테이블로 ERD를 생성합니다.")
+                app_logger.warning(
+                    f"관계/테이블 데이터 부족으로 전체 테이블로 대체 "
+                    f"(tables={len(tables_data) if tables_data else 0}, rel={len(relationships) if relationships else 0})"
+                )
                 tables_data = self.metadata_service.get_all_tables_with_columns()
                 relationships = relationships or []
             

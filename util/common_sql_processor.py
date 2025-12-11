@@ -182,7 +182,11 @@ class CommonSqlAnalyzer:
             conn = db.get_persistent_connection()
             # ensure_table_component 내부 사용을 위해 로컬 정의
             def ensure_table_component(table_name: str, owner: str = 'UNKNOWN') -> int:
-                """테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지)."""
+                """
+                테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지).
+                - OWNER가 포함된 입력(SM.TABLE)이어도 테이블명만 추출해 매칭/생성
+                """
+                normalized_name = (table_name or '').upper().split('.')[-1].strip()
                 proj_id_rows = db.execute_query("SELECT project_id FROM projects WHERE project_name=?", (self.project_name,), conn=conn)
                 project_id = proj_id_rows[0]['project_id'] if proj_id_rows else None
                 if project_id is None:
@@ -198,7 +202,7 @@ class CommonSqlAnalyzer:
                       AND del_yn='N'
                     LIMIT 1
                     """,
-                    (table_name, project_id), conn=conn)
+                    (normalized_name, project_id), conn=conn)
                 if rows:
                     return rows[0]['component_id']
 
@@ -273,13 +277,17 @@ class CommonSqlAnalyzer:
             project_id = proj_id_rows[0]['project_id'] if proj_id_rows else None
 
             def ensure_table_component(table_name: str, owner: str = 'UNKNOWN') -> int:
-                """테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지)."""
+                """
+                테이블 컴포넌트를 조회하거나, 현재 파일 컨텍스트의 file_id로 생성 (inferred 파일 생성 금지).
+                - OWNER가 포함된 입력(SM.TABLE)이어도 테이블명만 추출해 매칭/생성
+                """
+                normalized_name = (table_name or '').upper().split('.')[-1].strip()
                 # 4글자 이하 테이블명은 별칭 가능성이 높으므로 생성하지 않음
                 if project_id is None:
                     msg = f"[CommonSqlAnalyzer] 프로젝트 ID를 찾을 수 없습니다: {self.project_name}"
                     error(msg)
                     raise RuntimeError(msg)
-                if not table_name or len(table_name.strip()) <= 4:
+                if not normalized_name or len(normalized_name) <= 4:
                     debug(f"[CommonSqlAnalyzer] 4글자 이하 테이블명 스킵: {table_name}")
                     return None
                 rows = db.execute_query(
@@ -291,7 +299,7 @@ class CommonSqlAnalyzer:
                       AND del_yn='N'
                     LIMIT 1
                     """,
-                    (table_name, project_id), conn=conn)
+                    (normalized_name, project_id), conn=conn)
                 if rows:
                     return rows[0]['component_id']
 
@@ -503,12 +511,14 @@ class CommonSqlAnalyzer:
                 if len(table_name) <= 4 or table_name in self.oracle_keywords:
                     continue
 
-                tables.add((table_name, 'UNKNOWN'))
+                # OWNER가 포함된 경우 테이블명만 사용하여 중복 생성 방지
+                base_table_name = table_name.split('.')[-1]
+                tables.add((base_table_name, 'UNKNOWN'))
 
                 # 알리아스가 있으면 매핑 생성 (별칭 -> table명)
                 if len(parts) > 1:
                     alias = parts[1].upper()
-                    alias_map[alias] = table_name
+                    alias_map[alias] = base_table_name
         
         return {
             'tables': list(tables),

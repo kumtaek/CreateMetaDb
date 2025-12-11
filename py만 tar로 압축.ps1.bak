@@ -1,3 +1,4 @@
+D:
 cd D:\Analyzer\CreateMetaDb
 Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
 Get-ChildItem -Recurse -Filter *.yaml | Select-Object -Expand FullName >> list.txt
@@ -5,6 +6,18 @@ Get-ChildItem -Recurse -Filter *.sql | Select-Object -Expand FullName >> list.tx
 Get-ChildItem -Recurse -Filter *.js | Select-Object -Expand FullName >> list.txt
 Get-ChildItem -Recurse -Filter *.css | Select-Object -Expand FullName >> list.txt
 tar -czvf pys.tar.gz -T list.txt
-certutil -encode pys.tar.gz pys.log
+certutil -encode pys.tar.gz pytest.log
 del ../pys*.*
 move pys*.* ../
+
+
+
+D:
+cd D:\Analyzer\CreateMetaDb
+python main.py --project-name sampleSrc --clear-metadb --verbose
+
+
+python create_report.py --project-name sampleSrc --report-type backend-mapping --verbose
+python create_report.py --project-name sampleSrc --report-type erd
+python create_report.py --project-name sampleSrc --report-type erd-dagre
+

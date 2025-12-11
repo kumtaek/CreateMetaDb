@@ -92,8 +92,11 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 return True
 
             project_id_cache = self._get_project_id()
+            total_files = len(xml_files)
+            import time
+            last_progress_log = time.time()
 
-            for xml_file in xml_files:
+            for idx, xml_file in enumerate(xml_files, start=1):
                 try:
                     from util.path_utils import PathUtils
                     path_utils = PathUtils()
@@ -184,6 +187,15 @@ class XmlLoadingEngine(BaseLoadingEngine):
 
                     self.stats['xml_files_processed'] += 1
                     self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
+
+                    # 진행 상황 로그 (10초 간격, 최소 1건 처리 후)
+                    now = time.time()
+                    if now - last_progress_log >= 10:
+                        app_logger.info(
+                            f"[XML PROGRESS] {idx}/{total_files} files processed "
+                            f"(queries={self.stats['sql_queries_extracted']}, joins={self.stats['join_relationships_created']}, errors={self.stats['errors']})"
+                        )
+                        last_progress_log = now
 
                 except Exception as e:
                     self.stats['errors'] += 1

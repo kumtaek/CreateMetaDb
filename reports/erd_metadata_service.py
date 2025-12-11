@@ -105,6 +105,13 @@ class ERDMetadataService:
             raw_table_names = [t[3:] if t.startswith('[I]') else t for t in tables_with_relationships]
             # 테이블명 -> [I] 접두어 여부 매핑
             inferred_table_map = {(t[3:] if t.startswith('[I]') else t): t.startswith('[I]') for t in tables_with_relationships}
+            # 관계 기준 테이블명 로그 (디버깅용)
+            app_logger.info(f"[ERD DEBUG] 관계 기준 테이블 목록 (raw): {raw_table_names}")
+            # PLAR/PLAF/SM.PLAR 패턴 필터링 로그
+            for nm in raw_table_names:
+                up_nm = (nm or '').upper()
+                if up_nm in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
+                    app_logger.info(f"[ERD DEBUG][REL-RAW] table={nm}, inferred_prefix={inferred_table_map.get(nm, False)}")
 
             # IN 절을 위한 플레이스홀더 생성
             placeholders = ','.join(['?' for _ in raw_table_names])
@@ -133,6 +140,17 @@ class ERDMetadataService:
 
             params = [self.project_name] + raw_table_names
             results = self.db_utils.execute_query(query, params)
+
+            # 조회 결과 기준 누락 테이블 로그 (테이블 메타 없음)
+            returned_names = {row['table_name'] for row in (results or [])}
+            missing_tables = [name for name in raw_table_names if name not in returned_names]
+            if missing_tables:
+                app_logger.info(f"[ERD DEBUG] 테이블 메타 누락 감지: {missing_tables}")
+                # PLAR/PLAF 패턴 특화 로그
+                for mt in missing_tables:
+                    upper_mt = (mt or '').upper()
+                    if upper_mt in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
+                        app_logger.info(f"[ERD DEBUG] PLAR/PLAF/PAFF 관련 누락 테이블: {mt} (inferred={inferred_table_map.get(mt, False)})")
 
             # 테이블별로 데이터 그룹화 (INFERRED 테이블은 [I] 접두어 추가)
             tables_data = {}
@@ -190,7 +208,11 @@ class ERDMetadataService:
                 FROM tables t
                 LEFT JOIN columns c ON t.table_id = c.table_id AND c.del_yn = 'N'
                 JOIN projects p ON t.project_id = p.project_id
-                LEFT JOIN files f ON t.file_id = f.file_id AND f.del_yn = 'N'
+                LEFT JOIN components comp ON comp.component_type = 'TABLE' 
+                    AND comp.component_name = t.table_name 
+                    AND comp.project_id = t.project_id 
+                    AND comp.del_yn = 'N'
+                LEFT JOIN files f ON comp.file_id = f.file_id AND f.del_yn = 'N'
                 WHERE p.project_name = ? AND t.del_yn = 'N'
                 ORDER BY t.table_name, c.column_id
             """
@@ -296,21 +318,13 @@ class ERDMetadataService:
             for row in results:
                 table_name = row['table_name']
                 file_type = row.get('file_type')
+                upper_name = (table_name or '').upper()
+                if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
+                    app_logger.info(
+                        f"[ERD DEBUG][REL-TABLE] name={table_name}, file_type={file_type}, inferred_flag={row['is_inferred']}"
+                    )
                 if row['is_inferred']:
-                    # 특정 테이블명에서 inferred 표기가 붙는지 추적
-                    upper_name = (table_name or '').upper()
-                    if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS'):
-                        app_logger.info(
-                            f"[ERD DEBUG] inferred 플래그 테이블 감지: {table_name} "
-                            f"(file_type={file_type})"
-                        )
                     table_name = f"[I]{table_name}"
-                else:
-                    upper_name = (table_name or '').upper()
-                    if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS'):
-                        app_logger.info(
-                            f"[ERD DEBUG] CSV 테이블 감지: {table_name} (file_type={file_type})"
-                        )
                 table_names.append(table_name)
 
             app_logger.debug(f"관계가 있는 테이블 조회 완료: {len(table_names)}개 테이블")
@@ -419,7 +433,11 @@ class ERDMetadataService:
                     r.rel_type
                 FROM tables t
                 LEFT JOIN columns c ON t.table_id = c.table_id AND c.del_yn = 'N'
-                JOIN components comp ON t.component_id = comp.component_id
+                JOIN components comp 
+                    ON comp.component_type = 'TABLE'
+                    AND comp.component_name = t.table_name
+                    AND comp.project_id = t.project_id
+                    AND comp.del_yn = 'N'
                 JOIN relationships r ON (comp.component_id = r.src_id OR comp.component_id = r.dst_id)
                 JOIN projects p ON t.project_id = p.project_id
                 WHERE p.project_name = ?
@@ -480,10 +498,16 @@ class ERDMetadataService:
             src_base = self._normalize_table_name(src_table)
             dst_base = self._normalize_table_name(dst_table)
 
+            # CFG에 지정된 테이블과 직접 연결된 관계만 남김
             if src_base in base_set or dst_base in base_set:
                 filtered_relationships.append(rel)
                 allowed_tables.add(src_table)
                 allowed_tables.add(dst_table)
+
+        # 관계가 하나도 없으면 필터링 결과를 비워서 고아 출력 방지
+        if not filtered_relationships:
+            app_logger.info("[ERD DEBUG] 필터링 결과 관계가 없어 테이블/관계를 비웁니다.")
+            return {}, []
 
         filtered_tables = {
             name: data
@@ -622,7 +646,11 @@ class ERDMetadataService:
                 FROM tables t
                 JOIN columns c ON t.table_id = c.table_id
                 JOIN projects p ON t.project_id = p.project_id
-                LEFT JOIN components comp ON t.component_id = comp.component_id
+                LEFT JOIN components comp 
+                    ON comp.component_type = 'TABLE'
+                    AND comp.component_name = t.table_name
+                    AND comp.project_id = t.project_id
+                    AND comp.del_yn = 'N'
                 LEFT JOIN files f ON comp.file_id = f.file_id AND f.del_yn = 'N'
                 WHERE p.project_name = ? 
                   AND t.del_yn = 'N' 
