@@ -6,23 +6,65 @@ SourceAnalyzer 메인 실행 파일
 
 import sys
 import os
-import logging # logging 모듈 추가
-from util import (
-    ArgUtils, validate_and_get_project_name, print_usage_and_exit,
-    PathUtils, get_project_source_path, project_exists,
-    app_logger, info, error, debug, warning, handle_error, cleanup_old_log_files,
-    get_global_project_id, set_global_project_info
-)
+import time
+import logging  # logging 모듈 추가
 
-# recursion limit 설정 (XML 파싱 오류 방지)  
-# 재귀 제한을 너무 낮추면 표준 라이브러리(import 시)에서 오류가 발생하므로 여유 있게 설정
-sys.setrecursionlimit(1000)
-info(f"Recursion limit set to: {sys.getrecursionlimit()}")
+
+def _pre_logger_cleanup(log_directory: str, hours_threshold: int = 24) -> None:
+    """
+    로거 기동 전에 오래된 로그를 삭제하여 잠금 충돌을 방지합니다.
+    handle_error()를 호출할 수 없는 초기 구간이므로 치명 오류는 stderr 후 종료합니다.
+    """
+    try:
+        if not os.path.exists(log_directory):
+            return
+
+        now = time.time()
+        threshold_seconds = hours_threshold * 3600
+
+        for filename in os.listdir(log_directory):
+            file_path = os.path.join(log_directory, filename)
+
+            if not filename.endswith(".log") or not os.path.isfile(file_path):
+                continue
+
+            file_age = now - os.path.getmtime(file_path)
+            if file_age <= threshold_seconds:
+                continue
+
+            try:
+                os.remove(file_path)
+            except PermissionError as e:
+                print(f"FATAL: 로그 파일 잠금으로 삭제 실패: {file_path} - {e}", file=sys.stderr)
+                sys.exit(1)
+            except Exception as e:
+                print(f"FATAL: 로그 파일 삭제 실패: {file_path} - {e}", file=sys.stderr)
+                sys.exit(1)
+    except Exception as e:
+        print(f"FATAL: 로그 정리 중 예외 발생: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
     """메인 함수"""
     try:
+        # 0. 로거 기동 전에 오래된 로그 삭제 (잠금 회피)
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        _pre_logger_cleanup(os.path.join(project_root, "logs"), hours_threshold=24)
+
+        # util 로딩 (여기서 로거 초기화)
+        from util import (
+            ArgUtils, validate_and_get_project_name, print_usage_and_exit,
+            PathUtils, get_project_source_path, project_exists,
+            app_logger, info, error, debug, warning, handle_error, cleanup_old_log_files, safe_remove_file,
+            get_global_project_id, set_global_project_info
+        )
+
+        # recursion limit 설정 (XML 파싱 오류 방지)
+        # 재귀 제한을 너무 낮추면 표준 라이브러리(import 시)에서 오류가 발생하므로 여유 있게 설정
+        sys.setrecursionlimit(1000)
+        info(f"Recursion limit set to: {sys.getrecursionlimit()}")
+
         # 0. 오래된 로그 파일 정리 (24시간 지난 파일 삭제)
         path_utils = PathUtils()
         log_directory = path_utils.join_path('logs')
@@ -84,12 +126,10 @@ def main():
             sql_content_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "SqlContent.db")
             for target_path, label in [(metadata_db_path, "메타데이터베이스"), (sql_content_db_path, "SQL 콘텐츠 DB")]:
                 if os.path.exists(target_path):
-                    try:
-                        os.remove(target_path)
+                    if safe_remove_file(target_path, max_retries=3, retry_delay=0.5):
                         info(f"기존 {label} 삭제: {target_path}")
-                    except PermissionError as e:
-                        warning(f"{label} 삭제 실패(잠금 추정, 계속 진행): {target_path} - {e}")
-                        # 잠금 상태라면 이후 단계에서 기존 파일을 재사용하도록 계속 진행
+            # 초기화 요청은 이 시점에 완결되므로 이후 단계에서는 재시도하지 않음
+            clear_metadb = False
 
 
         # 로거 레벨 설정
@@ -248,6 +288,7 @@ def main():
 
 def show_help():
     """도움말 표시"""
+    from util import ArgUtils
     arg_utils = ArgUtils()
     arg_utils.create_parser()
     arg_utils.print_help()
@@ -255,7 +296,7 @@ def show_help():
 
 def show_usage():
     """사용법 표시"""
-    arg_utils = ArgUtils()
+    from util import ArgUtils
     arg_utils.create_parser()
     arg_utils.print_usage()
 

@@ -67,16 +67,32 @@ class DatabaseCache:
 
 class DatabaseUtils:
     """데이터베이스 처리 관련 공통 유틸리티 클래스"""
+
+    _instances: Dict[str, "DatabaseUtils"] = {}
+    _lock = threading.Lock()
+
+    def __new__(cls, db_path: str):
+        """같은 DB 경로에 대해 단일 인스턴스만 생성하여 잠금 문제를 방지합니다."""
+        if db_path not in cls._instances:
+            with cls._lock:
+                if db_path not in cls._instances:
+                    instance = super(DatabaseUtils, cls).__new__(cls)
+                    cls._instances[db_path] = instance
+        return cls._instances[db_path]
     
     def __init__(self, db_path: str):
         """
-        데이터베이스 유틸리티 초기화
+        데이터베이스 유틸리티 초기화 (싱글톤)
         
         Args:
             db_path: 데이터베이스 파일 경로
         """
+        if getattr(self, "_initialized", False):
+            return
+
         self.db_path = db_path
         self.connection = None
+        self._initialized = True
     
     def connect(self) -> bool:
         """
@@ -86,6 +102,15 @@ class DatabaseUtils:
             연결 성공 여부 (True/False)
         """
         try:
+            # 이미 연결이 열려 있으면 재사용
+            if self.connection:
+                try:
+                    self.connection.execute("SELECT 1")
+                    return True
+                except sqlite3.ProgrammingError:
+                    # 닫힌 커넥션이면 재연결
+                    self.connection = None
+
             # 디렉토리가 없으면 생성
             os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             
@@ -115,18 +140,41 @@ class DatabaseUtils:
             # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
             handle_error(e, f"데이터베이스 연결 실패: {self.db_path}")
             return False
+
+    def _ensure_connection(self, conn: Optional[sqlite3.Connection] = None) -> sqlite3.Connection:
+        """
+        주어진 커넥션이 닫혀 있으면 재연결한 후 유효한 커넥션을 반환합니다.
+        """
+        target_conn = conn or self.connection
+        try:
+            if target_conn:
+                target_conn.execute("SELECT 1")
+                return target_conn
+        except sqlite3.ProgrammingError:
+            # 닫힌 커넥션 → 재연결
+            pass
+        if not self.connect():
+            handle_error(Exception("데이터베이스 재연결 실패"), f"DB 재연결 실패: {self.db_path}")
+        return self.connection
     
-    def disconnect(self):
-        """데이터베이스 연결 해제"""
-        if self.connection:
-            try:
-                self.connection.close()
-                app_logger.debug(f"데이터베이스 연결 해제: {self.db_path}")
-            except Exception as e:
-                # USER RULE: 모든 exception 발생시 handle_error()로 exit()
-                handle_error(e, f"데이터베이스 연결 해제 실패")
-            finally:
-                self.connection = None
+    def disconnect(self, force: bool = False):
+        """
+        데이터베이스 연결 해제
+        Singleton 공유 커넥션이므로 기본적으로 닫지 않습니다.
+        필요 시 명시적으로 force=True로 호출하세요.
+        """
+        if not self.connection:
+            return
+        if not force:
+            app_logger.debug(f"공유 커넥션 유지: {self.db_path} (disconnect는 force=True일 때만 수행)")
+            return
+        try:
+            self.connection.close()
+            app_logger.debug(f"데이터베이스 연결 해제: {self.db_path}")
+        except Exception as e:
+            handle_error(e, f"데이터베이스 연결 해제 실패")
+        finally:
+            self.connection = None
     
     @contextmanager
     def get_connection(self):
@@ -175,12 +223,9 @@ class DatabaseUtils:
             쿼리 결과 리스트
         """
         try:
-            if conn is None:
-                with self.get_connection() as connection:
-                    return self.execute_query(query, params, connection)
-            
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            connection = self._ensure_connection(conn)
+            connection.row_factory = sqlite3.Row
+            cursor = connection.cursor()
             
             app_logger.debug(f"execute_query 시작: {query[:100]}...")
             if params:
@@ -207,6 +252,38 @@ class DatabaseUtils:
             # 모든 상세 로그가 출력된 후 Exception을 다시 발생시켜 상위에서 handle_error 호출
             app_logger.error(f"=== 상세 로그 출력 완료, Exception 재발생 ===")
             raise e
+
+    def safe_query_single_value(self, query: str, params: Optional[tuple] = None,
+                                conn: sqlite3.Connection = None, default: Any = None) -> Any:
+        """
+        단일 값 쿼리를 안전하게 실행하여 IndexError/TypeError를 방지합니다.
+        
+        Args:
+            query: 실행할 SQL 쿼리
+            params: 쿼리 파라미터
+            conn: 사용할 연결 객체
+            default: 결과가 없을 때 반환할 기본값
+        
+        Returns:
+            쿼리 결과의 첫 번째 값 또는 기본값
+        """
+        try:
+            result = self.execute_query(query, params, conn)
+
+            if not result:
+                debug(f"쿼리 결과 없음: {query[:80]}...")
+                return default
+
+            first_row = result[0]
+            if isinstance(first_row, dict):
+                return next(iter(first_row.values()), default)
+            if isinstance(first_row, (list, tuple)):
+                return first_row[0] if len(first_row) > 0 else default
+
+            return first_row
+        except Exception as e:
+            handle_error(e, f"단일 값 쿼리 실행 중 오류: {query[:80]}...")
+            return default
     
     def execute_update(self, query: str, params: Optional[tuple] = None, conn: sqlite3.Connection = None, auto_commit: bool = True) -> int:
         """
@@ -222,11 +299,8 @@ class DatabaseUtils:
             영향받은 행 수
         """
         try:
-            if conn is None:
-                with self.get_connection() as connection:
-                    return self.execute_update(query, params, connection, auto_commit)
-            
-            cursor = conn.cursor()
+            connection = self._ensure_connection(conn)
+            cursor = connection.cursor()
             
             if params:
                 cursor.execute(query, params)
@@ -234,7 +308,7 @@ class DatabaseUtils:
                 cursor.execute(query)
             
             if auto_commit:
-                conn.commit()
+                connection.commit()
             
             affected_rows = cursor.rowcount
             

@@ -34,7 +34,8 @@
       "Bash(dir /B /S D:AnalyzerCreateMetaDbprojectssampleSrcconfig)",
       "Bash(tee:*)",
       "Bash(iconv:*)",
-      "Bash(dir /B /O-D D:AnalyzerCreateMetaDblogs)"
+      "Bash(dir /B /O-D D:AnalyzerCreateMetaDblogs)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

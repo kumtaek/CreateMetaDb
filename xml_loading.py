@@ -199,7 +199,10 @@ class XmlLoadingEngine(BaseLoadingEngine):
 
                 except Exception as e:
                     self.stats['errors'] += 1
-                    warning(f"XML 파일 처리 중 오류 발생: {xml_file} - {e}")
+                    handle_error(
+                        e,
+                        f"XML 파일 파싱 실패: {xml_file} (성공 {self.stats['xml_files_processed']}건, 실패 {self.stats['errors']}건)"
+                    )
                 finally:
                     # 항상 컨텍스트 복원
                     self.file_context.pop()

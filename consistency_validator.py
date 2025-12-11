@@ -53,7 +53,7 @@ class ConsistencyValidator:
         """현재 프로젝트의 project_id 조회"""
         try:
             result = self.db_utils.execute_query("""
-                SELECT project_id FROM projects 
+                SELECT project_id FROM projects
                 WHERE project_name = ? AND del_yn = 'N'
                 LIMIT 1
             """, (self.project_name,))
@@ -63,11 +63,11 @@ class ConsistencyValidator:
                 info(f"프로젝트 ID 조회: {self.project_name} -> project_id {project_id}")
                 return project_id
             else:
-                warning(f"프로젝트를 찾을 수 없음: {self.project_name}")
+                handle_error(Exception("프로젝트 조회 실패"), f"프로젝트 ID 조회 실패: {self.project_name}")
                 return None
-                
+
         except Exception as e:
-            warning(f"프로젝트 ID 조회 실패: {self.project_name} - {e}")
+            handle_error(e, f"프로젝트 ID 조회 실패: {self.project_name}")
             return None
     
     def _get_csv_file_id(self, file_name: str) -> Optional[int]:
@@ -112,11 +112,11 @@ class ConsistencyValidator:
                 info(f"CSV/스키마 파일 ID 조회: {found_name} -> file_id {file_id}")
                 return file_id
             else:
-                warning(f"CSV/스키마 파일을 찾을 수 없음: {base_name}.sch / {base_name}.csv")
+                handle_error(Exception("CSV/스키마 파일 조회 실패"), f"CSV/스키마 파일 ID 조회 실패: {base_name}")
                 return None
 
         except Exception as e:
-            warning(f"CSV/스키마 파일 ID 조회 실패: {file_name} - {e}")
+            handle_error(e, f"CSV/스키마 파일 ID 조회 실패: {file_name}")
             return None
     
     def close(self):
@@ -454,11 +454,17 @@ class ConsistencyValidator:
                 for dup in duplicate_relationships:
                     relationship_ids = [int(id_str) for id_str in dup['relationship_ids'].split(',')]
                     keep_id = dup['keep_id']
+                    if keep_id is None:
+                        handle_error(Exception("relationship_id 누락"), "중복 관계 그룹에 keep_id가 없습니다")
+                        return
 
                     # 최소 ID를 제외한 나머지 ID들
                     remove_ids = [rid for rid in relationship_ids if rid != keep_id]
 
                     for remove_id in remove_ids:
+                        if remove_id is None:
+                            handle_error(Exception("relationship_id 누락"), "중복 관계 삭제 대상에 relationship_id가 없습니다")
+                            return
                         try:
                             # [Step 1] 삭제 전 하위 정보 병합
                             # 1-1. 이 relationship_id를 parent_id로 가진 컴포넌트들을 keep_id로 이동
@@ -561,14 +567,14 @@ class ConsistencyValidator:
                                 info(f"중복 관계 제거 (병합 {merge_count}건): relationship_id {remove_id} 삭제, {keep_id}로 통합")
 
                         except Exception as e:
-                            warning(f"관계 삭제 실패 (relationship_id: {remove_id}): {e}")
+                            handle_error(e, f"중복 관계 삭제 실패 (relationship_id: {remove_id})")
 
                 info(f"중복 관계 제거 완료: {total_removed}개 제거됨, {total_merged}개 하위 정보 병합 (중복 그룹: {len(duplicate_relationships)}개)")
             else:
                 info("중복 관계 없음")
 
         except Exception as e:
-            warning(f"중복 관계 제거 중 오류: {e}")
+            handle_error(e, "중복 관계 제거 실패")
 
     def _fallback_table_relationship_builder(self):
         """
@@ -910,23 +916,23 @@ class ConsistencyValidator:
         
         if unnecessary_methods:
             info(f"불필요한 getter/setter 메소드 발견: {len(unnecessary_methods)}개")
-            
+
             # 각 메소드를 del_yn='Y'로 업데이트
             cleanup_count = 0
             for method in unnecessary_methods:
                 try:
                     # components 테이블에서 del_yn='Y'로 업데이트
                     self.db_utils.execute_query("""
-                        UPDATE components 
+                        UPDATE components
                         SET del_yn = 'Y', updated_at = CURRENT_TIMESTAMP
                         WHERE component_id = ?
                     """, (method['component_id'],))
-                    
+
                     cleanup_count += 1
-                    
+
                 except Exception as e:
-                    warning(f"  정리 실패: {method['component_name']} - {e}")
-            
+                    handle_error(e, f"getter/setter 메소드 정리 실패: {method.get('component_name', 'UNKNOWN')}")
+
             info(f"불필요한 getter/setter 메소드 정리 완료: {cleanup_count}개 처리됨")
         else:
             info("불필요한 getter/setter 메소드 없음")
@@ -1057,7 +1063,7 @@ def execute_consistency_validation(project_name: str, conn: sqlite3.Connection) 
             validator.close()
             info("불필요한 getter/setter 메소드 정리 완료")
         except Exception as e:
-            warning(f"getter/setter 메소드 정리 중 오류: {e}")
+            handle_error(e, "getter/setter 메소드 정리 실패")
 
         # 모든 검증 결과 취합
         all_passed = all(result['passed'] for result in validation_results)

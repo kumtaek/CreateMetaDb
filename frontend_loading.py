@@ -15,6 +15,8 @@ USER RULES:
 import os
 import sqlite3
 from typing import List, Dict, Any, Optional
+import time
+import datetime
 from util import (
     DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
     build_api_identity_key, format_api_component_name,
@@ -48,8 +50,34 @@ class FrontendLoadingEngine(BaseLoadingEngine):
             'js_files': 0, 'html_files': 0, 'components_created': 0,
             'api_calls_found': 0, 'relationships_created': 0
         }
+        self._debug_last_ts: Dict[str, float] = {}  # 디버그 로그 스로틀링(키별)
         self.supported_extensions = {'.jsp': 'JSP', '.jsx': 'JSX', '.vue': 'VUE', '.ts': 'TS', '.tsx': 'TSX', '.js': 'JS', '.html': 'HTML'}
         info(f"프론트엔드 로딩 엔진 초기화 완료: {project_name}")
+
+    def _log_debug(self, key: str, message: str, interval: float = 1.0) -> None:
+        """
+        디버그 로그를 지정된 주기로만 콘솔/파일에 출력하고,
+        스로틀된 경우에도 로그 파일에는 모두 기록되도록 처리합니다.
+        """
+        now = time.time()
+        last_ts = self._debug_last_ts.get(key, 0.0)
+        if now - last_ts >= interval:
+            app_logger.info(message)  # 표준 핸들러(콘솔+파일)
+            self._debug_last_ts[key] = now
+        else:
+            self._write_logfile_only(message)
+
+    def _write_logfile_only(self, message: str) -> None:
+        """스로틀된 로그를 파일에만 기록"""
+        try:
+            from util import get_log_file_path
+            log_path = get_log_file_path()
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(f"{timestamp} - INFO - {message}\n")
+        except Exception:
+            # 파일 기록 실패는 조용히 무시 (핵심 로직 영향 방지)
+            pass
 
     def execute_frontend_loading(self) -> bool:
         """프론트엔드 파일 로딩 실행 (외부 트랜잭션 내에서)"""
@@ -171,16 +199,16 @@ class FrontendLoadingEngine(BaseLoadingEngine):
 
                     # 수정 필요: JSP만이 아닌 모든 프론트엔드 파일 타입 허용
                     file_type = api_call.get('file_type', '').upper()
-                    app_logger.info(f"[DEBUG] CALL_API 관계 생성 시도: file_type={file_type}, file_name={api_call['file_name']}, api_url_id={api_url_id}")
+                    self._log_debug("call_api_attempt", f"[DEBUG] CALL_API 관계 생성 시도: file_type={file_type}, file_name={api_call['file_name']}, api_url_id={api_url_id}")
                     if file_type in ['JSP', 'JSX', 'VUE', 'TS', 'TSX', 'JS', 'HTML']:
                         jsp_component_id = self._find_frontend_component_id(api_call['file_name'], project_id)
                         if jsp_component_id:
-                            app_logger.info(f"[DEBUG] CALL_API 관계 생성: jsp_component_id={jsp_component_id} -> api_url_id={api_url_id}")
+                            self._log_debug("call_api_created", f"[DEBUG] CALL_API 관계 생성: jsp_component_id={jsp_component_id} -> api_url_id={api_url_id}")
                             self._create_relationship(jsp_component_id, api_url_id, 'CALL_API')
                         else:
-                            app_logger.warning(f"[DEBUG] CALL_API 관계 생성 실패: jsp_component_id를 찾을 수 없음")
+                            self._log_debug("call_api_missing", "[DEBUG] CALL_API 관계 생성 실패: jsp_component_id를 찾을 수 없음")
                     else:
-                        app_logger.info(f"[DEBUG] CALL_API 관계 생성 스킵: 지원하지 않는 파일 타입={file_type}")
+                        self._log_debug("call_api_skip", f"[DEBUG] CALL_API 관계 생성 스킵: 지원하지 않는 파일 타입={file_type}")
                 except Exception as e:
                     handle_error(e, f"API 호출 관계 저장 실패: {api_call}")
 
@@ -204,10 +232,10 @@ class FrontendLoadingEngine(BaseLoadingEngine):
         identity_hash = self.hash_utils.generate_content_hash(identity_key)
 
         existing = self.db_utils.get_component_by_name(project_id, 'API_URL', identity_key)
-        app_logger.info(f"[DEBUG] API_URL 매칭 시도: identity_key={identity_key}, existing={existing is not None}")
+        self._log_debug("api_match", f"[DEBUG] API_URL 매칭 시도: identity_key={identity_key}, existing={existing is not None}")
         if existing:
             component_id = existing['component_id']
-            app_logger.info(f"[DEBUG] API_URL 매칭 성공: component_id={component_id}, existing_file_id={existing.get('file_id')}, current_file_id={self.current_file_id}")
+            self._log_debug("api_match", f"[DEBUG] API_URL 매칭 성공: component_id={component_id}, existing_file_id={existing.get('file_id')}, current_file_id={self.current_file_id}")
             if existing.get('file_id') != self.current_file_id:
                 self.db_utils.update_component_file_id(component_id, self.current_file_id, conn=self.conn)
             return component_id
@@ -240,7 +268,7 @@ class FrontendLoadingEngine(BaseLoadingEngine):
             query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND file_id = ? AND del_yn = 'N'"
             result = self.db_utils.execute_query(query, (project_id, base_name, self.current_file_id), conn=self.conn)
             component_id = result[0]['component_id'] if result else None
-            app_logger.info(f"[DEBUG] _find_frontend_component_id: file_name={file_name}, base_name={base_name}, project_id={project_id}, current_file_id={self.current_file_id}, found_component_id={component_id}")
+            self._log_debug("find_frontend_component", f"[DEBUG] _find_frontend_component_id: file_name={file_name}, base_name={base_name}, project_id={project_id}, current_file_id={self.current_file_id}, found_component_id={component_id}")
             return component_id
         except Exception as e:
             handle_error(e, f"프론트엔드 컴포넌트 ID 조회 실패: {file_name}")
@@ -249,12 +277,12 @@ class FrontendLoadingEngine(BaseLoadingEngine):
     def _create_relationship(self, src_id: int, dst_id: int, rel_type: str):
         """관계 생성"""
         try:
-            app_logger.info(f"[DEBUG] _create_relationship 시도: src_id={src_id}, dst_id={dst_id}, rel_type={rel_type}")
+            self._log_debug("create_relationship", f"[DEBUG] _create_relationship 시도: src_id={src_id}, dst_id={dst_id}, rel_type={rel_type}")
             if self.db_utils.insert_relationship(src_id, dst_id, rel_type):
                 self.stats['relationships_created'] += 1
-                app_logger.info(f"[DEBUG] _create_relationship 성공: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
+                self._log_debug("create_relationship", f"[DEBUG] _create_relationship 성공: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
             else:
-                app_logger.info(f"[DEBUG] _create_relationship 기존재 스킵: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
+                self._log_debug("create_relationship", f"[DEBUG] _create_relationship 기존재 스킵: src_id={src_id} -> dst_id={dst_id} ({rel_type})")
         except Exception as e:
             handle_error(e, f"관계 생성 실패: {src_id} -> {dst_id} ({rel_type})")
 

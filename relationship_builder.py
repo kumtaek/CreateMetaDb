@@ -55,11 +55,11 @@ class RelationshipBuilder:
             try:
                 from util.common_sql_processor import CommonSqlAnalyzer
                 CommonSqlAnalyzer(self.project_name).analyze_all_queries()
-            except Exception:
-                warning("CommonSqlAnalyzer analyze_all_queries warning: continue")
-
-
-
+            except SystemExit:
+                # 내부 handle_error() 호출 시 종료를 그대로 전파
+                raise
+            except Exception as e:
+                handle_error(e, "CommonSqlAnalyzer analyze_all_queries 실패")
 
             self.stats['total_relationships'] = sum(
                 v for k, v in self.stats.items() if k != 'total_relationships'

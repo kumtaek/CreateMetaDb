@@ -12,7 +12,7 @@ import mimetypes
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from .logger import app_logger, handle_error, info, debug, warning
+from .logger import app_logger, handle_error, info, debug, warning, get_log_file_path
 
 
 class FileUtils:
@@ -327,6 +327,52 @@ class FileUtils:
         except Exception as e:
             handle_error(e, f"디렉토리 생성 실패: {directory_path}")
             return False
+
+    @staticmethod
+    def safe_remove_file(file_path: str, max_retries: int = 3, retry_delay: float = 0.5) -> bool:
+        """
+        파일 잠금을 고려해 안전하게 삭제합니다.
+
+        Args:
+            file_path: 삭제할 파일 경로
+            max_retries: 최대 재시도 횟수
+            retry_delay: 재시도 간 대기 시간(초)
+
+        Returns:
+            삭제 성공 여부
+        """
+        import gc
+
+        if not file_path:
+            handle_error(Exception("파일 경로가 비어 있습니다"), "파일 삭제 실패: 잘못된 경로")
+            return False
+
+        if not os.path.exists(file_path):
+            debug(f"파일 삭제 스킵(파일 없음): {file_path}")
+            return True
+
+        gc.collect()
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                os.remove(file_path)
+                debug(f"파일 삭제 성공: {file_path}")
+                return True
+            except FileNotFoundError:
+                debug(f"파일 삭제 스킵(이미 없음): {file_path}")
+                return True
+            except PermissionError as e:
+                if attempt < max_retries:
+                    warning(f"파일 삭제 실패, 잠금 추정 재시도 {attempt}/{max_retries}: {file_path}")
+                    warning(f"  원인: {e}")
+                    time.sleep(retry_delay)
+                    gc.collect()
+                    continue
+                handle_error(e, f"파일 삭제 실패(잠금 추정, 재시도 {max_retries}회 모두 실패): {file_path}")
+            except Exception as e:
+                handle_error(e, f"파일 삭제 실패: {file_path}")
+
+        return False
     
     # get_relative_path 함수는 PathUtils.get_relative_path()로 통합됨
     # 중복 공통함수 제거 - PathUtils 사용 권장
@@ -351,7 +397,9 @@ class FileUtils:
             if not os.path.exists(log_directory):
                 info(f"로그 디렉토리가 존재하지 않습니다: {log_directory}")
                 return 0
-            
+
+            current_log_path = os.path.abspath(get_log_file_path()) if get_log_file_path else None
+
             for filename in os.listdir(log_directory):
                 file_path = os.path.join(log_directory, filename)
                 
@@ -362,6 +410,11 @@ class FileUtils:
                 # .log 확장자 파일만 처리
                 if not filename.endswith('.log'):
                     continue
+
+                # 현재 실행 중인 로그 파일은 삭제 대상에서 제외해 잠금 충돌 방지
+                if current_log_path and os.path.abspath(file_path) == current_log_path:
+                    debug(f"현재 실행 중인 로그 파일은 삭제 대상에서 제외: {file_path}")
+                    continue
                 
                 try:
                     # 파일의 수정 시간 확인
@@ -370,21 +423,19 @@ class FileUtils:
                     
                     # 지정된 시간보다 오래된 파일 삭제
                     if file_age > threshold_seconds:
-                        os.remove(file_path)
-                        deleted_count += 1
-                        info(f"오래된 로그 파일 삭제: {filename} (생성일: {time.ctime(file_mtime)})")
+                        if FileUtils.safe_remove_file(file_path, max_retries=1, retry_delay=0.1):
+                            deleted_count += 1
+                            info(f"오래된 로그 파일 삭제: {filename} (생성일: {time.ctime(file_mtime)})")
                         
                 except Exception as e:
-                    # 로그 파일 삭제 실패는 치명적이지 않으므로 경고로 처리
-                    warning(f"로그 파일 삭제 실패 (무시하고 계속 진행): {filename}, 오류: {str(e)}")
+                    handle_error(e, f"로그 파일 삭제 실패: {filename}")
             
             # 로그는 main.py에서 통합 출력
                 
             return deleted_count
             
         except Exception as e:
-            # 로그 파일 정리 실패는 치명적이지 않으므로 경고로 처리
-            warning(f"로그 파일 정리 실패 (무시하고 계속 진행): {log_directory}, 오류: {str(e)}")
+            handle_error(e, f"로그 파일 정리 실패: {log_directory}")
             return 0
 
 
@@ -417,3 +468,8 @@ def get_content_hash(content: str) -> str:
 def cleanup_old_log_files(log_directory: str, hours_threshold: int = 24) -> int:
     """오래된 로그 파일 삭제 편의 함수"""
     return FileUtils.cleanup_old_log_files(log_directory, hours_threshold)
+
+
+def safe_remove_file(file_path: str, max_retries: int = 3, retry_delay: float = 0.5) -> bool:
+    """파일 잠금 고려 삭제 편의 함수"""
+    return FileUtils.safe_remove_file(file_path, max_retries, retry_delay)

@@ -17,6 +17,7 @@ import re
 import os
 import sqlite3
 from typing import Dict, List, Any
+import time
 
 from util import info, handle_error, DatabaseUtils, ConfigUtils, PathUtils, HashUtils
 from util.oracle_keyword_manager import get_oracle_keyword_manager
@@ -38,6 +39,7 @@ class SimpleQueryAnalyzer:
             self.oracle_keyword_manager = get_oracle_keyword_manager()
             self.oracle_keywords = self.oracle_keyword_manager.get_keywords()
             self.sql_start_patterns = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE']
+            self._last_java_log_ts = 0.0
 
             # JPA Entity-Table 매핑 딕셔너리 (외부에서 설정)
             self.entity_table_mapping = {}
@@ -94,7 +96,10 @@ class SimpleQueryAnalyzer:
                         results['jpa_queries'].append(q)
                         existing_ids.add(q['query_id'])
 
-            info(f"Java analyzed: {file_path}, methods={len(methods)}, java={len(results['java_queries'])}, jpa={len(results['jpa_queries'])}")
+            now = time.time()
+            if now - self._last_java_log_ts >= 1:
+                info(f"Java analyzed: {file_path}, methods={len(methods)}, java={len(results['java_queries'])}, jpa={len(results['jpa_queries'])}")
+                self._last_java_log_ts = now
             return results
         except Exception as e:
             handle_error(e, f"Java analysis failed: {file_path}")
@@ -441,4 +446,3 @@ class SimpleQueryAnalyzer:
         if u.startswith('DELETE'):
             return 'SQL_DELETE'
         return 'SQL_MERGE'
-
