@@ -90,7 +90,7 @@ class SqlTextLoadingEngine:
                 handle_error(Exception("파일 ID 생성 실패"), f"files 테이블 저장 실패: {sql_path}")
                 return
 
-            component_id = self._upsert_component(project_id, file_id, query_id)
+            component_id = self._upsert_component(project_id, file_id, query_id, content)
             if not component_id:
                 handle_error(Exception("컴포넌트 생성 실패"), f"components 저장 실패: query_id={query_id}, file={sql_path}")
                 return
@@ -115,8 +115,8 @@ class SqlTextLoadingEngine:
                     file_path=file_path_unix,
                     file_name=sql_path.name,
                     query_id=query_id,
-                    query_type='SQL_TEXT',
-                    component_layer='SQLTEXT'
+                    query_type=self._infer_query_type(content, query_id),
+                    component_layer='QUERY_FROM_SQLTEXT'
                 )
             finally:
                 ctx_mgr.pop()
@@ -156,14 +156,22 @@ class SqlTextLoadingEngine:
         )
         return result[0]['file_id'] if result else None
 
-    def _upsert_component(self, project_id: int, file_id: int, query_id: str) -> Optional[int]:
+    def _infer_query_type(self, sql_content: str, query_id: str) -> str:
+        """SQLTEXT 쿼리 유형 추론 (공통 SQL Content Manager 로직 재사용)"""
+        try:
+            return self.sql_content_mgr._determine_sql_component_type(sql_content, query_id)
+        except Exception:
+            return 'SQL_QUERY'
+
+    def _upsert_component(self, project_id: int, file_id: int, query_id: str, sql_content: str) -> Optional[int]:
         """components 테이블 upsert 후 component_id 반환"""
+        component_type = self._infer_query_type(sql_content, query_id)
         component_data = {
             'project_id': project_id,
             'file_id': file_id,
             'component_name': query_id,
-            'component_type': 'SQL_QUERY',
-            'layer': 'SQL_TEXT',
+            'component_type': component_type,
+            'layer': 'QUERY_FROM_SQLTEXT',
             'hash_value': self.hash_utils.generate_md5(query_id),
             'del_yn': 'N'
         }
@@ -172,10 +180,10 @@ class SqlTextLoadingEngine:
         result = self.db_utils.execute_query(
             """
             SELECT component_id FROM components
-            WHERE project_id = ? AND file_id = ? AND component_name = ? AND component_type = 'SQL_QUERY' AND del_yn = 'N'
+            WHERE project_id = ? AND file_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'
             LIMIT 1
             """,
-            (project_id, file_id, query_id),
+            (project_id, file_id, query_id, component_type),
             conn=self.conn
         )
         return result[0]['component_id'] if result else None

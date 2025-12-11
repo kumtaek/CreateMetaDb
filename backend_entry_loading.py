@@ -289,8 +289,11 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
         ):
             return None
 
-        component_name = f"{entry.http_method}:{url_pattern}"
-        identity_key = f"{entry.http_method}:{url_pattern}"
+        component_name = format_api_component_name(entry.http_method, url_pattern, url_pattern)
+        identity_key = build_api_identity_key(url_pattern, entry.http_method)
+        if not component_name or not identity_key:
+            return None
+
         hash_value = self.hash_utils.generate_content_hash(identity_key)
 
         existing = self.db.get_component_by_hash(project_id, 'API_URL', hash_value)
@@ -298,7 +301,8 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
             existing_id = existing['component_id']
             if existing.get('component_name') != component_name:
                 self.db.update_component_name(existing_id, component_name, conn=self.conn)
-            if entry.file_id is not None and existing.get('file_id') != entry.file_id:
+            # 프론트엔드에서 이미 file_id를 설정했을 수 있으므로 비어 있을 때만 백엔드 file_id 적용
+            if existing.get('file_id') is None and entry.file_id is not None:
                 self.db.update_component_file_id(existing_id, entry.file_id, conn=self.conn)
             return None
         return {
@@ -324,18 +328,48 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
                 components_to_insert.append(component)
 
     def _find_existing_method(self, entry: BackendEntryInfo, project_id: int) -> Optional[int]:
-        full_method_name = f"{entry.class_name}.{entry.method_name}"
-        query = (
-            "SELECT c.component_id FROM components c WHERE c.project_id = ? "
-            "AND c.component_type = 'METHOD' AND c.component_name = ? AND c.del_yn = 'N'"
-        )
-        results = self.db.execute_query(query, (project_id, full_method_name), conn=self.conn)
-        return results[0]['component_id'] if results else None
+        # 자바 파서는 component_name을 메서드명 단독으로 저장하므로 파일 기준으로 매칭
+        candidates = []
+        if entry.file_id is not None:
+            query = (
+                "SELECT c.component_id FROM components c WHERE c.project_id = ? "
+                "AND c.component_type = 'METHOD' AND c.component_name = ? AND c.file_id = ? AND c.del_yn = 'N'"
+            )
+            candidates = self.db.execute_query(query, (project_id, entry.method_name, entry.file_id), conn=self.conn)
+        if not candidates:
+            query = (
+                "SELECT c.component_id FROM components c WHERE c.project_id = ? "
+                "AND c.component_type = 'METHOD' AND c.component_name = ? AND c.del_yn = 'N'"
+            )
+            candidates = self.db.execute_query(query, (project_id, entry.method_name), conn=self.conn)
+        return candidates[0]['component_id'] if candidates else None
+
+    def _get_methods_by_file(self, project_id: int, file_id: int) -> List[int]:
+        """동일 파일 내 METHOD 컴포넌트 ID 리스트 반환"""
+        try:
+            query = (
+                "SELECT component_id FROM components "
+                "WHERE project_id = ? AND file_id = ? AND component_type = 'METHOD' AND del_yn = 'N'"
+            )
+            rows = self.db.execute_query(query, (project_id, file_id), conn=self.conn)
+            return [row['component_id'] for row in rows] if rows else []
+        except Exception as e:
+            handle_error(e, "METHOD 컴포넌트 조회 실패")
+            return []
 
     def _create_api_relationships(self, entries: List[BackendEntryInfo], project_id: int, relationships_to_insert: List[Dict[str, Any]]):
         for entry in entries:
-            api_url_name = format_api_component_name(entry.http_method, entry.method_name, entry.url_pattern) or entry.url_pattern
-            api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
+            normalized_url = (entry.url_pattern or '').strip()
+            identity_key = build_api_identity_key(normalized_url, entry.http_method)
+            identity_hash = self.hash_utils.generate_content_hash(identity_key) if identity_key else None
+            api_url_name = format_api_component_name(entry.http_method, normalized_url, normalized_url)
+
+            api_url_id = None
+            if identity_hash:
+                api_url_id = self._get_component_id_by_hash(project_id, identity_hash, 'API_URL')
+            if api_url_id is None and api_url_name:
+                api_url_id = self._get_component_id_by_type(project_id, api_url_name, 'API_URL')
+
             method_id = self._find_existing_method(entry, project_id)
             if api_url_id and method_id:
                 relationships_to_insert.append({
@@ -344,11 +378,26 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
                     'rel_type': 'CALL_METHOD',
                     'del_yn': 'N',
                 })
+            # 추가 방어: 메서드명을 못 찾으면 동일 파일의 METHOD 전부 연결 (메타DB 기반, 재파싱 없음)
+            elif api_url_id and entry.file_id is not None:
+                fallback_methods = self._get_methods_by_file(project_id, entry.file_id)
+                for mid in fallback_methods:
+                    relationships_to_insert.append({
+                        'src_id': api_url_id,
+                        'dst_id': mid,
+                        'rel_type': 'CALL_METHOD',
+                        'del_yn': 'N',
+                    })
 
 
     def _get_component_id_by_type(self, project_id: int, component_name: str, component_type: str) -> Optional[int]:
         query = "SELECT component_id FROM components WHERE project_id = ? AND component_name = ? AND component_type = ? AND del_yn = 'N'"
         results = self.db.execute_query(query, (project_id, component_name, component_type), conn=self.conn)
+        return results[0]['component_id'] if results else None
+
+    def _get_component_id_by_hash(self, project_id: int, hash_value: str, component_type: str) -> Optional[int]:
+        query = "SELECT component_id FROM components WHERE project_id = ? AND component_type = ? AND hash_value = ? AND del_yn = 'N'"
+        results = self.db.execute_query(query, (project_id, component_type, hash_value), conn=self.conn)
         return results[0]['component_id'] if results else None
 
     def _print_backend_entry_statistics(self) -> None:

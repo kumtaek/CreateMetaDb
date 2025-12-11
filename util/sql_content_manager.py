@@ -416,12 +416,14 @@ class SqlContentManager:
                 handle_error(e, f"file_id 유효성 검증 실패: {query_id}")
                 return None
             
-            # SQLTEXT 전용: component_type은 SQL_QUERY로 통일, layer는 SQLTEXT로 설정
             component_type = query_type
             layer_value = component_layer or 'QUERY'
-            if query_type == 'SQL_TEXT':
-                component_type = 'SQL_QUERY'
-                layer_value = component_layer or 'SQLTEXT'
+            # SQLTEXT: 내용 기반으로 타입을 결정하고 layer는 QUERY_FROM_SQLTEXT로 고정
+            if (component_layer or '').upper() in ('SQLTEXT', 'QUERY_FROM_SQLTEXT'):
+                component_type = self._determine_sql_component_type(sql_content, query_id)
+                layer_value = 'QUERY_FROM_SQLTEXT'
+            elif query_type == 'SQL_QUERY':
+                component_type = self._determine_sql_component_type(sql_content, query_id)
 
             # Component 데이터 구성
             component_data = {

@@ -135,50 +135,79 @@ class FrontendMappingReportGenerator:
         return file_name or '-'
 
     def _generate_html(self, data: List[Dict[str, Any]]) -> str:
-        """HTML 생성 (단순 테이블)"""
+        """HTML 생성 (Backend Mapping Report와 동일 톤/스타일)"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        rows_html = []
-        for idx, row in enumerate(data, 1):
-            rows_html.append(f"""
-                <tr>
-                    <td>{idx}</td>
-                    <td>{row['frontend_name']}</td>
-                    <td>{row['frontend_file']}</td>
-                    <td>{row['api_url']}</td>
-                    <td>{row['method_name']}</td>
-                    <td>{row['method_file']}</td>
-                    <td>{row['query_id']}</td>
-                </tr>
-            """)
 
-        html = f"""
-        <!DOCTYPE html>
-        <html lang="ko">
-        <head>
-            <meta charset="UTF-8">
-            <title>Frontend Mapping Report - {self.project_name}</title>
-            <link rel="stylesheet" type="text/css" href="css/woori.css">
-        </head>
-        <body>
-            <h2>Frontend Mapping Report</h2>
-            <p>Project: {self.project_name} / Generated at: {timestamp}</p>
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Frontend Component</th>
-                        <th>Frontend File</th>
-                        <th>API URL</th>
-                        <th>Method</th>
-                        <th>Method File</th>
-                        <th>Query ID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {''.join(rows_html)}
-                </tbody>
-            </table>
-        </body>
-        </html>
-        """
-        return html
+        def sort_key(val: str) -> str:
+            return (val or "").lower()
+
+        sorted_data = sorted(
+            data,
+            key=lambda row: (
+                sort_key(row.get('frontend_file')),
+                sort_key(row.get('frontend_name')),
+                sort_key(row.get('api_url')),
+                sort_key(row.get('method_name')),
+                sort_key(row.get('query_id')),
+            ),
+        )
+
+        rows_html = ""
+        for idx, row in enumerate(sorted_data, 1):
+            rows_html += f"""
+            <tr>
+                <td>{idx}</td>
+                <td>{row['frontend_name']}</td>
+                <td>{row['frontend_file']}</td>
+                <td>{row['api_url']}</td>
+                <td>{row['method_name']}</td>
+                <td>{row['method_file']}</td>
+                <td>{row['query_id']}</td>
+            </tr>
+            """
+
+        return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Mapping Report - {self.project_name}</title>
+    <style>
+        body {{ font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; font-size: 9pt; font-weight: normal; }}
+        strong {{ font-weight: normal; }}
+        .container {{ max-width: 1800px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; font-size: 1.2em; font-weight: normal; }}
+        .info {{ color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: normal; font-size: 9pt; }}
+        th {{ background-color: #3498db; color: white; font-weight: normal; }}
+        tr:nth-child(even) {{ background-color: #f2f2f2; }}
+        tr:hover {{ background-color: #e8f4f8; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Frontend Mapping Report</h1>
+        <div class="info">
+            <strong>프로젝트:</strong> {self.project_name}<br>
+            <strong>생성일시:</strong> {timestamp}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px;">No</th>
+                    <th style="width:220px;">Frontend</th>
+                    <th style="width:260px;">Frontend File</th>
+                    <th style="width:240px;">API URL</th>
+                    <th style="width:200px;">Method</th>
+                    <th style="width:260px;">Method File</th>
+                    <th style="width:180px;">Query ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows_html}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>"""

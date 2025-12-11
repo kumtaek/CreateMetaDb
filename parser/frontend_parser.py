@@ -200,6 +200,18 @@ class FrontendParser:
         """JavaScript 계열 파일에서 API 호출 추출"""
         try:
             api_calls = []
+            # axios.create({ baseURL: '...' }) 또는 axios.defaults.baseURL 패턴에서 기본 경로 추출
+            base_url = None
+            try:
+                base_match = re.search(r'baseURL\s*:\s*[\'"]([^\'"]+)[\'"]', content, re.IGNORECASE)
+                if base_match:
+                    base_url = base_match.group(1).strip()
+                else:
+                    defaults_match = re.search(r'axios\\.defaults\\.baseURL\\s*=\\s*[\'"]([^\'"]+)[\'"]', content, re.IGNORECASE)
+                    if defaults_match:
+                        base_url = defaults_match.group(1).strip()
+            except Exception as e:
+                debug(f"baseURL 추출 실패: {str(e)}")
             
             # 설정에서 API 호출 패턴 가져오기 (JSP 설정 재사용 + JavaScript 전용 패턴 추가)
             api_patterns_text = self.config.get('api_call_patterns', '')
@@ -231,7 +243,7 @@ class FrontendParser:
                         line = content[line_start:line_end]
                         
                         # API 호출 정보 추출
-                        api_call = self._extract_api_call_info(match, line, line_num, file_name, default_methods, file_type)
+                        api_call = self._extract_api_call_info(match, line, line_num, file_name, default_methods, file_type, base_url)
                         if api_call:
                             api_calls.append(api_call)
                             
@@ -267,7 +279,7 @@ class FrontendParser:
         except Exception as e:
             handle_error(e, "HTML API 호출 추출 실패")
 
-    def _extract_api_call_info(self, match, line: str, line_num: int, file_name: str, default_methods: Dict[str, str], file_type: str = '') -> Optional[Dict[str, Any]]:
+    def _extract_api_call_info(self, match, line: str, line_num: int, file_name: str, default_methods: Dict[str, str], file_type: str = '', base_url: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """API 호출 정보 추출 (JSP 파서 로직 재사용)"""
         try:
             groups = match.groups()
@@ -278,6 +290,9 @@ class FrontendParser:
             api_url = groups[0].strip()
             if not api_url:
                 return None
+            if base_url and api_url.startswith('/') and not api_url.startswith(base_url):
+                # baseURL이 설정된 경우 프론트 호출 URL을 실제 호출 경로(/api/...)로 확장
+                api_url = base_url.rstrip('/') + api_url
             
             # HTTP 메서드 추출
             http_method = self._extract_http_method(match, line, groups, default_methods)

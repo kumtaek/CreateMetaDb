@@ -32,10 +32,12 @@ class CommonSqlAnalyzer:
     """공통 SQL 분석기 - SqlContent.db 기반"""
     
     def __init__(self, project_name: str):
-        from util.database_utils import DatabaseUtils
         self.project_name = project_name
         self.sql_content_db_path = f"projects/{project_name}/SqlContent.db"
+        from util.database_utils import DatabaseUtils
+        # 메타DB / SqlContentDB 공통 유틸 (단일 커넥션 재사용)
         self.db_utils = DatabaseUtils(f"projects/{project_name}/metadata.db")
+        self.sql_db_utils = DatabaseUtils(self.sql_content_db_path)
         self.project_id = self.db_utils.get_project_id(project_name)
         
         # Oracle 키워드 로드
@@ -100,7 +102,7 @@ class CommonSqlAnalyzer:
         # ... (함수 시작 및 쿼리 조회 부분은 동일) ...
         
         try:
-            conn = sqlite3.connect(self.sql_content_db_path)
+            conn = self.sql_db_utils._ensure_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT component_id, file_id, sql_content_compressed FROM sql_contents WHERE del_yn = 'N'")
             queries = cursor.fetchall()
@@ -167,7 +169,6 @@ class CommonSqlAnalyzer:
                     continue
                 finally:
                     ctx_mgr.pop()
-            conn.close()
         except Exception as e:
             handle_error(e, "analyze_all_queries 실행 실패")
             
@@ -420,7 +421,7 @@ class CommonSqlAnalyzer:
         if not column_name or not candidate_tables:
             return None
         try:
-            conn = self.db_utils.get_persistent_connection()
+            conn = self.db_utils._ensure_connection()
             cur = conn.cursor()
             for table_name in candidate_tables:
                 table_comp_id = self.db_utils.get_component_id(self.project_id, table_name, 'TABLE')
@@ -442,7 +443,7 @@ class CommonSqlAnalyzer:
         try:
             if not columns:
                 return
-            conn = self.db_utils.get_persistent_connection()
+            conn = self.db_utils._ensure_connection()
             for table_name, col_name in columns:
                 # 키워드/리터럴 컬럼은 무시하여 잘못된 inferred 컬럼 생성을 방지
                 if not self._should_register_column(col_name):
@@ -1007,8 +1008,7 @@ class CommonSqlAnalyzer:
         """분석 결과를 데이터베이스에 저장"""
         try:
             # metadata.db 연결
-            metadata_db_path = f"projects/{self.project_name}/metadata.db"
-            conn = sqlite3.connect(metadata_db_path)
+            conn = self.db_utils._ensure_connection()
             cursor = conn.cursor()
             
             # 테이블 저장
@@ -1020,7 +1020,6 @@ class CommonSqlAnalyzer:
                 self._save_join_relationship(cursor, join)
             
             conn.commit()
-            conn.close()
             
             return True
             

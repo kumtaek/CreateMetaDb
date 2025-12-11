@@ -8,6 +8,8 @@ D:\Analyzer\CreateMetaDb\install_runtime_deps.py
 D:\Analyzer\CreateMetaDb\java_loading.py
 D:\Analyzer\CreateMetaDb\main.py
 D:\Analyzer\CreateMetaDb\relationship_builder.py
+D:\Analyzer\CreateMetaDb\sqltext_java_matcher.py
+D:\Analyzer\CreateMetaDb\sqltext_loading.py
 D:\Analyzer\CreateMetaDb\test_log_output.py
 D:\Analyzer\CreateMetaDb\xml_loading.py
 D:\Analyzer\CreateMetaDb\backup\check_test_files.py
@@ -60,6 +62,7 @@ D:\Analyzer\CreateMetaDb\reports\erd_dagre_report_generator.py
 D:\Analyzer\CreateMetaDb\reports\erd_dagre_templates.py
 D:\Analyzer\CreateMetaDb\reports\erd_metadata_service.py
 D:\Analyzer\CreateMetaDb\reports\erd_report_generator.py
+D:\Analyzer\CreateMetaDb\reports\frontend_mapping_report_generator.py
 D:\Analyzer\CreateMetaDb\reports\query_list_report_generator.py
 D:\Analyzer\CreateMetaDb\reports\report_templates.py
 D:\Analyzer\CreateMetaDb\reports\sequence_diagram_report_generator.py
@@ -135,6 +138,12 @@ D:\Analyzer\CreateMetaDb\config\parser\xml_parser_config.yaml
 D:\Analyzer\CreateMetaDb\projects\sampleSrc\config\target_source_config.yaml
 D:\Analyzer\CreateMetaDb\database\create_sql_content_db.sql
 D:\Analyzer\CreateMetaDb\database\create_table_script.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\AC\AC_SQL_1001.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\AC\AC_SQL_1002.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\AC\AC_SQL_1003.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\NP\NP_SQL_1001.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\NP\NP_SQL_1002.sql
+D:\Analyzer\CreateMetaDb\projects\sampleSrc\sqltext\NP\NP_SQL_1003.sql
 D:\Analyzer\CreateMetaDb\js\cytoscape-dagre.js
 D:\Analyzer\CreateMetaDb\js\cytoscape-fcose.js
 D:\Analyzer\CreateMetaDb\js\cytoscape.min.js

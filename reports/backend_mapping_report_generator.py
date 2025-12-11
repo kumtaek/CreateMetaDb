@@ -67,12 +67,13 @@ class BackendMappingReportGenerator:
             if conn:
                 conn.close()
     
-    def _get_query_data(self, conn: sqlite3.Connection, metadata_sql_map: Dict[str, List[Dict[str, str]]]) -> List[Dict[str, Any]]:
+    def _get_query_data(self, conn: sqlite3.Connection, metadata_sql_map: Dict[Any, List[Dict[str, str]]]) -> List[Dict[str, Any]]:
         """SqlContent.db에서 쿼리 데이터 조회 + 메타 테이블 매핑 병합"""
         cursor = conn.cursor()
         
         query = """
         SELECT 
+            component_id,
             file_path,
             file_name,
             component_name,
@@ -92,18 +93,20 @@ class BackendMappingReportGenerator:
             except:
                 sql_content = row[3].decode('utf-8', errors='replace') if isinstance(row[3], bytes) else str(row[3])
 
-            comp_name = (row[2] or '').upper()
+            comp_id = row[0]
+            comp_name = (row[3] or '').upper()
             data.append({
-                'file_path': row[0] or '',
-                'file_name': row[1] or '',
-                'component_name': row[2] or '',
+                'component_id': comp_id,
+                'file_path': row[1] or '',
+                'file_name': row[2] or '',
+                'component_name': row[3] or '',
                 'sql_content': sql_content,
-                'metadata_tables': metadata_sql_map.get(comp_name, [])
+                'metadata_tables': metadata_sql_map.get(comp_id) or metadata_sql_map.get(comp_name, [])
             })
         
         return data
     
-    def _categorize_queries(self, query_data: List[Dict[str, Any]], metadata_join_map: Dict[str, Dict[str, Any]] = None) -> Dict[str, List[Dict[str, Any]]]:
+    def _categorize_queries(self, query_data: List[Dict[str, Any]], metadata_join_map: Dict[Any, Dict[str, Any]] = None) -> Dict[str, List[Dict[str, Any]]]:
         """
         쿼리를 MyBatis, JPA, Java String으로 분류
 
@@ -141,7 +144,7 @@ class BackendMappingReportGenerator:
                 table_list = []
 
             # 메타DB에서 조인 정보 조회 (SQL 재파싱 없이)
-            comp_key = (component_name or '').upper()
+            comp_key = item.get('component_id') or (component_name or '').upper()
             join_info = metadata_join_map.get(comp_key, {})
             join_type = join_info.get('join_type', '-')
             join_conditions = join_info.get('join_conditions', '-')
@@ -260,9 +263,9 @@ class BackendMappingReportGenerator:
                 seen.add(table_str)
         return formatted
 
-    def _load_metadata_use_tables(self) -> Dict[str, List[Dict[str, str]]]:
-        """metadata.db의 USE_TABLE 관계를 component_name 기준으로 맵으로 적재 (중복 제거)"""
-        meta_map: Dict[str, List[Dict[str, str]]] = {}
+    def _load_metadata_use_tables(self) -> Dict[Any, List[Dict[str, str]]]:
+        """metadata.db의 USE_TABLE 관계를 component_id 우선, 없으면 component_name 기준으로 적재 (중복 제거)"""
+        meta_map: Dict[Any, List[Dict[str, str]]] = {}
         if not os.path.exists(self.metadata_db_path):
             return meta_map
         try:
@@ -271,6 +274,7 @@ class BackendMappingReportGenerator:
             cursor.execute(
                 """
                 SELECT DISTINCT
+                       src.component_id   AS sql_comp_id,
                        src.component_name AS sql_comp,
                        dst.component_name AS table_name,
                        COALESCE(t.table_owner, 'UNKNOWN') AS table_owner
@@ -286,8 +290,8 @@ class BackendMappingReportGenerator:
                 """,
                 (self.project_name,)
             )
-            for comp_name, table_name, table_owner in cursor.fetchall():
-                key = (comp_name or '').upper()
+            for comp_id, comp_name, table_name, table_owner in cursor.fetchall():
+                key = comp_id or (comp_name or '').upper()
                 # 중복 방지: 이미 같은 owner+table 조합이 있는지 확인
                 existing_tables = meta_map.setdefault(key, [])
                 owner_name = (table_owner or 'UNKNOWN').strip().upper()
@@ -305,43 +309,19 @@ class BackendMappingReportGenerator:
         except Exception as e:
             handle_error(e, "metadata USE_TABLE 로드 실패")
 
-        # 디버깅용 요약: 메타DB USE_TABLE 관계에서 중복된 (owner, table) 여부를 컴포넌트 단위로 로깅
-        try:
-            for comp_key, tables in meta_map.items():
-                seen = set()
-                dup = set()
-                for tbl in tables:
-                    owner = (tbl.get('owner', 'UNKNOWN') or 'UNKNOWN').strip().upper()
-                    name = (tbl.get('table', '') or '').strip().upper()
-                    if not name:
-                        continue
-                    key = f"{owner}.{name}"
-                    if key in seen:
-                        dup.add(key)
-                    else:
-                        seen.add(key)
-                if dup:
-                    app_logger.info(
-                        "[BackendMapping][USE_TABLE 중복 요약] "
-                        f"component={comp_key}, duplicate_tables={sorted(dup)}"
-                    )
-        except Exception:
-            # 디버깅용 요약 처리에서 예외가 나더라도 전체 리포트 생성 로직은 그대로 진행한다.
-            pass
-
         return meta_map
 
-    def _load_metadata_join_conditions(self) -> Dict[str, Dict[str, Any]]:
+    def _load_metadata_join_conditions(self) -> Dict[Any, Dict[str, Any]]:
         """
         metadata.db에서 SQL 컴포넌트별 조인 조건 및 조인 타입을 조회
 
         Returns:
-            Dict[str, Dict]: component_name(대문자) -> {
+            Dict[Any, Dict]: component_id 또는 component_name -> {
                 'join_type': 'EXPLICIT'|'IMPLICIT'|'MERGE'|'-',
                 'join_conditions': 'A.col=B.col; ...'
             }
         """
-        join_map: Dict[str, Dict[str, Any]] = {}
+        join_map: Dict[Any, Dict[str, Any]] = {}
         if not os.path.exists(self.metadata_db_path):
             return join_map
         try:
@@ -350,7 +330,8 @@ class BackendMappingReportGenerator:
             # SQL 컴포넌트가 사용하는 테이블 목록 조회
             cursor.execute(
                 """
-                SELECT src.component_name AS sql_comp,
+                SELECT src.component_id AS sql_comp_id,
+                       src.component_name AS sql_comp,
                        GROUP_CONCAT(DISTINCT dst.component_name) AS table_list
                 FROM relationships r
                 JOIN components src ON r.src_id = src.component_id AND src.del_yn = 'N'
@@ -360,11 +341,14 @@ class BackendMappingReportGenerator:
                   AND r.rel_type = 'USE_TABLE'
                   AND r.del_yn = 'N'
                   AND dst.component_type = 'TABLE'
-                GROUP BY src.component_name
+                GROUP BY src.component_id, src.component_name
                 """,
                 (self.project_name,)
             )
-            sql_tables_map = {row[0].upper(): row[1].split(',') if row[1] else [] for row in cursor.fetchall()}
+            sql_tables_map = {}
+            for comp_id, comp_name, table_list in cursor.fetchall():
+                key = comp_id or (comp_name or '').upper()
+                sql_tables_map[key] = table_list.split(',') if table_list else []
 
             # 테이블 간 JOIN 관계 전체 조회
             cursor.execute(

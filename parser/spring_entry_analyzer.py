@@ -221,15 +221,16 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
         try:
             # 1. 주석 및 문자열 제거 전처리
             clean_content = self.preprocess_content(content)
+            raw_content = content
             lines = content.split('\n')
             
-            # 2. 클래스 정보 추출
-            class_info = self._extract_class_info_regex(clean_content, lines)
+            # 2. 클래스 정보 추출 (구조 파싱은 정규화된 텍스트, URL 등 값 추출은 원본 텍스트 사용)
+            class_info = self._extract_class_info_regex(clean_content, lines, raw_content)
             if not class_info:
                 return []
             
             # 3. 메서드 정보 추출
-            entries = self._extract_method_info_regex(clean_content, class_info, lines, file_path, file_id)
+            entries = self._extract_method_info_regex(raw_content, class_info, lines, file_path, file_id)
             
             return entries
             
@@ -237,9 +238,10 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(e, f"정규식 파싱 실패: {file_path}")
     
-    def _extract_class_info_regex(self, content: str, lines: List[str]) -> Optional[Dict[str, Any]]:
+    def _extract_class_info_regex(self, content: str, lines: List[str], raw_content: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """정규식으로 클래스 정보 추출"""
         try:
+            raw_text = raw_content if raw_content is not None else content
             # 클래스 선언 찾기
             if not self.class_declaration_regex:
                 return None
@@ -257,7 +259,7 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
             class_url = ""
             
             if self.class_annotation_regex:
-                annotation_matches = self.class_annotation_regex.findall(content)
+                annotation_matches = self.class_annotation_regex.findall(raw_text)
                 
                 for match in annotation_matches:
                     annotation_text = match[0] if isinstance(match, tuple) else match
@@ -265,6 +267,19 @@ class SpringEntryAnalyzer(BaseEntryAnalyzer):
                     
                     # URL 추출
                     url = self.extract_url_from_annotation(annotation_text)
+                    if url:
+                        class_url = url
+
+            # 어노테이션이 여러 줄에 흩어져 탐지되지 않을 경우 보조 탐지 수행
+            if not class_annotations:
+                if re.search(r'@RestController', raw_text):
+                    class_annotations.append('@RestController')
+                elif re.search(r'@Controller', raw_text):
+                    class_annotations.append('@Controller')
+            if not class_url:
+                fallback_req = re.search(r'@RequestMapping\s*\([^)]*\)', raw_text)
+                if fallback_req:
+                    url = self.extract_url_from_annotation(fallback_req.group(0))
                     if url:
                         class_url = url
             

@@ -1,10 +1,11 @@
 """
 Java 파일에서 sqltext SQL ID 문자열을 검색해 CALL_QUERY 관계를 생성하는 모듈.
-- component_type='SQL_QUERY', layer='SQL_TEXT'인 컴포넌트만 대상.
-- 단순 문자열 매칭(대소문자 무시)으로 누락을 최소화한다.
+- component_type LIKE 'SQL%' AND layer='QUERY_FROM_SQLTEXT'인 컴포넌트 대상.
+- 단순 문자열 매칭(대소문자 구분)으로 누락을 최소화한다.
 """
 
 import os
+import time
 from typing import List, Dict
 
 from util import (
@@ -23,6 +24,8 @@ class SqlTextJavaMatcher:
         self.path_utils = PathUtils()
         self.db_utils = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
         self.project_src_root = get_project_source_path(project_name)
+        self._warn_counters = {"method_missing": 0}
+        self._last_warn_ts = {}
 
     def execute(self) -> bool:
         """매칭 실행"""
@@ -51,6 +54,8 @@ class SqlTextJavaMatcher:
                 total_relationships += matched['relationships_created']
 
             info(f"sqltext-Java 매칭 완료: 파일 {len(java_files)}개, 매칭된 SQL ID {total_matches}개, 생성/유지된 관계 {total_relationships}개")
+            if self._warn_counters.get("method_missing"):
+                info(f"sqltext 매칭 스킵(메서드 없음): {self._warn_counters['method_missing']}건")
             return True
         except Exception as e:
             handle_error(e, "sqltext-Java 매칭 실행 실패")
@@ -63,8 +68,8 @@ class SqlTextJavaMatcher:
                 SELECT component_id, component_name
                 FROM components
                 WHERE project_id = ?
-                  AND component_type = 'SQL_QUERY'
-                  AND layer = 'SQLTEXT'
+                  AND component_type LIKE 'SQL%'
+                  AND layer = 'QUERY_FROM_SQLTEXT'
                   AND del_yn = 'N'
             """
             rows = self.db_utils.execute_query(query, (project_id,), conn=self.conn)
@@ -111,7 +116,7 @@ class SqlTextJavaMatcher:
         # 파일 내 모든 METHOD 컴포넌트 조회 (없으면 에러 처리)
         method_ids = self._get_method_components(project_id, file_info['file_id'])
         if not method_ids:
-            warning(f"METHOD 컴포넌트 없음: {full_path} (sqltext 매칭 스킵)")
+            self._log_method_missing(full_path)
             return {'matched_sql': 0, 'relationships_created': 0}
 
         for sql_comp in sql_components:
@@ -131,6 +136,19 @@ class SqlTextJavaMatcher:
                 debug(f"sqltext 매칭: {file_info['file_name']} 포함 SQL_ID={sql_id} -> METHOD {len(method_ids)}개 연결")
 
         return {'matched_sql': matched_sql, 'relationships_created': relationships_created}
+
+    def _throttled_warning(self, key: str, message: str, interval: float = 1.0) -> None:
+        """동일 유형 반복 로그는 interval 초 이내 중복 출력 방지 (콘솔 스팸 최소화)"""
+        now = time.time()
+        last = self._last_warn_ts.get(key, 0)
+        if now - last >= interval:
+            warning(message)
+            self._last_warn_ts[key] = now
+
+    def _log_method_missing(self, full_path: str) -> None:
+        self._warn_counters["method_missing"] += 1
+        self._throttled_warning("method_missing", f"METHOD 컴포넌트 없음: {full_path} (sqltext 매칭 스킵)")
+
 
     def _get_method_components(self, project_id: int, file_id: int) -> List[int]:
         """해당 Java 파일의 METHOD 컴포넌트 ID 리스트 반환"""

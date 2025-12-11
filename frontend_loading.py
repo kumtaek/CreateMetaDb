@@ -228,17 +228,23 @@ class FrontendLoadingEngine(BaseLoadingEngine):
         if not api_url:
             return None
 
-        identity_key = f"{http_method}:{api_url}"
+        identity_key = build_api_identity_key(api_url, http_method)
         identity_hash = self.hash_utils.generate_content_hash(identity_key)
 
-        existing = self.db_utils.get_component_by_name(project_id, 'API_URL', identity_key)
+        existing = self.db_utils.get_component_by_hash(project_id, 'API_URL', identity_hash)
         self._log_debug("api_match", f"[DEBUG] API_URL 매칭 시도: identity_key={identity_key}, existing={existing is not None}")
         if existing:
             component_id = existing['component_id']
+            # 프론트엔드에서 발견 시 file_id를 프론트 파일로 우선 갱신
+            if self.current_file_id and existing.get('file_id') != self.current_file_id:
+                try:
+                    self.db_utils.update_component_file_id(component_id, self.current_file_id, conn=self.conn)
+                except Exception as e:
+                    handle_error(e, f"API_URL file_id 갱신 실패: {component_id}")
             self._log_debug("api_match", f"[DEBUG] API_URL 매칭 성공: component_id={component_id}, existing_file_id={existing.get('file_id')}, current_file_id={self.current_file_id}")
             return component_id
 
-        component_name = f"{http_method}:{api_url}"
+        component_name = format_api_component_name(http_method, api_url, api_url)
         if not component_name:
             return None
 
