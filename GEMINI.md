@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **인터넷불가 폐쇄망 사용 가능하도록 개발**: 인터넷망에서 개발하지만 운영은 폐쇄망에서도 실행 가능하도록 개발되어야 함
 - **Exception발생시 중지**: Exception 발생시 에러로그 후 중지 -> error_handle()호출
 - **메타디비 구조 절대 변경 금지**: 메타디비 구조 변경은 승인받고 변경해야 함.
+- **PowerShell 명령 작성 주의**: bash heredoc(`python - <<'PY'`)을 사용하지 말고, PowerShell에서는 `@'... '@ | python -` 패턴을 사용해 스크립트를 전달할 것(구문 오류/시간 낭비 방지).
 
 ## DDL 스키마 변경 절대 금지
 - **database/ 폴더의 DDL 파일은 읽기 전용**: `create_table_script.sql`, `create_sql_content_db.sql` 파일은 읽기 전용(Read-Only) 속성이며, 절대 수정하지 말 것

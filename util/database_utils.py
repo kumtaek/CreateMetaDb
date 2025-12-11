@@ -932,11 +932,10 @@ class DatabaseUtils:
             app_logger.debug(f"Upsert 실행: {table_name}")
             app_logger.debug(f"데이터: {data}")
             
-            if conn is None:
-                # 단일 연결을 사용하도록 수정
-                conn = self.get_persistent_connection()
-            
-            cursor = conn.cursor()
+            # 단일 연결을 사용하도록 수정하고, 닫힌 커넥션이면 재연결
+            connection = self._ensure_connection(conn if conn is not None else self.get_persistent_connection())
+
+            cursor = connection.cursor()
             
             if table_name == 'components':
                 # components 테이블용 upsert 구현

@@ -218,6 +218,14 @@ def main():
         stats = file_engine.stats
         info(f"  => 성공: 테이블 {stats.get('tables_loaded', 0)}개, 컬럼 {stats.get('columns_loaded', 0)}개, 컴포넌트 {stats.get('components_created', 0)}개")
 
+        # 2-1단계 실행: sqltext 폴더 SQL 로딩
+        info("\n--- 2-1단계: sqltext SQL 로딩 ---")
+        from sqltext_loading import execute_sqltext_loading
+        success = execute_sqltext_loading(project_name, conn)
+        if not success:
+            raise Exception("2-1단계 sqltext 로딩 실패")
+        info("2-1단계 완료")
+
         # 3단계 실행: XML 분석
         info("\n--- 3단계: XML 분석 ---")
         from xml_loading import XmlLoadingEngine
@@ -238,6 +246,14 @@ def main():
             raise Exception("4단계 Java 분석 실패")
         info("4단계 완료")
         info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 관계 {java_stats.get('relationships_created', 0)}개")
+
+        # 4-1단계 실행: sqltext-Java 매칭 (문자열 기반 CALL_QUERY 연결)
+        info("\n--- 4-1단계: sqltext-Java 매칭 ---")
+        from sqltext_java_matcher import execute_sqltext_java_matching
+        success = execute_sqltext_java_matching(project_name, conn)
+        if not success:
+            raise Exception("4-1단계 sqltext-Java 매칭 실패")
+        info("4-1단계 완료")
 
         # 5단계 실행: Spring API 진입점 분석
         info("\n--- 5단계: API 진입점 분석 ---")

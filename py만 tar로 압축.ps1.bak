@@ -6,7 +6,7 @@ Get-ChildItem -Recurse -Filter *.sql | Select-Object -Expand FullName >> list.tx
 Get-ChildItem -Recurse -Filter *.js | Select-Object -Expand FullName >> list.txt
 Get-ChildItem -Recurse -Filter *.css | Select-Object -Expand FullName >> list.txt
 tar -czvf pys.tar.gz -T list.txt
-certutil -encode pys.tar.gz pytest.log
+certutil -encode pys.tar.gz pystest.log
 del ../pys*.*
 move pys*.* ../
 

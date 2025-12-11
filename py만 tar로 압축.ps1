@@ -18,6 +18,7 @@ python main.py --project-name sampleSrc --clear-metadb --verbose
 
 
 python create_report.py --project-name sampleSrc --report-type backend-mapping --verbose
+python create_report.py --project-name sampleSrc --report-type frontend-mapping --verbose
 python create_report.py --project-name sampleSrc --report-type erd
 python create_report.py --project-name sampleSrc --report-type erd-dagre
 

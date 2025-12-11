@@ -124,6 +124,7 @@ class SqlContentManager:
                 query_id=kwargs.get('query_id', kwargs.get('component_name', '')),
                 file_path=kwargs.get('file_path', ''),
                 query_type=kwargs.get('query_type', 'SQL_QUERY'),
+                component_layer=kwargs.get('component_layer'),
                 conn=conn,
                 file_name=kwargs.get('file_name')
             )
@@ -354,8 +355,9 @@ class SqlContentManager:
             return dirname, basename if basename else None
         return normalized_path, file_name
 
-    def _register_sql_component(self, sql_content: str, project_id: int, file_id: int, 
-                               query_id: str, file_path: str, query_type: str, conn=None, file_name: str = None) -> Optional[int]:
+    def _register_sql_component(self, sql_content: str, project_id: int, file_id: int,
+                               query_id: str, file_path: str, query_type: str, conn=None, file_name: str = None,
+                               component_layer: Optional[str] = None) -> Optional[int]:
         """
         SQL Component를 metadata.db의 components 테이블에 등록 (공통부)
         
@@ -414,14 +416,21 @@ class SqlContentManager:
                 handle_error(e, f"file_id 유효성 검증 실패: {query_id}")
                 return None
             
+            # SQLTEXT 전용: component_type은 SQL_QUERY로 통일, layer는 SQLTEXT로 설정
+            component_type = query_type
+            layer_value = component_layer or 'QUERY'
+            if query_type == 'SQL_TEXT':
+                component_type = 'SQL_QUERY'
+                layer_value = component_layer or 'SQLTEXT'
+
             # Component 데이터 구성
             component_data = {
                 'project_id': project_id,
                 'file_id': file_id,
-                'component_type': query_type,
+                'component_type': component_type,
                 'component_name': query_id,
                 'parent_id': None,
-                'layer': 'QUERY',  # SQL 컴포넌트는 QUERY layer
+                'layer': layer_value,  # SQLTEXT는 SQLTEXT, 기타는 QUERY layer
                 'line_start': 1,  # SQL에서는 정확한 라인 번호 추출이 어려움
                 'line_end': 1,
                 'has_error': 'N',
@@ -430,24 +439,12 @@ class SqlContentManager:
                 'del_yn': 'N'
             }
             
-            # components 테이블에 저장 (재시도 로직)
-            max_retries = 3
-            component_id = None
-            
-            for attempt in range(max_retries):
-                try:
-                    # 단일 연결을 사용하여 컴포넌트 등록
-                    component_id = metadata_db_utils.insert_or_replace_with_id('components', component_data, conn)
-                    break
-                except Exception as e:
-                    if "database is locked" in str(e) and attempt < max_retries - 1:
-                        app_logger.warning(f"데이터베이스 락 발생, 재시도 {attempt + 1}/{max_retries}: {e}")
-                        import time
-                        time.sleep(2)  # 2초 대기
-                        continue
-                    else:
-                        handle_error(e, f"SQL Component 등록 실패 (재시도 {attempt + 1}/{max_retries}): {query_id}")
-                        return None
+            try:
+                # 단일 연결을 사용하여 컴포넌트 등록 (락 발생 시 즉시 종료)
+                component_id = metadata_db_utils.insert_or_replace_with_id('components', component_data, conn)
+            except Exception as e:
+                handle_error(e, f"SQL Component 등록 실패: {query_id}")
+                return None
             
             if component_id:
                 app_logger.debug(f"SQL Component 등록 성공: {query_id} (ID: {component_id}, type: {query_type})")
@@ -843,36 +840,29 @@ class SqlContentManager:
             metadata_db_path = f'projects/{self.project_name}/metadata.db'
             metadata_db_utils = DatabaseUtils(metadata_db_path)
 
-            # 연결 관리: 전달받은 conn이 있으면 사용, 없으면 임시 연결 생성
-            temp_conn = None
+            # 연결 관리: 전달받은 conn이 없으면 지속 커넥션을 확보
             use_conn = conn
-
             if use_conn is None:
-                temp_conn = metadata_db_utils.get_connection()
-                use_conn = temp_conn
+                metadata_db_utils.connect()
+                use_conn = metadata_db_utils.get_persistent_connection()
 
-            try:
-                # 테이블 목록 조회 (Owner 무시, 테이블명만)
-                query = "SELECT table_name FROM tables WHERE project_id = ? AND del_yn = 'N'"
-                rows = metadata_db_utils.execute_query(query, (project_id,), conn=use_conn)
+            # 테이블 목록 조회 (Owner 무시, 테이블명만)
+            query = "SELECT table_name FROM tables WHERE project_id = ? AND del_yn = 'N'"
+            rows = metadata_db_utils.execute_query(query, (project_id,), conn=use_conn)
 
-                table_names = set()
-                if rows:
-                    for row in rows:
-                        t_name = row.get('table_name')
-                        if t_name:
-                            table_names.add(t_name.upper())
+            table_names = set()
+            if rows:
+                for row in rows:
+                    t_name = row.get('table_name')
+                    if t_name:
+                        table_names.add(t_name.upper())
 
-                app_logger.info(f"전체 테이블 목록 로드 완료: {len(table_names)}개")
+            app_logger.info(f"전체 테이블 목록 로드 완료: {len(table_names)}개")
 
-                # 정규식 패턴 사전 컴파일 (성능 최적화)
-                self._compile_regex_patterns(table_names)
+            # 정규식 패턴 사전 컴파일 (성능 최적화)
+            self._compile_regex_patterns(table_names)
 
-                return table_names
-
-            finally:
-                if temp_conn:
-                    temp_conn.close()
+            return table_names
 
         except Exception as e:
             app_logger.error(f"전체 테이블 목록 로드 실패: {e}")

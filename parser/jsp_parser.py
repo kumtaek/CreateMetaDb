@@ -23,6 +23,9 @@ from util import (
 class JspParser:
     """JSP 파서 - 5단계 Phase 1 MVP"""
 
+    # 동일한 설정 파일에 대해 초기화 로그가 반복되지 않도록 경로별 1회만 INFO 로그 출력
+    _init_logged_paths = set()
+
     def __init__(self, config_path: str = None, project_name: str = None):
         """
         JSP 파서 초기화
@@ -44,11 +47,16 @@ class JspParser:
             if config_path is None:
                 # 공통함수 사용 (크로스플랫폼 대응)
                 config_path = self.path_utils.get_parser_config_path("jsp")
-            
+
             self.config = config_utils.load_yaml_config(config_path)
-            
-            info(f"JSP 파서 초기화 완료: {config_path}")
-            
+
+            normalized = os.path.abspath(config_path)
+            if normalized not in self._init_logged_paths:
+                info(f"JSP 파서 초기화 완료: {config_path}")
+                self._init_logged_paths.add(normalized)
+            else:
+                debug(f"JSP 파서 재사용(로그 생략): {config_path}")
+
         except Exception as e:
             # exception은 handle_error()로 exit해야 에러 인지가 가능하다
             handle_error(e, "JSP 파서 초기화 실패")

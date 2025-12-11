@@ -17,11 +17,12 @@ import sqlite3
 from typing import List, Dict, Any, Optional
 import time
 import datetime
+import datetime
 from util import (
     DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
     build_api_identity_key, format_api_component_name,
     app_logger, info, error, debug, warning, handle_error,
-    get_project_source_path, get_project_metadata_db_path
+    get_project_source_path, get_project_metadata_db_path, get_log_file_path
 )
 from util.file_context import get_file_context_manager
 from parser.frontend_parser import FrontendParser
@@ -70,7 +71,6 @@ class FrontendLoadingEngine(BaseLoadingEngine):
     def _write_logfile_only(self, message: str) -> None:
         """스로틀된 로그를 파일에만 기록"""
         try:
-            from util import get_log_file_path
             log_path = get_log_file_path()
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with open(log_path, "a", encoding="utf-8") as log_file:
@@ -236,8 +236,6 @@ class FrontendLoadingEngine(BaseLoadingEngine):
         if existing:
             component_id = existing['component_id']
             self._log_debug("api_match", f"[DEBUG] API_URL 매칭 성공: component_id={component_id}, existing_file_id={existing.get('file_id')}, current_file_id={self.current_file_id}")
-            if existing.get('file_id') != self.current_file_id:
-                self.db_utils.update_component_file_id(component_id, self.current_file_id, conn=self.conn)
             return component_id
 
         component_name = f"{http_method}:{api_url}"
