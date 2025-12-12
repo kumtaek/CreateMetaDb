@@ -35,7 +35,10 @@
       "Bash(tee:*)",
       "Bash(iconv:*)",
       "Bash(dir /B /O-D D:AnalyzerCreateMetaDblogs)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(dir /B D:AnalyzerCreateMetaDbprojectssampleSrc*.db)",
+      "Bash(cmd /c \"dir /B D:\\Analyzer\\CreateMetaDb\\projects\\sampleSrc\\*.db\")",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

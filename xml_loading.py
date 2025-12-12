@@ -30,7 +30,7 @@ from util.base_loading_engine import BaseLoadingEngine
 class XmlLoadingEngine(BaseLoadingEngine):
     """XML 로딩 엔진 - 3단계 통합 처리"""
     
-    def __init__(self, project_name: str, conn: Optional[sqlite3.Connection], sql_content_enabled: bool = False):
+    def __init__(self, project_name: str, conn: Optional[sqlite3.Connection], sql_content_enabled: bool = False, use_compression: Optional[bool] = None):
         """
         XML 로딩 엔진 초기화
 
@@ -38,16 +38,19 @@ class XmlLoadingEngine(BaseLoadingEngine):
             project_name: 프로젝트명
             conn: 외부에서 주입된 데이터베이스 연결 객체
             sql_content_enabled: SQL Content 기능 활성화 여부
+            use_compression: SQL 압축 저장 여부
         """
         super().__init__(project_name, conn)
         self.sql_content_enabled = sql_content_enabled
+        from util import get_sql_compress
+        self.use_compression = use_compression if use_compression is not None else get_sql_compress()
 
         self.xml_parser = XmlParser()
         # SimpleQueryAnalyzer도 주입된 conn을 사용하도록 수정 필요
         self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, conn)
 
         from util.common_sql_processor import CommonSqlAnalyzer
-        self.common_sql_processor = CommonSqlAnalyzer(project_name)
+        self.common_sql_processor = CommonSqlAnalyzer(project_name, use_compression)
 
         if self.sql_content_enabled:
             try:
@@ -60,7 +63,7 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     enable_brute_force = config.get('sql_analysis', {}).get('enable_brute_force_table_search', True)
                     app_logger.info(f"단순 테이블 매칭 설정: {enable_brute_force}")
 
-                self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force)
+                self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force, use_compression=use_compression)
                 if not self.sql_content_manager.initialized:
                     raise Exception("SQL Content Manager 초기화 실패")
             except Exception as e:

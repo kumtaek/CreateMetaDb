@@ -27,6 +27,9 @@ from .global_project import (
     set_global_project_info, get_global_project_name, get_global_project_id,
     is_global_project_info_set, get_global_project_info
 )
+from .runtime_options import (
+    set_sql_compress, get_sql_compress, reset_runtime_options
+)
 
 __all__ = [
     # Logger
@@ -113,5 +116,10 @@ __all__ = [
     'get_global_project_name',
     'get_global_project_id',
     'is_global_project_info_set',
-    'get_global_project_info'
+    'get_global_project_info',
+
+    # Runtime options
+    'set_sql_compress',
+    'get_sql_compress',
+    'reset_runtime_options'
 ]

@@ -54,7 +54,7 @@ class FrontendMappingReportGenerator:
                 conn.close()
 
     def _fetch_mapping_data(self, conn: sqlite3.Connection) -> List[Dict[str, Any]]:
-        """metadata.db에서 프론트→API→METHOD→SQL QUERY 체인 조회"""
+        """metadata.db에서 METHOD 중심으로 Frontend/API/Query 연계를 조회"""
         try:
             cursor = conn.cursor()
 
@@ -63,38 +63,45 @@ class FrontendMappingReportGenerator:
                 return []
 
             query = """
-            WITH base AS (
-                SELECT
-                    f.component_name   AS frontend_name,
-                    ff.file_name       AS frontend_file,
-                    ff.file_path       AS frontend_path,
-                    api.component_name AS api_url,
-                    COALESCE(m_rel.component_id, m_file.component_id)       AS method_id,
-                    COALESCE(m_rel.component_name, m_file.component_name)   AS method_name,
-                    COALESCE(m_rel.file_id, m_file.file_id)                 AS method_file_id
-                FROM relationships r_api
-                JOIN components f   ON r_api.src_id = f.component_id    AND r_api.rel_type = 'CALL_API' AND r_api.del_yn = 'N' AND f.del_yn = 'N'
-                JOIN components api ON r_api.dst_id = api.component_id  AND api.del_yn = 'N'
-                LEFT JOIN files ff   ON f.file_id   = ff.file_id
-                LEFT JOIN relationships r_m ON r_m.src_id = api.component_id AND r_m.rel_type = 'CALL_METHOD' AND r_m.del_yn = 'N'
-                LEFT JOIN components m_rel ON r_m.dst_id = m_rel.component_id AND m_rel.del_yn = 'N'
-                LEFT JOIN components m_file ON m_file.file_id = api.file_id AND m_file.component_type = 'METHOD' AND m_file.del_yn = 'N'
-                WHERE f.project_id = ?
-            )
             SELECT DISTINCT
-                b.frontend_name,
-                b.frontend_file,
-                b.frontend_path,
-                b.api_url,
-                b.method_name,
-                mf.file_name   AS method_file,
-                mf.file_path   AS method_path,
-                q.component_name AS query_id
-            FROM base b
-            LEFT JOIN relationships r_q ON r_q.src_id = b.method_id AND r_q.rel_type = 'CALL_QUERY' AND r_q.del_yn = 'N'
+                m.component_name AS method_name,
+                mf.file_name     AS method_file,
+                mf.file_path     AS method_path,
+                COALESCE(api.component_name, '-') AS api_url,
+                COALESCE(ff.file_path, '-')       AS frontend_path,
+                COALESCE(ff.file_name, '-')       AS frontend_file,
+                q.component_name                  AS query_id,
+                qf.file_name                      AS query_file,
+                qf.file_path                      AS query_path
+            FROM components m
+            JOIN files mf ON m.file_id = mf.file_id
+            LEFT JOIN relationships r_am
+                ON r_am.dst_id = m.component_id
+               AND r_am.rel_type = 'CALL_METHOD'
+               AND r_am.del_yn = 'N'
+            LEFT JOIN components api
+                ON r_am.src_id = api.component_id
+               AND api.component_type = 'API_URL'
+               AND api.del_yn = 'N'
+            LEFT JOIN relationships r_f
+                ON r_f.dst_id = api.component_id
+               AND r_f.rel_type = 'CALL_API'
+               AND r_f.del_yn = 'N'
+            LEFT JOIN components f
+                ON r_f.src_id = f.component_id
+               AND f.del_yn = 'N'
+            LEFT JOIN files ff ON f.file_id = ff.file_id AND ff.del_yn = 'N'
+            LEFT JOIN relationships r_q
+                ON r_q.src_id = m.component_id
+               AND r_q.rel_type = 'CALL_QUERY'
+               AND r_q.del_yn = 'N'
             LEFT JOIN components q ON r_q.dst_id = q.component_id AND q.del_yn = 'N'
-            LEFT JOIN files mf ON b.method_file_id = mf.file_id
-            ORDER BY b.frontend_path, b.frontend_file, b.api_url, b.method_name, q.component_name
+            LEFT JOIN files qf ON q.file_id = qf.file_id AND qf.del_yn = 'N'
+            WHERE m.project_id = ?
+              AND m.component_type = 'METHOD'
+              AND m.del_yn = 'N'
+              AND mf.del_yn = 'N'
+            ORDER BY method_path, method_file, method_name, api_url, frontend_path, frontend_file, query_file, query_id
             """
 
             cursor.execute(query, (project_id,))
@@ -103,11 +110,12 @@ class FrontendMappingReportGenerator:
             result = []
             for row in rows:
                 result.append({
-                    'frontend_name': row['frontend_name'] or '-',
-                    'frontend_file': self._combine_path(row['frontend_path'], row['frontend_file']),
+                    'frontend_path': row['frontend_path'] or '-',
+                    'frontend_file': row['frontend_file'] or '-',
                     'api_url': row['api_url'] or '-',
+                    'method_file': self._combine_path(row['method_path'], row['method_file']),
                     'method_name': row['method_name'] or '-',
-                    'method_file': self._combine_path(row['method_path'], row['method_file']) if row['method_file'] else '-',
+                    'query_file': self._combine_path(row['query_path'], row['query_file']) if row['query_file'] else '-',
                     'query_id': row['query_id'] or '-'
                 })
             return result
@@ -144,10 +152,12 @@ class FrontendMappingReportGenerator:
         sorted_data = sorted(
             data,
             key=lambda row: (
+                sort_key(row.get('frontend_path')),
                 sort_key(row.get('frontend_file')),
-                sort_key(row.get('frontend_name')),
                 sort_key(row.get('api_url')),
+                sort_key(row.get('method_file')),
                 sort_key(row.get('method_name')),
+                sort_key(row.get('query_file')),
                 sort_key(row.get('query_id')),
             ),
         )
@@ -157,11 +167,12 @@ class FrontendMappingReportGenerator:
             rows_html += f"""
             <tr>
                 <td>{idx}</td>
-                <td>{row['frontend_name']}</td>
+                <td>{row['frontend_path']}</td>
                 <td>{row['frontend_file']}</td>
                 <td>{row['api_url']}</td>
-                <td>{row['method_name']}</td>
                 <td>{row['method_file']}</td>
+                <td>{row['method_name']}</td>
+                <td>{row['query_file']}</td>
                 <td>{row['query_id']}</td>
             </tr>
             """
@@ -196,11 +207,12 @@ class FrontendMappingReportGenerator:
             <thead>
                 <tr>
                     <th style="width:50px;">No</th>
-                    <th style="width:220px;">Frontend</th>
-                    <th style="width:260px;">Frontend File</th>
+                    <th style="width:220px;">Frontend Path</th>
+                    <th style="width:180px;">Frontend File</th>
                     <th style="width:240px;">API URL</th>
+                    <th style="width:220px;">Method File</th>
                     <th style="width:200px;">Method</th>
-                    <th style="width:260px;">Method File</th>
+                    <th style="width:200px;">XML File</th>
                     <th style="width:180px;">Query ID</th>
                 </tr>
             </thead>

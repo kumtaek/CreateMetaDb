@@ -17,6 +17,7 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from util.sql_content_manager import SqlContentManager
+from util import get_sql_compress
 from reports.report_templates import ReportTemplates
 
 
@@ -179,8 +180,8 @@ class QueryListReportGenerator:
         try:
             import sqlite3
             
-            # SqlContent.db에서 직접 쿼리 정보 가져오기
-            sqlcontent_conn = sqlite3.connect(f'projects/{self.project_name}/SqlContent.db')
+            sql_db_name = "SqlContent_compressed.db" if get_sql_compress() else "SqlContent.db"
+            sqlcontent_conn = sqlite3.connect(f'projects/{self.project_name}/{sql_db_name}')
             sqlcontent_cursor = sqlcontent_conn.cursor()
             
             query = """

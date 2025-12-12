@@ -30,16 +30,19 @@ class JoinCondition:
 
 class CommonSqlAnalyzer:
     """공통 SQL 분석기 - SqlContent.db 기반"""
-    
-    def __init__(self, project_name: str):
+
+    def __init__(self, project_name: str, use_compression: bool = False):
         self.project_name = project_name
-        self.sql_content_db_path = f"projects/{project_name}/SqlContent.db"
+        self.use_compression = use_compression
+        # 압축 사용 시 SqlContent_compressed.db, 아니면 SqlContent.db
+        db_filename = "SqlContent_compressed.db" if use_compression else "SqlContent.db"
+        self.sql_content_db_path = f"projects/{project_name}/{db_filename}"
         from util.database_utils import DatabaseUtils
         # 메타DB / SqlContentDB 공통 유틸 (단일 커넥션 재사용)
         self.db_utils = DatabaseUtils(f"projects/{project_name}/metadata.db")
         self.sql_db_utils = DatabaseUtils(self.sql_content_db_path)
         self.project_id = self.db_utils.get_project_id(project_name)
-        
+
         # Oracle 키워드 로드
         self.oracle_keywords = self._load_oracle_keywords()
         # SQL 정규화 설정 (향후 필요 시 환경설정으로 확장 가능)
@@ -116,7 +119,11 @@ class CommonSqlAnalyzer:
                 try:
                     if not compressed_sql:
                         continue
-                    sql_content = gzip.decompress(compressed_sql).decode('utf-8')
+                    # 압축 사용 여부에 따라 조건부로 압축 해제
+                    if self.use_compression:
+                        sql_content = gzip.decompress(compressed_sql).decode('utf-8')
+                    else:
+                        sql_content = compressed_sql.decode('utf-8')
                     clean_sql = normalize_sql_loose_with_config(sql_content, self.sql_normalize_config)
 
                     # 파일 컨텍스트 설정 (분석 대상 SQL이 속한 파일 기준)

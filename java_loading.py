@@ -20,7 +20,7 @@ from util.base_loading_engine import BaseLoadingEngine
 class SimpleJavaLoader(BaseLoadingEngine):
     """Simple Java file loader"""
 
-    def __init__(self, project_name: str, conn: sqlite3.Connection):
+    def __init__(self, project_name: str, conn: sqlite3.Connection, use_compression: Optional[bool] = None):
         """Initialize loader"""
         super().__init__(project_name, conn)
 
@@ -37,7 +37,9 @@ class SimpleJavaLoader(BaseLoadingEngine):
             enable_brute_force = config.get('sql_analysis', {}).get('enable_brute_force_table_search', True)
             app_logger.info(f"단순 테이블 매칭 설정: {enable_brute_force}")
 
-        self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force)
+        from util import get_sql_compress
+        resolved_compress = use_compression if use_compression is not None else get_sql_compress()
+        self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force, use_compression=resolved_compress)
         # 파일 컨텍스트 (현재 처리 중인 파일/컴포넌트 정보 전역 보관)
         self.file_context = get_file_context_manager()
 
@@ -317,7 +319,7 @@ class SimpleJavaLoader(BaseLoadingEngine):
 
         try:
             from util.common_sql_processor import CommonSqlAnalyzer
-            common_processor = CommonSqlAnalyzer(self.project_name)
+            common_processor = CommonSqlAnalyzer(self.project_name, self.sql_content_manager.use_compression)
             result = common_processor.analyze_all_queries()
             self.stats['relationships_created'] += result.get('statistics', {}).get('joins_found', 0)
             info(f"Created JOIN relationships: {result.get('statistics', {}).get('joins_found', 0)}")
@@ -391,9 +393,8 @@ class SimpleJavaLoader(BaseLoadingEngine):
             # 추론 불가 시 기본값
             return 'SQL_QUERY'
 
-def load_java_files_simple(project_name: str, project_id: int, conn: sqlite3.Connection) -> tuple[bool, dict]:
+def load_java_files_simple(project_name: str, project_id: int, conn: sqlite3.Connection, use_compression: Optional[bool] = None) -> tuple[bool, dict]:
     """Run simple Java loading"""
-    loader = SimpleJavaLoader(project_name, conn)
+    loader = SimpleJavaLoader(project_name, conn, use_compression)
     success = loader.execute_java_loading(project_id)
     return success, loader.stats
-

@@ -15,6 +15,7 @@ from typing import List, Dict, Any
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.report_utils import ReportUtils
+from util import get_sql_compress
 
 
 class BackendMappingReportGenerator:
@@ -25,7 +26,10 @@ class BackendMappingReportGenerator:
         self.output_dir = output_dir
         self.path_utils = PathUtils()
         self.report_utils = ReportUtils(project_name, output_dir)
-        self.sql_content_db_path = self.path_utils.join_path('projects', project_name, 'SqlContent.db')
+        if get_sql_compress():
+            self.sql_content_db_path = self.path_utils.join_path('projects', project_name, 'SqlContent_compressed.db')
+        else:
+            self.sql_content_db_path = self.path_utils.join_path('projects', project_name, 'SqlContent.db')
         self.metadata_db_path = self.path_utils.join_path('projects', project_name, 'metadata.db')
     
     def generate_report(self) -> bool:
@@ -88,10 +92,13 @@ class BackendMappingReportGenerator:
         
         data = []
         for row in results:
-            try:
-                sql_content = gzip.decompress(row[3]).decode('utf-8')
-            except:
-                sql_content = row[3].decode('utf-8', errors='replace') if isinstance(row[3], bytes) else str(row[3])
+            if get_sql_compress():
+                try:
+                    sql_content = gzip.decompress(row[4]).decode('utf-8')
+                except Exception:
+                    sql_content = row[4].decode('utf-8', errors='replace') if isinstance(row[4], bytes) else str(row[4])
+            else:
+                sql_content = row[4].decode('utf-8', errors='replace') if isinstance(row[4], bytes) else str(row[4])
 
             comp_id = row[0]
             comp_name = (row[3] or '').upper()

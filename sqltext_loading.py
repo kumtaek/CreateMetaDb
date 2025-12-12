@@ -21,13 +21,15 @@ from util.sql_content_manager import SqlContentManager
 class SqlTextLoadingEngine:
     """sqltext 폴더의 SQL 파일을 로드하여 메타DB와 SqlContent.db에 저장"""
 
-    def __init__(self, project_name: str, conn):
+    def __init__(self, project_name: str, conn, use_compression: Optional[bool] = None):
+        from util import get_sql_compress
         self.project_name = project_name
         self.conn = conn
         self.path_utils = PathUtils()
         self.hash_utils = HashUtils()
+        resolved_compress = use_compression if use_compression is not None else get_sql_compress()
         self.db_utils = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
-        self.sql_content_mgr = SqlContentManager(project_name, enable_brute_force_search=True)
+        self.sql_content_mgr = SqlContentManager(project_name, enable_brute_force_search=True, use_compression=resolved_compress)
         self.project_root = self.path_utils.join_path(self.path_utils.project_root, "projects", project_name)
         self.sqltext_root = os.path.join(self.project_root, "sqltext")
 
@@ -189,7 +191,7 @@ class SqlTextLoadingEngine:
         return result[0]['component_id'] if result else None
 
 
-def execute_sqltext_loading(project_name: str, conn) -> bool:
+def execute_sqltext_loading(project_name: str, conn, use_compression: Optional[bool] = None) -> bool:
     """편의 함수"""
-    engine = SqlTextLoadingEngine(project_name, conn)
+    engine = SqlTextLoadingEngine(project_name, conn, use_compression)
     return engine.execute()

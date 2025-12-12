@@ -18,10 +18,12 @@ from util import (
 class RelationshipBuilder:
     """Builds relationships among components for a given project."""
 
-    def __init__(self, project_name: str, project_id: int, conn: sqlite3.Connection):
+    def __init__(self, project_name: str, project_id: int, conn: sqlite3.Connection, use_compression: Optional[bool] = None):
         self.project_name = project_name
         self.project_id = project_id
         self.conn = conn
+        from util import get_sql_compress
+        self.use_compression = use_compression if use_compression is not None else get_sql_compress()
         self.path_utils = PathUtils()
         # Use actual metadata DB path for utility queries (e.g., table_exists)
         self.db_utils = DatabaseUtils(self.path_utils.get_project_metadata_db_path(project_name))
@@ -54,7 +56,7 @@ class RelationshipBuilder:
             # 3) Analyze SQL contents for tables/joins (SqlContent.db)
             try:
                 from util.common_sql_processor import CommonSqlAnalyzer
-                CommonSqlAnalyzer(self.project_name).analyze_all_queries()
+                CommonSqlAnalyzer(self.project_name, self.use_compression).analyze_all_queries()
             except SystemExit:
                 # 내부 handle_error() 호출 시 종료를 그대로 전파
                 raise

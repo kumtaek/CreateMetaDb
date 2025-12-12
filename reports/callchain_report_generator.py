@@ -18,6 +18,7 @@ from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
+from util import get_sql_compress
 from util.layer_classification_utils import get_layer_classifier
 from reports.report_templates import ReportTemplates
 
@@ -499,7 +500,10 @@ class CallChainReportGenerator:
         try:
             # 크로스플랫폼 경로 생성 (공통함수 사용)
             project_path = self.path_utils.get_project_source_path(self.project_name)
-            sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent.db")
+            if get_sql_compress():
+                sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent_compressed.db")
+            else:
+                sql_content_db_path = self.path_utils.join_path(project_path, "SqlContent.db")
             
             if not os.path.exists(sql_content_db_path):
                 app_logger.warning(f"SqlContent.db 파일이 존재하지 않습니다: {sql_content_db_path}")
@@ -531,7 +535,10 @@ class CallChainReportGenerator:
                     
                     # gzip 압축 해제 (크로스플랫폼 호환)
                     try:
-                        decompressed_content = gzip.decompress(compressed_content).decode('utf-8')
+                        if get_sql_compress():
+                            decompressed_content = gzip.decompress(compressed_content).decode('utf-8')
+                        else:
+                            decompressed_content = compressed_content.decode('utf-8', errors='replace')
                         # XML 태그 제거하고 순수 SQL만 추출
                         clean_sql = self._extract_pure_sql(decompressed_content)
                         sql_content_map[component_name] = clean_sql

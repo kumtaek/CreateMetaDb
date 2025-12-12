@@ -57,7 +57,8 @@ def main():
             ArgUtils, validate_and_get_project_name, print_usage_and_exit,
             PathUtils, get_project_source_path, project_exists,
             app_logger, info, error, debug, warning, handle_error, cleanup_old_log_files, safe_remove_file,
-            get_global_project_id, set_global_project_info
+            get_global_project_id, set_global_project_info,
+            set_sql_compress, get_sql_compress
         )
 
         # recursion limit 설정 (XML 파싱 오류 방지)
@@ -116,15 +117,26 @@ def main():
         # 5. 분석 옵션 확인
         clear_metadb = arg_utils.get_clear_metadb()
         verbose = arg_utils.get_verbose()
-
+        sql_compress = arg_utils.get_sql_compress()
         dry_run = arg_utils.get_dry_run()
+        set_sql_compress(sql_compress)
 
         # 5.1 메타데이터베이스 초기화 옵션 처리 (연결 전에 수행해야 잠금 회피)
         if clear_metadb:
             path_utils = PathUtils()
             metadata_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "metadata.db")
             sql_content_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "SqlContent.db")
-            for target_path, label in [(metadata_db_path, "메타데이터베이스"), (sql_content_db_path, "SQL 콘텐츠 DB")]:
+            sql_content_compressed_db_path = path_utils.join_path(path_utils.project_root, "projects", project_name, "SqlContent_compressed.db")
+            # sql_compress 지정 시 비압축 파일 삭제, 미지정 시 압축 파일 삭제 (활성 DB와 반대편 우선)
+            sql_content_targets = [
+                (metadata_db_path, "메타데이터베이스")
+            ]
+            if sql_compress:
+                sql_content_targets.append((sql_content_db_path, "SqlContent.db"))
+            else:
+                sql_content_targets.append((sql_content_compressed_db_path, "SqlContent_compressed.db"))
+
+            for target_path, label in sql_content_targets:
                 if os.path.exists(target_path):
                     if safe_remove_file(target_path, max_retries=3, retry_delay=0.5):
                         info(f"기존 {label} 삭제: {target_path}")
@@ -144,7 +156,7 @@ def main():
         info(f"분석 옵션:")
         info(f"  - 메타데이터베이스 초기화: {clear_metadb}")
         info(f"  - 상세 로그: {verbose}")
-
+        info(f"  - SQL 압축 저장: {sql_compress}")
         info(f"  - 드라이런 모드: {dry_run}")
 
         

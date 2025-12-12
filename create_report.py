@@ -15,6 +15,7 @@ sys.path.append(str(__file__).replace('create_report.py', ''))
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
+from util.runtime_options import set_sql_compress, get_sql_compress
 from reports.callchain_report_generator import CallChainReportGenerator
 from reports.erd_report_generator import ERDReportGenerator
 from reports.architecture_report_generator import ArchitectureReportGenerator
@@ -66,6 +67,12 @@ def parse_arguments():
         '--verbose', '-v',
         action='store_true',
         help='상세 로그 출력'
+    )
+
+    parser.add_argument(
+        '--sql-compress',
+        action='store_true',
+        help='SqlContent_compressed.db를 사용하여 압축 모드 리포트 생성'
     )
     
     
@@ -293,6 +300,14 @@ def main():
         
         # 명령행 인자 파싱
         args = parse_arguments()
+
+        # 런타임 옵션 설정 (압축 여부)
+        set_sql_compress(getattr(args, "sql_compress", False))
+        app_logger.info(f"SQL 압축 리포트 모드: {get_sql_compress()}")
+
+        # 상세 로그 설정
+        if getattr(args, "verbose", False):
+            app_logger.logger.setLevel("DEBUG")
         
         # 경로 유틸리티 초기화
         path_utils = PathUtils()

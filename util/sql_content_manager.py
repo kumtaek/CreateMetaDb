@@ -21,16 +21,21 @@ from .file_utils import FileUtils
 class SqlContentManager:
     """정제된 SQL 내용 관리 클래스"""
 
-    def __init__(self, project_name: str, enable_brute_force_search: bool = True):
+    def __init__(self, project_name: str, enable_brute_force_search: bool = True, use_compression: Optional[bool] = None):
         """
         SqlContentManager 초기화
 
         Args:
             project_name: 프로젝트명
             enable_brute_force_search: 단순 문자열 매칭을 통한 테이블 검색 활성화 여부 (기본값: True)
+            use_compression: SQL 압축 저장 여부 (기본값: False)
+                - False: SqlContent.db 생성 (비압축)
+                - True: SqlContent_compressed.db 생성 (압축)
         """
         self.project_name = project_name
-        self.db_utils = None
+        self.db_utils = None  # DB 유틸리티 (단일 DB)
+        from util import get_sql_compress
+        self.use_compression = use_compression if use_compression is not None else get_sql_compress()
         self.initialized = False
         self.enable_brute_force_search = enable_brute_force_search
         self._cached_table_names = None  # 테이블 목록 캐싱 (Lazy Loading)
@@ -47,32 +52,37 @@ class SqlContentManager:
                 from .logger import handle_error
                 handle_error(Exception(f"잘못된 프로젝트명: {self.project_name}"), "SQL Content Manager 초기화 실패")
                 return False
-            
+
             # 프로젝트별 데이터베이스 경로 생성 (공통함수 사용)
             path_utils = PathUtils()
-            db_path = path_utils.join_path("projects", self.project_name, "SqlContent.db")
-            
+
             # 디렉토리 생성
             project_dir = path_utils.join_path("projects", self.project_name)
             os.makedirs(project_dir, exist_ok=True)
-            
-            # DatabaseUtils 초기화
+
+            # 압축 여부에 따라 파일명 결정
+            if self.use_compression:
+                db_filename = "SqlContent_compressed.db"
+            else:
+                db_filename = "SqlContent.db"
+
+            db_path = path_utils.join_path("projects", self.project_name, db_filename)
             self.db_utils = DatabaseUtils(db_path)
-            
-            # 데이터베이스 연결
+
             if not self.db_utils.connect():
                 return False
-            
+
             # 스키마 생성 (공통함수 사용)
             schema_path = path_utils.join_path("database", "create_sql_content_db.sql")
-            
+
             if not self.db_utils.create_schema(schema_path):
-                app_logger.error("SQL Content 데이터베이스 스키마 생성 실패")
+                app_logger.error(f"{db_filename} 스키마 생성 실패")
                 return False
-            
-            app_logger.info(f"SQL Content 데이터베이스 초기화 완료: {db_path}")
+
+            app_logger.info(f"{db_filename} 초기화 완료: {db_path}")
+
             return True
-            
+
         except Exception as e:
             handle_error(e, "SQL Content 데이터베이스 초기화 실패")
             return False
@@ -314,25 +324,35 @@ class SqlContentManager:
                 except Exception:
                     pass
             
-            # 3. SQL Content 저장 (SqlContent.db)
+            # 3. SQL Content 저장 (단일 DB)
+            # 압축 여부에 따라 데이터 준비
+            if self.use_compression:
+                sql_data = compressed_content  # gzip 압축
+                db_type = "압축"
+            else:
+                sql_data = sql_content.encode('utf-8')  # 비압축
+                db_type = "비압축"
+
             sql_content_data = {
                 'project_id': project_id,
                 'file_id': kwargs.get('file_id'),
                 'component_id': component_id,  # 등록된 component_id 사용
-                'sql_content_compressed': compressed_content,
+                'sql_content_compressed': sql_data,
                 'file_path': kwargs.get('file_path'),
                 'component_name': kwargs.get('query_id', kwargs.get('component_name', '')),
                 'file_name': kwargs.get('file_name'),
                 'hash_value': kwargs.get('hash_value'),
                 'del_yn': 'N'
             }
-            
-            # 데이터베이스에 저장 (UPSERT 사용)
-            success = self._upsert_sql_content(sql_content_data)
-            
-            if success:
-                app_logger.debug(f"SQL Content + Component 저장 완료: {kwargs.get('query_id', 'unknown')} (component_id: {component_id})")
-            
+
+            success = self._upsert_sql_content(sql_content_data, self.db_utils)
+
+            if not success:
+                app_logger.error(f"SQL Content 저장 실패: {kwargs.get('query_id', 'unknown')}")
+                return False
+
+            app_logger.debug(f"SQL Content 저장 완료 ({db_type}): {kwargs.get('query_id', 'unknown')} (component_id: {component_id})")
+
             return success
             
         except Exception as e:
@@ -557,13 +577,14 @@ class SqlContentManager:
 
         return 'SQL_QUERY'
     
-    def _upsert_sql_content(self, sql_content_data: Dict[str, Any]) -> bool:
+    def _upsert_sql_content(self, sql_content_data: Dict[str, Any], db_utils: DatabaseUtils) -> bool:
         """
         SQL Content를 DatabaseUtils의 upsert 메서드로 저장 (hash_value 기반 변동분 감지)
-        
+
         Args:
             sql_content_data: SQL Content 데이터
-            
+            db_utils: 사용할 DatabaseUtils 인스턴스 (sqlcontent.db 또는 sqlcontent2.db)
+
         Returns:
             저장 성공 여부
         """
@@ -580,15 +601,15 @@ class SqlContentManager:
                     return False
             except Exception:
                 return False
-            
+
             # 기존 데이터 조회 (hash_value로 중복 체크)
             check_query = """
-                SELECT project_id, file_id, component_id, hash_value, del_yn 
-                FROM sql_contents 
+                SELECT project_id, file_id, component_id, hash_value, del_yn
+                FROM sql_contents
                 WHERE hash_value = ?
             """
-            existing_results = self.db_utils.execute_query(check_query, (hash_value,))
-            
+            existing_results = db_utils.execute_query(check_query, (hash_value,))
+
             if existing_results:
                 # hash_value가 이미 존재하면 스킵
                 app_logger.debug(f"SQL Content 중복 (스킵): {sql_content_data.get('component_name', 'unknown')} (hash_value: {hash_value})")
@@ -596,15 +617,15 @@ class SqlContentManager:
             else:
                 # 기존 데이터가 없으면 UPSERT 사용 (UNIQUE 제약조건 처리)
                 unique_columns = ['component_name', 'file_id', 'project_id']
-                success = self.db_utils.upsert('sql_contents', sql_content_data, unique_columns)
-                
+                success = db_utils.upsert('sql_contents', sql_content_data, unique_columns)
+
                 if success:
                     app_logger.debug(f"SQL Content UPSERT 성공 (신규): {sql_content_data.get('component_name', 'unknown')}")
                 else:
                     app_logger.error(f"SQL Content UPSERT 실패: {sql_content_data.get('component_name', 'unknown')}")
-                
+
                 return success is not None
-                
+
         except Exception as e:
             handle_error(e, "SQL Content UPSERT 실패")
     
@@ -715,30 +736,34 @@ class SqlContentManager:
     def get_sql_contents(self, project_id: int, limit: int = 100) -> List[Dict[str, Any]]:
         """
         SQL 내용 목록 조회
-        
+
         Args:
             project_id: 프로젝트 ID
             limit: 조회 개수 제한
-            
+
         Returns:
             SQL 내용 목록
         """
         try:
             query = """
-            SELECT 
+            SELECT
                 project_id, file_id, component_id, file_path, component_name,
                 hash_value, created_at, sql_content_compressed
-            FROM sql_contents 
+            FROM sql_contents
             WHERE project_id = ? AND del_yn = 'N'
             ORDER BY created_at DESC
             LIMIT ?
             """
-            
+
+            # 단일 DB에서 조회
             results = self.db_utils.execute_query(query, (project_id, limit))
-            
+
             # 압축 해제
             sql_contents = []
             for row in results:
+                # use_compression에 따라 압축 해제 여부 결정
+                sql_content = self._decompress_content(row[7]) if self.use_compression else row[7].decode('utf-8')
+
                 content_data = {
                     'project_id': row[0],
                     'file_id': row[1],
@@ -747,12 +772,12 @@ class SqlContentManager:
                     'component_name': row[4],
                     'hash_value': row[5],
                     'created_at': row[6],
-                    'sql_content': self._decompress_content(row[7])
+                    'sql_content': sql_content
                 }
                 sql_contents.append(content_data)
-            
+
             return sql_contents
-            
+
         except Exception as e:
             app_logger.error(f"SQL 내용 조회 실패 (무시하고 계속 진행): {str(e)}")
             return []
@@ -760,72 +785,76 @@ class SqlContentManager:
     def get_stats(self, project_id: int) -> Dict[str, Any]:
         """
         SQL 내용 통계 조회
-        
+
         Args:
             project_id: 프로젝트 ID
-            
+
         Returns:
             통계 정보
         """
         try:
+            # 단일 DB에서 통계 조회
+            target_db_utils = self.db_utils
+
             # 전체 통계
             total_query = """
-            SELECT 
+            SELECT
                 COUNT(*) as total_sql_contents,
                 SUM(LENGTH(sql_content_compressed)) as total_compressed_size,
                 AVG(LENGTH(sql_content_compressed)) as avg_compressed_size,
                 MAX(LENGTH(sql_content_compressed)) as max_compressed_size,
                 MIN(LENGTH(sql_content_compressed)) as min_compressed_size
-            FROM sql_contents 
+            FROM sql_contents
             WHERE project_id = ? AND del_yn = 'N'
             """
-            
-            total_stats = self.db_utils.execute_query(total_query, (project_id,))
-            
+
+            total_stats = target_db_utils.execute_query(total_query, (project_id,))
+
             # 파일별 통계
             file_query = """
-            SELECT 
+            SELECT
                 file_path, file_name,
                 COUNT(*) as total_sql_contents,
                 SUM(LENGTH(sql_content_compressed)) as total_compressed_size,
                 AVG(LENGTH(sql_content_compressed)) as avg_compressed_size
-            FROM sql_contents 
+            FROM sql_contents
             WHERE project_id = ? AND del_yn = 'N'
             GROUP BY file_path, file_name
             ORDER BY total_compressed_size DESC
             LIMIT 10
             """
-            
-            file_stats = self.db_utils.execute_query(file_query, (project_id,))
-            
+
+            file_stats = target_db_utils.execute_query(file_query, (project_id,))
+
             # 쿼리 타입별 통계
             type_query = """
-            SELECT 
+            SELECT
                 COUNT(*) as total_sql_contents,
                 SUM(LENGTH(sql_content_compressed)) as total_compressed_size,
                 AVG(LENGTH(sql_content_compressed)) as avg_compressed_size
-            FROM sql_contents 
+            FROM sql_contents
             WHERE project_id = ? AND del_yn = 'N'
             ORDER BY total_compressed_size DESC
             """
-            
-            type_stats = self.db_utils.execute_query(type_query, (project_id,))
-            
+
+            type_stats = target_db_utils.execute_query(type_query, (project_id,))
+
             return {
                 'total_stats': total_stats[0] if total_stats else None,
                 'file_stats': file_stats,
                 'type_stats': type_stats
             }
-            
+
         except Exception as e:
             app_logger.error(f"SQL 내용 통계 조회 실패 (무시하고 계속 진행): {str(e)}")
             return {}
-    
+
     def close(self):
         """데이터베이스 연결 해제"""
         if self.db_utils:
             self.db_utils.disconnect()
-            app_logger.info("SQL Content 데이터베이스 연결 해제")
+            db_type = "압축" if self.use_compression else "비압축"
+            app_logger.info(f"SqlContent DB 연결 해제 ({db_type})")
 
     def _load_all_tables(self, project_id: int, conn=None) -> set:
         """
