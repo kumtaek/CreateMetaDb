@@ -1,15 +1,13 @@
 # 처리플로우 상세 - 4단계: Java 소스코드 분석 및 관계 생성 (현행화)
 
-> ⚠️ **현행화 노트(2025-11-23)**: INFERRED 자동 생성/대체 로직은 제거되었고, 모든 단계에서 실제 파일 컨텍스트(`FileContext`)가 없으면 즉시 오류로 중단합니다. 아래 본문에 남아있는 inferred 관련 서술은 역사적 배경이며, 최신 정책은 `11_전역컨텍스트_및_파일출처_관리.md`와 `12_INFERRED_제거_정책_및_오류처리.md`를 참고하세요.
-
 ## 개요
 
 **목적**: Java 파일에서 **연관관계 도출**에 필요한 핵심 정보 추출 및 관계 분석  
 **핵심 기능**: 
 - **3단계 쿼리 분석기 완료**: 메소드-쿼리-테이블-조인조건 도출 완료
 - **1단계 쿼리 추출**: JPA @Query, StringBuilder, String.format에서 순수 SQL 추출 및 SqlContent.db 저장
-- **2단계 테이블 추출**: 설계된 SQL 패턴 기반 테이블 추출 및 INFERRED 테이블 등록
-- **3단계 조인관계 추출**: JOIN_EXPLICIT/JOIN_IMPLICIT 관계 추출 및 INFERRED 컬럼 등록
+- **2단계 테이블 추출**: 설계된 SQL 패턴 기반 테이블 추출
+- **3단계 조인관계 추출**: JOIN_EXPLICIT/JOIN_IMPLICIT 관계 추출
 - **Spring/JPA 지원**: Controller, Repository, Entity 어노테이션 분석
 - **RelationshipBuilder 연동**: 중앙 관계 관리 시스템과 통합
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
@@ -38,7 +36,6 @@
 ### 2단계 - 테이블 추출 (공통 처리)
 - **설계된 SQL 패턴 적용**: FROM, UPDATE, DELETE, INSERT, MERGE, JOIN 패턴에서 테이블 추출
 - **알리아스 처리**: 테이블과 알리아스를 딕셔너리 변수로 저장
-- **INFERRED 테이블 등록**: 존재하지 않는 테이블은 INFERRED로 등록 (table_owner = 'UNKNOWN')
 - **오라클 키워드 필터링**: config 폴더의 오라클 키워드 파일 참조하여 키워드 제외
 
 ### 3단계 - 조인관계 추출 (공통 처리)
@@ -47,7 +44,7 @@
 - **테이블 알리아스 참조**: 2단계에서 넘겨받은 딕셔너리 변수 활용
 - **이퀄 조건 필터링**: `테이블1.컬럼1 = 테이블2.컬럼2` 형태만 조인조건으로 인식
 - **1:N 관계 처리**: columns 테이블 참조하여 PK쪽을 1쪽으로, N쪽을 dst_id로 설정
-- **INFERRED 컬럼 등록**: 존재하지 않는 컬럼은 INFERRED 컬럼으로 등록
+
 
 ## 처리 플로우 차트 (3단계 쿼리 분석기 완료 버전)
 

@@ -10,13 +10,15 @@
 - `sql_content_manager.save_sql_content()`는 `file_context`가 설정되어 있어야 한다.
 - 외부 로더는 호출 전에 `get_file_context_manager().push(...)`로 현재 파일 정보를 설정하고, 처리 완료 후 `pop()`으로 정리한다.
 
-## sqltext 로더(신규) 사용 흐름
+## sqltext 로더 사용 흐름 (최신)
 - 위치: `sqltext_loading.py`
 - 처리 단계:
   1) `projects/{project}/sqltext` 이하 모든 서브폴더 `*.sql` 재귀 스캔.
   2) `files` 테이블에 SQL 파일 저장 (`file_type='SQL'`, 경로는 프로젝트 기준 상대경로).
-  3) `components`에 `component_type='SQL_QUERY'`, `component_name=파일명(확장자 제외)`로 저장.
-  4) `SqlContent.db`에 SQL 본문 저장 (`query_id=파일명`, `file_id` 매핑).
+  3) `components`에 `component_type`을 쿼리 내용으로 추론하여 저장  
+     (`SQL_SELECT/INSERT/UPDATE/DELETE/MERGE` 등, layer=`QUERY_FROM_SQLTEXT`, `component_name=파일명`).
+  4) `SqlContent.db`에 SQL 본문 저장 (`query_id=파일명`, `file_id` 매핑, layer=`QUERY_FROM_SQLTEXT`).
+- 매칭/리포트 시 `component_id` 기준으로 USE_TABLE/조인 정보를 조회하여, 동일한 쿼리 ID라도 파일별로 테이블이 섞이지 않도록 한다.
 - 주의: DB 접근은 싱글톤 `DatabaseUtils`/`SqlContentManager`의 **지속 커넥션**을 사용하며, 커넥션을 임의로 닫지 않는다.
 
 ## 잠금/중복 방지
