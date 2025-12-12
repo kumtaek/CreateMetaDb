@@ -45,7 +45,7 @@ handlers:
   console:
     class: logging.StreamHandler  # 표준 출력 스트림 사용
     level: INFO                  # INFO 레벨 이상의 로그만 출력 (일반 정보 포함)
-    formatter: simple            # 간단한 포맷터 사용
+    formatter: detailed          # 파일/라인 포함 포맷터 사용
     stream: ext://sys.stdout     # 표준 출력 스트림 지정
   
   # 파일 출력 핸들러 - 로그 파일에 저장

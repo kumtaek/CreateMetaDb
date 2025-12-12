@@ -120,7 +120,8 @@ class CommonSqlAnalyzer:
                     if not compressed_sql:
                         continue
                     # 압축 사용 여부에 따라 조건부로 압축 해제
-                    if self.use_compression:
+                    if self.use_compression or (compressed_sql and compressed_sql[:2] == b'\x1f\x8b'):
+                        # 압축 모드이거나 gzip 헤더가 감지되면 압축 해제
                         sql_content = gzip.decompress(compressed_sql).decode('utf-8')
                     else:
                         sql_content = compressed_sql.decode('utf-8')

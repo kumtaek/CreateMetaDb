@@ -8,9 +8,10 @@ SourceAnalyzer 데이터베이스 처리 공통 유틸리티 모듈
 
 import sqlite3
 import os
+import time
 from typing import Optional, List, Dict, Any, Union
 from contextlib import contextmanager
-from .logger import app_logger, handle_error, error, debug
+from .logger import app_logger, handle_error, error, debug, info
 import threading
 
 
@@ -819,11 +820,24 @@ class DatabaseUtils:
                 unique_columns = ['project_id']  # 기본값
             
             processed_count = 0
-            for data in data_list:
+            total_records = len(data_list)
+            start_time = time.time()
+            last_log_time = start_time
+            info(f"[DB-BATCH] {table_name} 저장 시작: 총 {total_records}건")
+
+            for index, data in enumerate(data_list, start=1):
                 result = self.upsert(table_name, data, unique_columns, conn)
                 if result:
                     processed_count += 1
-            
+                current_time = time.time()
+                if current_time - last_log_time >= 1.0:
+                    elapsed = current_time - start_time
+                    info(f"[DB-BATCH] {table_name} 처리중: {index}/{total_records}건 진행 (적용 {processed_count}건, 경과 {elapsed:.1f}초)")
+                    last_log_time = current_time
+
+            total_elapsed = time.time() - start_time
+            info(f"[DB-BATCH] {table_name} 저장 완료: {processed_count}/{total_records}건 적용 (총 {total_elapsed:.2f}초)")
+
             return processed_count
             
         except Exception as e:

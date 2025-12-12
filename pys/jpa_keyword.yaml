@@ -1,0 +1,483 @@
+# JPA JPQL 키워드 정의 파일
+# Jakarta Persistence 3.0 Specification 기반 JPQL 키워드 정의
+
+# JPQL 예약어 (Reserved Keywords)
+jpql_reserved_keywords:
+  # DML 키워드
+  dml_keywords:
+    - "SELECT"
+    - "FROM"
+    - "WHERE"
+    - "GROUP"
+    - "HAVING"
+    - "ORDER"
+    - "BY"
+    - "ASC"
+    - "DESC"
+    - "DISTINCT"
+    - "UPDATE"
+    - "DELETE"
+    - "SET"
+    - "INSERT"
+    - "INTO"
+    - "VALUES"
+  
+  # 조인 키워드
+  join_keywords:
+    - "JOIN"
+    - "INNER"
+    - "LEFT"
+    - "RIGHT"
+    - "OUTER"
+    - "FETCH"
+    - "ON"
+    - "WITH"
+  
+  # 연산자 키워드
+  operator_keywords:
+    - "AND"
+    - "OR"
+    - "NOT"
+    - "IN"
+    - "EXISTS"
+    - "BETWEEN"
+    - "LIKE"
+    - "IS"
+    - "NULL"
+    - "EMPTY"
+    - "MEMBER"
+    - "OF"
+    - "CASE"
+    - "WHEN"
+    - "THEN"
+    - "ELSE"
+    - "END"
+    - "NEW"
+    - "OBJECT"
+    - "FUNCTION"
+    - "COLLECTION"
+    - "INDEX"
+    - "KEY"
+    - "VALUE"
+    - "ENTRY"
+    - "TYPE"
+    - "TREAT"
+    - "CAST"
+  
+  # 집계 함수
+  aggregate_functions:
+    - "COUNT"
+    - "SUM"
+    - "AVG"
+    - "MIN"
+    - "MAX"
+  
+  # 문자열 함수
+  string_functions:
+    - "CONCAT"
+    - "SUBSTRING"
+    - "TRIM"
+    - "LOWER"
+    - "UPPER"
+    - "LENGTH"
+    - "LOCATE"
+  
+  # 수치 함수
+  numeric_functions:
+    - "ABS"
+    - "SQRT"
+    - "MOD"
+    - "SIZE"
+  
+  # 날짜/시간 함수
+  datetime_functions:
+    - "CURRENT_DATE"
+    - "CURRENT_TIME"
+    - "CURRENT_TIMESTAMP"
+
+# JPQL 내장 객체 (Built-in Objects)
+jpql_builtin_objects:
+  # 엔티티 타입
+  entity_types:
+    - "TYPE"
+    - "TREAT"
+  
+  # 컬렉션 함수
+  collection_functions:
+    - "SIZE"
+    - "INDEX"
+    - "KEY"
+    - "VALUE"
+    - "ENTRY"
+  
+  # 날짜/시간 함수
+  datetime_functions:
+    - "CURRENT_DATE"
+    - "CURRENT_TIME"
+    - "CURRENT_TIMESTAMP"
+
+# JPQL 연산자
+jpql_operators:
+  # 산술 연산자
+  arithmetic:
+    - "+"
+    - "-"
+    - "*"
+    - "/"
+    - "MOD"
+  
+  # 비교 연산자
+  comparison:
+    - "="
+    - "!="
+    - "<>"
+    - "<"
+    - ">"
+    - "<="
+    - ">="
+  
+  # 논리 연산자
+  logical:
+    - "AND"
+    - "OR"
+    - "NOT"
+  
+  # 집합 연산자
+  set:
+    - "IN"
+    - "NOT"
+    - "IN"
+    - "EXISTS"
+    - "NOT"
+    - "EXISTS"
+    - "BETWEEN"
+    - "NOT"
+    - "BETWEEN"
+    - "LIKE"
+    - "NOT"
+    - "LIKE"
+    - "IS"
+    - "NULL"
+    - "IS"
+    - "NOT"
+    - "NULL"
+    - "IS"
+    - "EMPTY"
+    - "IS"
+    - "NOT"
+    - "EMPTY"
+    - "MEMBER"
+    - "OF"
+    - "NOT"
+    - "MEMBER"
+    - "OF"
+
+# JPQL 함수
+jpql_functions:
+  # 문자열 함수
+  string_functions:
+    - "CONCAT(string1, string2)"
+    - "SUBSTRING(string, start, length)"
+    - "TRIM([[LEADING|TRAILING|BOTH] char FROM] string)"
+    - "LOWER(string)"
+    - "UPPER(string)"
+    - "LENGTH(string)"
+    - "LOCATE(string1, string2[, start])"
+  
+  # 수치 함수
+  numeric_functions:
+    - "ABS(number)"
+    - "SQRT(number)"
+    - "MOD(number1, number2)"
+    - "SIZE(collection)"
+  
+  # 날짜/시간 함수
+  datetime_functions:
+    - "CURRENT_DATE"
+    - "CURRENT_TIME"
+    - "CURRENT_TIMESTAMP"
+  
+  # 집계 함수
+  aggregate_functions:
+    - "COUNT([DISTINCT] expression)"
+    - "SUM([DISTINCT] expression)"
+    - "AVG([DISTINCT] expression)"
+    - "MIN([DISTINCT] expression)"
+    - "MAX([DISTINCT] expression)"
+
+# JPQL 쿼리 타입
+jpql_query_types:
+  # SELECT 쿼리
+  select_query:
+    - "SELECT"
+    - "FROM"
+    - "WHERE"
+    - "GROUP"
+    - "BY"
+    - "HAVING"
+    - "ORDER"
+    - "BY"
+    - "DISTINCT"
+  
+  # UPDATE 쿼리
+  update_query:
+    - "UPDATE"
+    - "SET"
+    - "WHERE"
+  
+  # DELETE 쿼리
+  delete_query:
+    - "DELETE"
+    - "FROM"
+    - "WHERE"
+
+# JPQL 조인 타입
+jpql_join_types:
+  # 내부 조인
+  inner_join:
+    - "INNER"
+    - "JOIN"
+    - "JOIN"
+  
+  # 외부 조인
+  outer_join:
+    - "LEFT"
+    - "JOIN"
+    - "LEFT"
+    - "OUTER"
+    - "JOIN"
+    - "RIGHT"
+    - "JOIN"
+    - "RIGHT"
+    - "OUTER"
+    - "JOIN"
+  
+  # 페치 조인
+  fetch_join:
+    - "JOIN"
+    - "FETCH"
+    - "LEFT"
+    - "JOIN"
+    - "FETCH"
+    - "RIGHT"
+    - "JOIN"
+    - "FETCH"
+
+# JPQL 서브쿼리
+jpql_subqueries:
+  - "EXISTS"
+  - "NOT"
+  - "EXISTS"
+  - "IN"
+  - "NOT"
+  - "IN"
+  - "ALL"
+  - "ANY"
+  - "SOME"
+
+# JPQL 정규식 패턴
+jpql_patterns:
+  # SELECT 쿼리 패턴
+  select_patterns:
+    - "SELECT\\s+.*?\\s+FROM\\s+"
+    - "SELECT\\s+DISTINCT\\s+.*?\\s+FROM\\s+"
+    - "SELECT\\s+.*?\\s+FROM\\s+.*?\\s+WHERE\\s+"
+    - "SELECT\\s+.*?\\s+FROM\\s+.*?\\s+GROUP\\s+BY\\s+"
+    - "SELECT\\s+.*?\\s+FROM\\s+.*?\\s+ORDER\\s+BY\\s+"
+  
+  # UPDATE 쿼리 패턴
+  update_patterns:
+    - "UPDATE\\s+.*?\\s+SET\\s+"
+    - "UPDATE\\s+.*?\\s+SET\\s+.*?\\s+WHERE\\s+"
+  
+  # DELETE 쿼리 패턴
+  delete_patterns:
+    - "DELETE\\s+FROM\\s+"
+    - "DELETE\\s+FROM\\s+.*?\\s+WHERE\\s+"
+  
+  # 조인 패턴
+  join_patterns:
+    - "JOIN\\s+.*?\\s+ON\\s+"
+    - "LEFT\\s+JOIN\\s+.*?\\s+ON\\s+"
+    - "RIGHT\\s+JOIN\\s+.*?\\s+ON\\s+"
+    - "INNER\\s+JOIN\\s+.*?\\s+ON\\s+"
+    - "JOIN\\s+FETCH\\s+"
+    - "LEFT\\s+JOIN\\s+FETCH\\s+"
+    - "RIGHT\\s+JOIN\\s+FETCH\\s+"
+  
+  # 함수 패턴
+  function_patterns:
+    - "COUNT\\(.*?\\)"
+    - "SUM\\(.*?\\)"
+    - "AVG\\(.*?\\)"
+    - "MIN\\(.*?\\)"
+    - "MAX\\(.*?\\)"
+    - "CONCAT\\(.*?\\)"
+    - "SUBSTRING\\(.*?\\)"
+    - "TRIM\\(.*?\\)"
+    - "LOWER\\(.*?\\)"
+    - "UPPER\\(.*?\\)"
+    - "LENGTH\\(.*?\\)"
+    - "LOCATE\\(.*?\\)"
+    - "ABS\\(.*?\\)"
+    - "SQRT\\(.*?\\)"
+    - "MOD\\(.*?\\)"
+    - "SIZE\\(.*?\\)"
+    - "CURRENT_DATE"
+    - "CURRENT_TIME"
+    - "CURRENT_TIMESTAMP"
+  
+  # 연산자 패턴
+  operator_patterns:
+    - "\\s+AND\\s+"
+    - "\\s+OR\\s+"
+    - "\\s+NOT\\s+"
+    - "\\s+IN\\s+"
+    - "\\s+NOT\\s+IN\\s+"
+    - "\\s+EXISTS\\s+"
+    - "\\s+NOT\\s+EXISTS\\s+"
+    - "\\s+BETWEEN\\s+"
+    - "\\s+NOT\\s+BETWEEN\\s+"
+    - "\\s+LIKE\\s+"
+    - "\\s+NOT\\s+LIKE\\s+"
+    - "\\s+IS\\s+NULL"
+    - "\\s+IS\\s+NOT\\s+NULL"
+    - "\\s+IS\\s+EMPTY"
+    - "\\s+IS\\s+NOT\\s+EMPTY"
+    - "\\s+MEMBER\\s+OF\\s+"
+    - "\\s+NOT\\s+MEMBER\\s+OF\\s+"
+
+# JPQL 엔티티 매핑 키워드
+jpql_entity_mapping:
+  # 엔티티 타입
+  entity_types:
+    - "Entity"
+    - "Table"
+    - "Id"
+    - "GeneratedValue"
+    - "Column"
+    - "JoinColumn"
+    - "OneToOne"
+    - "OneToMany"
+    - "ManyToOne"
+    - "ManyToMany"
+    - "JoinTable"
+    - "Embedded"
+    - "Embeddable"
+    - "Transient"
+    - "Temporal"
+    - "Enumerated"
+    - "Lob"
+    - "OrderBy"
+    - "OrderColumn"
+    - "MapKey"
+    - "MapKeyColumn"
+    - "MapKeyJoinColumn"
+    - "MapKeyTemporal"
+    - "MapKeyEnumerated"
+    - "AttributeOverride"
+    - "AttributeOverrides"
+    - "AssociationOverride"
+    - "AssociationOverrides"
+    - "SecondaryTable"
+    - "SecondaryTables"
+    - "PrimaryKeyJoinColumn"
+    - "PrimaryKeyJoinColumns"
+    - "Inheritance"
+    - "DiscriminatorColumn"
+    - "DiscriminatorValue"
+    - "MappedSuperclass"
+    - "NamedQuery"
+    - "NamedQueries"
+    - "NamedNativeQuery"
+    - "NamedNativeQueries"
+    - "SqlResultSetMapping"
+    - "SqlResultSetMappings"
+    - "ConstructorResult"
+    - "ColumnResult"
+    - "EntityResult"
+    - "FieldResult"
+    - "JoinColumn"
+    - "JoinColumns"
+    - "JoinTable"
+    - "UniqueConstraint"
+    - "Index"
+    - "ForeignKey"
+    - "Check"
+    - "Cacheable"
+    - "Cache"
+    - "ExcludeDefaultListeners"
+    - "ExcludeSuperclassListeners"
+    - "EntityListeners"
+    - "PrePersist"
+    - "PostPersist"
+    - "PreUpdate"
+    - "PostUpdate"
+    - "PreRemove"
+    - "PostRemove"
+    - "PostLoad"
+    - "PreFlush"
+    - "PostFlush"
+
+# JPQL 쿼리 힌트
+jpql_query_hints:
+  - "javax.persistence.query.timeout"
+  - "javax.persistence.fetchgraph"
+  - "javax.persistence.loadgraph"
+  - "javax.persistence.lock.timeout"
+  - "javax.persistence.lock.scope"
+  - "javax.persistence.cache.retrieveMode"
+  - "javax.persistence.cache.storeMode"
+  - "org.hibernate.fetchSize"
+  - "org.hibernate.cacheMode"
+  - "org.hibernate.cacheable"
+  - "org.hibernate.readOnly"
+  - "org.hibernate.flushMode"
+  - "org.hibernate.comment"
+
+# JPQL 락 모드
+jpql_lock_modes:
+  - "PESSIMISTIC_READ"
+  - "PESSIMISTIC_WRITE"
+  - "PESSIMISTIC_FORCE_INCREMENT"
+  - "OPTIMISTIC"
+  - "OPTIMISTIC_FORCE_INCREMENT"
+  - "READ"
+  - "WRITE"
+  - "UPGRADE"
+  - "UPGRADE_NOWAIT"
+  - "UPGRADE_SKIPLOCKED"
+
+# JPQL 페치 타입
+jpql_fetch_types:
+  - "LAZY"
+  - "EAGER"
+
+# JPQL 캐시 모드
+jpql_cache_modes:
+  - "NORMAL"
+  - "GET"
+  - "PUT"
+  - "REFRESH"
+  - "IGNORE"
+
+# JPQL 플러시 모드
+jpql_flush_modes:
+  - "AUTO"
+  - "COMMIT"
+  - "MANUAL"
+
+# JPQL 정렬 방향
+jpql_sort_directions:
+  - "ASC"
+  - "DESC"
+
+# JPQL NULL 처리
+jpql_null_handling:
+  - "NULLS"
+  - "FIRST"
+  - "LAST"
+  - "NULLS"
+  - "FIRST"
+  - "NULLS"
+  - "LAST"

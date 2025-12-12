@@ -1,0 +1,61 @@
+# JSP 키워드 정의 파일 - Phase 1 MVP 버전
+# Jakarta Server Pages 3.1 Specification 기반 JSP 키워드 정의
+# Phase 1 MVP: JSP → Java 메서드 관계만 집중
+
+# Phase 1 MVP: 핵심 JSP 스크립팅 패턴만 포함
+# 스크립틀릿(<%...%>) 및 표현식(<%=...%>)에서 메서드 호출 분석
+
+# JSP 스크립팅 패턴 (Phase 1 MVP - 핵심)
+jsp_scripting_patterns:
+  - '<%([^%]+)%>'  # 스크립틀릿 <%...%> (내용 추출)
+  - '<%=([^%]+)%>'  # 표현식 <%=...%>
+
+# Java 메서드 호출 패턴 (Phase 1 MVP - 핵심)
+java_method_call_patterns:
+  - '(\w+)\.(\w+)\s*\('  # object.method()
+  - '(\w+)\s*\([^)]*\)'  # method()
+
+# JavaScript 함수 패턴 (정답지5 기준: JSP_SCRIPTLET = JavaScript 함수명)
+javascript_function_patterns:
+  - 'function\s+(\w+)\s*\('  # function functionName(
+
+# 클래스명 매핑 (객체명 → 클래스명)
+class_name_mapping:
+  userService: UserService
+  userController: UserController
+  orderService: OrderService
+  productService: ProductService
+  dataService: DataService
+  service: Service
+
+# 메서드-클래스 매핑 (메서드명 → 클래스명)
+method_class_mapping:
+  getUserList: UserService
+  saveUser: UserService
+  deleteUser: UserService
+  getOrderList: OrderService
+  saveOrder: OrderService
+  getProductList: ProductService
+  saveProduct: ProductService
+
+# API 호출 패턴 (JSP에서 백엔드 API 호출 분석)
+api_call_patterns: |
+  \.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?\}
+  \.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?method\s*:\s*["']([^"']+)["'][^}]*?\}
+  \.get\s*\(\s*["']([^"']+)["']
+  \.post\s*\(\s*["']([^"']+)["']
+  \.put\s*\(\s*["']([^"']+)["']
+  \.delete\s*\(\s*["']([^"']+)["']
+  fetch\s*\(\s*["']([^"']+)["']
+  fetch\s*\(\s*["']([^"']+)["'][^)]*method\s*:\s*["']([^"']+)["']
+  url\s*:\s*["']([^"']+)["']
+  \.open\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']
+
+# HTTP 메서드 매핑 (기본값)
+default_http_methods:
+  ajax: GET
+  get: GET
+  post: POST
+  put: PUT
+  delete: DELETE
+  fetch: GET

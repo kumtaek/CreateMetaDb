@@ -221,19 +221,12 @@ class ERDReportGenerator:
             table_comments_map = table_comments_map or {}
             mermaid_lines = ["erDiagram"]
             table_label_map: Dict[str, str] = {}
-            target_table_hits = 0
-            target_rel_hits = 0
             
             # 테이블 정의
             for table_name, columns in tables_data.items():
                 upper_name = table_name.upper()
                 base_name = upper_name[3:] if upper_name.startswith("[I]") else upper_name
                 base_name = base_name.split(".")[-1] if "." in base_name else base_name
-                if base_name == "PLAR_PAFF_BAS":
-                    target_table_hits += 1
-                    app_logger.info(
-                        f"[ERD DEBUG][TABLE] name={table_name}, inferred_prefix={table_name.startswith('[I]')}, columns={len(columns)}"
-                    )
                 # 테이블 표시용 라벨 생성 (테이블명 30바이트, 코멘트 30바이트)
                 label_table_name = self._build_table_label_for_mermaid(
                     table_name,
@@ -311,13 +304,6 @@ class ERDReportGenerator:
                     up = up[3:] if up.startswith("[I]") else up
                     return up.split(".")[-1] if "." in up else up
 
-                if _normalize(rel['src_table']) == "PLAR_PAFF_BAS" or _normalize(rel['dst_table']) == "PLAR_PAFF_BAS":
-                    target_rel_hits += 1
-                    app_logger.info(
-                        f"[ERD DEBUG][REL] {rel['src_table']}.{rel['src_column']} -> {rel['dst_table']}.{rel['dst_column']} "
-                        f"label_src={src_label}, label_dst={dst_label}"
-                    )
-
                 # 중복 관계 제거 (방향성 고려하여 중복 제거)
                 rel_key = f"{src_label}-{dst_label}"
                 reverse_key = f"{dst_label}-{src_label}"
@@ -361,8 +347,6 @@ class ERDReportGenerator:
                 relationship_count += 1
             
             mermaid_code = '\n'.join(mermaid_lines)
-            if target_table_hits or target_rel_hits:
-                app_logger.info(f"[ERD DEBUG] PLAR_PAFF_BAS 관련: 테이블 노드 {target_table_hits}건, 관계 {target_rel_hits}건")
             app_logger.debug("Mermaid ERD 코드 생성 완료")
             return mermaid_code
             

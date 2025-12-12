@@ -1,0 +1,88 @@
+# 범용 프론트엔드 파서 설정 파일
+# JSP, JSX, Vue, TS, JS, HTML 파일의 API 호출 패턴 정의
+# 기존 JSP 설정을 기반으로 JavaScript 전용 패턴 추가
+
+# JSP API 호출 패턴 (기존 JSP 설정 재사용)
+api_call_patterns: |
+  \.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?\}
+  \.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?method\s*:\s*["']([^"']+)["'][^}]*?\}
+  \.get\s*\(\s*["']([^"']+)["']
+  \.post\s*\(\s*["']([^"']+)["']
+  \.put\s*\(\s*["']([^"']+)["']
+  \.delete\s*\(\s*["']([^"']+)["']
+  fetch\s*\(\s*["']([^"']+)["']
+  fetch\s*\(\s*["']([^"']+)["'][^)]*method\s*:\s*["']([^"']+)["']
+  url\s*:\s*["']([^"']+)["']
+  \.open\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']
+
+# JavaScript 전용 API 호출 패턴 추가
+javascript_api_patterns: |
+  # Axios 패턴
+  axios\.get\s*\(\s*["']([^"']+)["']
+  axios\.post\s*\(\s*["']([^"']+)["']
+  axios\.put\s*\(\s*["']([^"']+)["']
+  axios\.delete\s*\(\s*["']([^"']+)["']
+  axios\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?\}
+  axios\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?method\s*:\s*["']([^"']+)["'][^}]*?\}
+  
+  # Fetch API 패턴 (더 상세)
+  fetch\s*\(\s*["']([^"']+)["']\s*,\s*\{[^}]*?method\s*:\s*["']([^"']+)["']
+  fetch\s*\(\s*["']([^"']+)["']\s*,\s*\{[^}]*?method\s*:\s*["']([^"']+)["'][^}]*?\}
+  
+  # jQuery 패턴 (더 상세)
+  \$\.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?\}
+  \$\.ajax\s*\(\s*\{[^}]*?url\s*:\s*["']([^"']+)["'][^}]*?method\s*:\s*["']([^"']+)["'][^}]*?\}
+  \$\.get\s*\(\s*["']([^"']+)["']
+  \$\.post\s*\(\s*["']([^"']+)["']
+  \$\.getJSON\s*\(\s*["']([^"']+)["']
+  
+  # XMLHttpRequest 패턴
+  \.open\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']
+  request\.open\s*\(\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']
+  
+  # React/Vue 패턴
+  this\.\$http\.get\s*\(\s*["']([^"']+)["']
+  this\.\$http\.post\s*\(\s*["']([^"']+)["']
+  this\.\$http\.put\s*\(\s*["']([^"']+)["']
+  this\.\$http\.delete\s*\(\s*["']([^"']+)["']
+  
+  # Angular 패턴
+  http\.get\s*\(\s*["']([^"']+)["']
+  http\.post\s*\(\s*["']([^"']+)["']
+  http\.put\s*\(\s*["']([^"']+)["']
+  http\.delete\s*\(\s*["']([^"']+)["']
+
+# HTTP 메서드 매핑 (기본값)
+default_http_methods:
+  ajax: GET
+  get: GET
+  post: POST
+  put: PUT
+  delete: DELETE
+  fetch: GET
+  axios: GET
+  xhr: GET
+
+# 컴포넌트 추출 패턴
+component_patterns:
+  # React/JSX 패턴
+  react_function: 'function\s+(\w+)\s*\('
+  react_const: 'const\s+(\w+)\s*=\s*\('
+  react_class: 'class\s+(\w+)\s+extends'
+  react_export: 'export\s+default\s+function\s+(\w+)'
+  
+  # Vue 패턴
+  vue_template: '<template[^>]*>'
+  vue_script: '<script[^>]*>'
+  vue_style: '<style[^>]*>'
+  
+  # JavaScript 패턴
+  js_function: 'function\s+(\w+)\s*\('
+  js_class: 'class\s+(\w+)'
+  js_const_function: 'const\s+(\w+)\s*=\s*function'
+  js_export: 'export\s+default\s+function\s+(\w+)'
+  
+  # HTML 패턴
+  html_form: '<form[^>]*>'
+  html_input: '<input[^>]*>'
+  html_button: '<button[^>]*>'

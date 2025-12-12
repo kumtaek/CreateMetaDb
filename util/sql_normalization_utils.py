@@ -45,7 +45,7 @@ def normalize_sql_loose(
     if not sql_content:
         return ""
 
-    sql = sql_content
+    sql = sql_content.replace('\r\n', '\n').replace('\n\r', '\n').replace('\r', '\n')
 
     # 태그 제거
     if remove_tags:
@@ -53,10 +53,10 @@ def normalize_sql_loose(
 
     # 주석 제거
     if remove_comments:
-        # 한 줄 주석 (--, // ... CR/LF까지)
-        sql = re.sub(r"--[^\r\n]*", "", sql)
-        sql = re.sub(r"//[^\r\n]*", "", sql)
-        sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
+        # 한 줄 주석 (--, // ... CR/LF까지) - 개행 유지
+        sql = re.sub(r"--[^\r\n]*", "\n", sql)
+        sql = re.sub(r"//[^\r\n]*", "\n", sql)
+        sql = re.sub(r"/\*.*?\*/", "\n", sql, flags=re.DOTALL)
 
     # 바인딩 파라미터 단순화
     if remove_bind_params:

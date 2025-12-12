@@ -105,13 +105,6 @@ class ERDMetadataService:
             raw_table_names = [t[3:] if t.startswith('[I]') else t for t in tables_with_relationships]
             # 테이블명 -> [I] 접두어 여부 매핑
             inferred_table_map = {(t[3:] if t.startswith('[I]') else t): t.startswith('[I]') for t in tables_with_relationships}
-            # 관계 기준 테이블명 로그 (디버깅용)
-            app_logger.info(f"[ERD DEBUG] 관계 기준 테이블 목록 (raw): {raw_table_names}")
-            # PLAR/PLAF/SM.PLAR 패턴 필터링 로그
-            for nm in raw_table_names:
-                up_nm = (nm or '').upper()
-                if up_nm in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
-                    app_logger.info(f"[ERD DEBUG][REL-RAW] table={nm}, inferred_prefix={inferred_table_map.get(nm, False)}")
 
             # IN 절을 위한 플레이스홀더 생성
             placeholders = ','.join(['?' for _ in raw_table_names])
@@ -146,11 +139,6 @@ class ERDMetadataService:
             missing_tables = [name for name in raw_table_names if name not in returned_names]
             if missing_tables:
                 app_logger.info(f"[ERD DEBUG] 테이블 메타 누락 감지: {missing_tables}")
-                # PLAR/PLAF 패턴 특화 로그
-                for mt in missing_tables:
-                    upper_mt = (mt or '').upper()
-                    if upper_mt in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
-                        app_logger.info(f"[ERD DEBUG] PLAR/PLAF/PAFF 관련 누락 테이블: {mt} (inferred={inferred_table_map.get(mt, False)})")
 
             # 테이블별로 데이터 그룹화 (INFERRED 테이블은 [I] 접두어 추가)
             tables_data = {}
@@ -319,10 +307,6 @@ class ERDMetadataService:
                 table_name = row['table_name']
                 file_type = row.get('file_type')
                 upper_name = (table_name or '').upper()
-                if upper_name in ('PLAR_PAFF_BAS', 'PLAF_PAFF_BAS', 'SM.PLAR_PAFF_BAS', 'SM_PLAR_PAFF_BAS'):
-                    app_logger.info(
-                        f"[ERD DEBUG][REL-TABLE] name={table_name}, file_type={file_type}, inferred_flag={row['is_inferred']}"
-                    )
                 if row['is_inferred']:
                     table_name = f"[I]{table_name}"
                 table_names.append(table_name)

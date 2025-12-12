@@ -1,0 +1,647 @@
+# CSS3 키워드 정의 파일
+# CSS3, CSS Grid, CSS Flexbox, CSS Animations 등 모든 CSS 키워드 정의
+
+# CSS 기본 속성
+css_basic_properties:
+  # 레이아웃
+  layout:
+    - "display"
+    - "position"
+    - "top"
+    - "right"
+    - "bottom"
+    - "left"
+    - "z-index"
+    - "float"
+    - "clear"
+    - "overflow"
+    - "overflow-x"
+    - "overflow-y"
+    - "clip"
+    - "visibility"
+  
+  # 박스 모델
+  box_model:
+    - "width"
+    - "height"
+    - "min-width"
+    - "min-height"
+    - "max-width"
+    - "max-height"
+    - "margin"
+    - "margin-top"
+    - "margin-right"
+    - "margin-bottom"
+    - "margin-left"
+    - "padding"
+    - "padding-top"
+    - "padding-right"
+    - "padding-bottom"
+    - "padding-left"
+    - "border"
+    - "border-width"
+    - "border-style"
+    - "border-color"
+    - "border-top"
+    - "border-right"
+    - "border-bottom"
+    - "border-left"
+    - "border-radius"
+    - "border-top-left-radius"
+    - "border-top-right-radius"
+    - "border-bottom-left-radius"
+    - "border-bottom-right-radius"
+    - "box-sizing"
+    - "box-shadow"
+    - "outline"
+    - "outline-width"
+    - "outline-style"
+    - "outline-color"
+    - "outline-offset"
+  
+  # 타이포그래피
+  typography:
+    - "font"
+    - "font-family"
+    - "font-size"
+    - "font-weight"
+    - "font-style"
+    - "font-variant"
+    - "font-stretch"
+    - "line-height"
+    - "text-align"
+    - "text-decoration"
+    - "text-indent"
+    - "text-shadow"
+    - "text-transform"
+    - "letter-spacing"
+    - "word-spacing"
+    - "white-space"
+    - "word-wrap"
+    - "word-break"
+    - "text-overflow"
+    - "vertical-align"
+    - "direction"
+    - "unicode-bidi"
+  
+  # 색상 및 배경
+  color_background:
+    - "color"
+    - "background"
+    - "background-color"
+    - "background-image"
+    - "background-repeat"
+    - "background-attachment"
+    - "background-position"
+    - "background-size"
+    - "background-clip"
+    - "background-origin"
+    - "opacity"
+  
+  # 리스트
+  list:
+    - "list-style"
+    - "list-style-type"
+    - "list-style-position"
+    - "list-style-image"
+  
+  # 테이블
+  table:
+    - "table-layout"
+    - "border-collapse"
+    - "border-spacing"
+    - "caption-side"
+    - "empty-cells"
+
+# CSS3 새로운 속성
+css3_new_properties:
+  # 선택자
+  selectors:
+    - ":nth-child()"
+    - ":nth-last-child()"
+    - ":nth-of-type()"
+    - ":nth-last-of-type()"
+    - ":first-of-type"
+    - ":last-of-type"
+    - ":only-child"
+    - ":only-of-type"
+    - ":empty"
+    - ":target"
+    - ":enabled"
+    - ":disabled"
+    - ":checked"
+    - ":indeterminate"
+    - ":root"
+    - ":not()"
+    - ":lang()"
+    - ":focus"
+    - ":hover"
+    - ":active"
+    - ":visited"
+    - ":link"
+    - ":before"
+    - ":after"
+    - ":first-letter"
+    - ":first-line"
+  
+  # 박스 모델 확장
+  box_model_extensions:
+    - "box-shadow"
+    - "border-radius"
+    - "border-image"
+    - "border-image-source"
+    - "border-image-slice"
+    - "border-image-width"
+    - "border-image-outset"
+    - "border-image-repeat"
+    - "box-sizing"
+    - "resize"
+    - "outline-offset"
+  
+  # 배경 확장
+  background_extensions:
+    - "background-size"
+    - "background-clip"
+    - "background-origin"
+    - "background-attachment"
+    - "multiple-backgrounds"
+  
+  # 텍스트 효과
+  text_effects:
+    - "text-shadow"
+    - "text-overflow"
+    - "word-wrap"
+    - "word-break"
+    - "text-align-last"
+    - "text-justify"
+  
+  # 2D 변환
+  transform_2d:
+    - "transform"
+    - "transform-origin"
+    - "transform-style"
+    - "perspective"
+    - "perspective-origin"
+    - "backface-visibility"
+  
+  # 3D 변환
+  transform_3d:
+    - "transform: translateX()"
+    - "transform: translateY()"
+    - "transform: translateZ()"
+    - "transform: translate3d()"
+    - "transform: rotateX()"
+    - "transform: rotateY()"
+    - "transform: rotateZ()"
+    - "transform: rotate3d()"
+    - "transform: scaleX()"
+    - "transform: scaleY()"
+    - "transform: scaleZ()"
+    - "transform: scale3d()"
+    - "transform: skewX()"
+    - "transform: skewY()"
+    - "transform: skew()"
+    - "transform: matrix()"
+    - "transform: matrix3d()"
+  
+  # 전환
+  transitions:
+    - "transition"
+    - "transition-property"
+    - "transition-duration"
+    - "transition-timing-function"
+    - "transition-delay"
+  
+  # 애니메이션
+  animations:
+    - "animation"
+    - "animation-name"
+    - "animation-duration"
+    - "animation-timing-function"
+    - "animation-delay"
+    - "animation-iteration-count"
+    - "animation-direction"
+    - "animation-fill-mode"
+    - "animation-play-state"
+    - "@keyframes"
+  
+  # 미디어 쿼리
+  media_queries:
+    - "@media"
+    - "screen"
+    - "print"
+    - "all"
+    - "min-width"
+    - "max-width"
+    - "min-height"
+    - "max-height"
+    - "orientation"
+    - "aspect-ratio"
+    - "device-aspect-ratio"
+    - "resolution"
+    - "color"
+    - "color-index"
+    - "monochrome"
+    - "scan"
+    - "grid"
+  
+  # 다중 컬럼
+  multi_column:
+    - "columns"
+    - "column-count"
+    - "column-width"
+    - "column-gap"
+    - "column-rule"
+    - "column-rule-width"
+    - "column-rule-style"
+    - "column-rule-color"
+    - "column-span"
+    - "column-fill"
+    - "break-before"
+    - "break-after"
+    - "break-inside"
+  
+  # 사용자 인터페이스
+  user_interface:
+    - "appearance"
+    - "box-sizing"
+    - "icon"
+    - "nav-index"
+    - "nav-up"
+    - "nav-right"
+    - "nav-down"
+    - "nav-left"
+    - "outline-offset"
+    - "resize"
+    - "text-overflow"
+
+# CSS Flexbox
+css_flexbox:
+  # Flex 컨테이너
+  flex_container:
+    - "display: flex"
+    - "display: inline-flex"
+    - "flex-direction"
+    - "flex-wrap"
+    - "flex-flow"
+    - "justify-content"
+    - "align-items"
+    - "align-content"
+  
+  # Flex 아이템
+  flex_items:
+    - "order"
+    - "flex-grow"
+    - "flex-shrink"
+    - "flex-basis"
+    - "flex"
+    - "align-self"
+  
+  # Flex 값
+  flex_values:
+    - "row"
+    - "row-reverse"
+    - "column"
+    - "column-reverse"
+    - "nowrap"
+    - "wrap"
+    - "wrap-reverse"
+    - "flex-start"
+    - "flex-end"
+    - "center"
+    - "space-between"
+    - "space-around"
+    - "space-evenly"
+    - "stretch"
+    - "baseline"
+    - "auto"
+    - "initial"
+    - "inherit"
+
+# CSS Grid
+css_grid:
+  # Grid 컨테이너
+  grid_container:
+    - "display: grid"
+    - "display: inline-grid"
+    - "grid-template-columns"
+    - "grid-template-rows"
+    - "grid-template-areas"
+    - "grid-template"
+    - "grid-column-gap"
+    - "grid-row-gap"
+    - "grid-gap"
+    - "justify-items"
+    - "align-items"
+    - "justify-content"
+    - "align-content"
+    - "grid-auto-columns"
+    - "grid-auto-rows"
+    - "grid-auto-flow"
+  
+  # Grid 아이템
+  grid_items:
+    - "grid-column-start"
+    - "grid-column-end"
+    - "grid-column"
+    - "grid-row-start"
+    - "grid-row-end"
+    - "grid-row"
+    - "grid-area"
+    - "justify-self"
+    - "align-self"
+  
+  # Grid 함수
+  grid_functions:
+    - "repeat()"
+    - "minmax()"
+    - "fit-content()"
+    - "auto-fit"
+    - "auto-fill"
+  
+  # Grid 키워드
+  grid_keywords:
+    - "span"
+    - "auto"
+    - "min-content"
+    - "max-content"
+    - "fit-content"
+    - "fr"
+    - "px"
+    - "em"
+    - "rem"
+    - "%"
+    - "vh"
+    - "vw"
+    - "vmin"
+    - "vmax"
+
+# CSS 색상
+css_colors:
+  # 기본 색상
+  basic_colors:
+    - "red"
+    - "green"
+    - "blue"
+    - "yellow"
+    - "orange"
+    - "purple"
+    - "pink"
+    - "brown"
+    - "black"
+    - "white"
+    - "gray"
+    - "grey"
+    - "transparent"
+  
+  # 색상 함수
+  color_functions:
+    - "rgb()"
+    - "rgba()"
+    - "hsl()"
+    - "hsla()"
+    - "hwb()"
+    - "lab()"
+    - "lch()"
+    - "oklab()"
+    - "oklch()"
+    - "color()"
+  
+  # 색상 키워드
+  color_keywords:
+    - "currentColor"
+    - "inherit"
+    - "initial"
+    - "unset"
+
+# CSS 단위
+css_units:
+  # 절대 단위
+  absolute_units:
+    - "px"
+    - "pt"
+    - "pc"
+    - "in"
+    - "cm"
+    - "mm"
+    - "Q"
+  
+  # 상대 단위
+  relative_units:
+    - "em"
+    - "rem"
+    - "ex"
+    - "ch"
+    - "vw"
+    - "vh"
+    - "vmin"
+    - "vmax"
+    - "%"
+    - "fr"
+  
+  # 각도 단위
+  angle_units:
+    - "deg"
+    - "rad"
+    - "grad"
+    - "turn"
+  
+  # 시간 단위
+  time_units:
+    - "s"
+    - "ms"
+  
+  # 주파수 단위
+  frequency_units:
+    - "Hz"
+    - "kHz"
+
+# CSS 함수
+css_functions:
+  # 수학 함수
+  math_functions:
+    - "calc()"
+    - "min()"
+    - "max()"
+    - "clamp()"
+    - "abs()"
+    - "sign()"
+    - "round()"
+    - "mod()"
+    - "rem()"
+    - "pow()"
+    - "sqrt()"
+    - "hypot()"
+    - "sin()"
+    - "cos()"
+    - "tan()"
+    - "asin()"
+    - "acos()"
+    - "atan()"
+    - "atan2()"
+  
+  # 색상 함수
+  color_functions:
+    - "rgb()"
+    - "rgba()"
+    - "hsl()"
+    - "hsla()"
+    - "hwb()"
+    - "lab()"
+    - "lch()"
+    - "oklab()"
+    - "oklch()"
+    - "color()"
+  
+  # 변환 함수
+  transform_functions:
+    - "translate()"
+    - "translateX()"
+    - "translateY()"
+    - "translateZ()"
+    - "translate3d()"
+    - "rotate()"
+    - "rotateX()"
+    - "rotateY()"
+    - "rotateZ()"
+    - "rotate3d()"
+    - "scale()"
+    - "scaleX()"
+    - "scaleY()"
+    - "scaleZ()"
+    - "scale3d()"
+    - "skew()"
+    - "skewX()"
+    - "skewY()"
+    - "matrix()"
+    - "matrix3d()"
+    - "perspective()"
+  
+  # 기타 함수
+  other_functions:
+    - "var()"
+    - "attr()"
+    - "url()"
+    - "counter()"
+    - "counters()"
+    - "linear-gradient()"
+    - "radial-gradient()"
+    - "conic-gradient()"
+    - "repeating-linear-gradient()"
+    - "repeating-radial-gradient()"
+    - "repeating-conic-gradient()"
+    - "image()"
+    - "image-set()"
+    - "element()"
+    - "cross-fade()"
+    - "blur()"
+    - "brightness()"
+    - "contrast()"
+    - "drop-shadow()"
+    - "grayscale()"
+    - "hue-rotate()"
+    - "invert()"
+    - "opacity()"
+    - "saturate()"
+    - "sepia()"
+    - "filter()"
+    - "backdrop-filter()"
+
+# CSS 애니메이션 타이밍 함수
+css_timing_functions:
+  - "ease"
+  - "ease-in"
+  - "ease-out"
+  - "ease-in-out"
+  - "linear"
+  - "step-start"
+  - "step-end"
+  - "steps()"
+  - "cubic-bezier()"
+
+# CSS 미디어 쿼리
+css_media_queries:
+  # 미디어 타입
+  media_types:
+    - "all"
+    - "screen"
+    - "print"
+    - "speech"
+  
+  # 미디어 기능
+  media_features:
+    - "width"
+    - "min-width"
+    - "max-width"
+    - "height"
+    - "min-height"
+    - "max-height"
+    - "aspect-ratio"
+    - "min-aspect-ratio"
+    - "max-aspect-ratio"
+    - "orientation"
+    - "resolution"
+    - "min-resolution"
+    - "max-resolution"
+    - "color"
+    - "min-color"
+    - "max-color"
+    - "color-index"
+    - "min-color-index"
+    - "max-color-index"
+    - "monochrome"
+    - "min-monochrome"
+    - "max-monochrome"
+    - "scan"
+    - "grid"
+    - "hover"
+    - "any-hover"
+    - "pointer"
+    - "any-pointer"
+    - "prefers-reduced-motion"
+    - "prefers-color-scheme"
+    - "prefers-contrast"
+    - "prefers-reduced-transparency"
+    - "prefers-reduced-data"
+    - "inverted-colors"
+    - "forced-colors"
+    - "scripting"
+
+# CSS 정규식 패턴
+css_regex_patterns:
+  # CSS 속성 패턴
+  property_patterns:
+    - "[a-zA-Z-]+\\s*:"
+    - "\\.[a-zA-Z-]+\\s*\\{"
+    - "#[a-zA-Z-]+\\s*\\{"
+    - "@[a-zA-Z-]+"
+  
+  # CSS 값 패턴
+  value_patterns:
+    - "\\d+px"
+    - "\\d+em"
+    - "\\d+rem"
+    - "\\d+%"
+    - "\\d+vh"
+    - "\\d+vw"
+    - "rgb\\([^)]+\\)"
+    - "rgba\\([^)]+\\)"
+    - "hsl\\([^)]+\\)"
+    - "hsla\\([^)]+\\)"
+    - "url\\([^)]+\\)"
+    - "linear-gradient\\([^)]+\\)"
+    - "radial-gradient\\([^)]+\\)"
+  
+  # CSS 선택자 패턴
+  selector_patterns:
+    - "\\.[a-zA-Z-]+"
+    - "#[a-zA-Z-]+"
+    - "[a-zA-Z]+"
+    - "\\*"
+    - "\\[.*?\\]"
+    - ":.*?"
+    - "::.*?"
+    - "\\+"
+    - "~"
+    - ">"
+    - "\\s"

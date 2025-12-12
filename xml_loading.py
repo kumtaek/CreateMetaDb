@@ -140,6 +140,14 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     )
                     
                     analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
+                    if is_target_dbio:
+                        join_stats = analysis_result.get('join_analysis_stats') or {}
+                        info(
+                            f"[DBIO DEBUG] 분석 결과 요약: file={unix_relative_path} "
+                            f"has_error={analysis_result.get('has_error')} "
+                            f"sql_count={len(analysis_result.get('sql_queries') or [])} "
+                            f"join_stats={join_stats}"
+                        )
                     
                     if analysis_result.get('has_error') == 'Y':
                         self.stats['errors'] += 1
@@ -169,6 +177,7 @@ class XmlLoadingEngine(BaseLoadingEngine):
                                 query_type=query_type,
                                 hash_value=sql_query.get('hash_value'),
                                 component_name=query_id,
+                                raw_sql_content=sql_query.get('raw_sql_content'),
                                 debug_source_file=file_name,
                                 debug_source_path=unix_relative_path,
                                 debug_hint="DBIO_TARGET" if is_target_query else None,
@@ -177,6 +186,8 @@ class XmlLoadingEngine(BaseLoadingEngine):
 
                             if is_target_query:
                                 info(f"[DBIO DEBUG] SqlContent 저장 결과: query_id={query_id}, saved={saved}")
+                                if not saved:
+                                    warning(f"[DBIO DEBUG] SqlContent 저장 실패 - query_id={query_id}, file={unix_relative_path}")
 
                         if saved_any:
                             self.stats['sql_components_created'] += 1
@@ -191,9 +202,9 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     self.stats['xml_files_processed'] += 1
                     self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
 
-                    # 진행 상황 로그 (10초 간격, 최소 1건 처리 후)
+                    # 진행 상황 로그 (1초 간격, 최소 1건 처리 후)
                     now = time.time()
-                    if now - last_progress_log >= 10:
+                    if now - last_progress_log >= 1:
                         app_logger.info(
                             f"[XML PROGRESS] {idx}/{total_files} files processed "
                             f"(queries={self.stats['sql_queries_extracted']}, joins={self.stats['join_relationships_created']}, errors={self.stats['errors']})"

@@ -1,0 +1,442 @@
+# jQuery 키워드 정의 파일
+# jQuery Core, jQuery UI, jQuery Mobile API 키워드 정의
+
+# jQuery 핵심 키워드
+jquery_core:
+  # jQuery 기본
+  basic_keywords:
+    - "$"
+    - "jQuery"
+    - "jQuery.noConflict"
+    - "jQuery.ready"
+  
+  # 선택자
+  selectors:
+    - "$()"
+    - "$(document)"
+    - "$(window)"
+    - "$(this)"
+    - "$(element)"
+    - "$(selector)"
+    - "$(html)"
+    - "$(callback)"
+
+# jQuery 선택자
+jquery_selectors:
+  # 기본 선택자
+  basic_selectors:
+    - "#id"
+    - ".class"
+    - "element"
+    - "*"
+    - "selector1, selector2"
+  
+  # 계층 선택자
+  hierarchy_selectors:
+    - "parent > child"
+    - "ancestor descendant"
+    - "prev + next"
+    - "prev ~ siblings"
+  
+  # 속성 선택자
+  attribute_selectors:
+    - "[attribute]"
+    - "[attribute=value]"
+    - "[attribute!=value]"
+    - "[attribute^=value]"
+    - "[attribute$=value]"
+    - "[attribute*=value]"
+    - "[attribute~=value]"
+    - "[attribute|=value]"
+  
+  # 필터 선택자
+  filter_selectors:
+    - ":first"
+    - ":last"
+    - ":even"
+    - ":odd"
+    - ":eq(index)"
+    - ":gt(index)"
+    - ":lt(index)"
+    - ":header"
+    - ":animated"
+    - ":focus"
+    - ":root"
+    - ":target"
+    - ":lang(language)"
+    - ":not(selector)"
+    - ":has(selector)"
+    - ":empty"
+    - ":parent"
+    - ":contains(text)"
+    - ":visible"
+    - ":hidden"
+
+# jQuery DOM 조작
+jquery_dom_manipulation:
+  # 요소 생성
+  element_creation:
+    - "$(html)"
+    - "$(element)"
+    - "$(array)"
+    - "$(object)"
+  
+  # 요소 삽입
+  element_insertion:
+    - ".append()"
+    - ".appendTo()"
+    - ".prepend()"
+    - ".prependTo()"
+    - ".after()"
+    - ".insertAfter()"
+    - ".before()"
+    - ".insertBefore()"
+    - ".wrap()"
+    - ".wrapAll()"
+    - ".wrapInner()"
+  
+  # 요소 제거
+  element_removal:
+    - ".remove()"
+    - ".detach()"
+    - ".empty()"
+    - ".unwrap()"
+  
+  # 요소 복사
+  element_copying:
+    - ".clone()"
+    - ".clone(true)"
+  
+  # 요소 교체
+  element_replacement:
+    - ".replaceWith()"
+    - ".replaceAll()"
+
+# jQuery 속성 조작
+jquery_attributes:
+  # 일반 속성
+  general_attributes:
+    - ".attr()"
+    - ".removeAttr()"
+    - ".prop()"
+    - ".removeProp()"
+  
+  # 클래스 조작
+  class_manipulation:
+    - ".addClass()"
+    - ".removeClass()"
+    - ".toggleClass()"
+    - ".hasClass()"
+  
+  # HTML/텍스트 조작
+  html_text_manipulation:
+    - ".html()"
+    - ".text()"
+    - ".val()"
+  
+  # 데이터 속성
+  data_attributes:
+    - ".data()"
+    - ".removeData()"
+
+# jQuery CSS 조작
+jquery_css:
+  # CSS 속성
+  css_properties:
+    - ".css()"
+    - ".css(property)"
+    - ".css(property, value)"
+    - ".css(properties)"
+  
+  # 위치 및 크기
+  position_size:
+    - ".offset()"
+    - ".position()"
+    - ".scrollTop()"
+    - ".scrollLeft()"
+    - ".height()"
+    - ".width()"
+    - ".innerHeight()"
+    - ".innerWidth()"
+    - ".outerHeight()"
+    - ".outerWidth()"
+
+# jQuery 이벤트
+jquery_events:
+  # 이벤트 바인딩
+  event_binding:
+    - ".on()"
+    - ".off()"
+    - ".one()"
+    - ".trigger()"
+    - ".triggerHandler()"
+  
+  # 마우스 이벤트
+  mouse_events:
+    - ".click()"
+    - ".dblclick()"
+    - ".mousedown()"
+    - ".mouseup()"
+    - ".mousemove()"
+    - ".mouseover()"
+    - ".mouseout()"
+    - ".mouseenter()"
+    - ".mouseleave()"
+    - ".hover()"
+    - ".contextmenu()"
+  
+  # 키보드 이벤트
+  keyboard_events:
+    - ".keydown()"
+    - ".keyup()"
+    - ".keypress()"
+  
+  # 폼 이벤트
+  form_events:
+    - ".submit()"
+    - ".change()"
+    - ".focus()"
+    - ".blur()"
+    - ".focusin()"
+    - ".focusout()"
+    - ".select()"
+  
+  # 윈도우 이벤트
+  window_events:
+    - ".load()"
+    - ".unload()"
+    - ".resize()"
+    - ".scroll()"
+    - ".error()"
+  
+  # 터치 이벤트
+  touch_events:
+    - ".touchstart()"
+    - ".touchend()"
+    - ".touchmove()"
+    - ".touchcancel()"
+
+# jQuery 효과
+jquery_effects:
+  # 기본 효과
+  basic_effects:
+    - ".show()"
+    - ".hide()"
+    - ".toggle()"
+  
+  # 페이드 효과
+  fade_effects:
+    - ".fadeIn()"
+    - ".fadeOut()"
+    - ".fadeToggle()"
+    - ".fadeTo()"
+  
+  # 슬라이드 효과
+  slide_effects:
+    - ".slideDown()"
+    - ".slideUp()"
+    - ".slideToggle()"
+  
+  # 사용자 정의 애니메이션
+  custom_animation:
+    - ".animate()"
+    - ".stop()"
+    - ".finish()"
+    - ".delay()"
+
+# jQuery AJAX
+jquery_ajax:
+  # AJAX 메서드
+  ajax_methods:
+    - "$.ajax()"
+    - "$.get()"
+    - "$.post()"
+    - "$.getJSON()"
+    - "$.getScript()"
+    - "$.load()"
+  
+  # AJAX 설정
+  ajax_settings:
+    - "url"
+    - "type"
+    - "data"
+    - "dataType"
+    - "success"
+    - "error"
+    - "complete"
+    - "beforeSend"
+    - "timeout"
+    - "cache"
+    - "async"
+    - "contentType"
+    - "processData"
+  
+  # AJAX 이벤트
+  ajax_events:
+    - ".ajaxStart()"
+    - ".ajaxStop()"
+    - ".ajaxComplete()"
+    - ".ajaxError()"
+    - ".ajaxSuccess()"
+    - ".ajaxSend()"
+
+# jQuery 유틸리티
+jquery_utilities:
+  # 배열/객체 유틸리티
+  array_object_utilities:
+    - "$.each()"
+    - "$.map()"
+    - "$.grep()"
+    - "$.merge()"
+    - "$.inArray()"
+    - "$.unique()"
+    - "$.makeArray()"
+    - "$.extend()"
+    - "$.isEmptyObject()"
+    - "$.isPlainObject()"
+    - "$.isArray()"
+    - "$.isFunction()"
+    - "$.isNumeric()"
+    - "$.isWindow()"
+    - "$.isXMLDoc()"
+    - "$.type()"
+    - "$.parseJSON()"
+    - "$.parseXML()"
+    - "$.trim()"
+    - "$.param()"
+    - "$.serialize()"
+    - "$.serializeArray()"
+  
+  # 브라우저 감지
+  browser_detection:
+    - "$.browser"
+    - "$.support"
+    - "$.boxModel"
+  
+  # 기타 유틸리티
+  other_utilities:
+    - "$.noop()"
+    - "$.now()"
+    - "$.proxy()"
+    - "$.when()"
+    - "$.Deferred()"
+
+# jQuery UI 위젯
+jquery_ui_widgets:
+  # 상호작용 위젯
+  interaction_widgets:
+    - ".draggable()"
+    - ".droppable()"
+    - ".resizable()"
+    - ".selectable()"
+    - ".sortable()"
+  
+  # 위젯
+  widgets:
+    - ".accordion()"
+    - ".autocomplete()"
+    - ".button()"
+    - ".datepicker()"
+    - ".dialog()"
+    - ".menu()"
+    - ".progressbar()"
+    - ".slider()"
+    - ".spinner()"
+    - ".tabs()"
+    - ".tooltip()"
+  
+  # 효과
+  effects:
+    - ".addClass()"
+    - ".removeClass()"
+    - ".toggleClass()"
+    - ".switchClass()"
+    - ".effect()"
+    - ".hide()"
+    - ".show()"
+    - ".toggle()"
+
+# jQuery Mobile
+jquery_mobile:
+  # 페이지
+  pages:
+    - "data-role=\"page\""
+    - "data-role=\"header\""
+    - "data-role=\"content\""
+    - "data-role=\"footer\""
+  
+  # 네비게이션
+  navigation:
+    - "data-role=\"navbar\""
+    - "data-role=\"listview\""
+    - "data-role=\"button\""
+    - "data-role=\"link\""
+  
+  # 폼
+  forms:
+    - "data-role=\"fieldcontain\""
+    - "data-role=\"controlgroup\""
+    - "data-role=\"slider\""
+    - "data-role=\"flipswitch\""
+  
+  # 팝업
+  popups:
+    - "data-role=\"popup\""
+    - "data-role=\"panel\""
+    - "data-role=\"dialog\""
+
+# jQuery 정규식 패턴
+jquery_regex_patterns:
+  # jQuery 선택자 패턴
+  selector_patterns:
+    - "\\$\\('[^']*'\\)"
+    - "\\$\\(\"[^\"]*\"\\)"
+    - "\\$\\([^)]*\\)"
+  
+  # jQuery 메서드 패턴
+  method_patterns:
+    - "\\.\\w+\\([^)]*\\)"
+    - "\\.\\w+\\(\\)"
+  
+  # jQuery 이벤트 패턴
+  event_patterns:
+    - "\\.on\\('[^']*'"
+    - "\\.click\\("
+    - "\\.hover\\("
+    - "\\.submit\\("
+  
+  # jQuery AJAX 패턴
+  ajax_patterns:
+    - "\\$\\.ajax\\("
+    - "\\$\\.get\\("
+    - "\\$\\.post\\("
+    - "\\$\\.load\\("
+
+# jQuery 체이닝
+jquery_chaining:
+  - ".method1().method2().method3()"
+  - ".filter().map().each()"
+  - ".find().addClass().show()"
+  - ".parent().children().hide()"
+
+# jQuery 플러그인
+jquery_plugins:
+  # 일반적인 플러그인 패턴
+  plugin_patterns:
+    - ".pluginName()"
+    - ".pluginName(options)"
+    - ".pluginName('method')"
+    - ".pluginName('method', params)"
+  
+  # 인기 플러그인
+  popular_plugins:
+    - ".validate()"
+    - ".datepicker()"
+    - ".select2()"
+    - ".chosen()"
+    - ".slick()"
+    - ".owlCarousel()"
+    - ".lightbox()"
+    - ".tooltip()"
+    - ".popover()"
+    - ".modal()"

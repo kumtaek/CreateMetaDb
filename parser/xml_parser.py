@@ -128,6 +128,7 @@ class XmlParser:
         try:
             with open(xml_file, 'r', encoding='utf-8', errors='ignore') as f:
                 xml_content = f.read()
+            xml_content = xml_content.replace('\r\n', '\n').replace('\n\r', '\n').replace('\r', '\n')
 
             # namespace 추출
             namespace_match = re.search(r'<mapper\s+namespace="([^"]+)"', xml_content)
@@ -180,6 +181,7 @@ class XmlParser:
                 else:
                     query_type = 'QUERY'  # 알 수 없는 타입
 
+                raw_sql_content = sql_content
                 cleaned_sql = normalize_sql_loose_with_config(sql_content, self.sql_normalize_config)
 
                 query_info = {
@@ -187,6 +189,7 @@ class XmlParser:
                     'query_id': query_id,
                     'query_type': query_type,
                     'sql_content': cleaned_sql,
+                    'raw_sql_content': raw_sql_content,
                     'file_path': xml_file,
                     'line_start': 1,  # XML에서는 라인 번호를 정확히 계산하기 어려우므로 1로 설정
                     'line_end': 1,
@@ -240,7 +243,7 @@ class XmlParser:
 
             normalized = re.sub(r'WHERE\s+(AND|OR)\s+', 'WHERE ', normalized, flags=re.IGNORECASE)
             normalized = re.sub(r'SET\s+,', 'SET ', normalized, flags=re.IGNORECASE)
-            normalized = re.sub(r'\s+,', ' ,', normalized)
+            normalized = re.sub(r'[ \t]+,', ' ,', normalized)
             return normalized
         except Exception:
             return content

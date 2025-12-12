@@ -280,15 +280,15 @@ class SourceAnalyzerLogger:
         # 3. 에러 로그 기록
         # stacklevel=2를 사용하여 logger.error 호출 위치가 아닌 handle_error 호출 위치가 로그에 기록되도록 시도
         # 하지만 이미 메시지에 상세 위치를 포함시켰으므로, 로거 자체의 위치 정보는 덜 중요함
-        self.logger.error(log_msg)
+        self.logger.error(log_msg, stacklevel=3)
         
         # 로그 파일에 쓰기 완료를 보장하기 위해 잠시 대기
         import time
         time.sleep(0.2)  # 200ms 대기
         
         # 4. 프로그램 종료
-        self.logger.error(f"\n[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: {exit_code})")
-        self.logger.error(f"자세한 내용은 로그 파일을 확인하세요: {self.log_file_path}")
+        self.logger.error(f"\n[FATAL ERROR] 프로그램이 에러로 인해 종료됩니다. (종료코드: {exit_code})", stacklevel=3)
+        self.logger.error(f"자세한 내용은 로그 파일을 확인하세요: {self.log_file_path}", stacklevel=3)
         
         # 종료 전 추가 대기
         time.sleep(0.1)

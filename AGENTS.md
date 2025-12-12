@@ -13,6 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **메타디비 구조 절대 변경 금지**: 메타디비 구조 변경은 승인받고 변경해야 함.
 - **PowerShell 명령 작성 주의**: bash heredoc(`python - <<'PY'`)을 사용하지 말고, PowerShell에서는 `@'... '@ | python -` 패턴을 사용해 스크립트를 전달할 것(구문 오류/시간 낭비 방지).
 - **전역 실행 옵션 사용**: `--sql-compress` 등 런타임 플래그는 `util.runtime_options` 전역 객체를 통해 관리하고, 가능한 한 함수 인자 반복 전달을 피할 것.
+- **개발 완료 후 컴파일해서 신택스 체크 필수**
 
 ## DDL 스키마 변경 절대 금지
 - **database/ 폴더의 DDL 파일은 읽기 전용**: `create_table_script.sql`, `create_sql_content_db.sql` 파일은 읽기 전용(Read-Only) 속성이며, 절대 수정하지 말 것

@@ -1,0 +1,551 @@
+# MyBatis Dynamic SQL 키워드 정의 파일 (리뉴얼)
+# MyBatis 3 Dynamic SQL 기반 키워드 정의
+# 메뉴얼 기반으로 체계적으로 재구성
+
+# MyBatis Dynamic SQL 태그
+mybatis_dynamic_tags:
+  # 조건 태그
+  conditional_tags:
+    - "if"
+    - "choose"
+    - "when"
+    - "otherwise"
+  
+  # 구조 태그
+  structural_tags:
+    - "trim"
+    - "where"
+    - "set"
+    - "foreach"
+  
+  # 바인딩 태그
+  binding_tags:
+    - "bind"
+  
+  # SQL 조각 태그
+  sql_fragment_tags:
+    - "sql"
+    - "include"
+  
+  # 매핑 태그
+  mapping_tags:
+    - "resultMap"
+    - "result"
+    - "association"
+    - "collection"
+    - "discriminator"
+    - "constructor"
+    - "id"
+    - "property"
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+    - "foreignColumn"
+    - "autoMapping"
+  
+  # 매개변수 매핑 태그
+  parameter_mapping_tags:
+    - "parameterMap"
+    - "parameter"
+    - "parameterType"
+    - "parameterMode"
+  
+  # 캐시 태그
+  cache_tags:
+    - "cache"
+    - "cache-ref"
+    - "flushInterval"
+    - "size"
+    - "readOnly"
+    - "blocking"
+    - "eviction"
+    - "type"
+  
+  # 설정 태그
+  configuration_tags:
+    - "settings"
+    - "typeAliases"
+    - "typeAlias"
+    - "package"
+    - "typeHandlers"
+    - "typeHandler"
+    - "objectFactory"
+    - "objectWrapperFactory"
+    - "reflectorFactory"
+    - "plugins"
+    - "plugin"
+    - "environments"
+    - "environment"
+    - "transactionManager"
+    - "dataSource"
+    - "mappers"
+    - "mapper"
+    - "databaseIdProvider"
+
+# MyBatis SQL 매핑 태그
+mybatis_sql_mapping_tags:
+  # CRUD 태그
+  crud_tags:
+    - "select"
+    - "insert"
+    - "update"
+    - "delete"
+  
+  # SQL 태그 속성
+  sql_tag_attributes:
+    - "id"
+    - "parameterType"
+    - "parameterMap"
+    - "resultType"
+    - "resultMap"
+    - "resultSetType"
+    - "statementType"
+    - "fetchSize"
+    - "timeout"
+    - "flushCache"
+    - "useCache"
+    - "databaseId"
+    - "lang"
+    - "resultOrdered"
+    - "resultSets"
+
+# MyBatis 동적 SQL 속성
+mybatis_dynamic_attributes:
+  # if 태그 속성
+  if_attributes:
+    - "test"
+  
+  # choose 태그 속성
+  choose_attributes:
+    - "test"
+  
+  # when 태그 속성
+  when_attributes:
+    - "test"
+  
+  # trim 태그 속성
+  trim_attributes:
+    - "prefix"
+    - "prefixOverrides"
+    - "suffix"
+    - "suffixOverrides"
+  
+  # where 태그 속성
+  where_attributes:
+    - "prefix"
+    - "prefixOverrides"
+    - "suffix"
+    - "suffixOverrides"
+  
+  # set 태그 속성
+  set_attributes:
+    - "prefix"
+    - "prefixOverrides"
+    - "suffix"
+    - "suffixOverrides"
+  
+  # foreach 태그 속성
+  foreach_attributes:
+    - "collection"
+    - "item"
+    - "index"
+    - "open"
+    - "close"
+    - "separator"
+  
+  # bind 태그 속성
+  bind_attributes:
+    - "name"
+    - "value"
+  
+  # sql 태그 속성
+  sql_attributes:
+    - "id"
+    - "databaseId"
+    - "lang"
+  
+  # include 태그 속성
+  include_attributes:
+    - "refid"
+
+# MyBatis 매핑 속성
+mybatis_mapping_attributes:
+  # resultMap 속성
+  resultmap_attributes:
+    - "id"
+    - "type"
+    - "extends"
+    - "autoMapping"
+    - "databaseId"
+  
+  # result 속성
+  result_attributes:
+    - "property"
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+  
+  # association 속성
+  association_attributes:
+    - "property"
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+    - "foreignColumn"
+    - "autoMapping"
+  
+  # collection 속성
+  collection_attributes:
+    - "property"
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+    - "foreignColumn"
+    - "autoMapping"
+    - "ofType"
+  
+  # discriminator 속성
+  discriminator_attributes:
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+  
+  # constructor 속성
+  constructor_attributes:
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+  
+  # id 속성
+  id_attributes:
+    - "property"
+    - "column"
+    - "javaType"
+    - "jdbcType"
+    - "typeHandler"
+    - "select"
+    - "fetchType"
+    - "notNullColumn"
+    - "columnPrefix"
+    - "resultSet"
+
+# MyBatis JDBC 타입
+mybatis_jdbc_types:
+  - "ARRAY"
+  - "BIGINT"
+  - "BINARY"
+  - "BIT"
+  - "BLOB"
+  - "BOOLEAN"
+  - "CHAR"
+  - "CLOB"
+  - "DATALINK"
+  - "DATE"
+  - "DATETIME"
+  - "DECIMAL"
+  - "DISTINCT"
+  - "DOUBLE"
+  - "FLOAT"
+  - "INTEGER"
+  - "JAVA_OBJECT"
+  - "LONGNVARCHAR"
+  - "LONGVARBINARY"
+  - "LONGVARCHAR"
+  - "NCHAR"
+  - "NCLOB"
+  - "NULL"
+  - "NUMERIC"
+  - "NVARCHAR"
+  - "OTHER"
+  - "REAL"
+  - "REF"
+  - "ROWID"
+  - "SMALLINT"
+  - "SQLXML"
+  - "STRUCT"
+  - "TIME"
+  - "TIMESTAMP"
+  - "TINYINT"
+  - "VARBINARY"
+  - "VARCHAR"
+
+# MyBatis Java 타입
+mybatis_java_types:
+  - "String"
+  - "Integer"
+  - "Long"
+  - "Double"
+  - "Float"
+  - "Boolean"
+  - "Date"
+  - "BigDecimal"
+  - "BigInteger"
+  - "Byte"
+  - "Short"
+  - "Character"
+  - "Object"
+  - "List"
+  - "Map"
+  - "Set"
+  - "Collection"
+
+# MyBatis 정규식 패턴
+mybatis_patterns:
+  # 동적 SQL 태그 패턴
+  dynamic_tag_patterns:
+    - "<if\\s+test=[\"'].*?[\"']>.*?</if>"
+    - "<choose>.*?</choose>"
+    - "<when\\s+test=[\"'].*?[\"']>.*?</when>"
+    - "<otherwise>.*?</otherwise>"
+    - "<trim[^>]*>.*?</trim>"
+    - "<where>.*?</where>"
+    - "<set>.*?</set>"
+    - "<foreach[^>]*>.*?</foreach>"
+    - "<bind\\s+name=[\"'].*?[\"']\\s+value=[\"'].*?[\"'][^>]*/>"
+    - "<sql\\s+id=[\"'].*?[\"'][^>]*>.*?</sql>"
+    - "<include\\s+refid=[\"'].*?[\"'][^>]*/>"
+  
+  # 매핑 태그 패턴
+  mapping_tag_patterns:
+    - "<resultMap[^>]*>.*?</resultMap>"
+    - "<result\\s+property=[\"'].*?[\"']\\s+column=[\"'].*?[\"'][^>]*/>"
+    - "<association[^>]*>.*?</association>"
+    - "<collection[^>]*>.*?</collection>"
+    - "<discriminator[^>]*>.*?</discriminator>"
+    - "<constructor[^>]*>.*?</constructor>"
+    - "<id\\s+property=[\"'].*?[\"']\\s+column=[\"'].*?[\"'][^>]*/>"
+    - "<property\\s+name=[\"'].*?[\"']\\s+column=[\"'].*?[\"'][^>]*/>"
+  
+  # SQL 매핑 패턴
+  sql_mapping_patterns:
+    - "<select[^>]*>.*?</select>"
+    - "<insert[^>]*>.*?</insert>"
+    - "<update[^>]*>.*?</update>"
+    - "<delete[^>]*>.*?</delete>"
+  
+  # 매개변수 패턴
+  parameter_patterns:
+    - "#\\{.*?\\}"
+    - "\\$\\{.*?\\}"
+    - "#\\{.*?,\\s*jdbcType=.*?\\}"
+    - "#\\{.*?,\\s*javaType=.*?\\}"
+    - "#\\{.*?,\\s*typeHandler=.*?\\}"
+    - "#\\{.*?,\\s*mode=.*?\\}"
+    - "#\\{.*?,\\s*numericScale=.*?\\}"
+    - "#\\{.*?,\\s*resultMap=.*?\\}"
+    - "#\\{.*?,\\s*jdbcTypeName=.*?\\}"
+    - "#\\{.*?,\\s*statementType=.*?\\}"
+  
+  # 캐시 패턴
+  cache_patterns:
+    - "<cache[^>]*/>"
+    - "<cache-ref\\s+namespace=[\"'].*?[\"'][^>]*/>"
+  
+  # 설정 패턴
+  configuration_patterns:
+    - "<settings>.*?</settings>"
+    - "<typeAliases>.*?</typeAliases>"
+    - "<typeHandlers>.*?</typeHandlers>"
+    - "<environments>.*?</environments>"
+    - "<mappers>.*?</mappers>"
+
+# MyBatis 설정 속성
+mybatis_configuration_attributes:
+  # settings 속성
+  settings_attributes:
+    - "cacheEnabled"
+    - "lazyLoadingEnabled"
+    - "aggressiveLazyLoading"
+    - "multipleResultSetsEnabled"
+    - "useColumnLabel"
+    - "useGeneratedKeys"
+    - "autoMappingBehavior"
+    - "autoMappingUnknownColumnBehavior"
+    - "defaultExecutorType"
+    - "defaultStatementTimeout"
+    - "defaultFetchSize"
+    - "safeRowBoundsEnabled"
+    - "safeResultHandlerEnabled"
+    - "mapUnderscoreToCamelCase"
+    - "localCacheScope"
+    - "jdbcTypeForNull"
+    - "lazyLoadTriggerMethods"
+    - "defaultScriptingLanguage"
+    - "defaultEnumTypeHandler"
+    - "callSettersOnNulls"
+    - "returnInstanceForEmptyRow"
+    - "logPrefix"
+    - "logImpl"
+    - "proxyFactory"
+    - "vfsImpl"
+    - "useActualParamName"
+    - "configurationFactory"
+    - "shrinkWhitespacesInSql"
+    - "defaultSqlProviderType"
+    - "nullableOnForEach"
+    - "argNameBasedConstructorAutoMapping"
+  
+  # typeAliases 속성
+  typealiases_attributes:
+    - "type"
+    - "alias"
+    - "package"
+  
+  # typeHandlers 속성
+  typehandlers_attributes:
+    - "type"
+    - "handler"
+    - "javaType"
+    - "jdbcType"
+    - "package"
+  
+  # environments 속성
+  environments_attributes:
+    - "default"
+    - "id"
+  
+  # environment 속성
+  environment_attributes:
+    - "id"
+    - "transactionManager"
+    - "dataSource"
+  
+  # transactionManager 속성
+  transactionmanager_attributes:
+    - "type"
+  
+  # dataSource 속성
+  datasource_attributes:
+    - "type"
+  
+  # mappers 속성
+  mappers_attributes:
+    - "resource"
+    - "url"
+    - "class"
+    - "package"
+
+# MyBatis 실행자 타입
+mybatis_executor_types:
+  - "SIMPLE"
+  - "REUSE"
+  - "BATCH"
+
+# MyBatis 자동 매핑 동작
+mybatis_auto_mapping_behavior:
+  - "NONE"
+  - "PARTIAL"
+  - "FULL"
+
+# MyBatis 자동 매핑 알 수 없는 컬럼 동작
+mybatis_auto_mapping_unknown_column_behavior:
+  - "NONE"
+  - "WARNING"
+  - "FAILING"
+
+# MyBatis 로컬 캐시 스코프
+mybatis_local_cache_scope:
+  - "SESSION"
+  - "STATEMENT"
+
+# MyBatis 로그 구현
+mybatis_log_impl:
+  - "SLF4J"
+  - "LOG4J"
+  - "LOG4J2"
+  - "JDK_LOGGING"
+  - "COMMONS_LOGGING"
+  - "STDOUT_LOGGING"
+  - "NO_LOGGING"
+
+# MyBatis 프록시 팩토리
+mybatis_proxy_factory:
+  - "JAVASSIST"
+  - "CGLIB"
+
+# MyBatis VFS 구현
+mybatis_vfs_impl:
+  - "JBOSS6"
+  - "JBOSS7"
+
+# MyBatis 스크립팅 언어
+mybatis_scripting_language:
+  - "XML"
+  - "ANNOTATED"
+
+# MyBatis 열거형 타입 핸들러
+mybatis_enum_type_handler:
+  - "ORDINAL"
+  - "STRING"
+
+# MyBatis SQL 제공자 타입
+mybatis_sql_provider_type:
+  - "ANNOTATED"
+  - "XML"
+
+# SAX 파서용 설정
+sql_statement_types:
+  select: "SELECT"
+  insert: "INSERT"
+  update: "UPDATE"
+  delete: "DELETE"
+
+# 기본 SQL 태그 (SAX 파서용)
+default_sql_tags:
+  - "select"
+  - "insert"
+  - "update"
+  - "delete"
+
+# MyBatis XML 파일 식별자
+mybatis_indicators:
+  - "mybatis.org"
+  - "mybatis-3.org"
+  - "mapper"
+
+# XML 확장자
+xml_extensions:
+  - ".xml"
+
+# JOIN 분석 패턴 (SAX 파서용)
+join_patterns:
+  from_pattern: "FROM\\s+(\\w+)"
+  join_pattern: "JOIN\\s+(\\w+)"
+  join_keywords:
+    - "JOIN"
+    - "INNER JOIN"
+    - "LEFT JOIN"
+    - "RIGHT JOIN"
+    - "FULL JOIN"
+    - "OUTER JOIN"

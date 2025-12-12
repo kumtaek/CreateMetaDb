@@ -116,6 +116,7 @@ def main():
 
         # 5. 분석 옵션 확인
         clear_metadb = arg_utils.get_clear_metadb()
+        clear_metadb_requested = clear_metadb
         verbose = arg_utils.get_verbose()
         sql_compress = arg_utils.get_sql_compress()
         dry_run = arg_utils.get_dry_run()
@@ -154,7 +155,7 @@ def main():
             info("로거 레벨을 INFO로 설정합니다.")
         
         info(f"분석 옵션:")
-        info(f"  - 메타데이터베이스 초기화: {clear_metadb}")
+        info(f"  - 메타데이터베이스 초기화: {clear_metadb_requested}")
         info(f"  - 상세 로그: {verbose}")
         info(f"  - SQL 압축 저장: {sql_compress}")
         info(f"  - 드라이런 모드: {dry_run}")

@@ -5,6 +5,7 @@
 """
 
 import os
+import time
 from typing import Optional, List, Dict, Any
 from util import (
     PathUtils, DatabaseUtils, FileUtils, HashUtils, ValidationUtils,
@@ -62,7 +63,10 @@ class FileLoadingEngine(BaseLoadingEngine):
             
             # FileUtils.scan_directory()로 전체 디렉토리 스캔
             files = FileUtils.scan_directory(self.project_source_path, recursive=True)
-            for file_info in files:
+            total_files = len(files)
+            start_time = time.time()
+            last_log_time = start_time
+            for index, file_info in enumerate(files, start=1):
                 file_path = file_info['file_path']
                 
                 try:
@@ -98,10 +102,19 @@ class FileLoadingEngine(BaseLoadingEngine):
                         
                 except Exception as e:
                     handle_error(e, f"파일 스캔 오류: {file_path}")
+
+                current_time = time.time()
+                if current_time - last_log_time >= 1.0:
+                    elapsed = current_time - start_time
+                    info(
+                        f"[FILE SCAN PROGRESS] {index}/{total_files} files processed "
+                        f"(saved={self.stats['scanned_files']}, errors={self.stats['error_files']}, elapsed={elapsed:.1f}s)"
+                    )
+                    last_log_time = current_time
             
             self.stats['total_files'] = len(scanned_files)
             # info(f"파일 스캔 완료: 총 {self.stats['total_files']}개 파일")  # 로그 제거
-            
+
             return scanned_files
             
         except Exception as e:
@@ -410,9 +423,20 @@ class FileLoadingEngine(BaseLoadingEngine):
                 file_data_list.append(filtered)
             
             processed_count = 0
-            for file_data in file_data_list:
+            total_records = len(file_data_list)
+            start_time = time.time()
+            last_log_time = start_time
+            info(f"[FILE SAVE] 저장 시작: 총 {total_records}건")
+            for index, file_data in enumerate(file_data_list, start=1):
                 if self.db_utils.upsert('files', file_data, ['file_name', 'file_path', 'project_id'], self.conn):
                     processed_count += 1
+                current_time = time.time()
+                if current_time - last_log_time >= 1.0:
+                    elapsed = current_time - start_time
+                    info(f"[FILE SAVE PROGRESS] {index}/{total_records}건 처리 (적용 {processed_count}건, 경과 {elapsed:.1f}s)")
+                    last_log_time = current_time
+            total_elapsed = time.time() - start_time
+            info(f"[FILE SAVE] 저장 완료: {processed_count}/{total_records}건 적용 (총 {total_elapsed:.2f}s)")
             
             if processed_count > 0:
                 return True

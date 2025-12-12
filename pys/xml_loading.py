@@ -1,0 +1,1093 @@
+"""
+XML 로딩 모듈
+- 3단계 통합 처리: XML 파일에서 SQL 쿼리 추출 및 JOIN 관계 분석
+- 메모리 최적화 (스트리밍 처리)
+- 데이터베이스 저장 및 통계 관리
+
+USER RULES:
+- 하드코딩 금지: path_utils.get_parser_config_path("sql") 사용 (크로스플랫폼 대응)
+- Exception 처리: handle_error() 공통함수 사용
+- 공통함수 사용: util 모듈 활용
+- 메뉴얼 기반: parser/manual/04_mybatis 참고
+"""
+
+import os
+import sqlite3
+from typing import List, Dict, Any, Optional
+from util import (
+    DatabaseUtils, PathUtils, HashUtils, ValidationUtils,
+    app_logger, info, error, debug, warning, handle_error,
+    get_project_source_path, get_project_metadata_db_path
+)
+# USER RULES: 공통함수 사용, 하드코딩 금지
+from parser.xml_parser import XmlParser
+from parser.simple_query_analyzer import SimpleQueryAnalyzer
+from util.sql_content_manager import SqlContentManager
+# from util.sql_content_processor import SqlContentProcessor  # 보류 상태
+from util.base_loading_engine import BaseLoadingEngine
+
+
+class XmlLoadingEngine(BaseLoadingEngine):
+    """XML 로딩 엔진 - 3단계 통합 처리"""
+    
+    def __init__(self, project_name: str, conn: Optional[sqlite3.Connection], sql_content_enabled: bool = False, use_compression: Optional[bool] = None):
+        """
+        XML 로딩 엔진 초기화
+
+        Args:
+            project_name: 프로젝트명
+            conn: 외부에서 주입된 데이터베이스 연결 객체
+            sql_content_enabled: SQL Content 기능 활성화 여부
+            use_compression: SQL 압축 저장 여부
+        """
+        super().__init__(project_name, conn)
+        self.sql_content_enabled = sql_content_enabled
+        from util import get_sql_compress
+        self.use_compression = use_compression if use_compression is not None else get_sql_compress()
+
+        self.xml_parser = XmlParser()
+        # SimpleQueryAnalyzer도 주입된 conn을 사용하도록 수정 필요
+        self.simple_query_analyzer = SimpleQueryAnalyzer(project_name, conn)
+
+        from util.common_sql_processor import CommonSqlAnalyzer
+        self.common_sql_processor = CommonSqlAnalyzer(project_name, use_compression)
+
+        if self.sql_content_enabled:
+            try:
+                # 설정 파일에서 enable_brute_force_table_search 옵션 읽기
+                from util.config_utils import ConfigUtils
+                config_utils = ConfigUtils()
+                config = config_utils.load_target_source_config(project_name)
+                enable_brute_force = True  # 기본값
+                if config:
+                    enable_brute_force = config.get('sql_analysis', {}).get('enable_brute_force_table_search', True)
+                    app_logger.info(f"단순 테이블 매칭 설정: {enable_brute_force}")
+
+                self.sql_content_manager = SqlContentManager(project_name, enable_brute_force_search=enable_brute_force, use_compression=use_compression)
+                if not self.sql_content_manager.initialized:
+                    raise Exception("SQL Content Manager 초기화 실패")
+            except Exception as e:
+                handle_error(e, "SQL Content Manager 초기화 실패")
+                self.sql_content_manager = None
+        else:
+            self.sql_content_manager = None
+        # 파일 컨텍스트 관리자 (현재 처리 중인 파일 정보를 전역적으로 보관)
+        from util.file_context import get_file_context_manager
+        self.file_context = get_file_context_manager()
+        
+        self.stats = {
+            'xml_files_processed': 0, 'sql_queries_extracted': 0,
+            'sql_components_created': 0, 'join_relationships_created': 0, 'errors': 0
+        }
+
+    def execute_xml_loading(self) -> bool:
+        """
+        XML 로딩 실행 (외부 트랜잭션 내에서 실행)
+        """
+        try:
+            info("=== XML 로딩 시작 ===")
+            if not self.conn:
+                raise Exception("데이터베이스 연결이 제공되지 않았습니다.")
+
+            xml_files = self.xml_parser.get_filtered_xml_files(self.project_source_path)
+            if not xml_files:
+                warning("분석할 MyBatis XML 파일이 없습니다.")
+                return True
+
+            project_id_cache = self._get_project_id()
+            total_files = len(xml_files)
+            import time
+            last_progress_log = time.time()
+
+            for idx, xml_file in enumerate(xml_files, start=1):
+                try:
+                    from util.path_utils import PathUtils
+                    path_utils = PathUtils()
+                    relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
+                    unix_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
+                    file_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
+                    if file_dir in ('', '.'):
+                        file_dir = ''
+                    else:
+                        file_dir = path_utils.normalize_path_separator(file_dir, 'unix')
+                    file_name = os.path.basename(unix_relative_path)
+
+                    file_query = "SELECT file_id FROM files WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?) AND file_path = ? AND file_name = ? AND del_yn = 'N'"
+                    file_results = self.db_utils.execute_query(file_query, (self.project_name, file_dir, file_name), self.conn)
+                    
+                    if not file_results:
+                        warning(f"DB에 파일 정보가 없습니다. 건너뜁니다: {unix_relative_path}")
+                        continue
+                    
+                    file_id = file_results[0]['file_id']
+                    self.xml_parser.current_file_id = file_id
+
+                    # 대상 디버깅 파일 여부 (UbcRgstTgtPopDbio.dbio)
+                    is_target_dbio = (file_name == 'UbcRgstTgtPopDbio.dbio')
+                    if is_target_dbio:
+                        info(f"[DBIO DEBUG] 대상 파일 처리 시작: {unix_relative_path} (file_id={file_id})")
+
+                    # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
+                    self.file_context.push(
+                        project_name=self.project_name,
+                        project_id=project_id_cache,
+                        file_id=file_id,
+                        file_path=file_dir,
+                        file_name=file_name,
+                        file_type='XML',
+                        source_type='XML',
+                        stage='XML'
+                    )
+                    
+                    analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
+                    
+                    if analysis_result.get('has_error') == 'Y':
+                        self.stats['errors'] += 1
+                        continue
+
+                    if analysis_result['sql_queries']:
+                        project_id = project_id_cache
+                        saved_any = False
+                        for sql_query in analysis_result['sql_queries']:
+                            query_id = sql_query.get('query_id')
+                            query_type = sql_query.get('query_type')
+
+                            # 대상 쿼리 디버깅 플래그 (selectListUbcRgstTgt in UbcRgstTgtPopDbio.dbio)
+                            is_target_query = is_target_dbio and (query_id == 'selectListUbcRgstTgt')
+                            if is_target_query:
+                                info(f"[DBIO DEBUG] 쿼리 추출: query_id={query_id}, type={query_type}, file_id={file_id}, path={unix_relative_path}")
+
+                            # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
+                            saved = self.sql_content_manager.save_sql_content(
+                                sql_content=sql_query.get('sql_content', ''),
+                                project_id=project_id,
+                                conn=self.conn,
+                                query_id=query_id,
+                                file_id=file_id,
+                                file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
+                                file_name=file_name,
+                                query_type=query_type,
+                                hash_value=sql_query.get('hash_value'),
+                                component_name=query_id,
+                                debug_source_file=file_name,
+                                debug_source_path=unix_relative_path,
+                                debug_hint="DBIO_TARGET" if is_target_query else None,
+                            )
+                            saved_any = saved_any or bool(saved)
+
+                            if is_target_query:
+                                info(f"[DBIO DEBUG] SqlContent 저장 결과: query_id={query_id}, saved={saved}")
+
+                        if saved_any:
+                            self.stats['sql_components_created'] += 1
+
+                    if 'is_target_dbio' in locals() and is_target_dbio:
+                        info(f"[DBIO DEBUG] 파일 처리 완료: {unix_relative_path}, sql_queries={len(analysis_result.get('sql_queries', []))}, join_created={analysis_result.get('join_analysis_stats', {}).get('relationships_created', 0)}")
+
+                    # JOIN 관계 생성 통계 집계
+                    join_stats = analysis_result.get('join_analysis_stats', {})
+                    self.stats['join_relationships_created'] += join_stats.get('relationships_created', 0)
+
+                    self.stats['xml_files_processed'] += 1
+                    self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
+
+                    # 진행 상황 로그 (10초 간격, 최소 1건 처리 후)
+                    now = time.time()
+                    if now - last_progress_log >= 10:
+                        app_logger.info(
+                            f"[XML PROGRESS] {idx}/{total_files} files processed "
+                            f"(queries={self.stats['sql_queries_extracted']}, joins={self.stats['join_relationships_created']}, errors={self.stats['errors']})"
+                        )
+                        last_progress_log = now
+
+                except Exception as e:
+                    self.stats['errors'] += 1
+                    handle_error(
+                        e,
+                        f"XML 파일 파싱 실패: {xml_file} (성공 {self.stats['xml_files_processed']}건, 실패 {self.stats['errors']}건)"
+                    )
+                finally:
+                    # 항상 컨텍스트 복원
+                    self.file_context.pop()
+            
+            self._print_xml_loading_statistics()
+            info("=== XML 로딩 완료 ===")
+            return True
+
+        except Exception as e:
+            handle_error(e, "XML 로딩 실행 실패")
+    
+    def _save_sql_components_to_database(self, sql_queries: List[Dict[str, Any]], file_id: int, conn=None) -> bool:
+        """SQL 컴포넌트를 데이터베이스에 저장합니다."""
+        try:
+            if not sql_queries:
+                return True
+
+            project_id = self._get_project_id()
+            if not project_id:
+                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "SQL 컴포넌트 저장 실패")
+                return False
+
+            success_count = 0
+            for sql_query in sql_queries:
+                try:
+                    sql_id = sql_query.get('query_id', '') or sql_query.get('sql_id', '')
+                    sql_content = sql_query.get('sql_content', '')
+                    if not sql_id or not sql_content:
+                        continue
+
+                    component_type = sql_query.get('query_type', f"SQL_{sql_query.get('tag_name', 'QUERY').upper()}")
+                    # namespace.id 형식으로 component_name 설정
+                    namespace = sql_query.get('namespace', '')
+                    if namespace:
+                        component_name = f"{namespace}.{sql_id}"
+                    else:
+                        component_name = sql_id  # fallback
+                    
+                    component_data = {
+                        'project_id': project_id,
+                        'file_id': file_id,
+                        'component_type': component_type,
+                        'component_name': component_name,
+                        'hash_value': HashUtils.generate_md5(sql_content),
+                        'del_yn': 'N'
+                    }
+                    
+                    component_id = self.db_utils.insert_or_replace_with_id('components', component_data, conn=self.conn)
+
+                    if component_id:
+                        success_count += 1
+                        debug(f"SQL 컴포넌트 저장 성공: {sql_id} (component_id: {component_id})")
+                        # SqlContent.db 저장은 별도의 매니저가 담당
+                    else:
+                        warning(f"SQL 컴포넌트 저장 실패: {sql_id}")
+
+                except Exception as e:
+                    handle_error(e, f"개별 SQL 쿼리 처리 실패: {sql_id}")
+
+            debug(f"SQL 컴포넌트 저장 완료: {success_count}/{len(sql_queries)}개 성공")
+            return success_count > 0
+
+        except Exception as e:
+            handle_error(e, "SQL 컴포넌트 저장 실패")
+            return False
+    def _create_sql_table_relationships(self, sql_component_id: int, sql_content: str, project_id: int) -> None:
+        """
+        SQL 컴포넌트와 테이블 간의 USE_TABLE 관계를 생성
+
+        Args:
+            sql_component_id: SQL 컴포넌트 ID
+            sql_content: SQL 내용
+            project_id: 프로젝트 ID
+        """
+        try:
+            # SQL에서 사용되는 테이블명 추출
+            table_names = self._extract_table_names_from_sql(sql_content)
+            if not table_names:
+                return
+
+            debug(f"SQL에서 추출된 테이블명들: {table_names}")
+
+            for table_name in table_names:
+                # 테이블 컴포넌트 ID 조회
+                table_component_id = self._get_table_component_id(project_id, table_name)
+                if table_component_id:
+                    # USE_TABLE 관계 생성
+                    relationship_data = {
+                        'src_id': sql_component_id,
+                        'dst_id': table_component_id,
+                        'rel_type': 'USE_TABLE',
+                        'confidence': 0.8,  # SQL 파싱 기반이므로 높은 신뢰도
+                        'has_error': 'N',
+                        'error_message': None,
+                        'del_yn': 'N'
+                    }
+
+                    relationship_id = self.db_utils.insert_or_replace_with_id('relationships', relationship_data)
+                    if relationship_id:
+                        debug(f"USE_TABLE 관계 생성 성공: SQL({sql_component_id}) -> TABLE({table_component_id}) : {table_name}")
+                    else:
+                        debug(f"USE_TABLE 관계 생성 실패: SQL({sql_component_id}) -> TABLE({table_component_id}) : {table_name}")
+                else:
+                    debug(f"테이블 컴포넌트를 찾을 수 없음: {table_name}")
+
+        except Exception as e:
+            debug(f"SQL-테이블 관계 생성 중 오류: {str(e)}")
+
+    def _extract_table_names_from_sql(self, sql_content: str) -> set:
+        """
+        SQL 내용에서 테이블명 추출 (향상된 파서 사용)
+
+        Args:
+            sql_content: SQL 내용
+
+        Returns:
+            추출된 테이블명 집합
+        """
+        try:
+            from util import debug
+            from parser.sql_parser import SqlParser
+
+            # SQL 파서 사용
+            if not hasattr(self, '_sql_parser'):
+                self._sql_parser = SqlParser()
+
+            # 테이블명 추출
+            table_names = self._sql_parser.extract_table_names(sql_content)
+
+            debug(f"SQL 파서 결과: {table_names}")
+            return table_names
+
+        except Exception as e:
+            debug(f"SQL 파서 오류 - 기본 파서로 fallback: {str(e)}")
+
+            # 기존 파서로 fallback
+            return self._extract_table_names_from_sql_legacy(sql_content)
+
+    def _extract_table_names_from_sql_legacy(self, sql_content: str) -> set:
+        """
+        기존 SQL 파서 (향상된 파서 실패 시 fallback)
+
+        Args:
+            sql_content: SQL 내용
+
+        Returns:
+            추출된 테이블명 집합
+        """
+        try:
+            import re
+            from util import debug
+
+            table_names = set()
+
+            # SQL 내용을 대문자로 변환하고 정제
+            sql_upper = sql_content.upper().strip()
+
+            # FROM 절에서 테이블명 추출
+            from_pattern = r'\bFROM\s+([A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?)'
+            from_matches = re.findall(from_pattern, sql_upper)
+            for match in from_matches:
+                # 별칭이 있는 경우 첫 번째가 테이블명
+                table_name = match.split()[0].strip()
+                if self._is_valid_table_name_simple(table_name):
+                    table_names.add(table_name)
+
+            # JOIN 절에서 테이블명 추출
+            join_pattern = r'\b(?:JOIN|INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|OUTER\s+JOIN)\s+([A-Z_][A-Z0-9_]*(?:\s+[A-Z_][A-Z0-9_]*)?)'
+            join_matches = re.findall(join_pattern, sql_upper)
+            for match in join_matches:
+                table_name = match.split()[0].strip()
+                if self._is_valid_table_name_simple(table_name):
+                    table_names.add(table_name)
+
+            # UPDATE 절에서 테이블명 추출
+            update_pattern = r'\bUPDATE\s+([A-Z_][A-Z0-9_]*)'
+            update_matches = re.findall(update_pattern, sql_upper)
+            for match in update_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            # INSERT INTO 절에서 테이블명 추출
+            insert_pattern = r'\bINSERT\s+INTO\s+([A-Z_][A-Z0-9_]*)'
+            insert_matches = re.findall(insert_pattern, sql_upper)
+            for match in insert_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            # DELETE FROM 절에서 테이블명 추출
+            delete_pattern = r'\bDELETE\s+FROM\s+([A-Z_][A-Z0-9_]*)'
+            delete_matches = re.findall(delete_pattern, sql_upper)
+            for match in delete_matches:
+                if self._is_valid_table_name_simple(match):
+                    table_names.add(match)
+
+            return table_names
+
+        except Exception as e:
+            debug(f"기존 SQL 파서에서 테이블명 추출 중 오류: {str(e)}")
+            return set()
+
+    def _is_valid_table_name_simple(self, table_name: str) -> bool:
+        """
+        간단한 테이블명 유효성 검사
+
+        Args:
+            table_name: 검사할 테이블명
+
+        Returns:
+            유효한 테이블명이면 True
+        """
+        try:
+            # 별칭 오탐 방지를 위해 4글자 이하 테이블명은 모두 제외
+            if not table_name or len(table_name) <= 4:
+                return False
+
+            # 기본적인 패턴 검사
+            import re
+            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
+                return False
+            
+            # 단독 ID 제외
+            if table_name == 'ID':
+                return False
+
+            return True
+
+        except Exception:
+            return False
+    
+    def _save_join_relationships_to_database_removed(self, join_relationships: List[Dict[str, Any]]) -> bool:
+        """
+        JOIN 관계를 데이터베이스에 저장 (4단계)
+        
+        Args:
+            join_relationships: JOIN 관계 리스트
+            
+        Returns:
+            저장 성공 여부
+        """
+        try:
+            if not join_relationships:
+                handle_error("저장할 JOIN 관계가 없습니다")
+                return True
+            
+            # 프로젝트 ID 조회 (USER RULES: 공통함수 사용)
+            project_id = self._get_project_id()
+            if not project_id:
+                # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+                handle_error(Exception("프로젝트 ID를 찾을 수 없습니다"), "JOIN 관계 저장 실패")
+            
+            # 관계 데이터 변환
+            relationship_data_list = []
+            
+            for rel_info in join_relationships:
+                try:
+                    # USER RULES: 테이블명 유효성 검증 (별칭 오탐 방지)
+                    source_table = rel_info['source_table']
+                    target_table = rel_info['target_table']
+                    
+                    # 유효하지 않은 테이블명은 건너뜀
+                    if not self._is_valid_table_name(source_table):
+                        debug(f"유효하지 않은 소스 테이블명 건너뜀: {source_table}")
+                        continue
+                    if not self._is_valid_table_name(target_table):
+                        debug(f"유효하지 않은 대상 테이블명 건너뜀: {target_table}")
+                        continue
+                    
+                    # 소스 테이블 컴포넌트 ID 조회
+                    src_component_id = self._get_table_component_id(project_id, source_table)
+                    if not src_component_id:
+                        # inferred 테이블 생성 (join_relationships 전달)
+                        info(f"inferred 테이블 생성 시도: {source_table}")
+                        src_component_id = self._create_inferred_table(project_id, source_table, join_relationships)
+                        if src_component_id:
+                            self.stats['inferred_tables_created'] += 1
+                            info(f"inferred 테이블 생성 성공: {source_table} (ID: {src_component_id})")
+                        else:
+                            handle_error(f"inferred 테이블 생성 실패: {source_table}")
+                    
+                    # 대상 테이블 컴포넌트 ID 조회
+                    dst_component_id = self._get_table_component_id(project_id, target_table)
+                    if not dst_component_id:
+                        # inferred 테이블 생성 (join_relationships 전달)
+                        info(f"inferred 테이블 생성 시도: {target_table}")
+                        dst_component_id = self._create_inferred_table(project_id, target_table, join_relationships)
+                        if dst_component_id:
+                            self.stats['inferred_tables_created'] += 1
+                            info(f"inferred 테이블 생성 성공: {target_table} (ID: {dst_component_id})")
+                        else:
+                            handle_error(Exception(f"inferred 테이블 생성 실패: {target_table}"), f"inferred 테이블 생성 실패: {target_table}")
+                    
+                    if src_component_id and dst_component_id:
+                        # src_id와 dst_id가 같은 경우 필터링 (CHECK 제약조건 위반 방지)
+                        if src_component_id == dst_component_id:
+                            handle_error(f"자기 참조 JOIN 관계 스킵: {source_table} → {target_table} (src_id == dst_id)")
+                        
+                        # 관계 데이터 생성
+                        relationship_data = {
+                            'src_id': src_component_id,
+                            'dst_id': dst_component_id,
+                            'rel_type': rel_info['rel_type'],
+                            'confidence': 1.0,
+                            'del_yn': 'N'
+                        }
+                        
+                        relationship_data_list.append(relationship_data)
+                    
+                except Exception as e:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+                    handle_error(e, "JOIN 관계 데이터 변환 실패")
+            
+            # 배치 UPSERT (USER RULES: 공통함수 사용)
+            if relationship_data_list:
+                processed_count = self.db_utils.batch_insert_or_replace('relationships', relationship_data_list)
+                
+                if processed_count > 0:
+                    debug(f"JOIN 관계 저장 완료: {processed_count}개")
+                    return True
+                else:
+                    # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+                    handle_error(Exception("JOIN 관계 저장 실패"), "JOIN 관계 저장 실패")
+            else:
+                debug("저장할 유효한 JOIN 관계가 없습니다")
+                return True
+                
+        except Exception as e:
+            # 파싱에러를 제외한 모든 exception발생시 handle_error()로 exit()해야 에러인지가 가능함.
+            handle_error(e, "JOIN 관계 저장 실패")
+
+    def _is_valid_table_name(self, table_name: str) -> bool:
+        """
+        테이블명 유효성 검증 (별칭 오탐 방지)
+        
+        Args:
+            table_name: 검증할 테이블명
+            
+        Returns:
+            유효한 테이블명이면 True, 아니면 False
+        """
+        try:
+            if not table_name:
+                return False
+            
+            # 4글자 이하 테이블명은 별칭 가능성이 높으므로 차단
+            if len(table_name) <= 4:
+                return False
+            
+            # 실제 테이블명 패턴 검증 (대문자, 언더스코어 포함)
+            import re
+            if not re.match(r'^[A-Z][A-Z0-9_]*$', table_name):
+                return False
+            
+            # 예약어 체크 (자주 사용되는 단문 별칭)
+            reserved_words = {'B', 'C', 'O', 'P', 'R', 'T', 'U', 'V', 'X', 'Y', 'Z', 'S', 'M'}
+            if table_name in reserved_words:
+                return False
+            
+            return True
+            
+        except Exception as e:
+            handle_error(e, f"테이블명 유효성 검증 실패: {table_name}")
+    
+    def _get_project_id(self) -> Optional[int]:
+        """프로젝트 ID 조회 (USER RULES: 공통함수 사용)"""
+        return self.get_project_id()
+    
+    def _get_table_component_id(self, project_id: int, table_name: str) -> Optional[int]:
+        """
+        테이블 컴포넌트 ID 조회 (USER RULES: 공통함수 사용)
+        
+        Args:
+            project_id: 프로젝트 ID
+            table_name: 테이블명
+            
+        Returns:
+            컴포넌트 ID
+        """
+        try:
+            return self.db_utils.get_table_component_id(self.project_name, table_name)
+        except Exception as e:
+            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
+            handle_error(e, f"테이블 컴포넌트 ID 조회 실패: {table_name}")
+            return None
+    
+    def _get_inferred_file_id(self, project_id: int) -> Optional[int]:
+        """
+        inferred 테이블용 file_id 찾기 (XML 파일 중 하나 선택)
+        USER RULES: 공통함수 사용, 하드코딩 금지
+        
+        Args:
+            project_id: 프로젝트 ID
+            
+        Returns:
+            file_id 또는 None
+        """
+        try:
+            # USER RULES: 공통함수 사용 - DatabaseUtils의 execute_query 사용
+            query = """
+                SELECT file_id 
+                FROM files 
+                WHERE project_id = ? AND file_type = 'XML' AND del_yn = 'N'
+                LIMIT 1
+            """
+            result = self.db_utils.execute_query(query, (project_id,))
+            
+            if result and len(result) > 0:
+                file_id = result[0]['file_id']
+                debug(f"inferred 테이블용 file_id 찾음: {file_id}")
+                return file_id
+            else:
+                # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
+                handle_error("XML 파일이 files 테이블에 없습니다. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                return None
+                
+        except Exception as e:
+            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
+            handle_error(e, "inferred 테이블용 file_id 조회 실패")
+            return None
+    
+    
+    def _create_inferred_table(self, project_id: int, table_name: str, join_relationships: List[Dict[str, Any]] = None) -> Optional[int]:
+        """
+        inferred 테이블 생성 (USER RULES: 공통함수 사용)
+
+        Args:
+            project_id: 프로젝트 ID
+            table_name: 테이블명
+            join_relationships: JOIN 관계 리스트 (inferred 컬럼 생성용)
+
+        Returns:
+            컴포넌트 ID
+        """
+        try:
+            normalized_name = (table_name or '').strip().upper()
+            log_inferred_issue = normalized_name.startswith('PLAR_') or normalized_name.startswith('PLAF_') or normalized_name.endswith('PAFF_BAS')
+
+            # 4글자 이하 테이블명은 별칭일 가능성이 높으므로 inferred 생성하지 않음
+            if not table_name or len(table_name.strip()) <= 4:
+                debug(f"4글자 이하 테이블명으로 inferred 생성 스킵: {table_name}")
+                return None
+
+            # 먼저 기존 테이블 컴포넌트가 있는지 확인
+            existing_query = """
+                SELECT component_id FROM components
+                WHERE project_id = ? AND component_name = ? AND component_type = 'TABLE' AND del_yn = 'N'
+            """
+            existing_result = self.db_utils.execute_query(existing_query, (project_id, table_name))
+            if existing_result:
+                if log_inferred_issue:
+                    info(f"[INFERRED DEBUG] 기존 테이블 컴포넌트 발견, inferred 생성 생략: {table_name} (ID: {existing_result[0]['component_id']})")
+                else:
+                    info(f"기존 테이블 컴포넌트 발견: {table_name} (ID: {existing_result[0]['component_id']})")
+                return existing_result[0]['component_id']
+
+            # inferred 테이블용 file_id 찾기 (XML 파일 중 하나 선택)
+            inferred_file_id = self._get_inferred_file_id(project_id)
+            if not inferred_file_id:
+                # 시스템 에러: XML 파일이 files 테이블에 없는 것은 1단계에서 처리되지 않았음을 의미
+                handle_error(f"inferred 테이블용 file_id를 찾을 수 없습니다: {table_name}. 1단계 파일 스캔이 제대로 실행되지 않았습니다.")
+                return None
+            
+            # 먼저 components 테이블에 컴포넌트 생성
+            component_data = {
+                'project_id': project_id,
+                'component_type': 'TABLE',
+                'component_name': table_name,
+                'parent_id': None,
+                'file_id': inferred_file_id,
+                'layer': 'TABLE',  # TABLE 컴포넌트는 TABLE 레이어
+                'line_start': None,
+                'line_end': None,
+                'hash_value': 'INFERRED',
+                'has_error': 'N',
+                'error_message': None,
+                'del_yn': 'N'
+            }
+            
+            # 컴포넌트 생성 (USER RULES: 공통함수 사용)
+            debug(f"components 테이블에 데이터 삽입 시도: {component_data}")
+            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
+            debug(f"components 테이블 삽입 결과: {component_id}")
+            
+            if not component_id:
+                # 데이터베이스 저장 에러: components 테이블 삽입 실패 - handle_error()로 종료
+                handle_error(Exception(f"components 테이블 삽입 실패: {table_name}"), f"components 테이블 삽입 실패: {table_name}")
+                return None
+            
+            # 이제 tables 테이블에 component_id 포함해서 삽입
+            table_data = {
+                'project_id': project_id,
+                'component_id': component_id,  # FK 제약조건을 만족하는 유효한 component_id
+                'table_name': table_name,
+                'table_owner': 'UNKNOWN',
+                'table_comments': 'Inferred from SQL analysis',
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': 'INFERRED',
+                'del_yn': 'N'
+            }
+            
+            # 테이블 생성 (USER RULES: 공통함수 사용)
+            debug(f"tables 테이블에 데이터 삽입 시도: {table_data}")
+            table_id = self.db_utils.insert_or_replace_with_id('tables', table_data)
+            debug(f"tables 테이블 삽입 결과: {table_id}")
+            
+            if not table_id:
+                # 데이터베이스 저장 에러: tables 테이블 삽입 실패 - handle_error()로 종료
+                handle_error(Exception(f"tables 테이블 삽입 실패: {table_name}"), f"tables 테이블 삽입 실패: {table_name}")
+                return None
+            
+            # inferred 컬럼 생성
+            if join_relationships:
+                inferred_columns_created = self._create_inferred_columns(
+                    project_id, table_name, component_id, join_relationships
+                )
+                self.stats['inferred_columns_created'] += inferred_columns_created
+                if inferred_columns_created > 0:
+                    info(f"inferred 컬럼 생성 완료: {table_name}, {inferred_columns_created}개")
+
+            if log_inferred_issue:
+                info(f"[INFERRED DEBUG] inferred 테이블 생성 완료: {table_name}, component_id: {component_id}, join_count={len(join_relationships) if join_relationships else 0}")
+            else:
+                debug(f"inferred 테이블 생성 완료: {table_name}, component_id: {component_id}")
+            return component_id
+
+        except Exception as e:
+            # 시스템 에러: 데이터베이스 연결 실패 등 - 프로그램 종료
+            handle_error(e, f"inferred 테이블 생성 실패: {table_name}")
+            return None
+    
+    def _extract_join_columns_from_relationships(self, table_name: str, join_relationships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        JOIN 관계에서 해당 테이블의 조인 필드 추출
+        
+        Args:
+            table_name: 테이블명
+            join_relationships: JOIN 관계 리스트
+            
+        Returns:
+            조인 필드 정보 리스트
+        """
+        try:
+            join_columns = []
+            
+            for rel in join_relationships:
+                # 해당 테이블이 소스 또는 타겟인 관계만 처리
+                if rel.get('source_table') == table_name or rel.get('target_table') == table_name:
+                    # 조인 조건에서 컬럼명 추출
+                    join_condition = rel.get('join_condition', '')
+                    
+                    # 예: "up.type_id = ut.type_id" -> ["type_id", "type_id"]
+                    columns = self._extract_columns_from_join_condition(join_condition, table_name)
+                    
+                    for column_name in columns:
+                        if column_name and column_name not in [col['column_name'] for col in join_columns]:
+                            join_columns.append({
+                                'column_name': column_name,
+                                'data_type': 'INFERRED',
+                                'data_length': None,
+                                'nullable': 'Y',
+                                'column_comments': 'Inferred from JOIN analysis'
+                            })
+            
+            return join_columns
+            
+        except Exception as e:
+            handle_error(e, f"조인 필드 추출 실패: {table_name}")
+            return []
+    
+    def _extract_columns_from_join_condition(self, join_condition: str, table_name: str) -> List[str]:
+        """
+        조인 조건에서 특정 테이블의 컬럼명 추출
+        
+        Args:
+            join_condition: 조인 조건 (예: "up.type_id = ut.type_id")
+            table_name: 테이블명
+            
+        Returns:
+            컬럼명 리스트
+        """
+        try:
+            if not join_condition:
+                return []
+            
+            columns = []
+            
+            # 조인 조건을 = 기준으로 분할
+            parts = join_condition.split('=')
+            if len(parts) != 2:
+                return []
+            
+            left_side = parts[0].strip()
+            right_side = parts[1].strip()
+            
+            # 테이블 별칭 패턴 매칭 (예: up.type_id, ut.type_id)
+            import re
+            
+            # 테이블명의 첫 2-3글자로 별칭 추정
+            table_prefix = table_name[:2].lower()
+            
+            # 왼쪽과 오른쪽에서 해당 테이블의 컬럼 찾기
+            for side in [left_side, right_side]:
+                # 별칭.컬럼명 패턴 매칭
+                match = re.match(r'(\w+)\.(\w+)', side)
+                if match:
+                    alias = match.group(1)
+                    column_name = match.group(2)
+                    
+                    # 별칭이 테이블명과 유사한 경우 (첫 2글자 매칭)
+                    if alias.lower().startswith(table_prefix):
+                        columns.append(column_name)
+            
+            return columns
+            
+        except Exception as e:
+            handle_error(e, f"조인 조건에서 컬럼 추출 실패: {join_condition}")
+            return []
+    
+    def _create_inferred_columns(self, project_id: int, table_name: str, table_component_id: int, join_relationships: List[Dict[str, Any]]) -> int:
+        """
+        JOIN 관계에서 도출된 조인 필드를 inferred 컬럼으로 생성
+        
+        Args:
+            project_id: 프로젝트 ID
+            table_name: 테이블명
+            table_component_id: 테이블의 component_id
+            join_relationships: JOIN 관계 리스트
+            
+        Returns:
+            생성된 inferred 컬럼 수
+        """
+        try:
+            # 1. JOIN 관계에서 해당 테이블의 조인 필드 추출
+            join_columns = self._extract_join_columns_from_relationships(table_name, join_relationships)
+            
+            if not join_columns:
+                debug(f"테이블 {table_name}에 대한 조인 필드가 없습니다")
+                return 0
+            
+            # 2. inferred 테이블용 file_id 조회
+            inferred_file_id = self._get_inferred_file_id(project_id)
+            if not inferred_file_id:
+                handle_error(f"inferred 컬럼용 file_id를 찾을 수 없습니다: {table_name}")
+                return 0
+            
+            # 3. 테이블 ID 조회
+            table_id = self._get_table_id_by_component_id(table_component_id)
+            if not table_id:
+                handle_error(f"테이블 ID를 찾을 수 없습니다: {table_name}, component_id={table_component_id}")
+                return 0
+            
+            created_count = 0
+            
+            # 4. 각 조인 필드에 대해 inferred 컬럼 생성
+            for column_info in join_columns:
+                try:
+                    # columns 테이블에 컬럼 생성
+                    column_id = self._create_inferred_column_in_tables(
+                        project_id, table_id, column_info
+                    )
+                    
+                    if column_id:
+                        # components 테이블에 COLUMN 컴포넌트 생성
+                        component_id = self._create_inferred_column_component(
+                            project_id, inferred_file_id, table_component_id, column_info
+                        )
+                        
+                        if component_id:
+                            # columns 테이블의 component_id 업데이트
+                            success = self._update_column_component_id(table_id, column_id, component_id)
+                            if success:
+                                created_count += 1
+                                info(f"inferred 컬럼 생성 성공: {table_name}.{column_info['column_name']} (ID: {component_id})")
+                            else:
+                                handle_error(Exception(f"inferred 컬럼 component_id 업데이트 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 component_id 업데이트 실패: {table_name}.{column_info['column_name']}")
+                        else:
+                            handle_error(Exception(f"inferred 컬럼 컴포넌트 생성 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 컴포넌트 생성 실패: {table_name}.{column_info['column_name']}")
+                    else:
+                        handle_error(Exception(f"inferred 컬럼 테이블 생성 실패: {table_name}.{column_info['column_name']}"), f"inferred 컬럼 테이블 생성 실패: {table_name}.{column_info['column_name']}")
+                        
+                except Exception as e:
+                    handle_error(f"inferred 컬럼 생성 중 오류: {table_name}.{column_info['column_name']} - {str(e)}")
+            
+            if created_count > 0:
+                info(f"inferred 컬럼 생성 완료: {table_name}, {created_count}개 컬럼")
+            
+            return created_count
+            
+        except Exception as e:
+            handle_error(e, f"inferred 컬럼 생성 실패: {table_name}")
+            return 0
+    
+    def _get_table_id_by_component_id(self, component_id: int) -> Optional[int]:
+        """
+        component_id로 table_id 조회
+        
+        Args:
+            component_id: 테이블의 component_id
+            
+        Returns:
+            table_id 또는 None
+        """
+        try:
+            query = """
+                SELECT table_id FROM tables 
+                WHERE component_id = ? AND del_yn = 'N'
+            """
+            results = self.db_utils.execute_query(query, (component_id,))
+            
+            if results and len(results) > 0:
+                return results[0]['table_id']
+            return None
+            
+        except Exception as e:
+            handle_error(e, f"테이블 ID 조회 실패: component_id={component_id}")
+            return None
+    
+    def _create_inferred_column_in_tables(self, project_id: int, table_id: int, column_info: Dict[str, Any]) -> Optional[int]:
+        """
+        columns 테이블에 inferred 컬럼 생성
+        
+        Args:
+            project_id: 프로젝트 ID
+            table_id: 테이블 ID
+            column_info: 컬럼 정보
+            
+        Returns:
+            column_id 또는 None
+        """
+        try:
+            # 해시값 생성
+            column_hash = HashUtils.generate_content_hash(
+                f"INFERRED{table_id}{column_info['column_name']}{column_info['data_type']}"
+            )
+            
+            column_data = {
+                'table_id': table_id,
+                'column_name': column_info['column_name'],
+                'data_type': column_info['data_type'],
+                'data_length': column_info.get('data_length'),
+                'nullable': column_info.get('nullable', 'Y'),
+                'column_comments': column_info.get('column_comments', 'Inferred from JOIN analysis'),
+                'position_pk': None,
+                'data_default': None,
+                'owner': 'UNKNOWN',
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': column_hash,
+                'del_yn': 'N'
+            }
+            
+            column_id = self.db_utils.insert_or_replace_with_id('columns', column_data)
+            return column_id
+            
+        except Exception as e:
+            handle_error(e, f"inferred 컬럼 테이블 생성 실패: {column_info['column_name']}")
+            return None
+    
+    def _create_inferred_column_component(self, project_id: int, file_id: int, parent_id: int, column_info: Dict[str, Any]) -> Optional[int]:
+        """
+        components 테이블에 COLUMN 컴포넌트 생성
+        
+        Args:
+            project_id: 프로젝트 ID
+            file_id: 파일 ID
+            parent_id: 부모 테이블의 component_id
+            column_info: 컬럼 정보
+            
+        Returns:
+            component_id 또는 None
+        """
+        try:
+            # 해시값 생성
+            component_hash = HashUtils.generate_content_hash(
+                f"INFERRED{project_id}{column_info['column_name']}{parent_id}"
+            )
+            
+            component_data = {
+                'project_id': project_id,
+                'file_id': file_id,
+                'component_name': column_info['column_name'],  # 컬럼명만 사용
+                'component_type': 'COLUMN',
+                'parent_id': parent_id,  # 테이블의 component_id
+                'layer': 'DB',
+                'line_start': None,
+                'line_end': None,
+                'has_error': 'N',
+                'error_message': None,
+                'hash_value': component_hash,
+                'del_yn': 'N'
+            }
+            
+            component_id = self.db_utils.insert_or_replace_with_id('components', component_data)
+            return component_id
+            
+        except Exception as e:
+            handle_error(e, f"inferred 컬럼 컴포넌트 생성 실패: {column_info['column_name']}")
+            return None
+    
+    def _update_column_component_id(self, table_id: int, column_id: int, component_id: int) -> bool:
+        """
+        columns 테이블의 component_id 업데이트
+        
+        Args:
+            table_id: 테이블 ID
+            column_id: 컬럼 ID
+            component_id: 컴포넌트 ID
+            
+        Returns:
+            업데이트 성공 여부
+        """
+        try:
+            update_data = {'component_id': component_id}
+            where_conditions = {'column_id': column_id}
+            
+            success = self.db_utils.update_record('columns', update_data, where_conditions)
+            return success
+            
+        except Exception as e:
+            handle_error(e, f"컬럼 component_id 업데이트 실패: column_id={column_id}")
+    
+    def _print_xml_loading_statistics(self):
+        """XML 로딩 통계 출력"""
+        try:
+            info("=== XML 로딩 통계 ===")
+            info(f"처리된 XML 파일: {self.stats['xml_files_processed']}개")
+            info(f"추출된 SQL 쿼리: {self.stats['sql_queries_extracted']}개")
+            info(f"생성된 SQL 컴포넌트: {self.stats['sql_components_created']}개")
+            info(f"생성된 inferred 테이블: {self.stats.get('inferred_tables_created', 0)}개")
+            info(f"생성된 inferred 컬럼: {self.stats.get('inferred_columns_created', 0)}개")
+            info(f"오류 발생: {self.stats['errors']}개")
+            
+            # SQL Content 통계 출력 (부속 기능 - 에러 시 무시)
+            try:
+                if self.sql_content_manager and self.sql_content_manager.initialized:
+                    project_id = self._get_project_id()
+                    if project_id:
+                        sql_content_stats = self.sql_content_manager.get_stats(project_id)
+                        if sql_content_stats and sql_content_stats.get('total_stats'):
+                            total = sql_content_stats['total_stats']
+                            if total and isinstance(total, dict):
+                                info("=== SQL Content 통계 ===")
+                                info(f"저장된 SQL 내용: {total.get('total_sql_contents', 0)}개")
+                                info(f"총 압축 크기: {total.get('total_compressed_size', 0)} bytes")
+                                avg_size = total.get('avg_compressed_size', 0)
+                                if avg_size is not None:
+                                    info(f"평균 압축 크기: {avg_size:.2f} bytes")
+                                else:
+                                    info(f"평균 압축 크기: 0.00 bytes")
+                                info(f"최대 압축 크기: {total.get('max_compressed_size', 0)} bytes")
+                                info(f"최소 압축 크기: {total.get('min_compressed_size', 0)} bytes")
+                            else:
+                                info("=== SQL Content 통계 ===")
+                                info("저장된 SQL 내용이 없습니다.")
+                        else:
+                            info("=== SQL Content 통계 ===")
+                            info("SQL Content 통계 정보가 없습니다.")
+                    else:
+                        info("=== SQL Content 통계 ===")
+                        info("프로젝트 ID를 찾을 수 없어 SQL Content 통계를 출력할 수 없습니다.")
+                else:
+                    info("=== SQL Content 통계 ===")
+                    info("SQL Content Manager가 초기화되지 않았습니다.")
+            except Exception as e:
+                info("=== SQL Content 통계 ===")
+                info(f"SQL Content 통계 출력 중 오류 발생 (무시): {str(e)}")
+            
+        except Exception as e:
+            handle_error(e, "통계 출력 실패")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """통계 정보 반환"""
+        return self.stats.copy()
+    
+    def reset_statistics(self):
+        """통계 초기화"""
+        self.stats = {
+            'xml_files_processed': 0,
+            'sql_queries_extracted': 0,
+            'sql_components_created': 0,
+            'inferred_tables_created': 0,
+            'inferred_columns_created': 0,
+            'errors': 0
+        }

@@ -42,6 +42,36 @@ class SqlContentManager:
         self._compiled_regex_patterns = None  # 정규식 패턴 사전 컴파일 캐싱
         self._cleaned_sql_cache = {}  # SQL 전처리 결과 캐싱 (쿼리 해시 -> 정제된 SQL)
         self.initialized = self._initialize_database()
+
+    def _log_full_sql_debug(self, tag: str, query_id: str, content: Optional[str], extra: Optional[str] = None) -> None:
+        """
+        디버깅용 SQL 전체 내용을 조각별로 출력한다.
+
+        Args:
+            tag: 로그 태그 문자열
+            query_id: 쿼리 ID
+            content: 출력할 SQL 내용
+            extra: 부가 정보 문자열
+        """
+        try:
+            text = content or ''
+            total_len = len(text)
+            chunk_size = 1000
+            total_chunks = (total_len + chunk_size - 1) // chunk_size if total_len else 0
+            base_msg = f"{tag} query_id={query_id} len={total_len}"
+            if extra:
+                base_msg += f" {extra}"
+
+            if total_chunks <= 1:
+                app_logger.info(f"{base_msg} content={text}")
+                return
+
+            app_logger.info(f"{base_msg} chunks={total_chunks}, chunk_size={chunk_size}")
+            for idx in range(total_chunks):
+                chunk = text[idx * chunk_size:(idx + 1) * chunk_size]
+                app_logger.info(f"{tag} query_id={query_id} chunk {idx + 1}/{total_chunks}: {chunk}")
+        except Exception as e:
+            app_logger.warning(f"SQL 전체 로그 출력 실패({tag}, {query_id}): {e}")
     
     def _initialize_database(self) -> bool:
         """데이터베이스 초기화"""
@@ -126,6 +156,11 @@ class SqlContentManager:
                 # require_current_file가 이미 handle_error를 호출하므로 여기서는 재처리 없음
                 return False
             
+            raw_sql_content = kwargs.get('raw_sql_content')
+            sql_content = self._normalize_line_endings(sql_content or '')
+            if raw_sql_content is not None:
+                raw_sql_content = self._normalize_line_endings(raw_sql_content)
+
             # 1. Component 등록 (metadata.db, 단일 연결 사용)
             component_id = self._register_sql_component(
                 sql_content=sql_content,
@@ -174,11 +209,19 @@ class SqlContentManager:
                 parser = SqlParser()
                 table_names = parser.extract_table_names(sql_content) or set()
 
+                if is_debug_target and raw_sql_content:
+                    self._log_full_sql_debug(
+                        "[USE_TABLE][TARGET][SQL_RAW]",
+                        current_query_id,
+                        raw_sql_content,
+                        extra=f"component_id={component_id} file={debug_source_file} path={debug_source_path}"
+                    )
                 if is_debug_target:
-                    preview = (sql_content or '')[:500]
-                    app_logger.info(
-                        f"[USE_TABLE][TARGET][SQL_RAW] query_id={current_query_id} "
-                        f"len={len(sql_content or '')} preview={preview}"
+                    self._log_full_sql_debug(
+                        "[USE_TABLE][TARGET][SQL_NORMALIZED]",
+                        current_query_id,
+                        sql_content,
+                        extra=f"component_id={component_id}"
                     )
 
                 # 디버깅용: 파서 단계에서 추출된 테이블 로그
@@ -207,10 +250,11 @@ class SqlContentManager:
 
                             # 디버깅용: 전처리된 SQL 일부 로그 (길이 제한)
                             if is_debug_target:
-                                preview = cleaned_sql[:300]
-                                app_logger.info(
-                                    f"[USE_TABLE][TARGET][CLEANED_SQL] query_id={current_query_id} "
-                                    f"len={len(cleaned_sql)} preview={preview}"
+                                self._log_full_sql_debug(
+                                    "[USE_TABLE][TARGET][CLEANED_SQL]",
+                                    current_query_id,
+                                    cleaned_sql,
+                                    extra=f"component_id={component_id}"
                                 )
                             elif app_logger.logger.isEnabledFor(logging.DEBUG):
                                 app_logger.debug(
@@ -286,7 +330,12 @@ class SqlContentManager:
                             )
                             if not rows:
                                 # 디버깅용: 테이블은 찾았지만 TABLE 컴포넌트가 없는 경우
-                                if is_debug_target and app_logger.logger.isEnabledFor(logging.DEBUG):
+                                if is_debug_target:
+                                    app_logger.info(
+                                        f"[USE_TABLE][TARGET][NO_COMPONENT] query_id={current_query_id} "
+                                        f"component_id={component_id} table_name={normalized_table}"
+                                    )
+                                elif app_logger.logger.isEnabledFor(logging.DEBUG):
                                     app_logger.debug(
                                         f"[USE_TABLE][NO_COMPONENT] query_id={current_query_id} "
                                         f"component_id={component_id} table_name={normalized_table}"
@@ -306,11 +355,33 @@ class SqlContentManager:
                                 'del_yn': 'N'
                             }
                             metadata_db_utils.insert_or_replace_with_id('relationships', rel_data, conn=meta_conn)
+                            if is_debug_target:
+                                app_logger.info(
+                                    f"[USE_TABLE][TARGET][LINK] query_id={current_query_id} "
+                                    f"component_id={component_id} table_component_id={table_component_id} "
+                                    f"table_name={normalized_table}"
+                                )
                         except Exception as e:
                             handle_error(e, f"USE_TABLE 관계 생성 실패: component_id={component_id}, table={table_name}")
+                    if is_debug_target:
+                        app_logger.info(
+                            f"[USE_TABLE][TARGET][SUMMARY] query_id={current_query_id} "
+                            f"component_id={component_id} linked_tables={sorted(list(linked_tables))}"
+                        )
+                        missing_tables = sorted(list(set(tn.strip().upper() for tn in table_names) - linked_tables))
+                        if missing_tables:
+                            app_logger.warning(
+                                f"[USE_TABLE][TARGET][MISSING_LINK] query_id={current_query_id} "
+                                f"component_id={component_id} missing_tables={missing_tables}"
+                            )
                 else:
                     # 디버깅용: 어떤 방식으로도 테이블을 찾지 못한 경우
-                    if is_debug_target and app_logger.logger.isEnabledFor(logging.DEBUG):
+                    if is_debug_target:
+                        app_logger.info(
+                            f"[USE_TABLE][TARGET][EMPTY_FINAL] query_id={current_query_id} "
+                            f"component_id={component_id} - 테이블 미검출"
+                        )
+                    elif app_logger.logger.isEnabledFor(logging.DEBUG):
                         app_logger.debug(
                             f"[USE_TABLE][EMPTY] query_id={current_query_id} "
                             f"component_id={component_id} - 테이블 미검출"
@@ -930,11 +1001,12 @@ class SqlContentManager:
         Returns:
             정제된 SQL
         """
+        normalized_sql = self._normalize_line_endings(sql or '')
         try:
             import hashlib
 
             # SQL 해시 생성 (캐시 키)
-            sql_hash = hashlib.md5(sql.encode('utf-8')).hexdigest()
+            sql_hash = hashlib.md5(normalized_sql.encode('utf-8')).hexdigest()
 
             # 캐시 확인
             if sql_hash in self._cleaned_sql_cache:
@@ -943,14 +1015,14 @@ class SqlContentManager:
             import re
             # 1. MyBatis 태그 제거 (간단히 태그만 제거하고 내용은 남김, 혹은 공백 처리)
             # 여기서는 태그 자체를 공백으로 치환하여 단어 경계 유지
-            cleaned = re.sub(r'<[^>]+>', ' ', sql)
+            cleaned = re.sub(r'<[^>]+>', ' ', normalized_sql)
 
-            # 2. 라인 주석 제거 (-- ... 한 줄)
-            cleaned = re.sub(r'--[^\r\n]*', '', cleaned)
-            cleaned = re.sub(r'//[^\r\n]*', '', cleaned)
+            # 2. 라인 주석 제거 (-- ... 한 줄) - 개행 유지
+            cleaned = re.sub(r'--[^\r\n]*', '\n', cleaned)
+            cleaned = re.sub(r'//[^\r\n]*', '\n', cleaned)
 
-            # 3. 블록 주석 제거 (/* ... */)
-            cleaned = re.sub(r'/\*.*?\*/', '', cleaned, flags=re.DOTALL)
+            # 3. 블록 주석 제거 (/* ... */) - 개행 유지
+            cleaned = re.sub(r'/\*.*?\*/', '\n', cleaned, flags=re.DOTALL)
 
             # 4. 공백 정규화
             cleaned = re.sub(r'\s+', ' ', cleaned).strip()
@@ -961,4 +1033,10 @@ class SqlContentManager:
 
             return cleaned
         except Exception:
-            return sql
+            return normalized_sql
+
+    def _normalize_line_endings(self, text: Optional[str]) -> str:
+        """CR/LF 조합을 모두 LF로 통일"""
+        if text is None:
+            return ''
+        return text.replace('\r\n', '\n').replace('\n\r', '\n').replace('\r', '\n')
