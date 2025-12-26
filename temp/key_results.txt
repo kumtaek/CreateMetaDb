@@ -1,0 +1,4 @@
+FINDSTR: C:테이블 목록을(를) 열 수 없습니다.
+FINDSTR: C:중복 관계을(를) 열 수 없습니다.
+FINDSTR: C:USE_TABLE을(를) 열 수 없습니다.
+FINDSTR: performance_test.txt을(를) 열 수 없습니다.

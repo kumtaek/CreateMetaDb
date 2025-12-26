@@ -1,7 +1,0 @@
-USE_TABLE)
-            try:
-                from parser.sql_parser import SqlParser
-                parser = SqlParser()
-                table_names = parser.extract_table_names(sql_content) or set()
-                if table_names:
-                    metadata_db_path = f'projects/{self.project_name

@@ -1,0 +1,38 @@
+[DEBUG] 로깅 설정 파일 경로: config\logging.yaml
+[DEBUG] 로깅 설정 파일 존재: True
+[DEBUG] 로깅 설정 파일 읽기 시도
+[DEBUG] YAML 파싱 성공
+[DEBUG] logs 디렉토리 생성 완료
+[DEBUG] 로깅 설정 적용 완료
+[DEBUG] SourceAnalyzer 로거 생성 완료
+[DEBUG] 기존 핸들러 수: 2
+[DEBUG] 핸들러 타입: <class 'logging.StreamHandler'>
+[DEBUG] 핸들러 타입: <class 'logging.handlers.RotatingFileHandler'>
+[DEBUG] 기존 파일 핸들러 제거
+[DEBUG] 새로운 파일 핸들러 추가 완료
+[DEBUG] 로거 레벨 설정: DEBUG
+[DEBUG] 최종 핸들러 수: 2
+[DEBUG] 로깅 시스템 초기화 완료
+2025-11-28 13:55:13 - INFO - 로깅 시스템 테스트 - 이 메시지가 보이면 정상 작동
+[DEBUG] 테스트 로그 출력 완료
+2025-11-28 13:55:13 - INFO - SourceAnalyzer 리포트 생성 도구 시작
+2025-11-28 13:55:13 - INFO - 프로젝트 유효성 검증 완료: sampleSrc (테이블 23개)
+2025-11-28 13:55:13 - INFO - 
+
+
+
+8단계 시작 ========================================
+2025-11-28 13:55:13 - INFO - Backend Mapping Report 생성
+2025-11-28 13:55:13 - INFO - Backend Mapping Report 생성 시작: sampleSrc
+2025-11-28 13:55:13 - INFO - 조회된 쿼리 개수: 302
+2025-11-28 13:55:13 - INFO - 리포트 파일 저장 완료: D:/Analyzer/CreateMetaDb/projects/sampleSrc/report/[sampleSrc]_BackendMappingReport_20251128_135513.html
+2025-11-28 13:55:13 - INFO - Backend Mapping Report 생성 완료: D:/Analyzer/CreateMetaDb/projects/sampleSrc/report/[sampleSrc]_BackendMappingReport_20251128_135513.html
+2025-11-28 13:55:13 - INFO - 성공: Backend Mapping Report 생성 완료
+2025-11-28 13:55:13 - INFO - 
+
+
+
+=== 리포트 생성 완료 ===
+2025-11-28 13:55:13 - INFO - 성공: 1/1
+2025-11-28 13:55:13 - INFO - 실패: 0건
+2025-11-28 13:55:13 - INFO - 출력 디렉토리: D:/Analyzer/CreateMetaDb/projects/sampleSrc/report

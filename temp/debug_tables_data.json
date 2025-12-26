@@ -1,0 +1,568 @@
+{
+    "CUSTOMERS": [
+        {
+            "column_name": "CUSTOMER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "고객ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "CUSTOMER_NAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "고객명",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PHONE",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "전화번호",
+            "data_length": 20,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ADDRESS",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "주소",
+            "data_length": 200,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "EMAIL",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "이메일",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "CREATED_AT",
+            "data_type": "DATE",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "생성일시",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        }
+    ],
+    "DEPARTMENTS": [
+        {
+            "column_name": "DEPT_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "부서 고유 ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "DEPT_NAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "부서명",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "MANAGER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "부서장 ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "LOCATION",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "부서 위치",
+            "data_length": 200,
+            "data_default": null,
+            "is_inferred": false
+        }
+    ],
+    "ORDERS": [
+        {
+            "column_name": "ORDER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "주문ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "CUSTOMER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "고객ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ORDER_DATE",
+            "data_type": "DATE",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "주문일시",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "TOTAL_AMOUNT",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "총 주문금액",
+            "data_length": 10,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "STATUS",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "주문상태",
+            "data_length": 20,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "USER_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "USERS"
+        },
+        {
+            "column_name": "PRODUCT_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "PRODUCTS"
+        }
+    ],
+    "ORDER_ITEMS": [
+        {
+            "column_name": "ITEM_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "주문항목ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ORDER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "주문ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PRODUCT_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "상품ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "QUANTITY",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "수량",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "UNIT_PRICE",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "단가",
+            "data_length": 10,
+            "data_default": null,
+            "is_inferred": false
+        }
+    ],
+    "PRODUCTS": [
+        {
+            "column_name": "PRODUCT_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "상품ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PRODUCT_NAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "상품명",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "CATEGORY_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "카테고리ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PRICE",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "가격",
+            "data_length": 10,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "STOCK_QUANTITY",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "재고수량",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "DESCRIPTION",
+            "data_type": "CLOB",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "상품설명",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "BRAND_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "BRANDS"
+        },
+        {
+            "column_name": "SUPPLIER_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "SUPPLIERS"
+        }
+    ],
+    "USERS": [
+        {
+            "column_name": "USER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "사용자 고유 식별자",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "USERNAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "사용자명 (유니크)",
+            "data_length": 50,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "EMAIL",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "이메일 주소",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PASSWORD",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "암호화된 비밀번호",
+            "data_length": 100,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "CREATED_AT",
+            "data_type": "DATE",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "계정 생성일시",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "UPDATED_AT",
+            "data_type": "DATE",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "계정 수정일시",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "STATUS",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "계정 상태",
+            "data_length": 10,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "DEPT_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "DEPARTMENTS"
+        }
+    ],
+    "USER_PROFILES": [
+        {
+            "column_name": "PROFILE_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "프로필 고유 ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "USER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": false,
+            "is_nullable": false,
+            "column_comments": "사용자 ID (외래키)",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "FIRST_NAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "이름",
+            "data_length": 50,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "LAST_NAME",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "성",
+            "data_length": 50,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "PHONE",
+            "data_type": "VARCHAR2",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "전화번호",
+            "data_length": 20,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ADDRESS",
+            "data_type": "CLOB",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "주소",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        }
+    ],
+    "USER_ROLES": [
+        {
+            "column_name": "USER_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "사용자 ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ROLE_ID",
+            "data_type": "NUMBER",
+            "is_primary_key": true,
+            "is_nullable": false,
+            "column_comments": "역할 ID",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        },
+        {
+            "column_name": "ASSIGNED_AT",
+            "data_type": "DATE",
+            "is_primary_key": false,
+            "is_nullable": true,
+            "column_comments": "할당일시",
+            "data_length": null,
+            "data_default": null,
+            "is_inferred": false
+        }
+    ],
+    "[I]BRANDS_AUX": [
+        {
+            "column_name": "USER_REF",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "USERS"
+        }
+    ],
+    "[I]BRAND_METRICS": [
+        {
+            "column_name": "ORDER_REF",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "ORDERS"
+        }
+    ],
+    "[I]INVENTORY_AUDIT": [
+        {
+            "column_name": "ORDER_REF",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "ORDERS"
+        }
+    ],
+    "[I]PAYMENTS": [
+        {
+            "column_name": "ORDER_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "ORDERS"
+        }
+    ],
+    "[I]USER_ACTIVITIES": [
+        {
+            "column_name": "USER_ID",
+            "data_type": "INFERRED",
+            "data_length": null,
+            "is_nullable": true,
+            "column_comments": null,
+            "is_primary_key": false,
+            "is_foreign_key": false,
+            "data_default": null,
+            "is_inferred": true,
+            "inferred_from": "USERS"
+        }
+    ]
+}

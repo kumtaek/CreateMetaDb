@@ -1,0 +1,10 @@
+import sqlite3, pathlib, sys
+p=pathlib.Path('projects/sampleSrc/SqlContent.db')
+print('exists', p.exists())
+if not p.exists(): sys.exit()
+conn=sqlite3.connect(p)
+c=conn.cursor()
+print('total', c.execute('select count(*) from sql_contents').fetchone()[0])
+print('counts', c.execute('select file_name, count(*) from sql_contents group by file_name order by file_name').fetchall())
+print('prod sample', c.execute("select component_name from sql_contents where file_name='ProductMapper.xml' limit 5").fetchall())
+conn.close()

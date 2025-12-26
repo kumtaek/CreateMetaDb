@@ -1,0 +1,44 @@
+[DEBUG] 로깅 설정 파일 경로: config\logging.yaml
+[DEBUG] 로깅 설정 파일 존재: True
+[DEBUG] 로깅 설정 파일 읽기 시도
+[DEBUG] YAML 파싱 성공
+[DEBUG] logs 디렉토리 생성 완료
+[DEBUG] 로깅 설정 적용 완료
+[DEBUG] SourceAnalyzer 로거 생성 완료
+[DEBUG] 기존 핸들러 수: 2
+[DEBUG] 핸들러 타입: <class 'logging.StreamHandler'>
+[DEBUG] 핸들러 타입: <class 'logging.handlers.RotatingFileHandler'>
+[DEBUG] 기존 파일 핸들러 제거
+[DEBUG] 새로운 파일 핸들러 추가 완료
+[DEBUG] 로거 레벨 설정: DEBUG
+[DEBUG] 최종 핸들러 수: 2
+[DEBUG] 로깅 시스템 초기화 완료
+2025-12-09 18:12:52 - INFO - 로깅 시스템 테스트 - 이 메시지가 보이면 정상 작동
+[DEBUG] 테스트 로그 출력 완료
+2025-12-09 18:12:52 - INFO - 프로젝트 ID 조회: sampleSrc -> project_id 1
+2025-12-09 18:12:52 - WARNING - CSV 파일을 찾을 수 없음: ALL_TABLES.csv
+2025-12-09 18:12:52 - WARNING - CSV 파일을 찾을 수 없음: ALL_TAB_COLUMNS.csv
+2025-12-09 18:12:52 - INFO - 메타데이터베이스 일관성 검증 시작
+2025-12-09 18:12:52 - INFO - 메서드 중복 검증 완료: 0개 중복 발견
+2025-12-09 18:12:52 - INFO - API_URL 중복 검증 완료: 백엔드 0개, 프론트엔드 0개 위반 발견
+2025-12-09 18:12:52 - INFO - 중복 관계 없음
+2025-12-09 18:12:52 - INFO - === 단순 테이블명 매칭 시작 ===
+2025-12-09 18:12:52 - INFO - MyBatis 파일 확장자: ['.xml', '.dbio']
+2025-12-09 18:12:52 - INFO - MyBatis XML files collected: 8
+2025-12-09 18:12:52 - INFO - MyBatis XML 파일 8개 발견
+2025-12-09 18:12:52 - INFO - 테이블 23개 로드
+2025-12-09 18:12:52 - INFO - === 단순 테이블명 매칭 완료 ===
+2025-12-09 18:12:52 - INFO - 처리된 쿼리: 60개
+2025-12-09 18:12:52 - INFO - 추가된 USE_TABLE 관계: 0개
+2025-12-09 18:12:52 - WARNING - 백엔드 연결이 없는 API: 124개 (프론트엔드 전용 또는 JPA 자동 생성 API일 수 있음)
+2025-12-09 18:12:52 - WARNING -   - GET:/users (파일: ApiService.ts)
+2025-12-09 18:12:52 - WARNING -   - GET:/users/search/username (파일: JpaApiService.js)
+2025-12-09 18:12:52 - WARNING -   - GET:/users/search/email (파일: JpaApiService.js)
+2025-12-09 18:12:52 - WARNING -   - GET:/users/search/fullname (파일: JpaApiService.js)
+2025-12-09 18:12:52 - WARNING -   - GET:/users/search (파일: JpaApiService.js)
+2025-12-09 18:12:52 - WARNING - 테이블 연결이 없는 SQL: 73개 (시스템 함수 또는 DUAL 테이블 사용일 수 있음)
+2025-12-09 18:12:52 - WARNING -   - UserMapper.selectById (SQL_SELECT)
+2025-12-09 18:12:52 - WARNING -   - UserMapper.selectAll (SQL_SELECT)
+2025-12-09 18:12:52 - WARNING -   - UserMapper.update (SQL_UPDATE)
+2025-12-09 18:12:52 - INFO - 불필요한 getter/setter 메소드 없음
+2025-12-09 18:12:52 - INFO - 메타데이터베이스 일관성 검증 통과
