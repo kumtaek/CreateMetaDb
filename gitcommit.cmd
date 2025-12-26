@@ -1,5 +1,6 @@
 @echo off
 setlocal
+chcp 65001
 
 :: Check if a commit message was provided as an argument
 if "%~1"=="" (
