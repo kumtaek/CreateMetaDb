@@ -1,6 +1,7 @@
 @echo off
 setlocal
-chcp 65001
+:: 1. CMD compatibility: Use English for system messages to avoid encoding issues
+chcp 437 > nul
 
 :: Check if a commit message was provided as an argument
 if "%~1"=="" (
@@ -21,14 +22,14 @@ cd /d "D:\Analyzer\CreateMetaDb"
 :: Guard: remove stray reserved-name file if present (causes git add failure)
 if exist "\\?\%CD%\nul" del "\\?\%CD%\nul"
 
-:: Add changes (excluding temp and backup directories)
 git add . -- ":!temp/" ":!backup/"
-
-:: Commit with the message
 git commit -m "%CommitMessage%"
 
-:: Push to main
+:: 7. Push
+echo [3/3] Uploading to server (Push)...
 git push -u origin main
 
+echo.
+echo Process Completed.
 pause
 endlocal
