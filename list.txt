@@ -1,6 +1,7 @@
 ﻿D:\Analyzer\CreateMetaDb\backend_entry_loading.py
 D:\Analyzer\CreateMetaDb\consistency_validator.py
 D:\Analyzer\CreateMetaDb\create_report.py
+D:\Analyzer\CreateMetaDb\extract_sqltext.py
 D:\Analyzer\CreateMetaDb\file_loading.py
 D:\Analyzer\CreateMetaDb\frontend_loading.py
 D:\Analyzer\CreateMetaDb\install_extra_deps.py

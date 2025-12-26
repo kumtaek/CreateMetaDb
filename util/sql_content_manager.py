@@ -201,8 +201,7 @@ class SqlContentManager:
 
                 current_query_id = kwargs.get('query_id', kwargs.get('component_name', ''))
                 is_debug_target = bool(debug_target_query_id) and current_query_id == debug_target_query_id
-                # 특정 파일/쿼리 조합(UbcRgstTgtPopDbio.dbio + selectListUbcRgstTgt)도 디버깅 강제
-                if (debug_source_file == 'UbcRgstTgtPopDbio.dbio' and current_query_id == 'selectListUbcRgstTgt') or debug_hint:
+                if debug_hint:
                     is_debug_target = True
 
                 from parser.sql_parser import SqlParser

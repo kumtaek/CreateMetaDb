@@ -122,11 +122,6 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     file_id = file_results[0]['file_id']
                     self.xml_parser.current_file_id = file_id
 
-                    # 대상 디버깅 파일 여부 (UbcRgstTgtPopDbio.dbio)
-                    is_target_dbio = (file_name == 'UbcRgstTgtPopDbio.dbio')
-                    if is_target_dbio:
-                        info(f"[DBIO DEBUG] 대상 파일 처리 시작: {unix_relative_path} (file_id={file_id})")
-
                     # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
                     self.file_context.push(
                         project_name=self.project_name,
@@ -140,14 +135,6 @@ class XmlLoadingEngine(BaseLoadingEngine):
                     )
                     
                     analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
-                    if is_target_dbio:
-                        join_stats = analysis_result.get('join_analysis_stats') or {}
-                        info(
-                            f"[DBIO DEBUG] 분석 결과 요약: file={unix_relative_path} "
-                            f"has_error={analysis_result.get('has_error')} "
-                            f"sql_count={len(analysis_result.get('sql_queries') or [])} "
-                            f"join_stats={join_stats}"
-                        )
                     
                     if analysis_result.get('has_error') == 'Y':
                         self.stats['errors'] += 1
@@ -159,11 +146,6 @@ class XmlLoadingEngine(BaseLoadingEngine):
                         for sql_query in analysis_result['sql_queries']:
                             query_id = sql_query.get('query_id')
                             query_type = sql_query.get('query_type')
-
-                            # 대상 쿼리 디버깅 플래그 (selectListUbcRgstTgt in UbcRgstTgtPopDbio.dbio)
-                            is_target_query = is_target_dbio and (query_id == 'selectListUbcRgstTgt')
-                            if is_target_query:
-                                info(f"[DBIO DEBUG] 쿼리 추출: query_id={query_id}, type={query_type}, file_id={file_id}, path={unix_relative_path}")
 
                             # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
                             saved = self.sql_content_manager.save_sql_content(
@@ -178,22 +160,11 @@ class XmlLoadingEngine(BaseLoadingEngine):
                                 hash_value=sql_query.get('hash_value'),
                                 component_name=query_id,
                                 raw_sql_content=sql_query.get('raw_sql_content'),
-                                debug_source_file=file_name,
-                                debug_source_path=unix_relative_path,
-                                debug_hint="DBIO_TARGET" if is_target_query else None,
                             )
                             saved_any = saved_any or bool(saved)
 
-                            if is_target_query:
-                                info(f"[DBIO DEBUG] SqlContent 저장 결과: query_id={query_id}, saved={saved}")
-                                if not saved:
-                                    warning(f"[DBIO DEBUG] SqlContent 저장 실패 - query_id={query_id}, file={unix_relative_path}")
-
                         if saved_any:
                             self.stats['sql_components_created'] += 1
-
-                    if 'is_target_dbio' in locals() and is_target_dbio:
-                        info(f"[DBIO DEBUG] 파일 처리 완료: {unix_relative_path}, sql_queries={len(analysis_result.get('sql_queries', []))}, join_created={analysis_result.get('join_analysis_stats', {}).get('relationships_created', 0)}")
 
                     # JOIN 관계 생성 통계 집계
                     join_stats = analysis_result.get('join_analysis_stats', {})
