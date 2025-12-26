@@ -1,6 +1,5 @@
 @echo off
 setlocal
-:: 1. CMD compatibility: Use English for system messages to avoid encoding issues
 chcp 437 > nul
 
 :: Check if a commit message was provided as an argument
@@ -21,15 +20,18 @@ cd /d "D:\Analyzer\CreateMetaDb"
 
 :: Guard: remove stray reserved-name file if present (causes git add failure)
 if exist "\\?\%CD%\nul" del "\\?\%CD%\nul"
-
 git add . -- ":!temp/" ":!backup/"
 git commit -m "%CommitMessage%"
 
-:: 7. Push
-echo [3/3] Uploading to server (Push)...
+:: 3. STEP 2: Sync from Server (Pull after Commit is safer)
+echo [2/3] Syncing from Server (Pull Rebase)...
+git pull origin main --rebase
+
+:: 4. STEP 3: Uploading to server (Push)
+echo [3/3] Uploading to Server (Push)...
 git push -u origin main
 
 echo.
-echo Process Completed.
+echo All Done! Clean and Synced.
 pause
 endlocal
