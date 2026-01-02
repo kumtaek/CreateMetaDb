@@ -1,5 +1,4 @@
-D:
-cd D:\Analyzer\CreateMetaDb
+Set-Location $PSScriptRoot
 Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
 #Get-ChildItem -Recurse -Filter *.yaml | Select-Object -Expand FullName >> list.txt
 #Get-ChildItem -Recurse -Filter *.sql | Select-Object -Expand FullName >> list.txt
@@ -12,8 +11,8 @@ del ../pys*.*
 move pys*.* ../
  
 
-D:
-cd D:\Analyzer\CreateMetaDb
+Set-Location $PSScriptRoot
+
 python main.py --project-name sampleSrc --clear-metadb --verbose
 
 

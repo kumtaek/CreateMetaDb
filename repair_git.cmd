@@ -1,7 +1,7 @@
 @echo off
 setlocal
 chcp 65001 > nul
-cd /d "C:\Analyzer\CreateMetaDb"
+cd /d "%~dp0"
 
 echo [Git 상태 복구 도구]
 echo 1. 멈춰있는 Rebase 프로세스 정리 중...

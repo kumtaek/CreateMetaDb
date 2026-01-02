@@ -15,8 +15,8 @@ if "%~1"=="" (
 )
 
 :: Change to project directory
-d:
 cd /d "%~dp0"
+
 
 :: Guard: remove stray reserved-name file if present (causes git add failure)
 if exist "\\?\%CD%\nul" del "\\?\%CD%\nul"
