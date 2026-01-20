@@ -167,6 +167,10 @@ class RelationshipBuilder:
     # ===== DB helpers =====
 
     def _insert_relationship(self, src_id: int, dst_id: int, rel_type: str) -> None:
+        # 자기 참조 관계는 CHECK 제약조건 위반이므로 저장하지 않음
+        if src_id == dst_id:
+            debug(f"자기 참조 관계 스킵: src_id={src_id}, dst_id={dst_id}, rel_type={rel_type}")
+            return
         cur = self.conn.cursor()
         cur.execute(
             """

@@ -23,6 +23,8 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.component_filter_utils import ComponentFilterUtils
 from util.report_utils import ReportUtils
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -138,7 +140,10 @@ class ArchitectureLayerReportGenerator:
                     c.component_type, 
                     c.component_name,
                     c.component_id,
-                    f.file_name as file_path,
+                    CASE
+                        WHEN f.file_path IS NULL OR f.file_path = '' THEN f.file_name
+                        ELSE f.file_path || '/' || f.file_name
+                    END as file_path,
                     COALESCE(rel_count.total_relationships, 0) as relationship_count
                 FROM components c
                 JOIN files f ON c.file_id = f.file_id
@@ -164,6 +169,11 @@ class ArchitectureLayerReportGenerator:
             """
             
             component_results = self.db_utils.execute_query(components_query, (self.project_name,))
+
+            folder_filters = get_report_folders()
+            if folder_filters:
+                filter_utils = ReportFilterUtils()
+                component_results = filter_utils.filter_rows_by_paths(component_results, ['file_path'], folder_filters)
             
             # 중복 제거를 위한 컴포넌트 세트 (컴포넌트명 기준 완전 중복 제거)
             component_sets = {}
@@ -470,6 +480,8 @@ class ArchitectureLayerReportGenerator:
                             analysis['traditional_layer_relationships'][key] = count
             
             app_logger.debug(f"아키텍처 데이터 분석 완료: Layer {len(analysis['layer_distribution'])}개, 관계 {len(analysis['relationships'])}개, 컴포넌트 관계 {len(analysis['component_relationships'])}개")
+
+            analysis = self._apply_folder_filter_to_analysis(analysis)
             return analysis
             
         except Exception as e:
@@ -1267,6 +1279,48 @@ class ArchitectureLayerReportGenerator:
         except Exception as e:
             app_logger.error(f"리포트 파일 저장 실패: {e}")
             raise
+
+    def _apply_folder_filter_to_analysis(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        분석 결과에 폴더 필터 적용
+
+        Args:
+            analysis: 분석 결과 데이터
+
+        Returns:
+            폴더 필터가 반영된 분석 결과
+        """
+        folder_filters = get_report_folders()
+        if not folder_filters:
+            return analysis
+
+        filter_utils = ReportFilterUtils()
+        allowed_components = set()
+
+        for layer, components in analysis.get('layer_components', {}).items():
+            filtered_components = filter_utils.filter_rows_by_paths(components, ['file_path'], folder_filters)
+            analysis['layer_components'][layer] = filtered_components
+            for component in filtered_components:
+                allowed_components.add(component.get('name'))
+
+        component_relationships = analysis.get('component_relationships', {})
+        filtered_relationships = {}
+        for src_name, rel_info in component_relationships.items():
+            if src_name not in allowed_components:
+                continue
+            rels = [
+                rel for rel in rel_info.get('relationships', [])
+                if rel.get('target') in allowed_components
+            ]
+            if not rels:
+                continue
+            filtered_relationships[src_name] = {
+                'layer': rel_info.get('layer'),
+                'relationships': rels
+            }
+
+        analysis['component_relationships'] = filtered_relationships
+        return analysis
     
     def _is_valid_component_name(self, comp_name: str, comp_type: str) -> bool:
         """
@@ -1359,10 +1413,14 @@ class ArchitectureLayerReportGenerator:
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
+            folder_filters = get_report_folders()
+            filter_utils = ReportFilterUtils()
             
             # 레이어 매핑 적용하여 개수 계산
             count = 0
             for row in results:
+                if folder_filters and not filter_utils.is_path_in_folders(row['file_path'], folder_filters):
+                    continue
                 mapped_layer = map_to_target_layer(row['component_type'], row['file_path'])
                 if mapped_layer == layer:
                     count += 1

@@ -12,6 +12,7 @@ import time
 from typing import Optional, List, Dict, Any, Union
 from contextlib import contextmanager
 from .logger import app_logger, handle_error, error, debug, info
+from .progress_utils import ProgressTracker
 import threading
 
 
@@ -650,7 +651,59 @@ class DatabaseUtils:
             # DDL에서 has_error, error_message 폐지됨: 제거하여 스키마 준수
             if 'has_error' in data or 'error_message' in data:
                 data = {k: v for k, v in data.items() if k not in ('has_error', 'error_message')}
+            data = self._normalize_join_relationship_order(data)
         return data
+
+    def _normalize_join_relationship_order(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """JOIN_* 관계는 무방향성으로 보고 src_id < dst_id로 정규화"""
+        rel_type = data.get('rel_type')
+        src_id = data.get('src_id')
+        dst_id = data.get('dst_id')
+        if not rel_type or src_id is None or dst_id is None:
+            return data
+        rel_type_upper = str(rel_type).upper()
+        if not rel_type_upper.startswith('JOIN_'):
+            return data
+        if self._is_directional_join_rel_type(rel_type_upper):
+            return data
+        try:
+            if int(src_id) < int(dst_id):
+                return data
+        except (TypeError, ValueError):
+            return data
+
+        normalized = dict(data)
+        normalized['src_id'], normalized['dst_id'] = dst_id, src_id
+        if 'src_column' in normalized or 'dst_column' in normalized:
+            normalized['src_column'], normalized['dst_column'] = normalized.get('dst_column'), normalized.get('src_column')
+        join_condition = normalized.get('join_condition')
+        if isinstance(join_condition, str) and '=' in join_condition:
+            left, right = join_condition.split('=', 1)
+            normalized['join_condition'] = f"{right.strip()} = {left.strip()}"
+        app_logger.debug(f"JOIN 관계 정규화: {src_id} -> {dst_id} => {normalized['src_id']} -> {normalized['dst_id']}")
+        return normalized
+
+    def _is_directional_join_rel_type(self, rel_type: str) -> bool:
+        """방향성이 있는 JOIN_* 관계인지 판단"""
+        directional_rel_types = {
+            'JOIN_LEFT',
+            'JOIN_RIGHT',
+            'JOIN_OUTER',
+            'JOIN_LEFT_JOIN',
+            'JOIN_INNER_JOIN',
+            'JOIN_RIGHT_JOIN',
+            'JOIN_ORACLE_OUTER_JOIN',
+        }
+        return rel_type in directional_rel_types
+
+    def _should_skip_self_relationship(self, src_id: Any, dst_id: Any) -> bool:
+        """relationships 자기 참조 관계는 저장하지 않도록 판단"""
+        if src_id is None or dst_id is None:
+            return False
+        if src_id == dst_id:
+            app_logger.warning(f"자기 참조 관계 저장 스킵: src_id={src_id}, dst_id={dst_id}")
+            return True
+        return False
     
     def upsert(self, table_name: str, data: Dict[str, Any], unique_columns: List[str], conn: sqlite3.Connection = None) -> bool:
         """
@@ -668,6 +721,9 @@ class DatabaseUtils:
         try:
             # 테이블별 정규화 후 스키마 검증
             data = self._normalize_data_for_table(table_name, data, conn)
+            if table_name == 'relationships':
+                if self._should_skip_self_relationship(data.get('src_id'), data.get('dst_id')):
+                    return False
             self._assert_data_matches_schema(table_name, data, conn)
             where_conditions = {col: data[col] for col in unique_columns if col in data}
             
@@ -717,6 +773,9 @@ class DatabaseUtils:
         try:
             # 테이블별 정규화 후 스키마 검증 (엄격)
             data = self._normalize_data_for_table(table_name, data, conn)
+            if table_name == 'relationships':
+                if self._should_skip_self_relationship(data.get('src_id'), data.get('dst_id')):
+                    return False
             self._assert_data_matches_schema(table_name, data, conn)
             columns = list(data.keys())
             placeholders = ', '.join(['?' for _ in columns])
@@ -762,6 +821,8 @@ class DatabaseUtils:
             # 테이블별 unique_columns 설정
             if table_name == 'components':
                 unique_columns = ['project_id', 'file_id', 'component_name']
+            elif table_name == 'classes':
+                unique_columns = ['project_id', 'file_id', 'class_name']
             elif table_name == 'tables':
                 unique_columns = ['project_id', 'table_name', 'table_owner']
             elif table_name == 'columns':
@@ -810,6 +871,8 @@ class DatabaseUtils:
             # 테이블별 unique_columns 설정
             if table_name == 'components':
                 unique_columns = ['project_id', 'component_type', 'component_name', 'file_id']
+            elif table_name == 'classes':
+                unique_columns = ['project_id', 'file_id', 'class_name']
             elif table_name == 'tables':
                 unique_columns = ['project_id', 'table_name', 'table_owner']
             elif table_name == 'columns':
@@ -822,18 +885,30 @@ class DatabaseUtils:
             processed_count = 0
             total_records = len(data_list)
             start_time = time.time()
-            last_log_time = start_time
+            progress_tracker = ProgressTracker(
+                total=total_records,
+                desc=f"DB-BATCH {table_name}",
+                unit="row",
+                log_interval_sec=1.0,
+                leave=True
+            )
             info(f"[DB-BATCH] {table_name} 저장 시작: 총 {total_records}건")
 
-            for index, data in enumerate(data_list, start=1):
-                result = self.upsert(table_name, data, unique_columns, conn)
-                if result:
-                    processed_count += 1
-                current_time = time.time()
-                if current_time - last_log_time >= 1.0:
-                    elapsed = current_time - start_time
-                    info(f"[DB-BATCH] {table_name} 처리중: {index}/{total_records}건 진행 (적용 {processed_count}건, 경과 {elapsed:.1f}초)")
-                    last_log_time = current_time
+            try:
+                for index, data in enumerate(data_list, start=1):
+                    result = self.upsert(table_name, data, unique_columns, conn)
+                    if result:
+                        processed_count += 1
+                    elapsed = time.time() - start_time
+                    progress_tracker.update(
+                        current=index,
+                        log_message=(
+                            f"[DB-BATCH] {table_name} 처리중: {index}/{total_records}건 진행 "
+                            f"(적용 {processed_count}건, 경과 {elapsed:.1f}초)"
+                        )
+                    )
+            finally:
+                progress_tracker.close()
 
             total_elapsed = time.time() - start_time
             info(f"[DB-BATCH] {table_name} 저장 완료: {processed_count}/{total_records}건 적용 (총 {total_elapsed:.2f}초)")
@@ -1565,6 +1640,8 @@ class DatabaseUtils:
             저장 성공 여부
         """
         try:
+            if self._should_skip_self_relationship(src_id, dst_id):
+                return False
             if not src_id or not dst_id:
                 app_logger.warning(f"소스(src) 또는 대상(dst) ID가 없어 관계 저장을 건너뜁니다: {rel_type}")
                 return False

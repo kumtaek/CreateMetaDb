@@ -15,6 +15,7 @@ from typing import Dict, Any, Optional, Callable, Set
 from functools import wraps, lru_cache
 from pathlib import Path
 import hashlib
+from .file_utils import FileUtils
 
 class PerformanceOptimizer:
     """성능 최적화 매니저"""
@@ -85,9 +86,10 @@ class PerformanceOptimizer:
                         self.stats['cache_hits'] += 1
                         return self.file_cache[cache_key]
 
-                    # 파일 읽기
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
+                    # 파일 읽기 (인코딩 자동 감지)
+                    content = FileUtils.read_file(file_path)
+                    if content is None:
+                        return None
 
                     self.file_cache[cache_key] = content
                     self.stats['cache_misses'] += 1

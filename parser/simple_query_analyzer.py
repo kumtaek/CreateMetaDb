@@ -19,7 +19,7 @@ import sqlite3
 from typing import Dict, List, Any
 import time
 
-from util import info, handle_error, DatabaseUtils, ConfigUtils, PathUtils, HashUtils
+from util import info, handle_error, DatabaseUtils, ConfigUtils, PathUtils, HashUtils, FileUtils
 from util.oracle_keyword_manager import get_oracle_keyword_manager
 from parser.string_format_extractor import extract_string_format_queries
 
@@ -64,8 +64,9 @@ class SimpleQueryAnalyzer:
     def analyze_java_file(self, file_path: str, file_id: int) -> Dict[str, List[Dict]]:
         """Parse a Java file and extract queries per method."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            content = FileUtils.read_file(file_path)
+            if content is None:
+                return {'java_queries': [], 'jpa_queries': [], 'methods': []}
 
             results = {'java_queries': [], 'jpa_queries': [], 'methods': []}
             methods = self._extract_java_methods(content)

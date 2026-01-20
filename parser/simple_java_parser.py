@@ -4,7 +4,7 @@
 
 import re
 from typing import List, Dict, Any
-from util import warning, debug
+from util import FileUtils, warning, debug
 
 
 class SimpleJavaParser:
@@ -43,8 +43,14 @@ class SimpleJavaParser:
             }
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            content = FileUtils.read_file(file_path)
+            if content is None:
+                return {
+                    'file_path': file_path,
+                    'classes': [],
+                    'methods': [],
+                    'entity_table_mapping': {}
+                }
 
             # 원본 보관 (어노테이션 파싱용)
             original_content = content

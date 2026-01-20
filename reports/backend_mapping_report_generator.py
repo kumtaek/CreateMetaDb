@@ -16,6 +16,8 @@ from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.report_utils import ReportUtils
 from util import get_sql_compress
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 
 
 class BackendMappingReportGenerator:
@@ -47,6 +49,10 @@ class BackendMappingReportGenerator:
             # 3. SqlContent 조회 (쿼리 원문 + 메타 테이블 매핑)
             conn = sqlite3.connect(self.sql_content_db_path)
             query_data = self._get_query_data(conn, metadata_sql_map)
+            folder_filters = get_report_folders()
+            if folder_filters:
+                filter_utils = ReportFilterUtils()
+                query_data = filter_utils.filter_rows_by_paths(query_data, ['file_path'], folder_filters)
             app_logger.info(f"조회된 쿼리 개수: {len(query_data)}")
 
             # 4. 데이터 분류 (조인 조건 맵 전달)
@@ -584,24 +590,16 @@ class BackendMappingReportGenerator:
             return ''
 
     def _build_folder_href(self, normalized_path: str) -> str:
-        """폴더를 여는 file:// 프로토콜 링크 생성"""
+        """리포트 기준 상대 폴더 링크 생성"""
         if not normalized_path:
             return ''
         try:
-            # 프로젝트 내부 경로로 절대 경로 생성
             abs_path = self.path_utils.normalize_path(
                 self.path_utils.join_path("projects", self.project_name, normalized_path)
             )
-            
-            # 절대 경로가 실제로 존재하는지 확인
-            if not os.path.exists(abs_path):
-                # 경로가 존재하지 않으면 빈 문자열 반환
-                return ''
-            
-            # Windows 경로를 file:// 프로토콜 형식으로 변환
-            # file:///D:/path/to/folder 형식
-            abs_path_normalized = os.path.abspath(abs_path).replace('\\', '/')
-            return f"file:///{abs_path_normalized}"
+            report_dir = self.path_utils.normalize_path(self.output_dir)
+            rel_path = os.path.relpath(abs_path, report_dir)
+            return self.path_utils.normalize_path_separator(rel_path, 'unix')
         except Exception as e:
             app_logger.warning(f"폴더 링크 생성 실패: {normalized_path} - {e}")
             return ''

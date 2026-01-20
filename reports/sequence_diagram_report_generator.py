@@ -18,6 +18,8 @@ from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from util.config_utils import ConfigUtils
 from util.layer_classification_utils import get_layer_classifier
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -198,10 +200,13 @@ class SequenceDiagramReportGenerator:
             query = """
                 SELECT 
                     f.file_name as jsp_file,
+                    f.file_path as jsp_file_path,
                     api.component_name as api_entry,
                     cls.class_name,
                     method.component_name as method_name,
+                    mf.file_path as method_file_path,
                     xml_f.file_name as xml_file,
+                    xml_f.file_path as xml_file_path,
                     sql.component_name as query_id,
                     sql.component_type as query_type,
                     GROUP_CONCAT(DISTINCT t.table_name) as related_tables
@@ -210,6 +215,7 @@ class SequenceDiagramReportGenerator:
                 JOIN relationships r1 ON api.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
                 JOIN components method ON r1.dst_id = method.component_id
                 JOIN classes cls ON method.parent_id = cls.class_id
+                JOIN files mf ON method.file_id = mf.file_id
                 LEFT JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
                 LEFT JOIN components sql ON r2.dst_id = sql.component_id
                 LEFT JOIN files xml_f ON sql.file_id = xml_f.file_id
@@ -221,12 +227,17 @@ class SequenceDiagramReportGenerator:
                   AND api.del_yn = 'N'
                   AND method.del_yn = 'N'
                   AND r1.del_yn = 'N'
-                GROUP BY f.file_name, api.component_name, cls.class_name, 
-                         method.component_name, xml_f.file_name, sql.component_name
+                GROUP BY f.file_name, f.file_path, api.component_name, cls.class_name,
+                         method.component_name, mf.file_path, xml_f.file_name, xml_f.file_path, sql.component_name
                 LIMIT 10
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
+
+            results = self._filter_results_by_folders(
+                results,
+                ['jsp_file_path', 'method_file_path', 'xml_file_path']
+            )
             
             if not results:
                 return {
@@ -309,13 +320,17 @@ class SequenceDiagramReportGenerator:
                 SELECT 
                     src_cls.class_name as src_class,
                     src_method.component_name as src_method,
+                    src_file.file_path as src_file_path,
                     dst_cls.class_name as dst_class,
-                    dst_method.component_name as dst_method
+                    dst_method.component_name as dst_method,
+                    dst_file.file_path as dst_file_path
                 FROM relationships r
                 JOIN components src_method ON r.src_id = src_method.component_id
                 JOIN components dst_method ON r.dst_id = dst_method.component_id
                 JOIN classes src_cls ON src_method.parent_id = src_cls.class_id
                 JOIN classes dst_cls ON dst_method.parent_id = dst_cls.class_id
+                JOIN files src_file ON src_method.file_id = src_file.file_id
+                JOIN files dst_file ON dst_method.file_id = dst_file.file_id
                 JOIN projects p ON src_method.project_id = p.project_id
                 WHERE p.project_name = ?
                   AND r.rel_type = 'CALL_METHOD'
@@ -326,6 +341,11 @@ class SequenceDiagramReportGenerator:
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
+
+            results = self._filter_results_by_folders(
+                results,
+                ['src_file_path', 'dst_file_path']
+            )
             
             if not results:
                 return {
@@ -382,28 +402,69 @@ class SequenceDiagramReportGenerator:
     def _generate_layer_based_diagram(self) -> Dict[str, Any]:
         """Layer-based 시퀀스 다이어그램 생성"""
         try:
-            # 레이어별 호출 관계 조회
-            query = """
-                SELECT DISTINCT
-                    src.layer as src_layer,
-                    dst.layer as dst_layer,
-                    r.rel_type,
-                    COUNT(*) as call_count
-                FROM relationships r
-                JOIN components src ON r.src_id = src.component_id
-                JOIN components dst ON r.dst_id = dst.component_id
-                JOIN projects p ON src.project_id = p.project_id
-                WHERE p.project_name = ?
-                  AND src.layer IS NOT NULL
-                  AND dst.layer IS NOT NULL
-                  AND src.layer != dst.layer
-                  AND r.del_yn = 'N'
-                GROUP BY src.layer, dst.layer, r.rel_type
-                ORDER BY call_count DESC
-                LIMIT 10
-            """
-            
-            results = self.db_utils.execute_query(query, (self.project_name,))
+            folder_filters = get_report_folders()
+            if folder_filters:
+                raw_query = """
+                    SELECT 
+                        src.layer as src_layer,
+                        dst.layer as dst_layer,
+                        r.rel_type,
+                        src_file.file_path as src_file_path,
+                        dst_file.file_path as dst_file_path
+                    FROM relationships r
+                    JOIN components src ON r.src_id = src.component_id
+                    JOIN components dst ON r.dst_id = dst.component_id
+                    LEFT JOIN files src_file ON src.file_id = src_file.file_id
+                    LEFT JOIN files dst_file ON dst.file_id = dst_file.file_id
+                    JOIN projects p ON src.project_id = p.project_id
+                    WHERE p.project_name = ?
+                      AND src.layer IS NOT NULL
+                      AND dst.layer IS NOT NULL
+                      AND src.layer != dst.layer
+                      AND r.del_yn = 'N'
+                """
+                raw_results = self.db_utils.execute_query(raw_query, (self.project_name,))
+                raw_results = self._filter_results_by_folders(
+                    raw_results,
+                    ['src_file_path', 'dst_file_path']
+                )
+                agg = {}
+                for row in raw_results:
+                    key = (row['src_layer'], row['dst_layer'], row['rel_type'])
+                    agg[key] = agg.get(key, 0) + 1
+                results = [
+                    {
+                        'src_layer': key[0],
+                        'dst_layer': key[1],
+                        'rel_type': key[2],
+                        'call_count': count
+                    }
+                    for key, count in agg.items()
+                ]
+                results.sort(key=lambda x: x['call_count'], reverse=True)
+                results = results[:10]
+            else:
+                # 레이어별 호출 관계 조회
+                query = """
+                    SELECT DISTINCT
+                        src.layer as src_layer,
+                        dst.layer as dst_layer,
+                        r.rel_type,
+                        COUNT(*) as call_count
+                    FROM relationships r
+                    JOIN components src ON r.src_id = src.component_id
+                    JOIN components dst ON r.dst_id = dst.component_id
+                    JOIN projects p ON src.project_id = p.project_id
+                    WHERE p.project_name = ?
+                      AND src.layer IS NOT NULL
+                      AND dst.layer IS NOT NULL
+                      AND src.layer != dst.layer
+                      AND r.del_yn = 'N'
+                    GROUP BY src.layer, dst.layer, r.rel_type
+                    ORDER BY call_count DESC
+                    LIMIT 10
+                """
+                results = self.db_utils.execute_query(query, (self.project_name,))
             
             if not results:
                 return {
@@ -484,13 +545,17 @@ class SequenceDiagramReportGenerator:
                 SELECT 
                     method.component_name as method_name,
                     cls.class_name,
+                    method_file.file_path as method_file_path,
                     sql.component_name as query_id,
                     sql.component_type as query_type,
+                    sql_file.file_path as query_file_path,
                     GROUP_CONCAT(DISTINCT t.table_name) as related_tables
                 FROM relationships r
                 JOIN components method ON r.src_id = method.component_id
                 JOIN components sql ON r.dst_id = sql.component_id
                 JOIN classes cls ON method.parent_id = cls.class_id
+                JOIN files method_file ON method.file_id = method_file.file_id
+                LEFT JOIN files sql_file ON sql.file_id = sql_file.file_id
                 LEFT JOIN relationships r2 ON sql.component_id = r2.src_id AND r2.rel_type = 'USE_TABLE'
                 LEFT JOIN tables t ON r2.dst_id = t.component_id
                 JOIN projects p ON method.project_id = p.project_id
@@ -498,12 +563,17 @@ class SequenceDiagramReportGenerator:
                   AND r.rel_type = 'CALL_QUERY'
                   AND method.component_type = 'METHOD'
                   AND r.del_yn = 'N'
-                GROUP BY method.component_name, cls.class_name, sql.component_name, sql.component_type
+                GROUP BY method.component_name, cls.class_name, method_file.file_path, sql.component_name, sql.component_type, sql_file.file_path
                 ORDER BY sql.component_type, sql.component_name
                 LIMIT 8
             """
             
             results = self.db_utils.execute_query(query, (self.project_name,))
+
+            results = self._filter_results_by_folders(
+                results,
+                ['method_file_path', 'query_file_path']
+            )
             
             if not results:
                 return {
@@ -625,6 +695,23 @@ class SequenceDiagramReportGenerator:
                 return f"{parts[0]} {parts[1]}"
         
         return api_name
+
+    def _filter_results_by_folders(self, rows: List[Dict[str, Any]], path_keys: List[str]) -> List[Dict[str, Any]]:
+        """
+        폴더 필터 기반으로 결과 목록을 필터링
+
+        Args:
+            rows: 결과 목록
+            path_keys: 경로 키 목록
+
+        Returns:
+            필터링된 결과 목록
+        """
+        folder_filters = get_report_folders()
+        if not folder_filters:
+            return rows
+        filter_utils = ReportFilterUtils()
+        return filter_utils.filter_rows_by_paths(rows, path_keys, folder_filters)
     
     def _generate_html(self, stats: Dict[str, int], diagrams_data: Dict[str, Dict[str, Any]]) -> str:
         """HTML 생성 - woori.css 기반 통일된 스타일 적용"""

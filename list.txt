@@ -1,4 +1,5 @@
-﻿D:\Analyzer\CreateMetaDb\backend_entry_loading.py
+﻿D:\Analyzer\CreateMetaDb\gitcommit.cmd
+D:\Analyzer\CreateMetaDb\backend_entry_loading.py
 D:\Analyzer\CreateMetaDb\consistency_validator.py
 D:\Analyzer\CreateMetaDb\create_report.py
 D:\Analyzer\CreateMetaDb\extract_sqltext.py
@@ -146,6 +147,7 @@ D:\Analyzer\CreateMetaDb\temp\dump_sql.py
 D:\Analyzer\CreateMetaDb\temp\dump_sql_all.py
 D:\Analyzer\CreateMetaDb\temp\inspect_sql.py
 D:\Analyzer\CreateMetaDb\temp\investigate_issue.py
+D:\Analyzer\CreateMetaDb\temp\run_report_with_folder.py
 D:\Analyzer\CreateMetaDb\temp\run_xml.py
 D:\Analyzer\CreateMetaDb\temp\show_xml_func.py
 D:\Analyzer\CreateMetaDb\temp\test_brute_force_search.py
@@ -175,6 +177,8 @@ D:\Analyzer\CreateMetaDb\util\oracle_keyword_manager.py
 D:\Analyzer\CreateMetaDb\util\path_utils.py
 D:\Analyzer\CreateMetaDb\util\path_utils_example.py
 D:\Analyzer\CreateMetaDb\util\performance_optimizer.py
+D:\Analyzer\CreateMetaDb\util\progress_utils.py
+D:\Analyzer\CreateMetaDb\util\report_filter_utils.py
 D:\Analyzer\CreateMetaDb\util\report_utils.py
 D:\Analyzer\CreateMetaDb\util\runtime_options.py
 D:\Analyzer\CreateMetaDb\util\safe_logger.py
@@ -184,3 +188,13 @@ D:\Analyzer\CreateMetaDb\util\sql_normalization_utils.py
 D:\Analyzer\CreateMetaDb\util\statistics_utils.py
 D:\Analyzer\CreateMetaDb\util\validation_utils.py
 D:\Analyzer\CreateMetaDb\util\__init__.py
+D:\Analyzer\CreateMetaDb\py_tar_compress.ps1
+D:\Analyzer\CreateMetaDb\temp\decode_file.ps1
+D:\Analyzer\CreateMetaDb\temp\decode_large_file.ps1
+D:\Analyzer\CreateMetaDb\temp\encode_file.ps1
+D:\Analyzer\CreateMetaDb\temp\encode_large_file.ps1
+D:\Analyzer\CreateMetaDb\temp\run_report_with_folder.ps1
+D:\Analyzer\CreateMetaDb\gitcommit.cmd
+D:\Analyzer\CreateMetaDb\py_tar_compress.cmd
+D:\Analyzer\CreateMetaDb\repair_git.cmd
+D:\Analyzer\CreateMetaDb\temp\run_report_with_folder.cmd

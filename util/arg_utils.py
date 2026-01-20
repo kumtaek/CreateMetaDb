@@ -37,7 +37,7 @@ class ArgUtils:
                 epilog="""
 사용 예시:
   python main.py --project-name <프로젝트명>
-  python main.py --project-name <프로젝트명> --clear-metadb
+  python main.py --project-name <프로젝트명> --no-clear-metadb
   python main.py --project-name <프로젝트명> --verbose
   python main.py --project-name <프로젝트명> --sql-compress
                 """
@@ -52,10 +52,18 @@ class ArgUtils:
             )
 
             # 선택적 인자들
+            # 기본값은 초기화(True), 필요 시 --no-clear-metadb로 비활성화
+            self.parser.set_defaults(clear_metadb=True)
             self.parser.add_argument(
                 '--clear-metadb',
                 action='store_true',
-                help='메타데이터베이스를 초기화하고 새로 생성'
+                help='메타데이터베이스를 초기화하고 새로 생성 (기본값: ON)'
+            )
+            self.parser.add_argument(
+                '--no-clear-metadb',
+                action='store_false',
+                dest='clear_metadb',
+                help='메타데이터베이스 초기화 비활성화'
             )
 
             self.parser.add_argument(
@@ -82,6 +90,12 @@ class ArgUtils:
                 help='실제 분석 없이 설정만 확인'
             )
 
+            self.parser.add_argument(
+                '--start-step',
+                type=str,
+                help='시작 단계 지정 (예: 4-1)'
+            )
+
         except RecursionError as e:
             # Recursion limit 초과시 fallback
             from util.logger import info
@@ -99,7 +113,7 @@ class ArgUtils:
         class FallbackArgs:
             def __init__(self):
                 self.project_name = None
-                self.clear_metadb = False
+                self.clear_metadb = True
                 self.verbose = False
                 self.sql_compress = False
                 self.config_file = None
@@ -107,6 +121,7 @@ class ArgUtils:
                 self.output_format = 'html'
                 self.dry_run = False
                 self.force = False
+                self.start_step = None
 
             def parse_sys_argv(self):
                 import sys
@@ -116,10 +131,14 @@ class ArgUtils:
                         self.project_name = args[i + 1]
                     elif arg == '--clear-metadb':
                         self.clear_metadb = True
+                    elif arg == '--no-clear-metadb':
+                        self.clear_metadb = False
                     elif arg == '--verbose':
                         self.verbose = True
                     elif arg == '--sql-compress':
                         self.sql_compress = True
+                    elif arg == '--start-step' and i + 1 < len(args):
+                        self.start_step = args[i + 1]
                 return self
 
         return FallbackArgs().parse_sys_argv()
@@ -179,6 +198,15 @@ class ArgUtils:
             if args.config_file:
                 if not ValidationUtils.is_valid_file_path(args.config_file):
                     app_logger.error(f"잘못된 설정 파일 경로: {args.config_file}")
+                    return False
+
+            # 시작 단계 검증 (지정된 경우)
+            start_step = getattr(args, 'start_step', None)
+            if start_step:
+                allowed_steps = {'1', '2', '2-1', '3', '4', '4-1', '5', '6', '6-2', '6-3', '7'}
+                if start_step not in allowed_steps:
+                    app_logger.error(f"잘못된 시작 단계: {start_step}")
+                    app_logger.error(f"허용 값: {sorted(list(allowed_steps))}")
                     return False
 
             app_logger.debug("인자 검증 성공")
@@ -242,6 +270,17 @@ class ArgUtils:
         if self.args:
             return getattr(self.args, 'dry_run', False)
         return False
+
+    def get_start_step(self) -> Optional[str]:
+        """
+        시작 단계 반환
+
+        Returns:
+            시작 단계 또는 None
+        """
+        if self.args:
+            return getattr(self.args, 'start_step', None)
+        return None
 
     def get_all_args(self) -> Dict[str, Any]:
         """

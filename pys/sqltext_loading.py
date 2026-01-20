@@ -50,10 +50,20 @@ class SqlTextLoadingEngine:
                 info("sqltext 폴더에 처리할 SQL 파일이 없습니다")
                 return True
 
+            total_files = len(sql_files)
+            processed_count = 0
+            log_interval = 500
             for sql_path in sql_files:
                 self._process_sql_file(sql_path, project_id)
+                processed_count += 1
+                # 500개 단위 진행 상황 로그
+                if processed_count % log_interval == 0:
+                    info(f"sqltext 로딩 진행: {processed_count}/{total_files}개 처리")
 
-            info(f"sqltext 로딩 완료: {len(sql_files)}개 SQL 파일 처리")
+            # 잔여분 진행 로그 (500개 단위가 아닌 경우)
+            if processed_count % log_interval != 0:
+                info(f"sqltext 로딩 진행: {processed_count}/{total_files}개 처리")
+            info(f"sqltext 로딩 완료: {processed_count}개 SQL 파일 처리")
             return True
         except Exception as e:
             handle_error(e, "sqltext 로딩 실행 실패")

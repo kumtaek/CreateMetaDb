@@ -1164,22 +1164,40 @@ class CommonSqlAnalyzer:
             right_table_id = cursor.fetchone()
             
             if left_table_id and right_table_id:
+                if left_table_id[0] == right_table_id[0]:
+                    warning(f"자기 참조 JOIN 관계 스킵: {join.left_table} -> {join.right_table}")
+                    return
                 # 스키마에 없어도 조인 조건을 그대로 보존(INFERRED)
                 stored_src_col = join.left_column.upper()
                 stored_dst_col = join.right_column.upper()
                 join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
+                src_id = left_table_id[0]
+                dst_id = right_table_id[0]
+                rel_type = f"JOIN_{join.join_type}"
+                if rel_type not in {
+                    'JOIN_LEFT',
+                    'JOIN_RIGHT',
+                    'JOIN_OUTER',
+                    'JOIN_LEFT_JOIN',
+                    'JOIN_INNER_JOIN',
+                    'JOIN_RIGHT_JOIN',
+                    'JOIN_ORACLE_OUTER_JOIN',
+                } and src_id > dst_id:
+                    src_id, dst_id = dst_id, src_id
+                    stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
+                    join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"
                 # 중복 체크
                 cursor.execute("""
                     SELECT COUNT(*) FROM relationships 
                     WHERE src_id = ? AND dst_id = ? AND rel_type = ?
-                """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}"))
+                """, (src_id, dst_id, rel_type))
                 
                 if cursor.fetchone()[0] == 0:
                     # 조인 관계 저장
                     cursor.execute("""
                         INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
                         VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
-                    """, (left_table_id[0], right_table_id[0], f"JOIN_{join.join_type}", 0.8, stored_src_col, stored_dst_col, join_cond))
+                    """, (src_id, dst_id, rel_type, 0.8, stored_src_col, stored_dst_col, join_cond))
                 
         except Exception as e:
             from util.logger import handle_error
@@ -1204,24 +1222,40 @@ class CommonSqlAnalyzer:
             right_result = db_utils.execute_query(right_query, (join.right_table, self.project_name))
             
             if left_result and right_result:
+                if left_result[0]['table_id'] == right_result[0]['table_id']:
+                    warning(f"자기 참조 JOIN 관계 스킵: {join.left_table} -> {join.right_table}")
+                    return
                 # 중복 체크
+                src_id = left_result[0]['table_id']
+                dst_id = right_result[0]['table_id']
+                stored_src_col = join.left_column.upper()
+                stored_dst_col = join.right_column.upper()
+                join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
+                rel_type = f"JOIN_{join.join_type}"
+                if rel_type not in {
+                    'JOIN_LEFT',
+                    'JOIN_RIGHT',
+                    'JOIN_OUTER',
+                    'JOIN_LEFT_JOIN',
+                    'JOIN_INNER_JOIN',
+                    'JOIN_RIGHT_JOIN',
+                    'JOIN_ORACLE_OUTER_JOIN',
+                } and src_id > dst_id:
+                    src_id, dst_id = dst_id, src_id
+                    stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
+                    join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"
                 check_query = """
                     SELECT COUNT(*) FROM relationships 
                     WHERE src_id = ? AND dst_id = ? AND rel_type = ?
                 """
-                count_result = db_utils.execute_query(check_query, (left_result[0]['table_id'], right_result[0]['table_id'], f"JOIN_{join.join_type}"))
+                count_result = db_utils.execute_query(check_query, (src_id, dst_id, rel_type))
                 
                 if count_result[0]['COUNT(*)'] == 0:
                     # 조인 관계 저장
-                    # 스키마에 없어도 조인 조건을 그대로 보존(INFERRED)
-                    stored_src_col = join.left_column.upper()
-                    stored_dst_col = join.right_column.upper()
-                    join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
-
                     relationship_data = {
-                        'src_id': left_result[0]['table_id'],
-                        'dst_id': right_result[0]['table_id'],
-                        'rel_type': f"JOIN_{join.join_type}",
+                        'src_id': src_id,
+                        'dst_id': dst_id,
+                        'rel_type': rel_type,
                         'confidence': 0.8,
                         'del_yn': 'N',
                         'src_column': stored_src_col,

@@ -1,0 +1,798 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아키텍처 레이어 다이어그램 - sampleSrc</title>
+    <link rel="stylesheet" href="css/woori.css">
+    <style>
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(25, 118, 210, 0.12);
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 300;
+        }
+        .header .subtitle {
+            margin: 2px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.8em;
+        }
+        .layer-filter {
+            margin-top: 4px;
+            text-align: center;
+        }
+        .component-filter {
+            background: white;
+            border: 1px solid #666;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-size: 0.6em;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 120px;
+        }
+        .component-filter:hover {
+            border-color: #1976d2;
+            box-shadow: 0 1px 2px rgba(25, 118, 210, 0.2);
+        }
+        .component-filter:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+        }
+        .stats {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            margin: 6px 0;
+            border-radius: 4px;
+        }
+        .stat-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            flex: 1;
+            max-width: 150px;
+        }
+        .stat-item:hover {
+            transform: translateY(-1px);
+        }
+        .stat-number {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 2px;
+            display: block;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.7em;
+            display: block;
+        }
+        .content {
+            padding: 4px;
+        }
+        .architecture-container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            padding: 10px;
+            background: white;
+            min-height: 400px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        .layer-column {
+            flex: 1;
+            min-width: 0;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 6px;
+            position: relative;
+            height: 100%;
+            overflow-y: auto;
+            margin: 0 2px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .layer-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.7em;
+            padding: 3px;
+            border-radius: 2px;
+            margin-bottom: 4px;
+            color: #333;
+            flex-shrink: 0;
+        }
+        
+        .layer-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .component-item {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            padding: 2px 4px;
+            margin-bottom: 1px;
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            order: 1;
+        }
+        
+        .component-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border-color: #007bff;
+            z-index: 5;
+        }
+        
+        .component-item.selected {
+            background: #007bff !important;
+            color: white !important;
+            border-color: #0056b3 !important;
+            border-width: 3px !important;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.4) !important;
+            transform: translateY(-2px) scale(1.02) !important;
+            z-index: 1000 !important;
+            position: relative !important;
+            order: 0 !important;
+        }
+        
+        .component-item.related {
+            background: #28a745 !important;
+            color: white !important;
+            border-color: #1e7e34 !important;
+            border-width: 2px !important;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.3) !important;
+            transform: translateY(-1px) !important;
+            z-index: 500 !important;
+            position: relative !important;
+        }
+        
+        .component-item.dimmed {
+            opacity: 0.3;
+            background: #f8f9fa;
+            border-color: #e9ecef;
+        }
+        
+        .component-count {
+            background: #666;
+            color: white;
+            border-radius: 8px;
+            padding: 1px 4px;
+            font-size: 0.5em;
+            margin-left: 2px;
+            float: right;
+        }
+        
+        .relationship-arrows {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .arrow {
+            stroke: #666;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        
+        .arrow.highlighted {
+            stroke: #007bff;
+            stroke-width: 3;
+        }
+        
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .layer-column {
+                min-width: 140px;
+                padding: 8px;
+            }
+            .component-item {
+                font-size: 10px;
+                padding: 4px 6px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .architecture-container {
+                gap: 5px;
+                padding: 5px;
+            }
+            .layer-column {
+                min-width: 120px;
+                padding: 6px;
+            }
+            .layer-header {
+                font-size: 11px;
+                padding: 6px;
+            }
+            .component-item {
+                font-size: 9px;
+                padding: 3px 5px;
+                margin-bottom: 2px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>아키텍처 레이어 다이어그램</h1>
+            <div class="subtitle">프로젝트: sampleSrc | 생성일: 2026-01-19 12:42:15</div>
+        </div>
+        
+        <div class="content">
+            <div class="architecture-container" id="architectureContainer">
+                <svg class="relationship-arrows" id="relationshipArrows">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                                refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                        </marker>
+                    </defs>
+                </svg>
+                
+                <div class="layer-column" style="border-color: #e3f2fd;" data-layer="FRONTEND">
+                    
+                <div class="layer-header" style="background-color: #e3f2fd;">
+                    FRONTEND Layer<br>
+                    <small>(7개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="FRONTEND">
+                            <option value="all">전체 컴포넌트</option><option value="error.jsp">error.jsp (JSP)</option><option value="list.jsp">list.jsp (JSP)</option><option value="searchResult.jsp">searchResult.jsp (JSP)</option><option value="typeList.jsp">typeList.jsp (JSP)</option><option value="userManagement.jsp">userManagement.jsp (JSP)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                    <div class="layer-content" id="layer-content-FRONTEND">
+                        
+                    <div class="component-item" 
+                         data-component-id="1762" 
+                         data-layer="FRONTEND" 
+                         data-type="JSP"
+                         data-name="error.jsp"
+                         data-file-path="src/main/webapp/user/error.jsp"
+                         title="error.jsp (JSP) - src/main/webapp/user/error.jsp">
+                        error.jsp
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1764" 
+                         data-layer="FRONTEND" 
+                         data-type="JSP"
+                         data-name="list.jsp"
+                         data-file-path="src/main/webapp/product/list.jsp"
+                         title="list.jsp (JSP) - src/main/webapp/product/list.jsp">
+                        list.jsp
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1767" 
+                         data-layer="FRONTEND" 
+                         data-type="JSP"
+                         data-name="searchResult.jsp"
+                         data-file-path="src/main/webapp/product/searchResult.jsp"
+                         title="searchResult.jsp (JSP) - src/main/webapp/product/searchResult.jsp">
+                        searchResult.jsp
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1771" 
+                         data-layer="FRONTEND" 
+                         data-type="JSP"
+                         data-name="typeList.jsp"
+                         data-file-path="src/main/webapp/user/typeList.jsp"
+                         title="typeList.jsp (JSP) - src/main/webapp/user/typeList.jsp">
+                        typeList.jsp
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1773" 
+                         data-layer="FRONTEND" 
+                         data-type="JSP"
+                         data-name="userManagement.jsp"
+                         data-file-path="src/main/webapp/user/userManagement.jsp"
+                         title="userManagement.jsp (JSP) - src/main/webapp/user/userManagement.jsp">
+                        userManagement.jsp
+                    </div>
+                    
+                    </div>
+                </div>
+                
+                <div class="layer-column" style="border-color: #e8f5e8;" data-layer="CONTROLLER">
+                    
+                <div class="layer-header" style="background-color: #e8f5e8;">
+                    CONTROLLER Layer<br>
+                    <small>(4개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="CONTROLLER">
+                            <option value="all">전체 컴포넌트</option><option value="GET:/api/legacy/orders">GET:/api/legacy/orders (API_URL)</option><option value="GET:/api/legacy/products">GET:/api/legacy/products (API_URL)</option><option value="GET:/api/legacy/users">GET:/api/legacy/users (API_URL)</option><option value="GET:/non-existent-endpoint">GET:/non-existent-endp... (API_URL)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                    <div class="layer-content" id="layer-content-CONTROLLER">
+                        
+                    <div class="component-item" 
+                         data-component-id="1777" 
+                         data-layer="CONTROLLER" 
+                         data-type="API_URL"
+                         data-name="GET:/api/legacy/orders"
+                         data-file-path="src/main/webapp/user/userManagement.jsp"
+                         title="GET:/api/legacy/orders (API_URL) - src/main/webapp/user/userManagement.jsp">
+                        GET:/api/legacy/orders
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1779" 
+                         data-layer="CONTROLLER" 
+                         data-type="API_URL"
+                         data-name="GET:/api/legacy/products"
+                         data-file-path="src/main/webapp/user/userManagement.jsp"
+                         title="GET:/api/legacy/products (API_URL) - src/main/webapp/user/userManagement.jsp">
+                        GET:/api/legacy/products
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1774" 
+                         data-layer="CONTROLLER" 
+                         data-type="API_URL"
+                         data-name="GET:/api/legacy/users"
+                         data-file-path="src/main/webapp/user/userManagement.jsp"
+                         title="GET:/api/legacy/users (API_URL) - src/main/webapp/user/userManagement.jsp">
+                        GET:/api/legacy/users
+                    </div>
+                    
+                    <div class="component-item" 
+                         data-component-id="1763" 
+                         data-layer="CONTROLLER" 
+                         data-type="API_URL"
+                         data-name="GET:/non-existent-endpoint"
+                         data-file-path="src/main/webapp/user/error.jsp"
+                         title="GET:/non-existent-endpoint (API_URL) - src/main/webapp/user/error.jsp">
+                        GET:/non-existent-endp...
+                    </div>
+                    
+                    </div>
+                </div>
+                
+                <div class="layer-column" style="border-color: #fff3e0;" data-layer="SERVICE">
+                    
+                <div class="layer-header" style="background-color: #fff3e0;">
+                    SERVICE Layer<br>
+                    <small>(0개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="SERVICE">
+                            <option value="all">전체 컴포넌트</option>
+                        </select>
+                    </div>
+                </div>
+                
+                    <div class="layer-content" id="layer-content-SERVICE">
+                        
+                    </div>
+                </div>
+                
+                <div class="layer-column" style="border-color: #f8bbd9;" data-layer="MODEL">
+                    
+                <div class="layer-header" style="background-color: #f8bbd9;">
+                    MODEL Layer<br>
+                    <small>(0개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="MODEL">
+                            <option value="all">전체 컴포넌트</option>
+                        </select>
+                    </div>
+                </div>
+                
+                    <div class="layer-content" id="layer-content-MODEL">
+                        
+                    </div>
+                </div>
+                
+                <div class="layer-column" style="border-color: #f5f5f5;" data-layer="TABLE">
+                    
+                <div class="layer-header" style="background-color: #f5f5f5;">
+                    TABLE Layer<br>
+                    <small>(0개 컴포넌트)</small>
+                    <div class="layer-filter">
+                        <select class="component-filter" data-layer="TABLE">
+                            <option value="all">전체 컴포넌트</option>
+                        </select>
+                    </div>
+                </div>
+                
+                    <div class="layer-content" id="layer-content-TABLE">
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="stats">
+            
+            <div class="stat-item">
+                <div class="stat-number">1,171</div>
+                <div class="stat-label">총 컴포넌트</div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-number">2,980</div>
+                <div class="stat-label">총 관계</div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-number">2</div>
+                <div class="stat-label">활성 레이어</div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-number">7</div>
+                <div class="stat-label">레이어간 관계</div>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+    <script>
+        
+        let selectedComponent = null;
+        let lastSelectedComponent = null;
+        let relationshipData = {"error.jsp": {"layer": "FRONTEND", "relationships": [{"target": "GET:/non-existent-endpoint", "target_layer": "API_ENTRY", "type": "CALL_API"}]}, "userManagement.jsp": {"layer": "FRONTEND", "relationships": [{"target": "GET:/api/legacy/orders", "target_layer": "API_ENTRY", "type": "CALL_API"}, {"target": "GET:/api/legacy/products", "target_layer": "API_ENTRY", "type": "CALL_API"}, {"target": "GET:/api/legacy/users", "target_layer": "API_ENTRY", "type": "CALL_API"}]}};
+        let layerRelationships = {};
+        
+        console.log('관계 데이터 로드됨:', Object.keys(relationshipData).length + '개 컴포넌트');
+        console.log('관계 데이터 상세:', relationshipData);
+        console.log('레이어 관계:', layerRelationships);
+        
+        // 선택된 컴포넌트들을 추적하는 전역 변수
+        let selectedComponents = {};
+        
+        // 컴포넌트와 연관된 다른 컴포넌트들을 찾는 함수
+        function findRelatedComponents(componentName) {
+            const relatedComponents = new Set();
+            const visited = new Set();
+            
+            // 재귀적으로 연결고리 추적
+            function traceRelationships(compName, depth = 0, maxDepth = 3) {
+                if (depth > maxDepth || visited.has(compName)) return;
+                visited.add(compName);
+                
+                // 직접 관계 추가
+                if (relationshipData[compName]) {
+                    relationshipData[compName].relationships.forEach(function(rel) {
+                        relatedComponents.add(rel.target);
+                        traceRelationships(rel.target, depth + 1, maxDepth);
+                    });
+                }
+                
+                // 역방향 관계 추가
+                Object.keys(relationshipData).forEach(function(srcName) {
+                    relationshipData[srcName].relationships.forEach(function(rel) {
+                        if (rel.target === compName) {
+                            relatedComponents.add(srcName);
+                            traceRelationships(srcName, depth + 1, maxDepth);
+                        }
+                    });
+                });
+            }
+            
+            traceRelationships(componentName, 0, 3);
+            return Array.from(relatedComponents);
+        }
+        
+        // 동적 콤보박스 업데이트 함수
+        function updateComboBoxes() {
+            // 모든 레이어의 콤보박스 업데이트
+            const allLayers = ['FRONTEND', 'CONTROLLER', 'SERVICE', 'MODEL', 'TABLE'];
+            
+            allLayers.forEach(function(layer) {
+                const selectElement = document.querySelector('[data-layer="' + layer + '"]');
+                if (!selectElement) return;
+                
+                // 기존 옵션들 저장 (전체 컴포넌트 옵션 제외)
+                const existingOptions = Array.from(selectElement.options).slice(1);
+                const existingValues = existingOptions.map(opt => opt.value);
+                
+                // 현재 선택된 컴포넌트들로부터 연관된 컴포넌트들 수집
+                const relatedComponents = new Set();
+                
+                Object.keys(selectedComponents).forEach(function(selectedLayer) {
+                    const selectedComp = selectedComponents[selectedLayer];
+                    if (selectedComp && selectedComp !== 'all') {
+                        relatedComponents.add(selectedComp);
+                        const related = findRelatedComponents(selectedComp);
+                        related.forEach(function(relComp) {
+                            relatedComponents.add(relComp);
+                        });
+                    }
+                });
+                
+                // 해당 레이어의 연관된 컴포넌트들만 필터링
+                const layerRelatedComponents = Array.from(relatedComponents).filter(function(compName) {
+                    const components = document.querySelectorAll('[data-name="' + compName + '"][data-layer="' + layer + '"]');
+                    return components.length > 0;
+                });
+                
+                // 연관된 컴포넌트가 있으면 해당 컴포넌트들만 표시, 없으면 모든 컴포넌트 표시
+                if (layerRelatedComponents.length > 0) {
+                    // 기존 옵션들 숨김
+                    existingOptions.forEach(function(option) {
+                        option.style.display = 'none';
+                    });
+                    
+                    // 연관된 컴포넌트들만 표시
+                    layerRelatedComponents.forEach(function(compName) {
+                        const option = selectElement.querySelector('option[value="' + compName + '"]');
+                        if (option) {
+                            option.style.display = 'block';
+                        }
+                    });
+                } else {
+                    // 연관된 컴포넌트가 없으면 모든 옵션 표시
+                    existingOptions.forEach(function(option) {
+                        option.style.display = 'block';
+                    });
+                }
+            });
+        }
+        
+        // AND 조건으로 컴포넌트 필터링
+        function applyComponentFilters() {
+            // 모든 컴포넌트를 먼저 숨김
+            document.querySelectorAll('.component-item').forEach(function(component) {
+                component.style.display = 'none';
+                component.style.opacity = '0.3';
+                component.classList.remove('selected', 'related');
+            });
+            
+            // 선택된 컴포넌트들과 관련된 컴포넌트들을 수집
+            const allRelatedComponents = new Set();
+            
+            // 각 레이어에서 선택된 컴포넌트들의 연관 컴포넌트 수집
+            Object.keys(selectedComponents).forEach(function(layer) {
+                const selectedComp = selectedComponents[layer];
+                if (selectedComp && selectedComp !== 'all') {
+                    allRelatedComponents.add(selectedComp);
+                    const related = findRelatedComponents(selectedComp);
+                    related.forEach(function(relComp) {
+                        allRelatedComponents.add(relComp);
+                    });
+                }
+            });
+            
+            // 관련 컴포넌트들 표시
+            allRelatedComponents.forEach(function(compName) {
+                const components = document.querySelectorAll('[data-name="' + compName + '"]');
+                components.forEach(function(component) {
+                    component.style.display = 'block';
+                    component.style.opacity = '1';
+                    component.classList.add('related');
+                });
+            });
+            
+            // 선택된 컴포넌트들 강조 표시
+            Object.keys(selectedComponents).forEach(function(layer) {
+                const selectedComp = selectedComponents[layer];
+                if (selectedComp && selectedComp !== 'all') {
+                    const components = document.querySelectorAll('[data-name="' + selectedComp + '"]');
+                    components.forEach(function(component) {
+                        component.style.display = 'block';
+                        component.style.opacity = '1';
+                        component.classList.add('selected');
+                    });
+                }
+            });
+            
+            // 콤보박스 동적 업데이트
+            updateComboBoxes();
+            
+            console.log('AND 조건 필터링 완료:', Object.keys(selectedComponents), '관련 컴포넌트:', allRelatedComponents.size + '개');
+        }
+        
+        // 개별 콤보박스 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', function() {
+            const componentFilters = document.querySelectorAll('.component-filter');
+            componentFilters.forEach(function(filter) {
+                filter.addEventListener('change', function() {
+                    const layer = this.dataset.layer;
+                    const selectedComponent = this.value;
+                    
+                    // 선택된 컴포넌트 저장
+                    if (selectedComponent === 'all') {
+                        delete selectedComponents[layer];
+                        // 전체 컴포넌트 선택 시 모든 콤보박스 옵션 표시
+                        const allOptions = filter.querySelectorAll('option');
+                        allOptions.forEach(function(option) {
+                            option.style.display = 'block';
+                        });
+                    } else {
+                        selectedComponents[layer] = selectedComponent;
+                    }
+                    
+                    console.log('컴포넌트 필터 변경:', layer, '->', selectedComponent);
+                    console.log('현재 선택된 컴포넌트들:', selectedComponents);
+                    
+                    // AND 조건으로 필터링 적용
+                    applyComponentFilters();
+                });
+            });
+            
+            // 간단한 클릭 이벤트
+            document.querySelectorAll('.component-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    const name = this.dataset.name;
+                    
+                    // 동일한 컴포넌트 두 번째 클릭 시 토글 (전체 활성화)
+                    if (lastSelectedComponent === name) {
+                        console.log('동일 컴포넌트 두 번째 클릭 - 전체 활성화:', name);
+                        // 모든 상태 초기화 (전체 활성화)
+                        document.querySelectorAll('.component-item').forEach(function(el) {
+                            el.style.opacity = '';
+                            el.style.borderColor = '';
+                            el.style.borderWidth = '';
+                            el.style.zIndex = '';
+                            el.style.position = '';
+                            el.style.order = '';
+                            el.classList.remove('selected', 'related', 'dimmed');
+                        });
+                        lastSelectedComponent = null;
+                        selectedComponent = null;
+                        return;
+                    }
+                    
+                    // 기존 선택 해제 (모든 상태 초기화)
+                    document.querySelectorAll('.component-item').forEach(function(el) {
+                        el.style.opacity = '';
+                        el.style.borderColor = '';
+                        el.style.borderWidth = '';
+                        el.style.zIndex = '';
+                        el.style.position = '';
+                        el.style.order = '';
+                        el.classList.remove('selected', 'related', 'dimmed');
+                    });
+                    
+                    // 현재 컴포넌트 선택
+                    this.classList.add('selected');
+                    this.style.borderColor = '#007bff';
+                    this.style.zIndex = '1000';
+                    this.style.position = 'relative';
+                    
+                    const layer = this.dataset.layer;
+                    const type = this.dataset.type;
+                    console.log('선택된 컴포넌트:', name, '레이어:', layer, '타입:', type);
+                    console.log('해당 컴포넌트 관계 데이터:', relationshipData[name]);
+                    
+                    // 선택된 컴포넌트 기록
+                    lastSelectedComponent = name;
+                    selectedComponent = name;
+                    
+                    // 전체 호출 체인 추적 (CallChain 스타일)
+                    const relatedComponents = new Set();
+                    const visited = new Set();
+                    
+                    // 재귀적으로 연결고리 추적
+                    function traceRelationships(compName, depth = 0, maxDepth = 5) {
+                        if (depth > maxDepth || visited.has(compName)) return;
+                        visited.add(compName);
+                        
+                        // 직접 관계 추가
+                        if (relationshipData[compName]) {
+                            relationshipData[compName].relationships.forEach(function(rel) {
+                                relatedComponents.add(rel.target);
+                                console.log(`${depth}단계 관계:`, compName, '->', rel.target, `(${rel.target_layer})`);
+                                // 재귀적으로 다음 단계 추적
+                                traceRelationships(rel.target, depth + 1, maxDepth);
+                            });
+                        }
+                        
+                        // 역방향 관계 추가
+                        Object.keys(relationshipData).forEach(function(srcName) {
+                            relationshipData[srcName].relationships.forEach(function(rel) {
+                                if (rel.target === compName) {
+                                    relatedComponents.add(srcName);
+                                    console.log(`${depth}단계 역방향:`, srcName, '->', compName);
+                                    // 재귀적으로 이전 단계 추적
+                                    traceRelationships(srcName, depth + 1, maxDepth);
+                                }
+                            });
+                        });
+                    }
+                    
+                    // 선택된 컴포넌트부터 체인 추적 시작
+                    traceRelationships(name, 0, 5);
+                    
+                    // 관련 컴포넌트들 하이라이트 (모든 레이어에서)
+                    relatedComponents.forEach(function(targetName) {
+                        const targets = document.querySelectorAll('[data-name="' + targetName + '"]');
+                        targets.forEach(function(target) {
+                            target.style.borderColor = '#28a745';
+                            target.style.borderWidth = '2px';
+                            target.style.opacity = '1';
+                            target.style.zIndex = '500';
+                            target.style.position = 'relative';
+                            target.classList.add('related');
+                            
+                            // 관련 컴포넌트가 있는 레이어도 표시
+                            const relatedLayer = target.dataset.layer;
+                            const relatedColumn = document.querySelector('[data-layer="' + relatedLayer + '"]');
+                            if (relatedColumn) {
+                                relatedColumn.style.display = 'flex';
+                                relatedColumn.style.opacity = '1';
+                            }
+                        });
+                    });
+                    
+                    console.log('총 관련 컴포넌트:', relatedComponents.size, '개');
+                    
+                    // 관련 없는 컴포넌트만 흐리게
+                    document.querySelectorAll('.component-item:not(.selected):not(.related)').forEach(function(el) {
+                        el.style.opacity = '0.3';
+                        el.classList.add('dimmed');
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+            

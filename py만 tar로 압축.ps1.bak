@@ -1,20 +1,31 @@
+<<<<<<< HEAD
+Set-Location $PSScriptRoot
+Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
+=======
 D:
 cd D:\Analyzer\CreateMetaDb
-Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
+Get-ChildItem -Recurse -Filter gitcommit.cmd | Select-Object -Expand FullName > list.txt
+Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName >> list.txt
+tar -czvf pys.tar.gz -T list.txt  
+certutil -encode pys.tar.gz pystest.log
+del ../pys*.*
+move pys*.* ../
+
+  
+
+>>>>>>> 1aae599 (:=-)
 #Get-ChildItem -Recurse -Filter *.yaml | Select-Object -Expand FullName >> list.txt
 #Get-ChildItem -Recurse -Filter *.sql | Select-Object -Expand FullName >> list.txt
 #Get-ChildItem -Recurse -Filter *.js | Select-Object -Expand FullName >> list.txt
 #Get-ChildItem -Recurse -Filter *.css | Select-Object -Expand FullName >> list.txt
 #Get-ChildItem -Recurse -Filter *.zip | Select-Object -Expand FullName >> list.txt
-tar -czvf pys.tar.gz -T list.txt 
-certutil -encode pys.tar.gz pystest.log
-del ../pys*.*
-move pys*.* ../
 
 
 
-D:
-cd D:\Analyzer\CreateMetaDb
+
+
+Set-Location $PSScriptRoot
+
 python main.py --project-name sampleSrc --clear-metadb --verbose
 
 

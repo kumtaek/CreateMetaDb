@@ -1,5 +1,5 @@
 """
-sqltext 폴더의 *.sql 파일을 메타DB와 SqlContent.db에 저장하는 로더
+FramePlus sqltext 폴더의 *.sql 파일을 메타DB와 SqlContent.db에 저장하는 로더
 - sqltext/ 하위 모든 서브폴더 재귀 탐색
 - 파일명(확장자 제외)을 query_id로 사용
 - files, components(metadata.db) + sql_contents(SqlContent.db) 기록
@@ -50,8 +50,9 @@ class SqlTextLoadingEngine:
                 info("sqltext 폴더에 처리할 SQL 파일이 없습니다")
                 return True
 
-            for sql_path in sql_files:
-                self._process_sql_file(sql_path, project_id)
+            total_files = len(sql_files)
+            for file_idx, sql_path in enumerate(sql_files, start=1):
+                self._process_sql_file(sql_path, project_id, file_idx, total_files)
 
             info(f"sqltext 로딩 완료: {len(sql_files)}개 SQL 파일 처리")
             return True
@@ -75,12 +76,14 @@ class SqlTextLoadingEngine:
             handle_error(e, f"프로젝트 ID 조회 실패: {self.project_name}")
             return None
 
-    def _process_sql_file(self, sql_path: Path, project_id: int) -> None:
+    def _process_sql_file(self, sql_path: Path, project_id: int, file_idx: int, total_files: int) -> None:
         """단일 SQL 파일 처리"""
         try:
             query_id = sql_path.stem
-            relative_path = os.path.relpath(sql_path, self.project_root)
-            file_path_unix = self.path_utils.normalize_path_separator(relative_path, 'unix')
+            relative_dir = os.path.relpath(sql_path.parent, self.project_root)
+            if relative_dir in ('.', ''):
+                relative_dir = ''
+            file_path_unix = self.path_utils.normalize_path_separator(relative_dir, 'unix')
 
             content = FileUtils.read_file(str(sql_path))
             if content is None:
@@ -118,7 +121,10 @@ class SqlTextLoadingEngine:
                     file_name=sql_path.name,
                     query_id=query_id,
                     query_type=self._infer_query_type(content, query_id),
-                    component_layer='QUERY_FROM_SQLTEXT'
+                    component_layer='SQL_FROM_SQLTEXT',
+                    progress_current=file_idx,
+                    progress_total=total_files,
+                    progress_context="sqltext"
                 )
             finally:
                 ctx_mgr.pop()
@@ -173,7 +179,7 @@ class SqlTextLoadingEngine:
             'file_id': file_id,
             'component_name': query_id,
             'component_type': component_type,
-            'layer': 'QUERY_FROM_SQLTEXT',
+            'layer': 'SQL_FROM_SQLTEXT',
             'hash_value': self.hash_utils.generate_md5(query_id),
             'del_yn': 'N'
         }

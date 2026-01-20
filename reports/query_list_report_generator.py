@@ -18,6 +18,8 @@ from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from util.sql_content_manager import SqlContentManager
 from util import get_sql_compress
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -238,6 +240,11 @@ class QueryListReportGenerator:
                 query_data.append(query_info)
             
             sqlcontent_conn.close()
+
+            folder_filters = get_report_folders()
+            if folder_filters:
+                filter_utils = ReportFilterUtils()
+                query_data = filter_utils.filter_rows_by_paths(query_data, ['file_path'], folder_filters)
             
             app_logger.info(f"쿼리 리스트 데이터 조회 완료: {len(query_data)}개")
             return query_data

@@ -1,0 +1,5 @@
+cd D:\Analyzer\CreateMetaDb
+call Get-ChildItem -Recurse -Filter *.py | Select-Object -Expand FullName > list.txt
+tar -czvf pys.tar.gz -T list.txt
+certutil -encode pys.tar.gz pys.log
+move pys*.* ../ 

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query List Report - sampleSrc</title>
+    <link rel="stylesheet" href="css/woori.css">
+    <style>
+        .query-list-body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2px;
+            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+            min-height: 100vh;
+        }
+        .query-list-container {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.16);
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .query-list-header {
+            background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 4px 8px;
+            margin-bottom: 3px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 40px;
+        }
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .header-left h1 {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: 300;
+            color: white;
+            line-height: 1.2;
+        }
+        .subtitle {
+            margin: 2px 0 0 0;
+            opacity: 0.8;
+            font-size: 0.7em;
+            color: white;
+            line-height: 1.2;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        .csv-export-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+        .csv-export-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .query-list-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px;
+            padding: 6px;
+            background: #f8f9fa;
+            margin-bottom: 3px;
+            position: sticky;
+            top: 43px;
+            z-index: 99;
+            flex-shrink: 0;
+        }
+        .query-list-stat-card {
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .query-list-stat-card:hover {
+            transform: translateY(-1px);
+        }
+        .query-list-stat-number {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 2px;
+        }
+        .query-list-stat-label {
+            color: #7f8c8d;
+            font-size: 0.7em;
+            font-weight: 500;
+        }
+        .query-list-content {
+            padding: 2px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .query-list-table-container {
+            background: white;
+            border-radius: 4px;
+            overflow: auto;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            flex: 1;
+            min-height: 0;
+        }
+        .query-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+            min-width: 1000px;
+        }
+        .query-list-table th {
+            background: #3498db;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8em;
+            position: sticky;
+            top: 0;
+            z-index: 98;
+            white-space: nowrap;
+        }
+        .query-list-table td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.8em;
+            vertical-align: top;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .query-list-table td:hover {
+            background-color: #f0f8ff;
+        }
+        .query-list-table td.copied {
+            background-color: #e8f5e8 !important;
+            color: #2e7d32;
+        }
+        .query-list-table td.copied::after {
+            content: " ✓ 복사됨";
+            font-size: 0.7em;
+            color: #2e7d32;
+            margin-left: 5px;
+        }
+        .query-list-table tr:hover {
+            background-color: #bbdefb;
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4);
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+            border-left: 4px solid #1976d2;
+        }
+        /* 컬럼 너비 설정 - 내용에 맞춰 자동 조정, SQL만 넓게 설정 */
+        .query-list-table th:nth-child(1), .query-list-table td:nth-child(1) { width: auto; min-width: 120px; max-width: 200px; } /* 파일명 - 내용에 맞춰 줄임 */
+        .query-list-table th:nth-child(2), .query-list-table td:nth-child(2) { width: auto; min-width: 100px; max-width: 150px; } /* 쿼리 ID - 내용에 맞춰 줄임 */
+        .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) { width: 800px; min-width: 800px; } /* SQL 내용 - 더 넓게 설정 */
+        .query-list-table th:nth-child(4), .query-list-table td:nth-child(4) { width: auto; min-width: 120px; max-width: 200px; } /* 관련 테이블 - 내용에 맞춰 줄임 */
+        .file-type-java {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+            font-size: 0.7em;
+        }
+        .file-type-xml {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+            font-size: 0.7em;
+        }
+        .query-list-table td:nth-child(3) {
+            font-family: 'Courier New', monospace;
+            font-size: 0.7em;
+            background: #f5f5f5;
+            padding: 4px;
+            border-left: 2px solid #3498db;
+            white-space: pre-wrap;
+            word-break: break-all;
+            vertical-align: top;
+        }
+        .sql-content:hover {
+            background: #e3f2fd;
+            border-left-color: #1976d2;
+        }
+        .sql-content.copied {
+            background: #e8f5e8 !important;
+            border-left-color: #2e7d32 !important;
+            color: #2e7d32;
+        }
+        .sql-content.copied::after {
+            content: " ✓ SQL 복사됨";
+            font-size: 0.6em;
+            color: #2e7d32;
+            display: block;
+            margin-top: 2px;
+            font-weight: bold;
+        }
+        .related-tables {
+            color: #666;
+            font-size: 0.7em;
+            word-break: break-all;
+        }
+        .query-type {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+            font-size: 0.7em;
+        }
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .query-list-table {
+                font-size: 0.7em;
+                min-width: 800px;
+            }
+            .query-list-table th, .query-list-table td {
+                padding: 4px 2px;
+            }
+            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) { width: 500px; min-width: 500px; } /* SQL 내용 조정 */
+        }
+        @media (max-width: 480px) {
+            .query-list-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .query-list-table {
+                min-width: 600px;
+            }
+            .query-list-table th:nth-child(3), .query-list-table td:nth-child(3) { width: 400px; min-width: 400px; } /* SQL 내용 더 조정 */
+        }
+    </style>
+</head>
+<body class="query-list-body">
+    <div class="query-list-container">
+        <div class="query-list-header">
+            <div class="header-left">
+                <h1>Query List Report</h1>
+                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2026-01-19 12:42:16</div>
+            </div>
+            <div class="header-right">
+                <button onclick="exportToCSV()" class="csv-export-btn">📊 CSV 다운로드</button>
+            </div>
+        </div>
+        
+            <div class="query-list-stats">
+                <div class="query-list-stat-card">
+                    <div class="query-list-stat-number">308</div>
+                    <div class="query-list-stat-label">전체 쿼리</div>
+                </div>
+                <div class="query-list-stat-card">
+                    <div class="query-list-stat-number">242</div>
+                    <div class="query-list-stat-label">Java 쿼리</div>
+                </div>
+                <div class="query-list-stat-card">
+                    <div class="query-list-stat-number">60</div>
+                    <div class="query-list-stat-label">XML 쿼리</div>
+                </div>
+                <div class="query-list-stat-card">
+                    <div class="query-list-stat-number">12</div>
+                    <div class="query-list-stat-label">관련 테이블</div>
+                </div>
+            </div>
+            
+        <div class="query-list-content">
+            <div class="query-list-table-container">
+                <table id="queryTable" class="query-list-table">
+                    <thead>
+                        <tr>
+                            <th>파일명</th>
+                            <th>쿼리 ID</th>
+                            <th>SQL 내용</th>
+                            <th>관련 테이블</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan='7' style='text-align: center; padding: 50px; color: #999;'>조회된 쿼리가 없습니다.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function exportToCSV() {
+            const table = document.getElementById('queryTable');
+            const rows = table.querySelectorAll('tr');
+            let csv = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cols = row.querySelectorAll('td, th');
+                let csvRow = [];
+                
+                for (let j = 0; j < cols.length; j++) {
+                    let cellText = cols[j].textContent || cols[j].innerText;
+                    // CSV에서 쉼표와 따옴표 처리
+                    if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+                        cellText = '"' + cellText.replace(/"/g, '""') + '"';
+                    }
+                    csvRow.push(cellText);
+                }
+                csv.push(csvRow.join(','));
+            }
+            
+            const csvContent = csv.join('\n');
+            // CP949 인코딩을 위한 BOM 추가
+            const BOM = '\uFEFF';
+            const csvWithBOM = BOM + csvContent;
+            const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=cp949;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'query_list_2026-01-19_124216.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 클립보드 복사 함수
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return true;
+                } catch (fallbackErr) {
+                    document.body.removeChild(textArea);
+                    return false;
+                }
+            }
+        }
+
+        // 복사 완료 시각적 피드백
+        function showCopyFeedback(element, text) {
+            // 기존 복사 표시 제거
+            document.querySelectorAll('.copied').forEach(el => {
+                el.classList.remove('copied');
+            });
+            
+            // 새로운 복사 표시 추가
+            element.classList.add('copied');
+            
+            // 2초 후 복사 표시 제거
+            setTimeout(() => {
+                element.classList.remove('copied');
+            }, 2000);
+            
+            // 브라우저 알림 (선택사항)
+            if (navigator.clipboard) {
+                console.log(`복사됨: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
+            }
+        }
+
+        // 페이지 로드 시 더블클릭 이벤트 리스너 추가
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('queryTable');
+            const cells = table.querySelectorAll('td');
+            
+            cells.forEach(cell => {
+                cell.addEventListener('dblclick', async function(e) {
+                    e.preventDefault();
+                    
+                    let textToCopy = '';
+                    let elementToHighlight = this;
+                    
+                    // SQL 내용 셀인지 확인 (3번째 컬럼)
+                    if (this.cellIndex === 2) {
+                        // SQL 내용 복사
+                        const sqlContent = this.querySelector('.sql-content');
+                        if (sqlContent) {
+                            textToCopy = sqlContent.textContent || sqlContent.innerText;
+                            elementToHighlight = sqlContent;
+                        } else {
+                            textToCopy = this.textContent || this.innerText;
+                        }
+                    } else {
+                        // 일반 셀 내용 복사
+                        textToCopy = this.textContent || this.innerText;
+                    }
+                    
+                    // 텍스트가 있는 경우에만 복사
+                    if (textToCopy && textToCopy.trim()) {
+                        const success = await copyToClipboard(textToCopy.trim());
+                        if (success) {
+                            showCopyFeedback(elementToHighlight, textToCopy);
+                        } else {
+                            alert('클립보드 복사에 실패했습니다.');
+                        }
+                    }
+                });
+                
+                // 셀에 툴팁 추가
+                cell.title = '더블클릭하여 복사';
+            });
+        });
+    </script>
+</body>
+</html>

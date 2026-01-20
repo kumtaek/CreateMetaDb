@@ -19,6 +19,8 @@ from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.report_utils import ReportUtils
 from util import get_sql_compress
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from util.layer_classification_utils import get_layer_classifier
 from reports.report_templates import ReportTemplates
 
@@ -171,11 +173,14 @@ class CallChainReportGenerator:
             method_chain_query = """
                 SELECT 
                     '' as jsp_file,
+                    '' as jsp_file_path,
                     '' as api_entry,
                     '' as virtual_endpoint,
-                    cls.class_name as class_name,
-                    src_m.component_name as method_name,
+                    java_file.file_name as class_name,
+                    java_file.file_path as class_file_path,
+                    dst_m.component_name as method_name,
                     xml_file.file_name as xml_file,
+                    xml_file.file_path as xml_file_path,
                     q.component_name as query_id,
                     q.component_type as query_type,
                     COALESCE(t.table_name, '') as related_tables
@@ -183,8 +188,9 @@ class CallChainReportGenerator:
                 JOIN classes cls ON src_m.parent_id = cls.class_id
                 JOIN relationships r1 ON src_m.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
                 JOIN components dst_m ON r1.dst_id = dst_m.component_id AND dst_m.component_type = 'METHOD'
+                JOIN files java_file ON dst_m.file_id = java_file.file_id
                 JOIN relationships r2 ON dst_m.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
-                JOIN components q ON r2.dst_id = q.component_id AND q.component_type = 'QUERY'
+                JOIN components q ON r2.dst_id = q.component_id AND (q.component_type LIKE 'SQL_%' OR q.component_type = 'QUERY')
                 JOIN files xml_file ON q.file_id = xml_file.file_id
                 LEFT JOIN relationships r3 ON q.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
                 LEFT JOIN tables t ON r3.dst_id = t.component_id
@@ -201,11 +207,14 @@ class CallChainReportGenerator:
             sql_chain_query = """
                 SELECT 
                     '' as jsp_file,
+                    '' as jsp_file_path,
                     '' as api_entry,
                     '' as virtual_endpoint,
-                    f.file_name as class_name,
-                    q.component_name as method_name,
+                    '' as class_name,
+                    '' as class_file_path,
+                    '' as method_name,
                     f.file_name as xml_file,
+                    f.file_path as xml_file_path,
                     q.component_name as query_id,
                     q.component_type as query_type,
                     COALESCE(t.table_name, '') as related_tables
@@ -218,17 +227,24 @@ class CallChainReportGenerator:
                   AND q.component_type LIKE 'SQL_%'
                   AND q.del_yn = 'N'
                   AND f.del_yn = 'N'
+                  AND q.component_id NOT IN (
+                      SELECT DISTINCT dst_id FROM relationships
+                      WHERE rel_type = 'CALL_QUERY' AND del_yn = 'N'
+                  )
             """
             
             # 부분 체인 쿼리 (API_URL → METHOD에서 끝나는 경우, SQL 호출이 없는 메서드)
             partial_chain_query = """
                 SELECT 
                     frontend_file.file_name as jsp_file,
+                    frontend_file.file_path as jsp_file_path,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
-                    cls.class_name as class_name,
+                    java_file.file_name as class_name,
+                    java_file.file_path as class_file_path,
                     method.component_name as method_name,
                     'NO-QUERY' as xml_file,
+                    '' as xml_file_path,
                     'NO-QUERY' as query_id,
                     'CALCULATION_ONLY' as query_type,
                     'NO-QUERY' as related_tables
@@ -237,6 +253,7 @@ class CallChainReportGenerator:
                 JOIN relationships r1 ON api_url.component_id = r1.src_id AND r1.rel_type = 'CALL_METHOD'
                 JOIN components method ON r1.dst_id = method.component_id
                 JOIN classes cls ON method.parent_id = cls.class_id
+                JOIN files java_file ON method.file_id = java_file.file_id
                 LEFT JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY' AND r2.del_yn = 'N'
                 JOIN projects p ON api_url.project_id = p.project_id
                 WHERE p.project_name = ?
@@ -253,11 +270,14 @@ class CallChainReportGenerator:
             broken_frontend_query = """
                 SELECT 
                     frontend_file.file_name as jsp_file,
+                    frontend_file.file_path as jsp_file_path,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
                     '' as class_name,
+                    '' as class_file_path,
                     '' as method_name,
                     '' as xml_file,
+                    '' as xml_file_path,
                     '' as query_id,
                     '' as query_type,
                     '' as related_tables
@@ -276,11 +296,14 @@ class CallChainReportGenerator:
             api_chain_query = """
                 SELECT 
                     frontend_file.file_name as jsp_file,
+                    frontend_file.file_path as jsp_file_path,
                     api_url.component_name as api_entry,
                     '' as virtual_endpoint,
-                    cls.class_name as class_name,
+                    java_file.file_name as class_name,
+                    java_file.file_path as class_file_path,
                     method.component_name as method_name,
                     xml_file.file_name as xml_file,
+                    xml_file.file_path as xml_file_path,
                     sql.component_name as query_id,
                     sql.component_type as query_type,
                     COALESCE(t.table_name, '') as related_tables
@@ -308,16 +331,52 @@ class CallChainReportGenerator:
                   AND r2.del_yn = 'N'
                   AND (r3.rel_type = 'USE_TABLE' OR r3.rel_type IS NULL)
             """
+
+            # METHOD -> Query -> Table 체인 (API_URL/메서드 호출이 없는 경우)
+            method_query_chain = """
+                SELECT 
+                    '' as jsp_file,
+                    '' as jsp_file_path,
+                    '' as api_entry,
+                    '' as virtual_endpoint,
+                    java_file.file_name as class_name,
+                    java_file.file_path as class_file_path,
+                    method.component_name as method_name,
+                    xml_file.file_name as xml_file,
+                    xml_file.file_path as xml_file_path,
+                    sql.component_name as query_id,
+                    sql.component_type as query_type,
+                    COALESCE(t.table_name, '') as related_tables
+                FROM components method
+                JOIN files java_file ON method.file_id = java_file.file_id
+                JOIN relationships r2 ON method.component_id = r2.src_id AND r2.rel_type = 'CALL_QUERY'
+                JOIN components sql ON r2.dst_id = sql.component_id
+                JOIN files xml_file ON sql.file_id = xml_file.file_id
+                LEFT JOIN relationships r3 ON sql.component_id = r3.src_id AND r3.rel_type = 'USE_TABLE'
+                LEFT JOIN tables t ON r3.dst_id = t.component_id
+                JOIN projects p ON method.project_id = p.project_id
+                WHERE p.project_name = ?
+                  AND method.component_type = 'METHOD'
+                  AND (sql.component_type LIKE 'SQL_%' OR sql.component_type = 'QUERY')
+                  AND method.del_yn = 'N'
+                  AND sql.del_yn = 'N'
+                  AND java_file.del_yn = 'N'
+                  AND r2.del_yn = 'N'
+                  AND (r3.rel_type = 'USE_TABLE' OR r3.rel_type IS NULL)
+            """
             
             # 고아 XML 쿼리 (관계가 없는 XML SQL 쿼리들)
             orphan_xml_query = """
                 SELECT 
                     '' as jsp_file,
+                    '' as jsp_file_path,
                     '' as api_entry,
                     '' as virtual_endpoint,
                     '' as class_name,
+                    '' as class_file_path,
                     '' as method_name,
                     xml_file.file_name as xml_file,
+                    xml_file.file_path as xml_file_path,
                     q.component_name as query_id,
                     q.component_type as query_type,
                     COALESCE(t.table_name, '') as related_tables
@@ -341,11 +400,14 @@ class CallChainReportGenerator:
             query = f"""
                 SELECT 
                     jsp_file,
+                    jsp_file_path,
                     api_entry,
                     virtual_endpoint,
                     class_name,
+                    class_file_path,
                     method_name,
                     xml_file,
+                    xml_file_path,
                     query_id,
                     query_type,
                     GROUP_CONCAT(DISTINCT related_tables) as related_tables
@@ -353,6 +415,8 @@ class CallChainReportGenerator:
                     {api_chain_query}
                     UNION ALL
                     {method_chain_query}
+                    UNION ALL
+                    {method_query_chain}
                     UNION ALL
                     {sql_chain_query}
                     UNION ALL
@@ -362,7 +426,7 @@ class CallChainReportGenerator:
                     UNION ALL
                     {orphan_xml_query}
                 ) 
-                GROUP BY jsp_file, api_entry, virtual_endpoint, class_name, method_name, xml_file, query_id, query_type
+                GROUP BY jsp_file, jsp_file_path, api_entry, virtual_endpoint, class_name, class_file_path, method_name, xml_file, xml_file_path, query_id, query_type
                 ORDER BY 
                     CASE WHEN api_entry = '' THEN 1 ELSE 0 END,
                     CASE WHEN class_name = '' AND method_name = '' AND xml_file != '' AND xml_file != 'NO-QUERY' THEN 1 ELSE 0 END,
@@ -374,7 +438,27 @@ class CallChainReportGenerator:
                     query_id
             """
             
-            results = self.db_utils.execute_query(query, (self.project_name, self.project_name, self.project_name, self.project_name, self.project_name, self.project_name))
+            results = self.db_utils.execute_query(
+                query,
+                (
+                    self.project_name,
+                    self.project_name,
+                    self.project_name,
+                    self.project_name,
+                    self.project_name,
+                    self.project_name,
+                    self.project_name,
+                )
+            )
+
+            folder_filters = get_report_folders()
+            if folder_filters:
+                filter_utils = ReportFilterUtils()
+                results = filter_utils.filter_rows_by_paths(
+                    results,
+                    ['jsp_file_path', 'class_file_path', 'xml_file_path'],
+                    folder_filters
+                )
             
             # SqlContent.db에서 정제된 SQL 내용 조회
             sql_content_map = self._get_sql_contents()
@@ -423,6 +507,11 @@ class CallChainReportGenerator:
                 method_name = row['method_name']
                 if method_name.startswith('API_ENTRY.'):
                     method_name = method_name[10:]  # 'API_ENTRY.' 제거
+
+                # 클래스명은 파일명 기반으로 저장되므로 .java 확장자 제거
+                class_name = row['class_name'] or ''
+                if class_name.lower().endswith('.java'):
+                    class_name = class_name[:-5]
                 
                 # Layer 정보 추가
                 method_layer = row.get('method_layer', 'APPLICATION')
@@ -449,7 +538,7 @@ class CallChainReportGenerator:
                     'jsp_file': row['jsp_file'],
                     'api_entry': api_entry,
                     'virtual_endpoint': virtual_endpoint,
-                    'class_name': row['class_name'],
+                    'class_name': class_name,
                     'method_name': method_name,
                     'method_layer': method_layer,
                     'method_color': method_color,

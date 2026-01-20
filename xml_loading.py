@@ -25,6 +25,7 @@ from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
 # from util.sql_content_processor import SqlContentProcessor  # 보류 상태
 from util.base_loading_engine import BaseLoadingEngine
+from util.progress_utils import ProgressTracker
 
 
 class XmlLoadingEngine(BaseLoadingEngine):
@@ -95,102 +96,117 @@ class XmlLoadingEngine(BaseLoadingEngine):
                 return True
 
             project_id_cache = self._get_project_id()
+            total_queries_all = 0
+            for xml_file in xml_files:
+                total_queries_all += self.xml_parser.count_sql_queries(xml_file)
             total_files = len(xml_files)
-            import time
-            last_progress_log = time.time()
+            progress_tracker = ProgressTracker(
+                total=total_files,
+                desc="XML Files",
+                unit="file",
+                log_interval_sec=1.0
+            )
+            global_query_idx = 0
 
-            for idx, xml_file in enumerate(xml_files, start=1):
-                try:
-                    from util.path_utils import PathUtils
-                    path_utils = PathUtils()
-                    relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
-                    unix_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
-                    file_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
-                    if file_dir in ('', '.'):
-                        file_dir = ''
-                    else:
-                        file_dir = path_utils.normalize_path_separator(file_dir, 'unix')
-                    file_name = os.path.basename(unix_relative_path)
+            try:
+                for idx, xml_file in enumerate(xml_files, start=1):
+                    try:
+                        from util.path_utils import PathUtils
+                        path_utils = PathUtils()
+                        relative_path = path_utils.get_relative_path(xml_file, self.project_source_path)
+                        unix_relative_path = path_utils.normalize_path_separator(relative_path, 'unix')
+                        file_dir = os.path.dirname(unix_relative_path) if unix_relative_path else ''
+                        if file_dir in ('', '.'):
+                            file_dir = ''
+                        else:
+                            file_dir = path_utils.normalize_path_separator(file_dir, 'unix')
+                        file_name = os.path.basename(unix_relative_path)
 
-                    file_query = "SELECT file_id FROM files WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?) AND file_path = ? AND file_name = ? AND del_yn = 'N'"
-                    file_results = self.db_utils.execute_query(file_query, (self.project_name, file_dir, file_name), self.conn)
-                    
-                    if not file_results:
-                        warning(f"DB에 파일 정보가 없습니다. 건너뜁니다: {unix_relative_path}")
-                        continue
-                    
-                    file_id = file_results[0]['file_id']
-                    self.xml_parser.current_file_id = file_id
+                        file_query = "SELECT file_id FROM files WHERE project_id = (SELECT project_id FROM projects WHERE project_name = ?) AND file_path = ? AND file_name = ? AND del_yn = 'N'"
+                        file_results = self.db_utils.execute_query(file_query, (self.project_name, file_dir, file_name), self.conn)
+                        
+                        if not file_results:
+                            warning(f"DB에 파일 정보가 없습니다. 건너뜁니다: {unix_relative_path}")
+                            continue
+                        
+                        file_id = file_results[0]['file_id']
+                        self.xml_parser.current_file_id = file_id
 
-                    # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
-                    self.file_context.push(
-                        project_name=self.project_name,
-                        project_id=project_id_cache,
-                        file_id=file_id,
-                        file_path=file_dir,
-                        file_name=file_name,
-                        file_type='XML',
-                        source_type='XML',
-                        stage='XML'
-                    )
-                    
-                    analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
-                    
-                    if analysis_result.get('has_error') == 'Y':
-                        self.stats['errors'] += 1
-                        continue
-
-                    if analysis_result['sql_queries']:
-                        project_id = project_id_cache
-                        saved_any = False
-                        for sql_query in analysis_result['sql_queries']:
-                            query_id = sql_query.get('query_id')
-                            query_type = sql_query.get('query_type')
-
-                            # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
-                            saved = self.sql_content_manager.save_sql_content(
-                                sql_content=sql_query.get('sql_content', ''),
-                                project_id=project_id,
-                                conn=self.conn,
-                                query_id=query_id,
-                                file_id=file_id,
-                                file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
-                                file_name=file_name,
-                                query_type=query_type,
-                                hash_value=sql_query.get('hash_value'),
-                                component_name=query_id,
-                                raw_sql_content=sql_query.get('raw_sql_content'),
-                            )
-                            saved_any = saved_any or bool(saved)
-
-                        if saved_any:
-                            self.stats['sql_components_created'] += 1
-
-                    # JOIN 관계 생성 통계 집계
-                    join_stats = analysis_result.get('join_analysis_stats', {})
-                    self.stats['join_relationships_created'] += join_stats.get('relationships_created', 0)
-
-                    self.stats['xml_files_processed'] += 1
-                    self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
-
-                    # 진행 상황 로그 (1초 간격, 최소 1건 처리 후)
-                    now = time.time()
-                    if now - last_progress_log >= 1:
-                        app_logger.info(
-                            f"[XML PROGRESS] {idx}/{total_files} files processed "
-                            f"(queries={self.stats['sql_queries_extracted']}, joins={self.stats['join_relationships_created']}, errors={self.stats['errors']})"
+                        # 파일 컨텍스트에 현재 XML 파일 정보 저장 (file_id 유실 방지)
+                        self.file_context.push(
+                            project_name=self.project_name,
+                            project_id=project_id_cache,
+                            file_id=file_id,
+                            file_path=file_dir,
+                            file_name=file_name,
+                            file_type='XML',
+                            source_type='XML',
+                            stage='XML'
                         )
-                        last_progress_log = now
+                        
+                        analysis_result = self.xml_parser.extract_sql_queries_and_analyze_relationships(xml_file)
+                        
+                        if analysis_result.get('has_error') == 'Y':
+                            self.stats['errors'] += 1
+                            continue
 
-                except Exception as e:
-                    self.stats['errors'] += 1
-                    handle_error(
-                        e,
-                        f"XML 파일 파싱 실패: {xml_file} (성공 {self.stats['xml_files_processed']}건, 실패 {self.stats['errors']}건)"
-                    )
-                finally:
-                    # 항상 컨텍스트 복원
-                    self.file_context.pop()
+                        if analysis_result['sql_queries']:
+                            project_id = project_id_cache
+                            saved_any = False
+                            total_queries_in_file = len(analysis_result['sql_queries'])
+                            for query_idx, sql_query in enumerate(analysis_result['sql_queries'], start=1):
+                                global_query_idx += 1
+                                query_id = sql_query.get('query_id')
+                                query_type = sql_query.get('query_type')
+
+                                # SqlContentManager를 통해 SQL 내용 + 컴포넌트 동시 저장 (USE_TABLE까지 즉시 생성)
+                                saved = self.sql_content_manager.save_sql_content(
+                                    sql_content=sql_query.get('sql_content', ''),
+                                    project_id=project_id,
+                                    conn=self.conn,
+                                    query_id=query_id,
+                                    file_id=file_id,
+                                    file_path=file_dir,  # 파일명 제외한 디렉터리만 저장
+                                    file_name=file_name,
+                                    query_type=query_type,
+                                    hash_value=sql_query.get('hash_value'),
+                                    component_name=query_id,
+                                    raw_sql_content=sql_query.get('raw_sql_content'),
+                                    progress_current=global_query_idx,
+                                    progress_total=total_queries_all,
+                                    progress_context="xml_batch"
+                                )
+                                saved_any = saved_any or bool(saved)
+
+                            if saved_any:
+                                self.stats['sql_components_created'] += 1
+
+                        # JOIN 관계 생성 통계 집계
+                        join_stats = analysis_result.get('join_analysis_stats', {})
+                        self.stats['join_relationships_created'] += join_stats.get('relationships_created', 0)
+
+                        self.stats['xml_files_processed'] += 1
+                        self.stats['sql_queries_extracted'] += len(analysis_result['sql_queries'])
+
+                        progress_tracker.update(
+                            current=idx,
+                            log_message=(
+                                f"[XML PROGRESS] {idx}/{total_files} files processed "
+                                f"(queries={self.stats['sql_queries_extracted']}, joins={self.stats['join_relationships_created']}, errors={self.stats['errors']})"
+                            )
+                        )
+
+                    except Exception as e:
+                        self.stats['errors'] += 1
+                        handle_error(
+                            e,
+                            f"XML 파일 파싱 실패: {xml_file} (성공 {self.stats['xml_files_processed']}건, 실패 {self.stats['errors']}건)"
+                        )
+                    finally:
+                        # 항상 컨텍스트 복원
+                        self.file_context.pop()
+            finally:
+                progress_tracker.close()
             
             self._print_xml_loading_statistics()
             info("=== XML 로딩 완료 ===")

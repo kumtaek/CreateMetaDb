@@ -8,7 +8,7 @@ import gzip
 import hashlib
 from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass
-from util.logger import error, handle_error
+from util.logger import error, handle_error, warning
 
 @dataclass
 class TableInfo:
@@ -250,11 +250,30 @@ class CommonSqlAnalyzer:
             dst_comp_id = ensure_table_component(join.right_table)
             
             if src_comp_id and dst_comp_id:
+                if src_comp_id == dst_comp_id:
+                    warning(f"자기 참조 JOIN 관계 스킵: {join.left_table} -> {join.right_table}")
+                    return
+                stored_src_col = join.left_column.upper()
+                stored_dst_col = join.right_column.upper()
+                join_cond = f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"
+                rel_type = f"JOIN_{join.join_type}"
+                if rel_type not in {
+                    'JOIN_LEFT',
+                    'JOIN_RIGHT',
+                    'JOIN_OUTER',
+                    'JOIN_LEFT_JOIN',
+                    'JOIN_INNER_JOIN',
+                    'JOIN_RIGHT_JOIN',
+                    'JOIN_ORACLE_OUTER_JOIN',
+                } and src_comp_id > dst_comp_id:
+                    src_comp_id, dst_comp_id = dst_comp_id, src_comp_id
+                    stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
+                    join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"
                 # 조인 관계 저장
                 cursor.execute("""
                     INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
                     VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
-                """, (src_comp_id, dst_comp_id, f"JOIN_{join.join_type}", 0.8, join.left_column.upper(), join.right_column.upper(), f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"))
+                """, (src_comp_id, dst_comp_id, rel_type, 0.8, stored_src_col, stored_dst_col, join_cond))
                 
         except Exception as e:
             handle_error(e, "조인 관계 저장 실패 (inferred 파일 생성 금지 모드)")

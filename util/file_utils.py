@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from .logger import app_logger, handle_error, info, debug, warning, get_log_file_path
+from .progress_utils import ProgressTracker
 
 
 class FileUtils:
@@ -63,40 +64,38 @@ class FileUtils:
             # USER RULE: 모든 exception 발생시 handle_error()로 exit()
             handle_error(Exception(f"파일을 찾을 수 없습니다: {file_path}"), f"파일 읽기 실패: {file_path}")
         except UnicodeDecodeError:
-            from util.path_utils import PathUtils
-            path_utils = PathUtils()
-            filename = path_utils.get_filename(file_path)
-            info(f"인코딩 문제 감지, 다른 인코딩으로 재시도: {filename}")
-            
-            # UTF-8 BOM 처리 시도
-            try:
-                with open(file_path, 'r', encoding='utf-8-sig') as file:
-                    content = file.read()
-                    app_logger.debug(f"파일 읽기 성공 (utf-8-sig): {file_path}")
-                    return content
-            except UnicodeDecodeError:
-                # UTF-8 BOM 실패하면 CP949 시도
+            encodings_to_try = [
+                'utf-8-sig',
+                'cp949',
+                'euc-kr',
+                'utf-16',
+                'utf-16-le',
+                'utf-16-be',
+            ]
+            for enc in encodings_to_try:
                 try:
-                    with open(file_path, 'r', encoding='cp949') as file:
+                    with open(file_path, 'r', encoding=enc) as file:
                         content = file.read()
-                        app_logger.debug(f"파일 읽기 성공 (cp949): {file_path}")
+                        app_logger.debug(f"파일 읽기 성공 ({enc}): {file_path}")
                         return content
                 except UnicodeDecodeError:
-                    # CP949도 실패하면 EUC-KR 시도
-                    try:
-                        with open(file_path, 'r', encoding='euc-kr') as file:
-                            content = file.read()
-                            app_logger.debug(f"파일 읽기 성공 (euc-kr): {file_path}")
-                            return content
-                    except UnicodeDecodeError:
-                        # 모든 인코딩 실패 시 에러 처리
-                        handle_error(Exception(f"모든 인코딩 시도 실패 (utf-8, utf-8-sig, cp949, euc-kr): {file_path}"), f"파일 인코딩 문제: {file_path}")
-                        return None
+                    continue
                 except Exception as e:
                     handle_error(e, f"파일 읽기 실패: {file_path}")
                     return None
+            # 모든 인코딩 실패 시 최종 대체(손실 가능)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+                    content = file.read()
+                    app_logger.debug(f"파일 읽기 성공 (utf-8 replace): {file_path}")
+                    return content
             except Exception as e:
-                handle_error(e, f"파일 읽기 실패: {file_path}")
+                handle_error(
+                    Exception(
+                        f"모든 인코딩 시도 실패 (utf-8, utf-8-sig, utf-16, utf-16-le, utf-16-be, cp949, euc-kr): {file_path}"
+                    ),
+                    f"파일 인코딩 문제: {file_path}"
+                )
                 return None
         except Exception as e:
             handle_error(e, f"파일 읽기 실패: {file_path}")
@@ -274,25 +273,67 @@ class FileUtils:
         files = []
         
         try:
+            scanned_count = 0
+            start_time = time.time()
+            progress_tracker = None
             if recursive:
+                progress_tracker = ProgressTracker(
+                    total=None,
+                    desc="Directory Scan",
+                    unit="file",
+                    log_interval_sec=1.0
+                )
                 for root, dirs, filenames in os.walk(directory_path):
                     for filename in filenames:
                         file_path = os.path.join(root, filename)
                         file_info = FileUtils.get_file_info(file_path)
                         if file_info['exists']:
                             files.append(file_info)
+                        scanned_count += 1
+                        elapsed = time.time() - start_time
+                        progress_tracker.update(
+                            increment=1,
+                            log_message=(
+                                f"[DIR SCAN PROGRESS] scanned={scanned_count} "
+                                f"elapsed={elapsed:.1f}s"
+                            )
+                        )
             else:
-                for item in os.listdir(directory_path):
+                items = os.listdir(directory_path)
+                total_items = len(items)
+                progress_tracker = ProgressTracker(
+                    total=total_items,
+                    desc="Directory Scan",
+                    unit="file",
+                    log_interval_sec=1.0
+                )
+                for item in items:
                     item_path = os.path.join(directory_path, item)
                     if os.path.isfile(item_path):
                         file_info = FileUtils.get_file_info(item_path)
                         if file_info['exists']:
                             files.append(file_info)
+                    scanned_count += 1
+                    elapsed = time.time() - start_time
+                    progress_tracker.update(
+                        current=scanned_count,
+                        log_message=(
+                            f"[DIR SCAN PROGRESS] scanned={scanned_count}/{total_items} "
+                            f"elapsed={elapsed:.1f}s"
+                        )
+                    )
+            if progress_tracker:
+                progress_tracker.close()
             
             app_logger.debug(f"디렉토리 스캔 완료: {directory_path}, 파일 수: {len(files)}")
             return files
             
         except Exception as e:
+            if progress_tracker:
+                try:
+                    progress_tracker.close()
+                except Exception:
+                    pass
             handle_error(e, f"디렉토리 스캔 실패: {directory_path}")
             return []
     

@@ -126,8 +126,15 @@ class XmlParser:
         MyBatis 태그만 제거하고 쿼리 내용만 남기는 심플한 로직"""
         sql_queries = []
         try:
-            with open(xml_file, 'r', encoding='utf-8', errors='ignore') as f:
-                xml_content = f.read()
+            xml_content = FileUtils.read_file(xml_file)
+            if xml_content is None:
+                return {
+                    'sql_queries': [],
+                    'join_relationships': [],
+                    'file_path': xml_file,
+                    'has_error': 'Y',
+                    'error_message': 'XML 파일 인코딩 처리 실패'
+                }
             xml_content = xml_content.replace('\r\n', '\n').replace('\n\r', '\n').replace('\r', '\n')
 
             # namespace 추출
@@ -210,7 +217,6 @@ class XmlParser:
                 'has_error': 'N',
                 'error_message': None
             }
-
         except Exception as e:
             handle_error(e, f"XML MyBatis 파싱 실패: {xml_file}")
             return {
@@ -220,6 +226,31 @@ class XmlParser:
                 'has_error': 'Y',
                 'error_message': f"XML 파싱 실패: {str(e)}"
             }
+
+    def count_sql_queries(self, xml_file: str) -> int:
+        """
+        XML 파일에서 SQL 쿼리 개수를 빠르게 계산한다.
+
+        Args:
+            xml_file: XML 파일 경로
+
+        Returns:
+            추출 가능한 SQL 쿼리 개수
+        """
+        try:
+            xml_content = FileUtils.read_file(xml_file)
+            if not xml_content:
+                return 0
+            xml_content = xml_content.replace('\r\n', '\n').replace('\n\r', '\n').replace('\r', '\n')
+            mybatis_tags = ['select', 'insert', 'update', 'delete', 'merge']
+            pattern = re.compile(
+                rf'<({"|".join(mybatis_tags)})\s+id="([^"]+)"[^>]*>(.*?)</\1>',
+                re.DOTALL | re.IGNORECASE
+            )
+            return sum(1 for _ in pattern.finditer(xml_content))
+        except Exception as e:
+            handle_error(e, f"XML 쿼리 개수 계산 실패: {xml_file}")
+            return 0
 
     def _approximate_mybatis_dynamic_tags(self, content: str) -> str:
         """

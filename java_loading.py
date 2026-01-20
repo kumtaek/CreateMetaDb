@@ -5,9 +5,10 @@
 
 import os
 import sqlite3
+import time
 from typing import List, Dict, Any, Optional
 from util import (
-    DatabaseUtils, info, warning, debug, handle_error,
+    DatabaseUtils, info, warning, debug, handle_error, FileUtils,
     get_project_source_path, get_project_metadata_db_path, HashUtils
 )
 from util.file_context import get_file_context_manager
@@ -16,6 +17,7 @@ from parser.simple_query_analyzer import SimpleQueryAnalyzer
 from util.sql_content_manager import SqlContentManager
 from util.path_utils import PathUtils
 from util.base_loading_engine import BaseLoadingEngine
+from util.progress_utils import ProgressTracker
 
 class SimpleJavaLoader(BaseLoadingEngine):
     """Simple Java file loader"""
@@ -71,15 +73,34 @@ class SimpleJavaLoader(BaseLoadingEngine):
 
             info(f"Java files to process: {len(java_files)}")
 
-            for java_file in java_files:
-                try:
-                    self._process_java_file(java_file, project_id)
-                    self.stats['java_files_processed'] += 1
-                except Exception as e:
-                    handle_error(e, f"Java file processing failed: {java_file}")
-                    raise
+            progress_tracker = ProgressTracker(
+                total=len(java_files),
+                desc="Java Loading",
+                unit="file",
+                log_interval_sec=1.0
+            )
+            start_time = time.time()
+            try:
+                for index, java_file in enumerate(java_files, start=1):
+                    try:
+                        self._process_java_file(java_file, project_id)
+                        self.stats['java_files_processed'] += 1
+                    except Exception as e:
+                        handle_error(e, f"Java file processing failed: {java_file}")
+                        raise
 
-                    self.stats['errors'] += 1
+                        self.stats['errors'] += 1
+                    elapsed = time.time() - start_time
+                    progress_tracker.update(
+                        current=index,
+                        log_message=(
+                            f"[JAVA FILE PROGRESS] {index}/{len(java_files)} "
+                            f"file={os.path.basename(java_file)} "
+                            f"elapsed={elapsed:.1f}s"
+                        )
+                    )
+            finally:
+                progress_tracker.close()
 
             if self.collected_sql_queries:
                 # Entity-Table 매핑을 쿼리 분석기에 설정 (JPQL 변환용)
@@ -131,13 +152,14 @@ class SimpleJavaLoader(BaseLoadingEngine):
                 debug(f"classes in parse_result: {parse_result.get('classes')}")
                 if not parse_result.get('classes'):
                     # Enum 파일인지 확인
-                    with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        if 'enum ' in content:
-                            # Enum은 연관관계가 없어서 처리하지 않음
-                            debug(f"Enum file ignored (no relationships): {java_file}")
-                        else:
-                            warning(f"No classes extracted: {java_file}")
+                    content = FileUtils.read_file(java_file)
+                    if content is None:
+                        return
+                    if 'enum ' in content:
+                        # Enum은 연관관계가 없어서 처리하지 않음
+                        debug(f"Enum file ignored (no relationships): {java_file}")
+                    else:
+                        warning(f"No classes extracted: {java_file}")
             except Exception as e:
                 handle_error(e, f"Java file parse failed: {java_file}")
                 return
@@ -207,8 +229,9 @@ class SimpleJavaLoader(BaseLoadingEngine):
                 from parser.java_parser import JavaParser
                 java_parser = JavaParser()
                 
-                with open(java_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    java_content = f.read()
+                java_content = FileUtils.read_file(java_file)
+                if java_content is None:
+                    return
                 
                 # MyBatis FQMN 쿼리 추출
                 mybatis_fqmn_queries = java_parser._extract_mybatis_fqmn_queries(java_content, java_file)
@@ -281,7 +304,8 @@ class SimpleJavaLoader(BaseLoadingEngine):
                 info(f"JPQL 정규화 적용: {jpql_normalized_count}개 쿼리")
 
         try:
-            for query_data in self.collected_sql_queries:
+            total_queries = len(self.collected_sql_queries)
+            for query_idx, query_data in enumerate(self.collected_sql_queries, start=1):
                 # 파일 컨텍스트 세팅: 저장 대상 쿼리가 속한 파일 기준
                 file_id = query_data.get('file_id')
                 file_path = ''
@@ -311,7 +335,13 @@ class SimpleJavaLoader(BaseLoadingEngine):
                     stage='Java-SQLSave'
                 )
                 try:
-                    self.sql_content_manager.save_sql_content(conn=self.conn, **query_data)
+                    self.sql_content_manager.save_sql_content(
+                        conn=self.conn,
+                        progress_current=query_idx,
+                        progress_total=total_queries,
+                        progress_context="java_batch",
+                        **query_data
+                    )
                 finally:
                     self.file_context.pop()
         except Exception as e:

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallChain Report - sampleSrc</title>
+    <link rel="stylesheet" href="css/woori.css">
+</head>
+<body class="callchain-body">
+    <div class="callchain-container">
+        <div class="callchain-header">
+            <div class="header-left">
+                <h1>CallChain Report</h1>
+                <div class="subtitle">프로젝트: sampleSrc | 생성일시: 2026-01-19 12:42:15</div>
+            </div>
+            <div class="header-right">
+                <button onclick="exportToCSV()" class="csv-export-btn">📊 CSV 다운로드</button>
+            </div>
+        </div>
+        
+        <div class="callchain-stats">
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">20</div>
+                <div class="callchain-stat-label">Frontend Files</div>
+            </div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">152</div>
+                <div class="callchain-stat-label">Java 클래스</div>
+            </div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">7</div>
+                <div class="callchain-stat-label">XML 파일</div>
+            </div>
+            <div class="callchain-stat-card">
+                <div class="callchain-stat-number">23</div>
+                <div class="callchain-stat-label">데이터베이스 테이블</div>
+            </div>
+        </div>
+        <div class="callchain-content">
+            <div class="callchain-section">
+                <div class="callchain-table-container">
+                    <table id="chainTable" class="callchain-table">
+                        <thead>
+                            <tr>
+                                <th>Frontend</th>
+                                <th>API_URL</th>
+                                <th>클래스</th>
+                                <th>메서드</th>
+                                <th>XML파일</th>
+                                <th>쿼리ID</th>
+                                <th>쿼리종류</th>
+                                <th>관련테이블들</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                <tr>
+                    <td><span class="callchain-badge" title="Frontend 파일: error.jsp">error.jsp</span></td>
+                    <td><span class="callchain-badge" title="API URL: GET:/non-existent-endpoint">GET:/non-existent-endpoint</span></td>
+                    <td><span class="callchain-badge" title="클래스: "></span></td>
+                    <td>
+                        <span class="callchain-badge" title="메서드:  (Layer: APPLICATION)" style="background-color: #e1f5fe;">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge" title="XML 파일: "></span></td>
+                    <td>
+                        <span class="callchain-badge query-tooltip" 
+                              title="쿼리 ID:  (Layer: DATA)" 
+                              style="background-color: #f1f8e9;"
+                              data-query-content=""
+                              data-query-type=""
+                              data-related-tables="">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge query-type"></span></td>
+                    <td><span class="callchain-badge" title="관련 테이블: "></span></td>
+                </tr>
+
+                <tr>
+                    <td><span class="callchain-badge" title="Frontend 파일: userManagement.jsp">userManagement.jsp</span></td>
+                    <td><span class="callchain-badge" title="API URL: GET:/api/legacy/orders">GET:/api/legacy/orders</span></td>
+                    <td><span class="callchain-badge" title="클래스: "></span></td>
+                    <td>
+                        <span class="callchain-badge" title="메서드:  (Layer: APPLICATION)" style="background-color: #e1f5fe;">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge" title="XML 파일: "></span></td>
+                    <td>
+                        <span class="callchain-badge query-tooltip" 
+                              title="쿼리 ID:  (Layer: DATA)" 
+                              style="background-color: #f1f8e9;"
+                              data-query-content=""
+                              data-query-type=""
+                              data-related-tables="">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge query-type"></span></td>
+                    <td><span class="callchain-badge" title="관련 테이블: "></span></td>
+                </tr>
+
+                <tr>
+                    <td><span class="callchain-badge" title="Frontend 파일: userManagement.jsp">userManagement.jsp</span></td>
+                    <td><span class="callchain-badge" title="API URL: GET:/api/legacy/products">GET:/api/legacy/products</span></td>
+                    <td><span class="callchain-badge" title="클래스: "></span></td>
+                    <td>
+                        <span class="callchain-badge" title="메서드:  (Layer: APPLICATION)" style="background-color: #e1f5fe;">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge" title="XML 파일: "></span></td>
+                    <td>
+                        <span class="callchain-badge query-tooltip" 
+                              title="쿼리 ID:  (Layer: DATA)" 
+                              style="background-color: #f1f8e9;"
+                              data-query-content=""
+                              data-query-type=""
+                              data-related-tables="">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge query-type"></span></td>
+                    <td><span class="callchain-badge" title="관련 테이블: "></span></td>
+                </tr>
+
+                <tr>
+                    <td><span class="callchain-badge" title="Frontend 파일: userManagement.jsp">userManagement.jsp</span></td>
+                    <td><span class="callchain-badge" title="API URL: GET:/api/legacy/users">GET:/api/legacy/users</span></td>
+                    <td><span class="callchain-badge" title="클래스: "></span></td>
+                    <td>
+                        <span class="callchain-badge" title="메서드:  (Layer: APPLICATION)" style="background-color: #e1f5fe;">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge" title="XML 파일: "></span></td>
+                    <td>
+                        <span class="callchain-badge query-tooltip" 
+                              title="쿼리 ID:  (Layer: DATA)" 
+                              style="background-color: #f1f8e9;"
+                              data-query-content=""
+                              data-query-type=""
+                              data-related-tables="">
+                            
+                        </span>
+                    </td>
+                    <td><span class="callchain-badge query-type"></span></td>
+                    <td><span class="callchain-badge" title="관련 테이블: "></span></td>
+                </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        
+        // 오프라인 환경 지원을 위한 JavaScript
+        // 외부 라이브러리 의존성 없이 순수 JavaScript로 구현
+
+        // CallChain Report 기능 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('CallChain Report initialized');
+            setupSelectableTooltips();
+        });
+
+        // 선택 가능한 툴팁 설정 (title 속성의 내용을 선택 가능한 팝업으로 표시)
+        function setupSelectableTooltips() {
+            // 모든 callchain-badge 요소에 클릭 이벤트 추가
+            const badges = document.querySelectorAll('.callchain-badge[title]');
+            badges.forEach(badge => {
+                badge.style.cursor = 'pointer';
+                badge.addEventListener('click', function(e) {
+                    showSelectableTooltip(this, e);
+                });
+            });
+        }
+
+        // 선택 가능한 툴팁 팝업 표시
+        function showSelectableTooltip(element, event) {
+            const content = element.getAttribute('title');
+            if (!content) return;
+
+            // 기존 팝업 제거
+            const existingPopup = document.querySelector('.selectable-tooltip-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+
+            // 새 팝업 생성
+            const popup = document.createElement('div');
+            popup.className = 'selectable-tooltip-popup';
+            popup.innerHTML = `
+                <div class="popup-header">
+                    <span>내용 보기 (드래그하여 복사 가능)</span>
+                    <button onclick="this.parentElement.parentElement.remove()">✕</button>
+                </div>
+                <div class="popup-content" style="user-select: text; -webkit-user-select: text; -moz-user-select: text;">${content}</div>
+                <div class="popup-footer">
+                    <button onclick="copyToClipboard(this.parentElement.previousElementSibling.textContent)">📋 복사</button>
+                </div>
+            `;
+
+            // 팝업 위치 설정
+            popup.style.position = 'fixed';
+            popup.style.left = event.pageX + 'px';
+            popup.style.top = event.pageY + 'px';
+            popup.style.zIndex = '10000';
+            popup.style.background = 'white';
+            popup.style.border = '2px solid #1976d2';
+            popup.style.borderRadius = '8px';
+            popup.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            popup.style.maxWidth = '600px';
+            popup.style.maxHeight = '400px';
+
+            document.body.appendChild(popup);
+
+            // 화면 밖으로 나가지 않도록 위치 조정
+            const rect = popup.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                popup.style.left = (window.innerWidth - rect.width - 10) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+                popup.style.top = (window.innerHeight - rect.height - 10) + 'px';
+            }
+        }
+
+        // 클립보드 복사 기능
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('클립보드에 복사되었습니다!');
+                }).catch(err => {
+                    console.error('클립보드 복사 실패:', err);
+                    fallbackCopyToClipboard(text);
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        }
+
+        // 클립보드 복사 대안 방법
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('클립보드에 복사되었습니다!');
+            } catch (err) {
+                alert('클립보드 복사에 실패했습니다. 수동으로 복사해주세요.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // CSV 다운로드 기능
+        function exportToCSV() {
+            const table = document.getElementById('chainTable');
+            if (!table) {
+                alert('테이블을 찾을 수 없습니다.');
+                return;
+            }
+
+            let csvContent = '';
+            
+            // 헤더 추가
+            const headers = ['Frontend', 'API_URL', '클래스', '메서드', 'XML파일', '쿼리ID', '쿼리종류', '관련테이블들'];
+            csvContent += headers.join(',') + '\n';
+
+            // 데이터 행 추가 (title 속성에서 전체 내용 추출)
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = [];
+                
+                cells.forEach(cell => {
+                    const badge = cell.querySelector('.callchain-badge');
+                    if (badge) {
+                        // title 속성이 있으면 전체 내용 사용, 없으면 텍스트 내용 사용
+                        const fullContent = badge.getAttribute('title') || badge.textContent;
+                        // CSV용 특수문자 이스케이프
+                        const csvSafeContent = '"' + fullContent.replace(/"/g, '""') + '"';
+                        rowData.push(csvSafeContent);
+                    } else {
+                        rowData.push('""');
+                    }
+                });
+                
+                csvContent += rowData.join(',') + '\n';
+            });
+
+            // CP949 인코딩으로 CSV 파일 다운로드
+            try {
+                // CP949 인코딩을 위한 BOM 추가
+                const BOM = '\uFEFF';
+                const csvWithBOM = BOM + csvContent;
+                
+                const blob = new Blob([csvWithBOM], { 
+                    type: 'text/csv;charset=cp949;' 
+                });
+                
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'CallChain_Report_sampleSrc_2026-01-19 12:42:15.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('CSV 파일이 다운로드되었습니다!');
+            } catch (error) {
+                console.error('CSV 다운로드 오류:', error);
+                alert('CSV 다운로드 중 오류가 발생했습니다.');
+            }
+        }
+        
+    </script>
+</body>
+</html>

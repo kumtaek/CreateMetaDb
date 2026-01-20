@@ -9,11 +9,13 @@ import gzip
 import sqlite3
 import os
 import logging
+import time
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from .logger import app_logger, handle_error
 from .database_utils import DatabaseUtils
+from .progress_utils import ProgressTracker
 from .path_utils import PathUtils
 from .file_utils import FileUtils
 
@@ -41,7 +43,58 @@ class SqlContentManager:
         self._cached_table_names = None  # 테이블 목록 캐싱 (Lazy Loading)
         self._compiled_regex_patterns = None  # 정규식 패턴 사전 컴파일 캐싱
         self._cleaned_sql_cache = {}  # SQL 전처리 결과 캐싱 (쿼리 해시 -> 정제된 SQL)
+        self._throttled_log_ts = {}  # 진행 로그 간격 제어
+        self._use_table_batch_trackers = {}  # USE_TABLE 배치 tqdm 관리
+        self._use_table_batch_last = {}  # USE_TABLE 배치 진행도 캐시
+        self._use_table_batch_done = set()  # USE_TABLE 배치 완료 컨텍스트
         self.initialized = self._initialize_database()
+
+    def _update_use_table_batch_progress(
+        self,
+        progress_current: Optional[int],
+        progress_total: Optional[int],
+        progress_context: Optional[str],
+    ) -> None:
+        """
+        USE_TABLE 배치 진행 상황을 전체 단위로 업데이트한다.
+
+        Args:
+            progress_current: 현재 처리 건수(선택)
+            progress_total: 전체 건수(선택)
+            progress_context: 진행 컨텍스트 문자열(선택)
+        """
+        if progress_current is None or not progress_total:
+            return
+        context_key = progress_context or "default"
+        if context_key in self._use_table_batch_done:
+            return
+        last_value = self._use_table_batch_last.get(context_key)
+        if last_value == progress_current:
+            return
+        progress_tracker = self._use_table_batch_trackers.get(context_key)
+        if not progress_tracker:
+            progress_tracker = ProgressTracker(
+                total=progress_total,
+                desc=f"USE_TABLE BATCH {context_key}",
+                unit="query",
+                log_interval_sec=3.0,
+                leave=True
+            )
+            self._use_table_batch_trackers[context_key] = progress_tracker
+        progress_tracker.update(
+            current=progress_current,
+            log_message=(
+                f"[USE_TABLE BATCH] context={context_key} "
+                f"progress={progress_current}/{progress_total}"
+            ),
+            force_log=(progress_current == progress_total)
+        )
+        self._use_table_batch_last[context_key] = progress_current
+        if progress_current == progress_total:
+            progress_tracker.close()
+            self._use_table_batch_trackers.pop(context_key, None)
+            self._use_table_batch_last.pop(context_key, None)
+            self._use_table_batch_done.add(context_key)
 
     def _log_full_sql_debug(self, tag: str, query_id: str, content: Optional[str], extra: Optional[str] = None) -> None:
         """
@@ -117,6 +170,75 @@ class SqlContentManager:
             handle_error(e, "SQL Content 데이터베이스 초기화 실패")
             return False
     
+    def _log_use_table_progress(
+        self,
+        query_id: str,
+        processed: int,
+        total: int,
+        last_log_time: float,
+        log_interval_sec: float,
+        file_name: Optional[str] = None,
+        progress_current: Optional[int] = None,
+        progress_total: Optional[int] = None,
+        progress_context: Optional[str] = None,
+        progress_tracker: Optional[ProgressTracker] = None
+    ) -> float:
+        """
+        USE_TABLE 단순 매칭 진행 상황을 주기적으로 로그한다.
+
+        Args:
+            query_id: 쿼리 ID
+            processed: 처리한 테이블 수
+            total: 전체 테이블 수
+            last_log_time: 마지막 로그 시간
+            log_interval_sec: 로그 주기(초)
+            file_name: 파일명(선택)
+            progress_current: 현재 처리 건수(선택)
+            progress_total: 전체 건수(선택)
+            progress_context: 진행 컨텍스트 문자열(선택)
+            progress_tracker: tqdm 진행바 추적기(선택)
+
+        Returns:
+            마지막 로그 시간 (갱신됨)
+        """
+        if progress_current is not None and progress_total:
+            self._update_use_table_batch_progress(progress_current, progress_total, progress_context)
+            return last_log_time
+
+        file_hint = f", file={file_name}" if file_name else ""
+        progress_hint = ""
+        if progress_current is not None and progress_total:
+            progress_hint = f", progress={progress_current}/{progress_total}"
+        context_hint = f", context={progress_context}" if progress_context else ""
+        message = (
+            f"[USE_TABLE PROGRESS] query_id={query_id}{file_hint} "
+            f"tables_scanned={processed}/{total}{progress_hint}{context_hint}"
+        )
+
+        if progress_tracker:
+            return progress_tracker.update(current=processed, log_message=message)
+
+        now = time.time()
+        if now - last_log_time >= log_interval_sec:
+            app_logger.info(message)
+            return now
+        return last_log_time
+
+    def _throttled_info(self, key: str, message: str, interval_sec: float = 1.0) -> None:
+        """
+        동일 키에 대해 interval_sec 간격으로 info 로그를 제한한다.
+
+        Args:
+            key: 로그 식별 키
+            message: 로그 메시지
+            interval_sec: 출력 간격(초)
+        """
+        now = time.time()
+        last = self._throttled_log_ts.get(key, 0.0)
+        if now - last >= interval_sec:
+            app_logger.info(message)
+            self._throttled_log_ts[key] = now
+
     def save_sql_content(self, sql_content: str, project_id: int, conn=None, **kwargs) -> bool:
         """
         정제된 SQL 내용 저장 및 Component 등록 (공통부, 단일 연결 지원)
@@ -256,42 +378,110 @@ class SqlContentManager:
                                     extra=f"component_id={component_id}"
                                 )
                             elif app_logger.logger.isEnabledFor(logging.DEBUG):
-                                app_logger.debug(
-                                    f"[USE_TABLE][CLEANED_SQL] query_id={current_query_id} "
-                                    f"len={len(cleaned_sql)}"
+                                self._throttled_info(
+                                    key=f"use_table_cleaned:{current_query_id}",
+                                    message=(
+                                        f"[USE_TABLE][CLEANED_SQL] query_id={current_query_id} "
+                                        f"len={len(cleaned_sql)}"
+                                    ),
+                                    interval_sec=1.0
                                 )
 
                             # 3. 단순 매칭 검색 (사전 컴파일된 정규식 패턴 사용)
+                            progress_current = kwargs.get('progress_current')
+                            progress_total = kwargs.get('progress_total')
+                            progress_context = kwargs.get('progress_context')
+
                             if self._compiled_regex_patterns:
                                 # 정규식 패턴이 컴파일되어 있으면 재사용
-                                for known_table in self._cached_table_names:
-                                    # 이미 찾은 테이블은 건너뜀
-                                    if known_table in table_names:
-                                        continue
+                                total_tables = len(self._cached_table_names)
+                                scanned_tables = 0
+                                progress_last_log = time.time()
+                                progress_tracker = None
+                                if progress_total is None:
+                                    progress_tracker = ProgressTracker(
+                                        total=total_tables,
+                                        desc=f"USE_TABLE {current_query_id}",
+                                        unit="table",
+                                        log_interval_sec=3.0,
+                                        leave=True
+                                    )
+                                try:
+                                    for known_table in self._cached_table_names:
+                                        scanned_tables += 1
+                                        progress_last_log = self._log_use_table_progress(
+                                            query_id=current_query_id,
+                                            processed=scanned_tables,
+                                            total=total_tables,
+                                            last_log_time=progress_last_log,
+                                            log_interval_sec=3.0,
+                                            file_name=debug_source_file,
+                                            progress_current=progress_current,
+                                            progress_total=progress_total,
+                                            progress_context=progress_context,
+                                            progress_tracker=progress_tracker
+                                        )
+                                        # 이미 찾은 테이블은 건너뜀
+                                        if known_table in table_names:
+                                            continue
 
-                                    # 사전 컴파일된 패턴으로 검색 (성능 개선)
-                                    pattern = self._compiled_regex_patterns.get(known_table)
-                                    if pattern and pattern.search(cleaned_sql):
-                                        table_names.add(known_table)
-                                        if is_debug_target:
-                                            app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
-                                        elif app_logger.logger.isEnabledFor(logging.DEBUG):
-                                            app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
+                                        # 사전 컴파일된 패턴으로 검색 (성능 개선)
+                                        pattern = self._compiled_regex_patterns.get(known_table)
+                                        if pattern and pattern.search(cleaned_sql):
+                                            table_names.add(known_table)
+                                            if is_debug_target:
+                                                app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
+                                            elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                                                app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
+                                    # 완료 로그
+                                finally:
+                                    if progress_tracker:
+                                        progress_tracker.close()
                             else:
                                 # 정규식 패턴이 없으면 기존 방식 사용 (Fallback)
                                 import re
-                                for known_table in self._cached_table_names:
-                                    # 이미 찾은 테이블은 건너뜀
-                                    if known_table in table_names:
-                                        continue
+                                total_tables = len(self._cached_table_names)
+                                scanned_tables = 0
+                                progress_last_log = time.time()
+                                progress_tracker = None
+                                if progress_total is None:
+                                    progress_tracker = ProgressTracker(
+                                        total=total_tables,
+                                        desc=f"USE_TABLE {current_query_id}",
+                                        unit="table",
+                                        log_interval_sec=3.0,
+                                        leave=True
+                                    )
+                                try:
+                                    for known_table in self._cached_table_names:
+                                        scanned_tables += 1
+                                        progress_last_log = self._log_use_table_progress(
+                                            query_id=current_query_id,
+                                            processed=scanned_tables,
+                                            total=total_tables,
+                                            last_log_time=progress_last_log,
+                                            log_interval_sec=3.0,
+                                            file_name=debug_source_file,
+                                            progress_current=progress_current,
+                                            progress_total=progress_total,
+                                            progress_context=progress_context,
+                                            progress_tracker=progress_tracker
+                                        )
+                                        # 이미 찾은 테이블은 건너뜀
+                                        if known_table in table_names:
+                                            continue
 
-                                    # 단어 경계로 검색 (부분 일치 방지)
-                                    if re.search(r'\b' + re.escape(known_table) + r'\b', cleaned_sql):
-                                        table_names.add(known_table)
-                                        if is_debug_target:
-                                            app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
-                                        elif app_logger.logger.isEnabledFor(logging.DEBUG):
-                                            app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
+                                        # 단어 경계로 검색 (부분 일치 방지)
+                                        if re.search(r'\b' + re.escape(known_table) + r'\b', cleaned_sql):
+                                            table_names.add(known_table)
+                                            if is_debug_target:
+                                                app_logger.info(f"[USE_TABLE][TARGET][BRUTE_FORCE] 단순 매칭으로 테이블 발견: {known_table} (in {current_query_id})")
+                                            elif app_logger.logger.isEnabledFor(logging.DEBUG):
+                                                app_logger.debug(f"[USE_TABLE][BRUTE_FORCE] 단순 매칭 발견: {known_table}")
+                                    # 완료 로그
+                                finally:
+                                    if progress_tracker:
+                                        progress_tracker.close()
                     except Exception as e:
                         # 단순 매칭 실패해도 기존 로직은 계속 수행
                         app_logger.warning(f"단순 테이블 매칭 중 오류 (무시): {e}")
@@ -303,9 +493,13 @@ class SqlContentManager:
                         f"component_id={component_id} tables={sorted(list(table_names)) if table_names else []}"
                     )
                 elif app_logger.logger.isEnabledFor(logging.DEBUG):
-                    app_logger.debug(
-                        f"[USE_TABLE][FINAL] query_id={current_query_id} "
-                        f"component_id={component_id} tables={len(table_names)}"
+                    self._throttled_info(
+                        key=f"use_table_final:{current_query_id}",
+                        message=(
+                            f"[USE_TABLE][FINAL] query_id={current_query_id} "
+                            f"component_id={component_id} tables={len(table_names)}"
+                        ),
+                        interval_sec=1.0
                     )
 
                 if is_debug_target and not table_names:
@@ -508,10 +702,10 @@ class SqlContentManager:
             
             component_type = query_type
             layer_value = component_layer or 'QUERY'
-            # SQLTEXT: 내용 기반으로 타입을 결정하고 layer는 QUERY_FROM_SQLTEXT로 고정
-            if (component_layer or '').upper() in ('SQLTEXT', 'QUERY_FROM_SQLTEXT'):
+            # FramePlus SQLTEXT: 내용 기반으로 타입을 결정하고 layer는 SQL_FROM_SQLTEXT로 고정
+            if (component_layer or '').upper() in ('SQLTEXT', 'QUERY_FROM_SQLTEXT', 'SQL_FROM_SQLTEXT'):
                 component_type = self._determine_sql_component_type(sql_content, query_id)
-                layer_value = 'QUERY_FROM_SQLTEXT'
+                layer_value = 'SQL_FROM_SQLTEXT'
             elif query_type == 'SQL_QUERY':
                 component_type = self._determine_sql_component_type(sql_content, query_id)
 

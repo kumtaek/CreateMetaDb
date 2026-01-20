@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
 
 from util.logger import app_logger, handle_error
+from util import FileUtils
 from util.database_utils import DatabaseUtils
 from util.path_utils import PathUtils
 from util.hash_utils import HashUtils
@@ -219,11 +220,13 @@ class BackendEntryLoadingEngine(BaseLoadingEngine):
         return scanned
 
     def _read_file_content(self, file_path: str) -> Optional[str]:
-        # Read file content as UTF-8
+        """
+        파일 내용을 인코딩 자동 인식으로 읽습니다.
+        - utf-8/utf-8-sig/cp949/euc-kr 순서로 시도
+        """
         try:
             normalized_path = self.path_utils.normalize_path(file_path)
-            with open(normalized_path, 'r', encoding='utf-8') as file:
-                return file.read()
+            return FileUtils.read_file(normalized_path)
         except FileNotFoundError:
             handle_error(Exception(f"File not found: {file_path}"), "Read file failed")
             return None

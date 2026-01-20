@@ -27,6 +27,7 @@ from util import (
 from util.file_context import get_file_context_manager
 from parser.frontend_parser import FrontendParser
 from util.base_loading_engine import BaseLoadingEngine
+from util.progress_utils import ProgressTracker
 
 
 class FrontendLoadingEngine(BaseLoadingEngine):
@@ -95,13 +96,32 @@ class FrontendLoadingEngine(BaseLoadingEngine):
             self.stats['total_files'] = len(frontend_files)
             info(f"총 {len(frontend_files)}개 프론트엔드 파일 발견")
 
-            for file_info in frontend_files:
-                try:
-                    self._process_frontend_file(file_info, project_id)
-                    self.stats['processed_files'] += 1
-                except Exception as e:
-                    self.stats['error_files'] += 1
-                    handle_error(e, f"프론트엔드 파일 처리 실패: {full_file_path}")
+            progress_tracker = ProgressTracker(
+                total=len(frontend_files),
+                desc="Frontend Loading",
+                unit="file",
+                log_interval_sec=1.0
+            )
+            start_time = time.time()
+            try:
+                for index, file_info in enumerate(frontend_files, start=1):
+                    try:
+                        self._process_frontend_file(file_info, project_id)
+                        self.stats['processed_files'] += 1
+                    except Exception as e:
+                        self.stats['error_files'] += 1
+                        handle_error(e, f"프론트엔드 파일 처리 실패: {full_file_path}")
+                    elapsed = time.time() - start_time
+                    progress_tracker.update(
+                        current=index,
+                        log_message=(
+                            f"[FRONTEND FILE PROGRESS] {index}/{len(frontend_files)} "
+                            f"file={file_info.get('file_name')} "
+                            f"elapsed={elapsed:.1f}s"
+                        )
+                    )
+            finally:
+                progress_tracker.close()
 
             self._print_statistics()
             info("=== 프론트엔드 파일 로딩 완료 ===")

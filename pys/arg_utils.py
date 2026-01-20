@@ -37,7 +37,7 @@ class ArgUtils:
                 epilog="""
 사용 예시:
   python main.py --project-name <프로젝트명>
-  python main.py --project-name <프로젝트명> --clear-metadb
+  python main.py --project-name <프로젝트명> --no-clear-metadb
   python main.py --project-name <프로젝트명> --verbose
   python main.py --project-name <프로젝트명> --sql-compress
                 """
@@ -52,10 +52,18 @@ class ArgUtils:
             )
 
             # 선택적 인자들
+            # 기본값은 초기화(True), 필요 시 --no-clear-metadb로 비활성화
+            self.parser.set_defaults(clear_metadb=True)
             self.parser.add_argument(
                 '--clear-metadb',
                 action='store_true',
-                help='메타데이터베이스를 초기화하고 새로 생성'
+                help='메타데이터베이스를 초기화하고 새로 생성 (기본값: ON)'
+            )
+            self.parser.add_argument(
+                '--no-clear-metadb',
+                action='store_false',
+                dest='clear_metadb',
+                help='메타데이터베이스 초기화 비활성화'
             )
 
             self.parser.add_argument(
@@ -99,7 +107,7 @@ class ArgUtils:
         class FallbackArgs:
             def __init__(self):
                 self.project_name = None
-                self.clear_metadb = False
+                self.clear_metadb = True
                 self.verbose = False
                 self.sql_compress = False
                 self.config_file = None
@@ -116,6 +124,8 @@ class ArgUtils:
                         self.project_name = args[i + 1]
                     elif arg == '--clear-metadb':
                         self.clear_metadb = True
+                    elif arg == '--no-clear-metadb':
+                        self.clear_metadb = False
                     elif arg == '--verbose':
                         self.verbose = True
                     elif arg == '--sql-compress':

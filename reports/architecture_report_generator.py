@@ -15,6 +15,8 @@ from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
 from util.component_filter_utils import ComponentFilterUtils
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from reports.report_templates import ReportTemplates
 
 
@@ -60,6 +62,9 @@ class ArchitectureReportGenerator:
             
             # 3. 컴포넌트 관계 분석
             relationships = self._get_relationships()
+
+            # 3-1. 폴더 필터 적용
+            layer_data, relationships = self._apply_folder_filter(layer_data, relationships)
             
             # 4. HTML 생성
             html_content = self._generate_html(stats, layer_data, relationships)
@@ -703,6 +708,40 @@ class ArchitectureReportGenerator:
         except Exception as e:
             handle_error(e, "Architecture 리포트 파일 저장 실패")
             return ""
+
+    def _apply_folder_filter(self, layer_data: Dict[str, List[Dict[str, Any]]], relationships: Dict[str, List[Dict[str, Any]]]) -> Tuple[Dict[str, List[Dict[str, Any]]], Dict[str, List[Dict[str, Any]]]]:
+        """
+        리포트 폴더 필터 적용
+
+        Args:
+            layer_data: 레이어별 컴포넌트 데이터
+            relationships: 관계 데이터
+
+        Returns:
+            필터링된 레이어 데이터와 관계 데이터
+        """
+        folder_filters = get_report_folders()
+        if not folder_filters:
+            return layer_data, relationships
+
+        filter_utils = ReportFilterUtils()
+        filtered_layer_data = {}
+        allowed_components = set()
+
+        for layer, components in layer_data.items():
+            filtered_components = filter_utils.filter_rows_by_paths(components, ['file_path'], folder_filters)
+            filtered_layer_data[layer] = filtered_components
+            for comp in filtered_components:
+                allowed_components.add(comp.get('component_name'))
+
+        filtered_relationships = {}
+        for rel_type, items in relationships.items():
+            filtered_relationships[rel_type] = [
+                item for item in items
+                if item.get('src_component') in allowed_components and item.get('dst_component') in allowed_components
+            ]
+
+        return filtered_layer_data, filtered_relationships
 
 
 if __name__ == '__main__':

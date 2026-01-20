@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
-"""
+r"""
 SourceAnalyzer 리포트 생성 메인 실행 파일
 - CallChain Report 생성
 - ERD Report 생성
+ 
+python create_report.py --project-name sampleSrc --report-type callchain --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type architecture --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type architecture-layer --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type sequence --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type query-list --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type backend-mapping --folder "main/webapp/product" "main/webapp/user"
+python create_report.py --project-name sampleSrc --report-type frontend-mapping --folder "main/webapp/product" "main/webapp/user"
+   
 """
 
 import sys
@@ -15,7 +24,8 @@ sys.path.append(str(__file__).replace('create_report.py', ''))
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.database_utils import DatabaseUtils
-from util.runtime_options import set_sql_compress, get_sql_compress
+from util.runtime_options import set_sql_compress, get_sql_compress, set_report_folders, get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 from reports.callchain_report_generator import CallChainReportGenerator
 from reports.erd_report_generator import ERDReportGenerator
 from reports.architecture_report_generator import ArchitectureReportGenerator
@@ -73,6 +83,13 @@ def parse_arguments():
         '--sql-compress',
         action='store_true',
         help='SqlContent_compressed.db를 사용하여 압축 모드 리포트 생성'
+    )
+
+    parser.add_argument(
+        '--folder',
+        action='append',
+        nargs='+',
+        help='리포트 대상 폴더 지정 (여러 폴더 가능, 하위 폴더 포함)'
     )
     
     
@@ -304,6 +321,20 @@ def main():
         # 런타임 옵션 설정 (압축 여부)
         set_sql_compress(getattr(args, "sql_compress", False))
         app_logger.info(f"SQL 압축 리포트 모드: {get_sql_compress()}")
+
+        # 리포트 폴더 필터 설정 (여러 폴더 허용)
+        raw_folders = []
+        if getattr(args, "folder", None):
+            for group in args.folder:
+                raw_folders.extend(group)
+
+        filter_utils = ReportFilterUtils()
+        normalized_folders = filter_utils.normalize_folders(raw_folders)
+        set_report_folders(normalized_folders)
+        if get_report_folders():
+            app_logger.info(f"리포트 폴더 필터: {', '.join(get_report_folders())}")
+        else:
+            app_logger.info("리포트 폴더 필터: 없음")
 
         # 상세 로그 설정
         if getattr(args, "verbose", False):

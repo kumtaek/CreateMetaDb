@@ -2,6 +2,11 @@
 SourceAnalyzer 메인 실행 파일
 - 명령행 인자 처리
 - 프로젝트 분석 실행
+
+    python main.py --project-name <프로젝트명> --start-step 4-1
+
+    * 추가한 단계 키
+        - 1, 2, 2-1, 3, 4, 4-1, 5, 6, 6-2, 6-3, 7                                         
 """
 
 import sys
@@ -120,6 +125,11 @@ def main():
         verbose = arg_utils.get_verbose()
         sql_compress = arg_utils.get_sql_compress()
         dry_run = arg_utils.get_dry_run()
+        start_step = arg_utils.get_start_step()
+        # 시작 단계가 1보다 크면 메타DB 초기화는 자동 비활성화
+        if start_step and start_step != '1' and clear_metadb:
+            clear_metadb = False
+            info(f"시작 단계({start_step})로 인해 메타DB 초기화 스킵")
         set_sql_compress(sql_compress)
 
         # 5.1 메타데이터베이스 초기화 옵션 처리 (연결 전에 수행해야 잠금 회피)
@@ -141,6 +151,9 @@ def main():
                 if os.path.exists(target_path):
                     if safe_remove_file(target_path, max_retries=3, retry_delay=0.5):
                         info(f"기존 {label} 삭제: {target_path}")
+                    else:
+                        handle_error(Exception(f"{label} 삭제 실패"), f"{label} 삭제 실패: {target_path}")
+                        sys.exit(1)
             # 초기화 요청은 이 시점에 완결되므로 이후 단계에서는 재시도하지 않음
             clear_metadb = False
 
@@ -159,6 +172,7 @@ def main():
         info(f"  - 상세 로그: {verbose}")
         info(f"  - SQL 압축 저장: {sql_compress}")
         info(f"  - 드라이런 모드: {dry_run}")
+        info(f"  - 시작 단계: {start_step or '1'}")
 
         
         # 6. 드라이런 모드 확인
@@ -169,6 +183,21 @@ def main():
         
         # 7. 분석 단계 실행 (단일 트랜잭션으로 묶어서 처리)
         info("\n\n\n\n분석 단계 실행 시작 (단일 트랜잭션) ========================================")
+
+        # 단계 진행 제어 (시작 단계 기준)
+        step_order = ['1', '2', '2-1', '3', '4', '4-1', '5', '6', '6-2', '6-3', '7']
+        if start_step:
+            try:
+                start_index = step_order.index(start_step)
+            except ValueError:
+                handle_error(Exception(f"잘못된 시작 단계: {start_step}"), "시작 단계 설정 오류")
+                return
+        else:
+            start_index = 0
+
+        def should_run(step_key: str) -> bool:
+            """시작 단계 기준으로 실행 여부 판단"""
+            return step_order.index(step_key) >= start_index
         
         # 데이터베이스 유틸리티 인스턴스 생성
         from util import DatabaseUtils, get_project_metadata_db_path
@@ -203,108 +232,127 @@ def main():
         db_utils.disconnect()
 
         # 1단계 실행: 파일 정보 저장 (프로젝트 전체 스캔)
-        info("\n--- 1단계: 파일 정보 저장 ---")
         conn = db_utils.get_persistent_connection()
         from file_loading import FileLoadingEngine
         file_engine = FileLoadingEngine(project_name, conn)
-        success = file_engine.execute_file_scan(clear_metadb)
-        if not success:
-            raise Exception("1단계 파일 스캔 실패")
-        info("1단계 완료")
-        stats = file_engine.stats
-        info(f"  => 성공: {stats.get('scanned_files', 0)}개 파일 스캔, 실패: {stats.get('error_files', 0)}건")
+        project_id = None
+        if should_run('1'):
+            info("\n--- 1단계: 파일 정보 저장 ---")
+            success = file_engine.execute_file_scan(clear_metadb)
+            if not success:
+                raise Exception("1단계 파일 스캔 실패")
+            info("1단계 완료")
+            stats = file_engine.stats
+            info(f"  => 성공: {stats.get('scanned_files', 0)}개 파일 스캔, 실패: {stats.get('error_files', 0)}건")
 
-        # 1단계 완료 후 프로젝트 ID 획득 및 전역 설정
-        project_id = db_utils.get_project_id(project_name, conn)
-        if project_id:
-            set_global_project_info(project_name, project_id)
-            info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
+            # 1단계 완료 후 프로젝트 ID 획득 및 전역 설정
+            project_id = db_utils.get_project_id(project_name, conn)
+            if project_id:
+                set_global_project_info(project_name, project_id)
+                info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
+            else:
+                raise Exception("프로젝트 ID 획득 실패")
         else:
-            raise Exception("프로젝트 ID 획득 실패")
+            project_id = db_utils.get_project_id(project_name, conn)
+            if project_id:
+                set_global_project_info(project_name, project_id)
+                info(f"전역 프로젝트 정보 설정: {project_name} (ID: {project_id})")
+            else:
+                raise Exception("프로젝트 ID 획득 실패 (시작 단계가 1보다 높음)")
 
         # 2단계 실행: 데이터베이스 구조 저장
-        info("\n--- 2단계: DB 구조 저장 ---")
-        success = file_engine.execute_db_loading()
-        if not success:
-            raise Exception("2단계 DB 구조 저장 실패")
-        info("2단계 완료")
-        stats = file_engine.stats
-        info(f"  => 성공: 테이블 {stats.get('tables_loaded', 0)}개, 컬럼 {stats.get('columns_loaded', 0)}개, 컴포넌트 {stats.get('components_created', 0)}개")
+        if should_run('2'):
+            info("\n--- 2단계: DB 구조 저장 ---")
+            success = file_engine.execute_db_loading()
+            if not success:
+                raise Exception("2단계 DB 구조 저장 실패")
+            info("2단계 완료")
+            stats = file_engine.stats
+            info(f"  => 성공: 테이블 {stats.get('tables_loaded', 0)}개, 컬럼 {stats.get('columns_loaded', 0)}개, 컴포넌트 {stats.get('components_created', 0)}개")
 
         # 2-1단계 실행: sqltext 폴더 SQL 로딩
-        info("\n--- 2-1단계: sqltext SQL 로딩 ---")
-        from sqltext_loading import execute_sqltext_loading
-        success = execute_sqltext_loading(project_name, conn)
-        if not success:
-            raise Exception("2-1단계 sqltext 로딩 실패")
-        info("2-1단계 완료")
+        if should_run('2-1'):
+            info("\n--- 2-1단계: sqltext SQL 로딩 ---")
+            from sqltext_loading import execute_sqltext_loading
+            success = execute_sqltext_loading(project_name, conn)
+            if not success:
+                raise Exception("2-1단계 sqltext 로딩 실패")
+            info("2-1단계 완료")
 
         # 3단계 실행: XML 분석
-        info("\n--- 3단계: XML 분석 ---")
-        from xml_loading import XmlLoadingEngine
-        sql_content_enabled = True
-        xml_engine = XmlLoadingEngine(project_name, conn, sql_content_enabled)
-        success = xml_engine.execute_xml_loading()
-        if not success:
-            raise Exception("3단계 XML 분석 실패")
-        info("3단계 완료")
-        stats = xml_engine.get_statistics()
-        info(f"  => 성공: XML {stats.get('xml_files_processed', 0)}개, SQL 컴포넌트 {stats.get('sql_components_created', 0)}개, JOIN 관계 {stats.get('join_relationships_created', 0)}개")
+        if should_run('3'):
+            info("\n--- 3단계: XML 분석 ---")
+            from xml_loading import XmlLoadingEngine
+            sql_content_enabled = True
+            xml_engine = XmlLoadingEngine(project_name, conn, sql_content_enabled)
+            success = xml_engine.execute_xml_loading()
+            if not success:
+                raise Exception("3단계 XML 분석 실패")
+            info("3단계 완료")
+            stats = xml_engine.get_statistics()
+            info(f"  => 성공: XML {stats.get('xml_files_processed', 0)}개, SQL 컴포넌트 {stats.get('sql_components_created', 0)}개, JOIN 관계 {stats.get('join_relationships_created', 0)}개")
 
         # 4단계 실행: Java 소스코드 분석
-        info("\n--- 4단계: Java 분석 ---")
-        from java_loading import load_java_files_simple
-        success, java_stats = load_java_files_simple(project_name, project_id, conn)
-        if not success:
-            raise Exception("4단계 Java 분석 실패")
-        info("4단계 완료")
-        info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 관계 {java_stats.get('relationships_created', 0)}개")
+        if should_run('4'):
+            info("\n--- 4단계: Java 분석 ---")
+            from java_loading import load_java_files_simple
+            success, java_stats = load_java_files_simple(project_name, project_id, conn)
+            if not success:
+                raise Exception("4단계 Java 분석 실패")
+            info("4단계 완료")
+            info(f"  => 성공: Java 파일 {java_stats.get('java_files_processed', 0)}개, 관계 {java_stats.get('relationships_created', 0)}개")
 
         # 4-1단계 실행: sqltext-Java 매칭 (문자열 기반 CALL_QUERY 연결)
-        info("\n--- 4-1단계: sqltext-Java 매칭 ---")
-        from sqltext_java_matcher import execute_sqltext_java_matching
-        success = execute_sqltext_java_matching(project_name, conn)
-        if not success:
-            raise Exception("4-1단계 sqltext-Java 매칭 실패")
-        info("4-1단계 완료")
+        if should_run('4-1'):
+            info("\n--- 4-1단계: sqltext-Java 매칭 ---")
+            from sqltext_java_matcher import execute_sqltext_java_matching
+            success = execute_sqltext_java_matching(project_name, conn)
+            if not success:
+                raise Exception("4-1단계 sqltext-Java 매칭 실패")
+            info("4-1단계 완료")
 
         # 5단계 실행: Spring API 진입점 분석
-        info("\n--- 5단계: API 진입점 분석 ---")
-        from backend_entry_loading import execute_backend_entry_loading
-        success = execute_backend_entry_loading(project_name, conn)
-        if not success:
-            raise Exception("5단계 API 진입점 분석 실패")
-        info("5단계 완료")
+        if should_run('5'):
+            info("\n--- 5단계: API 진입점 분석 ---")
+            from backend_entry_loading import execute_backend_entry_loading
+            success = execute_backend_entry_loading(project_name, conn)
+            if not success:
+                raise Exception("5단계 API 진입점 분석 실패")
+            info("5단계 완료")
 
         # 6단계 실행: 프론트엔드 분석 및 연관관계 구축
-        info("\n--- 6단계: 프론트엔드 분석 및 관계 구축 ---")
-        from frontend_loading import FrontendLoadingEngine
-        frontend_engine = FrontendLoadingEngine(project_name, conn)
-        success = frontend_engine.execute_frontend_loading()
-        if not success:
-            warning("6-1단계 프론트엔드 분석 중 오류 발생")
-        info("6-1단계 프론트엔드 분석 완료")
-        stats = frontend_engine.stats
-        info(f"  => 성공: API 호출 {stats.get('api_calls_found', 0)}개, 관계 {stats.get('relationships_created', 0)}개")
+        if should_run('6'):
+            info("\n--- 6단계: 프론트엔드 분석 및 관계 구축 ---")
+            from frontend_loading import FrontendLoadingEngine
+            frontend_engine = FrontendLoadingEngine(project_name, conn)
+            success = frontend_engine.execute_frontend_loading()
+            if not success:
+                warning("6-1단계 프론트엔드 분석 중 오류 발생")
+            info("6-1단계 프론트엔드 분석 완료")
+            stats = frontend_engine.stats
+            info(f"  => 성공: API 호출 {stats.get('api_calls_found', 0)}개, 관계 {stats.get('relationships_created', 0)}개")
 
         from relationship_builder import RelationshipBuilder, execute_db_relationship_backfill
-        relationship_builder = RelationshipBuilder(project_name, project_id, conn)
-        relationship_stats = relationship_builder.build_all_relationships()
-        info("6-2단계 연관관계 구축 완료")
-        info(f"  => 성공: 총 관계 {relationship_stats.get('total_relationships', 0)}개 생성")
+        if should_run('6-2'):
+            relationship_builder = RelationshipBuilder(project_name, project_id, conn)
+            relationship_stats = relationship_builder.build_all_relationships()
+            info("6-2단계 연관관계 구축 완료")
+            info(f"  => 성공: 총 관계 {relationship_stats.get('total_relationships', 0)}개 생성")
 
         # 7단계 실행: 일관성 검증
-        info("\n--- 7단계: 일관성 검증 ---")
-        # 6-3단계: DB 기반 필수 관계 보강 (CALL_API, CALL_METHOD)
-        backfill_stats = execute_db_relationship_backfill(project_name, conn)
-        info(f"6-3단계 DB 기반 관계 보강: CALL_API={backfill_stats.get('CALL_API',0)}, CALL_METHOD={backfill_stats.get('CALL_METHOD',0)}")
+        if should_run('6-3'):
+            info("\n--- 6-3단계: DB 기반 관계 보강 ---")
+            backfill_stats = execute_db_relationship_backfill(project_name, conn)
+            info(f"6-3단계 DB 기반 관계 보강: CALL_API={backfill_stats.get('CALL_API',0)}, CALL_METHOD={backfill_stats.get('CALL_METHOD',0)}")
 
-        from consistency_validator import execute_consistency_validation
-        validation_success = execute_consistency_validation(project_name, conn)
-        if validation_success:
-            info("일관성 검증 완료: 모든 검사 통과")
-        else:
-            warning("일관성 검증 완료: 문제 발견됨 (상세 내용은 로그 확인)")
+        if should_run('7'):
+            info("\n--- 7단계: 일관성 검증 ---")
+            from consistency_validator import execute_consistency_validation
+            validation_success = execute_consistency_validation(project_name, conn)
+            if validation_success:
+                info("일관성 검증 완료: 모든 검사 통과")
+            else:
+                warning("일관성 검증 완료: 문제 발견됨 (상세 내용은 로그 확인)")
 
         info("\n\n분석 완료: 모든 단계가 성공적으로 Auto Commit 모드로 처리되었습니다.")
     except KeyboardInterrupt:

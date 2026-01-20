@@ -549,8 +549,9 @@ class JavaParser:
     def parse_java_file(self, java_file: str) -> Dict[str, Any]:
         """Java 파일을 파싱하여 클래스, 메서드, SQL 쿼리를 추출하고 공통 2,3단계 처리 수행"""
         try:
-            with open(java_file, 'r', encoding='utf-8') as f:
-                java_content = f.read()
+            java_content = FileUtils.read_file(java_file)
+            if java_content is None:
+                raise Exception("Java 파일 인코딩 처리 실패")
 
             # 1. 클래스 추출
             debug(f"parse_java_file: _extract_classes 호출 전")

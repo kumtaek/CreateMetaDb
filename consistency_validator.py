@@ -25,6 +25,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from util.database_utils import DatabaseUtils
 from util.path_utils import get_project_metadata_db_path, PathUtils
 from util.logger import app_logger, handle_error, info, warning, error, debug
+from util.file_utils import FileUtils
 
 
 class ConsistencyValidator:
@@ -620,9 +621,11 @@ class ConsistencyValidator:
             # 3. 각 XML 파일 처리
             for xml_file in xml_files:
                 try:
-                    # 파일 내용 읽기 (UTF-8 + 에러 무시)
-                    with open(xml_file, 'r', encoding='utf-8', errors='ignore') as f:
-                        xml_content = f.read()
+                    # 파일 내용 읽기 (인코딩 자동 감지)
+                    xml_content = FileUtils.read_file(xml_file)
+                    if xml_content is None:
+                        handle_error(Exception("XML 파일 읽기 실패"), f"XML 파일을 읽을 수 없습니다: {xml_file}")
+                        continue
 
                     # namespace 추출
                     namespace_match = re.search(r'<mapper\s+namespace\s*=\s*["\']([^"\']+)["\']', xml_content, re.IGNORECASE)

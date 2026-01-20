@@ -12,6 +12,8 @@ from typing import List, Dict, Any
 from util.logger import app_logger, handle_error
 from util.path_utils import PathUtils
 from util.report_utils import ReportUtils
+from util.runtime_options import get_report_folders
+from util.report_filter_utils import ReportFilterUtils
 
 
 class FrontendMappingReportGenerator:
@@ -101,14 +103,27 @@ class FrontendMappingReportGenerator:
               AND m.component_type = 'METHOD'
               AND m.del_yn = 'N'
               AND mf.del_yn = 'N'
-            ORDER BY method_path, method_file, method_name, api_url, frontend_path, frontend_file, query_file, query_id
+            ORDER BY frontend_path, frontend_file, api_url, method_path, method_file, method_name, query_file, query_id
             """
 
             cursor.execute(query, (project_id,))
             rows = cursor.fetchall()
 
+            folder_filters = get_report_folders()
+            filter_utils = ReportFilterUtils()
+
             result = []
             for row in rows:
+                if folder_filters:
+                    frontend_path = row['frontend_path'] or ''
+                    method_path = row['method_path'] or ''
+                    query_path = row['query_path'] or ''
+                    if not (
+                        filter_utils.is_path_in_folders(frontend_path, folder_filters)
+                        or filter_utils.is_path_in_folders(method_path, folder_filters)
+                        or filter_utils.is_path_in_folders(query_path, folder_filters)
+                    ):
+                        continue
                 result.append({
                     'frontend_path': row['frontend_path'] or '-',
                     'frontend_file': row['frontend_file'] or '-',
@@ -147,7 +162,9 @@ class FrontendMappingReportGenerator:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         def sort_key(val: str) -> str:
-            return (val or "").lower()
+            norm = (val or "").lower()
+            # '-' 표시는 뒤로 보내기 위한 보조 키
+            return f"1|{norm}" if norm == "-" else f"0|{norm}"
 
         sorted_data = sorted(
             data,

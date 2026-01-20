@@ -11,7 +11,7 @@ from typing import Dict, Optional
 import sqlite3
 
 from util import (
-    DatabaseUtils, PathUtils, app_logger, info, error, debug, warning, handle_error
+    DatabaseUtils, PathUtils, FileUtils, app_logger, info, error, debug, warning, handle_error
 )
 
 
@@ -277,8 +277,10 @@ class RelationshipBuilder:
                 return {}
             
             # 2. Java 파일 내용 읽기
-            with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
-                java_content = f.read()
+            java_content = FileUtils.read_file(full_path)
+            if java_content is None:
+                handle_error(Exception("Java 파일 읽기 실패"), f"Java 파일을 읽을 수 없습니다: {full_path}")
+                return {}
             
             # 3. 메소드별 MyBatis 호출 패턴 파싱
             method_fqmn_map = {}
