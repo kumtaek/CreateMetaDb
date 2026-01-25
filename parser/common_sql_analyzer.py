@@ -250,11 +250,27 @@ class CommonSqlAnalyzer:
             dst_comp_id = ensure_table_component(join.right_table)
             
             if src_comp_id and dst_comp_id:
+                rel_type = self._map_join_type_to_rel_type(join.join_type)
                 # 조인 관계 저장
                 cursor.execute("""
                     INSERT INTO relationships (src_id, dst_id, rel_type, confidence, del_yn, src_column, dst_column, join_condition)
                     VALUES (?, ?, ?, ?, 'N', ?, ?, ?)
-                """, (src_comp_id, dst_comp_id, f"JOIN_{join.join_type}", 0.8, join.left_column.upper(), join.right_column.upper(), f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"))
+                """, (src_comp_id, dst_comp_id, rel_type, 0.8, join.left_column.upper(), join.right_column.upper(), f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"))
                 
         except Exception as e:
             handle_error(e, "조인 관계 저장 실패 (inferred 파일 생성 금지 모드)")
+
+    def _map_join_type_to_rel_type(self, join_type: str) -> str:
+        """조인 타입을 relationships.rel_type으로 매핑"""
+        join_type_upper = (join_type or "").upper()
+        if join_type_upper in {'LEFT', 'RIGHT', 'OUTER'}:
+            return 'JOIN_EXPLICIT_OUTER'
+        if join_type_upper in {'FULL', 'FULL_OUTER'}:
+            return 'JOIN_EXPLICIT_FULL_OUTER'
+        if join_type_upper in {'IMPLICIT'}:
+            return 'JOIN_IMPLICIT'
+        if join_type_upper in {'IMPLICIT_OUTER', 'ORACLE_OUTER'}:
+            return 'JOIN_IMPLICIT_OUTER'
+        if join_type_upper in {'MERGE', 'MERGEON'}:
+            return 'JOIN_MERGEON'
+        return 'JOIN_EXPLICIT'

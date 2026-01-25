@@ -71,7 +71,7 @@ class SqlParser:
         try:
             processed_sql = self._preprocess_sql(sql_content)
             patterns = [
-                r"\bFROM\s+(.*?)(?=\bWHERE\b|\bGROUP\b|\bORDER\b|\bUNION\b|\bHAVING\b|\bFOR\b|\bLIMIT\b|\bFETCH\b|\bCONNECT\b|\bMODEL\b|\bPIVOT\b|,\s*\(\s*SELECT|;|$)",
+                r"\bFROM\s+(.*?)(?=\bJOIN\b|\bWHERE\b|\bGROUP\b|\bORDER\b|\bUNION\b|\bHAVING\b|\bFOR\b|\bLIMIT\b|\bFETCH\b|\bCONNECT\b|\bMODEL\b|\bPIVOT\b|,\s*\(\s*SELECT|;|$)",
                 r"\bUPDATE\s+(.*?)(?=\bSET)",
                 r"\bDELETE\s+FROM\s+(.*?)(?=\bWHERE|;|$)",
                 r"\bINSERT\s+INTO\s+(.*?)(?=\s*\(|\bSELECT)",
@@ -171,7 +171,12 @@ class SqlParser:
             ]
             for pat, jt in patterns:
                 for m in re.finditer(pat, sql_content):
-                    out.append({'join_type': jt, 'table_name': m.group(1), 'table_alias': m.group(2), 'left_column': m.group(3), 'right_column': m.group(4), 'relationship_type': 'JOIN_EXPLICIT'})
+                    rel_type = 'JOIN_EXPLICIT'
+                    if jt in ('LEFT_JOIN', 'RIGHT_JOIN'):
+                        rel_type = 'JOIN_EXPLICIT_OUTER'
+                    elif jt in ('FULL_JOIN', 'FULL_OUTER_JOIN'):
+                        rel_type = 'JOIN_EXPLICIT_FULL_OUTER'
+                    out.append({'join_type': jt, 'table_name': m.group(1), 'table_alias': m.group(2), 'left_column': m.group(3), 'right_column': m.group(4), 'relationship_type': rel_type})
             return out
         except Exception:
             return out
@@ -184,12 +189,13 @@ class SqlParser:
                 return out
             where = m.group(1)
             patterns = [
-                r'([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)',
-                r'([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*\(\+\)\s*=\s*([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)',
+                (r'([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)', 'JOIN_IMPLICIT'),
+                (r'([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*\(\+\)\s*=\s*([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)', 'JOIN_IMPLICIT_OUTER'),
+                (r'([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)\.([A-Z_][A-Z0-9_]*)\s*\(\+\)', 'JOIN_IMPLICIT_OUTER'),
             ]
-            for pat in patterns:
+            for pat, rel_type in patterns:
                 for m2 in re.finditer(pat, where):
-                    out.append({'join_type': 'IMPLICIT', 'left_table_alias': m2.group(1), 'left_column': m2.group(2), 'right_table_alias': m2.group(3), 'right_column': m2.group(4), 'relationship_type': 'JOIN_IMPLICIT'})
+                    out.append({'join_type': 'IMPLICIT', 'left_table_alias': m2.group(1), 'left_column': m2.group(2), 'right_table_alias': m2.group(3), 'right_column': m2.group(4), 'relationship_type': rel_type})
             return out
         except Exception:
             return out

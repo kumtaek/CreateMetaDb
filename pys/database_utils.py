@@ -653,7 +653,7 @@ class DatabaseUtils:
         return data
 
     def _normalize_join_relationship_order(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """JOIN_* 관계는 무방향성으로 보고 src_id < dst_id로 정규화"""
+        """방향성이 없는 JOIN_* 관계만 src_id < dst_id로 정규화"""
         rel_type = data.get('rel_type')
         src_id = data.get('src_id')
         dst_id = data.get('dst_id')
@@ -684,13 +684,8 @@ class DatabaseUtils:
     def _is_directional_join_rel_type(self, rel_type: str) -> bool:
         """방향성이 있는 JOIN_* 관계인지 판단"""
         directional_rel_types = {
-            'JOIN_LEFT',
-            'JOIN_RIGHT',
-            'JOIN_OUTER',
-            'JOIN_LEFT_JOIN',
-            'JOIN_INNER_JOIN',
-            'JOIN_RIGHT_JOIN',
-            'JOIN_ORACLE_OUTER_JOIN',
+            'JOIN_EXPLICIT_OUTER',
+            'JOIN_IMPLICIT_OUTER',
         }
         return rel_type in directional_rel_types
 

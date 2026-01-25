@@ -11,6 +11,18 @@ from dataclasses import dataclass
 from util.sql_normalization_utils import normalize_sql_loose_with_config, DEFAULT_SQL_NORMALIZATION_CONFIG
 from util.logger import error, handle_error, warning
 
+JOIN_TYPE_EXPLICIT = 'EXPLICIT'
+JOIN_TYPE_EXPLICIT_OUTER = 'EXPLICIT_OUTER'
+JOIN_TYPE_EXPLICIT_FULL_OUTER = 'EXPLICIT_FULL_OUTER'
+JOIN_TYPE_IMPLICIT = 'IMPLICIT'
+JOIN_TYPE_IMPLICIT_OUTER = 'IMPLICIT_OUTER'
+JOIN_TYPE_MERGEON = 'MERGEON'
+DIRECTIONAL_JOIN_REL_TYPES = {
+    'JOIN_EXPLICIT_OUTER',
+    'JOIN_IMPLICIT_OUTER',
+}
+
+
 @dataclass
 class TableInfo:
     """테이블 정보"""
@@ -26,7 +38,7 @@ class JoinCondition:
     right_table: str
     left_column: str
     right_column: str
-    join_type: str = 'INNER'
+    join_type: str = JOIN_TYPE_EXPLICIT
 
 class CommonSqlAnalyzer:
     """공통 SQL 분석기 - SqlContent.db 기반"""
@@ -561,13 +573,20 @@ class CommonSqlAnalyzer:
         # 2. 후보 테이블 목록 (쿼리에서 사용된 모든 실제 테이블)
         candidate_tables = [t for t in alias_map.values() if not t.startswith('SUBQUERY_')]
         
-        # 3. 조인 타입 추측
-        join_type = self._guess_join_type(sql)
+        # 3. 조인 타입 기본값 추측 (세부 분류는 조건별 보정)
+        base_join_type = self._guess_join_type(sql)
         
         # 4. 패턴 1: table.column = table.column (양쪽 모두 별칭 있음)
-        pattern1 = r'(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
+        pattern1 = r'(\w+)\.(\w+)(\(\+\))?\s*=\s*(\w+)\.(\w+)(\(\+\))?'
         for match in re.finditer(pattern1, sql, re.IGNORECASE):
-            left_alias, left_col, right_alias, right_col = match.groups()
+            left_alias, left_col, left_plus, right_alias, right_col, right_plus = match.groups()
+            left_has_plus = left_plus is not None
+            right_has_plus = right_plus is not None
+            join_type = base_join_type
+            if left_has_plus or right_has_plus:
+                join_type = JOIN_TYPE_IMPLICIT_OUTER
+            elif join_type == JOIN_TYPE_IMPLICIT_OUTER:
+                join_type = JOIN_TYPE_IMPLICIT
             
             # 컬럼 해석 (인라인 뷰 역추적 포함)
             left_table, left_column = self._resolve_column_with_inline_view(
@@ -576,6 +595,11 @@ class CommonSqlAnalyzer:
             right_table, right_column = self._resolve_column_with_inline_view(
                 right_alias, right_col, alias_map, inline_view_map
             )
+
+            # Oracle (+) 방향성 보정: (+)가 왼쪽이면 방향 반전
+            if join_type == JOIN_TYPE_IMPLICIT_OUTER and left_has_plus and not right_has_plus:
+                left_table, right_table = right_table, left_table
+                left_column, right_column = right_column, left_column
             
             # 조인 조건 생성
             join_cond = self._create_join_condition(
@@ -585,9 +609,16 @@ class CommonSqlAnalyzer:
                 joins.append(join_cond)
         
         # 5. 패턴 2: column = table.column (왼쪽 별칭 없음)
-        pattern2 = r'\b([A-Z_][A-Z0-9_]*)\s*=\s*(\w+)\.(\w+)'
+        pattern2 = r'\b([A-Z_][A-Z0-9_]*)(\(\+\))?\s*=\s*(\w+)\.(\w+)(\(\+\))?'
         for match in re.finditer(pattern2, sql, re.IGNORECASE):
-            bare_col, right_alias, right_col = match.groups()
+            bare_col, bare_plus, right_alias, right_col, right_plus = match.groups()
+            left_has_plus = bare_plus is not None
+            right_has_plus = right_plus is not None
+            join_type = base_join_type
+            if left_has_plus or right_has_plus:
+                join_type = JOIN_TYPE_IMPLICIT_OUTER
+            elif join_type == JOIN_TYPE_IMPLICIT_OUTER:
+                join_type = JOIN_TYPE_IMPLICIT
             
             # 별칭 없는 컬럼이 이미 패턴1에서 처리되었는지 확인
             if '.' in bare_col:
@@ -602,18 +633,31 @@ class CommonSqlAnalyzer:
             right_table, right_column = self._resolve_column_with_inline_view(
                 right_alias, right_col, alias_map, inline_view_map
             )
+            left_column = bare_col.upper()
+
+            # Oracle (+) 방향성 보정: (+)가 왼쪽이면 방향 반전
+            if join_type == JOIN_TYPE_IMPLICIT_OUTER and left_has_plus and not right_has_plus:
+                left_table, right_table = right_table, left_table
+                left_column, right_column = right_column, left_column
             
             # 조인 조건 생성
             join_cond = self._create_join_condition(
-                left_table, bare_col.upper(), right_table, right_column, join_type, seen
+                left_table, left_column, right_table, right_column, join_type, seen
             )
             if join_cond:
                 joins.append(join_cond)
         
         # 6. 패턴 3: table.column = column (오른쪽 별칭 없음)
-        pattern3 = r'(\w+)\.(\w+)\s*=\s*\b([A-Z_][A-Z0-9_]*)\b'
+        pattern3 = r'(\w+)\.(\w+)(\(\+\))?\s*=\s*\b([A-Z_][A-Z0-9_]*)(\(\+\))?\b'
         for match in re.finditer(pattern3, sql, re.IGNORECASE):
-            left_alias, left_col, bare_col = match.groups()
+            left_alias, left_col, left_plus, bare_col, bare_plus = match.groups()
+            left_has_plus = left_plus is not None
+            right_has_plus = bare_plus is not None
+            join_type = base_join_type
+            if left_has_plus or right_has_plus:
+                join_type = JOIN_TYPE_IMPLICIT_OUTER
+            elif join_type == JOIN_TYPE_IMPLICIT_OUTER:
+                join_type = JOIN_TYPE_IMPLICIT
             
             # 별칭 없는 컬럼이 이미 처리되었는지 확인
             if '.' in bare_col:
@@ -628,10 +672,16 @@ class CommonSqlAnalyzer:
             right_table = self._find_table_for_column(bare_col, candidate_tables)
             if not right_table:
                 continue
+            right_column = bare_col.upper()
+
+            # Oracle (+) 방향성 보정: (+)가 왼쪽이면 방향 반전
+            if join_type == JOIN_TYPE_IMPLICIT_OUTER and left_has_plus and not right_has_plus:
+                left_table, right_table = right_table, left_table
+                left_column, right_column = right_column, left_column
             
             # 조인 조건 생성
             join_cond = self._create_join_condition(
-                left_table, left_column, right_table, bare_col.upper(), join_type, seen
+                left_table, left_column, right_table, right_column, join_type, seen
             )
             if join_cond:
                 joins.append(join_cond)
@@ -678,14 +728,19 @@ class CommonSqlAnalyzer:
         return column_map
     
     def _guess_join_type(self, sql: str) -> str:
-        """조인 타입 추측"""
+        """조인 타입 기본값 추측"""
         sql_upper = sql.upper()
         if 'MERGE INTO' in sql_upper:
-            return 'MERGE'
-        elif 'JOIN' in sql_upper:
-            return 'EXPLICIT'
-        else:
-            return 'IMPLICIT'
+            return JOIN_TYPE_MERGEON
+        if re.search(r'\bFULL\s+(?:OUTER\s+)?JOIN\b', sql_upper):
+            return JOIN_TYPE_EXPLICIT_FULL_OUTER
+        if re.search(r'\b(LEFT|RIGHT)\s+(?:OUTER\s+)?JOIN\b', sql_upper):
+            return JOIN_TYPE_EXPLICIT_OUTER
+        if 'JOIN' in sql_upper:
+            return JOIN_TYPE_EXPLICIT
+        if '(+)' in sql_upper:
+            return JOIN_TYPE_IMPLICIT_OUTER
+        return JOIN_TYPE_IMPLICIT
     
     def _resolve_column_with_inline_view(self, alias: str, column: str, 
                                          alias_map: Dict[str, str],
@@ -858,7 +913,7 @@ class CommonSqlAnalyzer:
                     right_table=right_table,
                     left_column=left_col.upper(),
                     right_column=right_col.upper(),
-                    join_type='MERGE'
+                    join_type=JOIN_TYPE_MERGEON
                 ))
         
         return joins
@@ -868,13 +923,94 @@ class CommonSqlAnalyzer:
         """
         Extract JOINs from MERGE statements.
         Heuristics:
-        - USING (subselect ...): create JOIN_MERGE between MERGE target and all tables in subselect FROM/JOIN.
-        - ON 절의 서브쿼리 별칭을 서브쿼리 내 메인 테이블로 치환하여 조인 조건 생성.
+        - ON 절의 서브쿼리 별칭(SRC 등)을 서브쿼리 SELECT 목록 기반으로 실제 테이블/컬럼으로 치환.
+        - 컬럼 추적이 불가능한 관계는 생성하지 않는다.
         """
         joins: List[JoinCondition] = []
 
         def _upper(s: str) -> str:
             return s.upper() if isinstance(s, str) else s
+
+        def _split_select_from(inner_sql: str) -> Tuple[Optional[str], Optional[str]]:
+            """서브쿼리 SELECT 목록과 FROM 이후를 분리 (완전 파싱 아님)"""
+            m_select = re.search(r"\bSELECT\b", inner_sql, flags=re.IGNORECASE)
+            if not m_select:
+                return None, None
+            i = m_select.end()
+            level = 0
+            while i < len(inner_sql):
+                ch = inner_sql[i]
+                if ch == '(':
+                    level += 1
+                elif ch == ')':
+                    level = max(0, level - 1)
+                if level == 0 and re.match(r"\s*FROM\b", inner_sql[i:], flags=re.IGNORECASE):
+                    sel = inner_sql[m_select.end():i].strip()
+                    frm = inner_sql[i:].strip()
+                    return sel, frm
+                i += 1
+            return inner_sql[m_select.end():].strip(), None
+
+        def _split_select_items(select_segment: str) -> List[str]:
+            """SELECT 항목을 콤마 기준으로 분리 (괄호 레벨 고려)"""
+            items: List[str] = []
+            if not select_segment:
+                return items
+            buf: List[str] = []
+            level = 0
+            for ch in select_segment:
+                if ch == '(':
+                    level += 1
+                elif ch == ')':
+                    level = max(0, level - 1)
+                if ch == ',' and level == 0:
+                    item = ''.join(buf).strip()
+                    if item:
+                        items.append(item)
+                    buf = []
+                else:
+                    buf.append(ch)
+            tail = ''.join(buf).strip()
+            if tail:
+                items.append(tail)
+            return items
+
+        def _build_subquery_alias_map(from_segment: str) -> Dict[str, str]:
+            """서브쿼리 FROM/JOIN 구문에서 별칭 맵 생성"""
+            sub_map: Dict[str, str] = {}
+            if not from_segment:
+                return sub_map
+            pattern = r"\b(?:FROM|JOIN)\s+([A-Za-z_][A-Za-z0-9_$.]*)\s*(?:AS\s+)?(\w+)?"
+            for tbl, alias in re.findall(pattern, from_segment, flags=re.IGNORECASE):
+                t_up = _upper(tbl)
+                if not t_up or t_up in self.oracle_keywords:
+                    continue
+                if alias:
+                    sub_map[_upper(alias)] = t_up
+                sub_map[t_up] = t_up
+            return sub_map
+
+        def _build_select_output_map(select_segment: str, sub_alias_map: Dict[str, str],
+                                     primary_table: Optional[str]) -> Dict[str, Tuple[str, str]]:
+            """SELECT 출력 컬럼 -> (테이블, 컬럼) 매핑 (단순 패턴만)"""
+            output_map: Dict[str, Tuple[str, str]] = {}
+            for item in _split_select_items(select_segment):
+                # 단순 alias.col [AS out] / alias.col out / col
+                m = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*(?:AS\s+([A-Za-z_][A-Za-z0-9_]*)|\\s+([A-Za-z_][A-Za-z0-9_]*))?$",
+                             item, flags=re.IGNORECASE)
+                if m:
+                    alias, col, out1, out2 = m.groups()
+                    tbl = sub_alias_map.get(_upper(alias))
+                    if tbl:
+                        out_name = _upper(out1 or out2 or col)
+                        output_map[out_name] = (tbl, _upper(col))
+                    continue
+                # 별칭 없는 단일 컬럼
+                m2 = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)$", item.strip(), flags=re.IGNORECASE)
+                if m2 and primary_table:
+                    col = _upper(m2.group(1))
+                    output_map[col] = (primary_table, col)
+            return output_map
 
         try:
             # MERGE target table (별칭 포함)
@@ -910,6 +1046,9 @@ class CommonSqlAnalyzer:
 
             tables_in_using: List[str] = []
             primary_table_in_using = None  # 서브쿼리 FROM 절의 첫 번째 테이블
+            subquery_alias_map: Dict[str, str] = {}
+            select_segment = None
+            from_segment = None
 
             if target_table and using_segment:
                 seg = using_segment.strip()
@@ -929,6 +1068,10 @@ class CommonSqlAnalyzer:
                                 end = idx
                                 break
                     inner = seg[start:end]
+
+                    select_segment, from_segment = _split_select_from(inner)
+                    if from_segment:
+                        subquery_alias_map = _build_subquery_alias_map(from_segment)
 
                     # FROM 절 테이블 추출 (첫 번째가 primary)
                     from_tables = re.findall(r"\bFROM\s+([A-Za-z_][A-Za-z0-9_$.]*)", inner, flags=re.IGNORECASE)
@@ -952,6 +1095,7 @@ class CommonSqlAnalyzer:
                         if t_up and t_up not in self.oracle_keywords:
                             tables_in_using.append(t_up)
                             primary_table_in_using = t_up
+                            subquery_alias_map[t_up] = t_up
 
             # ON 절 추출
             on_clause = None
@@ -964,20 +1108,40 @@ class CommonSqlAnalyzer:
 
             # ON 절에서 조인 조건 추출
             if on_clause and target_table:
+                # SELECT 출력 컬럼 매핑 (SRC.col -> 실제 테이블/컬럼)
+                output_map: Dict[str, Tuple[str, str]] = {}
+                if select_segment:
+                    output_map = _build_select_output_map(select_segment, subquery_alias_map, primary_table_in_using)
+
                 # 별칭 맵 확장 (타겟 테이블 별칭, 서브쿼리 별칭)
                 local_alias_map = dict(alias_map)
                 if target_alias:
                     local_alias_map[target_alias] = target_table
-                if subquery_alias and primary_table_in_using:
-                    local_alias_map[subquery_alias] = primary_table_in_using
 
                 # ON 절의 컬럼=컬럼 조건 파싱
                 eq_pattern = r'(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)'
                 for left_alias, left_col, right_alias, right_col in re.findall(eq_pattern, on_clause, re.IGNORECASE):
-                    lt = local_alias_map.get(_upper(left_alias), _upper(left_alias))
-                    rt = local_alias_map.get(_upper(right_alias), _upper(right_alias))
-                    lc = _upper(left_col)
-                    rc = _upper(right_col)
+                    left_alias_u = _upper(left_alias)
+                    right_alias_u = _upper(right_alias)
+
+                    # 서브쿼리 별칭은 SELECT 출력 매핑으로 해석
+                    if subquery_alias and left_alias_u == subquery_alias:
+                        mapped = output_map.get(_upper(left_col))
+                        if not mapped:
+                            continue
+                        lt, lc = mapped
+                    else:
+                        lt = local_alias_map.get(left_alias_u, left_alias_u)
+                        lc = _upper(left_col)
+
+                    if subquery_alias and right_alias_u == subquery_alias:
+                        mapped = output_map.get(_upper(right_col))
+                        if not mapped:
+                            continue
+                        rt, rc = mapped
+                    else:
+                        rt = local_alias_map.get(right_alias_u, right_alias_u)
+                        rc = _upper(right_col)
 
                     if (lt not in self.oracle_keywords and rt not in self.oracle_keywords
                             and lc not in self.oracle_keywords and rc not in self.oracle_keywords):
@@ -986,25 +1150,7 @@ class CommonSqlAnalyzer:
                             right_table=rt,
                             left_column=lc,
                             right_column=rc,
-                            join_type='MERGE'
-                        ))
-
-            # USING 서브쿼리 내 테이블들과 타겟 테이블 간 관계 생성 (컬럼 정보 없이)
-            for t in dict.fromkeys(tables_in_using):
-                if t != target_table and target_table not in self.oracle_keywords:
-                    # 이미 ON 절에서 추출한 조인과 중복 방지
-                    already_exists = any(
-                        (j.left_table == target_table and j.right_table == t) or
-                        (j.left_table == t and j.right_table == target_table)
-                        for j in joins
-                    )
-                    if not already_exists:
-                        joins.append(JoinCondition(
-                            left_table=target_table,
-                            right_table=t,
-                            left_column='',
-                            right_column='',
-                            join_type='MERGE'
+                            join_type=JOIN_TYPE_MERGEON
                         ))
 
             return joins
@@ -1173,15 +1319,7 @@ class CommonSqlAnalyzer:
                 src_id = left_table_id[0]
                 dst_id = right_table_id[0]
                 rel_type = f"JOIN_{join.join_type}"
-                if rel_type not in {
-                    'JOIN_LEFT',
-                    'JOIN_RIGHT',
-                    'JOIN_OUTER',
-                    'JOIN_LEFT_JOIN',
-                    'JOIN_INNER_JOIN',
-                    'JOIN_RIGHT_JOIN',
-                    'JOIN_ORACLE_OUTER_JOIN',
-                } and src_id > dst_id:
+                if rel_type not in DIRECTIONAL_JOIN_REL_TYPES and src_id > dst_id:
                     src_id, dst_id = dst_id, src_id
                     stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
                     join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"
@@ -1231,15 +1369,7 @@ class CommonSqlAnalyzer:
                 stored_dst_col = join.right_column.upper()
                 join_cond = f"{join.left_table}.{stored_src_col} = {join.right_table}.{stored_dst_col}"
                 rel_type = f"JOIN_{join.join_type}"
-                if rel_type not in {
-                    'JOIN_LEFT',
-                    'JOIN_RIGHT',
-                    'JOIN_OUTER',
-                    'JOIN_LEFT_JOIN',
-                    'JOIN_INNER_JOIN',
-                    'JOIN_RIGHT_JOIN',
-                    'JOIN_ORACLE_OUTER_JOIN',
-                } and src_id > dst_id:
+                if rel_type not in DIRECTIONAL_JOIN_REL_TYPES and src_id > dst_id:
                     src_id, dst_id = dst_id, src_id
                     stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
                     join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"

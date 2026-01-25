@@ -7,7 +7,7 @@
 - **3단계 쿼리 분석기 완료**: 메소드-쿼리-테이블-조인조건 도출 완료
 - **1단계 쿼리 추출**: JPA @Query, StringBuilder, String.format에서 순수 SQL 추출 및 SqlContent.db 저장
 - **2단계 테이블 추출**: 설계된 SQL 패턴 기반 테이블 추출
-- **3단계 조인관계 추출**: JOIN_EXPLICIT/JOIN_IMPLICIT 관계 추출
+- **3단계 조인관계 추출**: JOIN_EXPLICIT/EXPLICIT_OUTER/EXPLICIT_FULL_OUTER/IMPLICIT/IMPLICIT_OUTER/MERGEON 관계 추출
 - **Spring/JPA 지원**: Controller, Repository, Entity 어노테이션 분석
 - **RelationshipBuilder 연동**: 중앙 관계 관리 시스템과 통합
 **실행 함수**: `JavaLoadingEngine.execute_java_loading()`  
@@ -39,8 +39,12 @@
 - **오라클 키워드 필터링**: config 폴더의 오라클 키워드 파일 참조하여 키워드 제외
 
 ### 3단계 - 조인관계 추출 (공통 처리)
-- **EXPLICIT JOIN**: `JOIN ... ON <조인조건>` 패턴 분석
-- **IMPLICIT JOIN**: `WHERE ... <조인조건>` 패턴 분석
+- **JOIN_EXPLICIT**: `INNER JOIN ... ON ...`
+- **JOIN_EXPLICIT_OUTER**: `LEFT/RIGHT OUTER JOIN`
+- **JOIN_EXPLICIT_FULL_OUTER**: `FULL OUTER JOIN`
+- **JOIN_IMPLICIT**: `WHERE` 기반 `T1.F1 = T2.F2`
+- **JOIN_IMPLICIT_OUTER**: Oracle `(+)` 방식
+- **JOIN_MERGEON**: `MERGE ... USING ... ON`
 - **테이블 알리아스 참조**: 2단계에서 넘겨받은 딕셔너리 변수 활용
 - **이퀄 조건 필터링**: `테이블1.컬럼1 = 테이블2.컬럼2` 형태만 조인조건으로 인식
 - **1:N 관계 처리**: columns 테이블 참조하여 PK쪽을 1쪽으로, N쪽을 dst_id로 설정
@@ -57,7 +61,7 @@ flowchart TD
     E --> F["메서드 정보 추출<br/>연관관계 중심"]
     F --> G1["1단계: 쿼리 추출<br/>JPA @Query, StringBuilder<br/>SqlContent.db 저장"]
     G1 --> G2["2단계: 테이블 추출<br/>설계된 SQL 패턴<br/>스키마 검증"]
-    G2 --> G3["3단계: 조인관계 추출<br/>JOIN_EXPLICIT/IMPLICIT<br/>INFERRED 보강"]
+    G2 --> G3["3단계: 조인관계 추출<br/>JOIN_EXPLICIT/EXPLICIT_OUTER/EXPLICIT_FULL_OUTER/IMPLICIT/IMPLICIT_OUTER/MERGEON<br/>INFERRED 보강"]
     G3 --> H["Spring/JPA 어노테이션 분석<br/>@Controller, @Repository, @Entity"]
     H --> I["컴포넌트 저장<br/>classes, components 테이블"]
     I --> J["연관관계 수집<br/>RelationshipBuilder로 전달"]
@@ -977,7 +981,7 @@ sequenceDiagram
 
         JE->>DB: SQL 컴포넌트 저장 (SQL_SELECT 등)
         JE->>DB: USE_TABLE 관계 저장
-        JE->>DB: JOIN 관계 저장 (EXPLICIT/IMPLICIT)
+        JE->>DB: JOIN 관계 저장 (JOIN_EXPLICIT/EXPLICIT_OUTER/EXPLICIT_FULL_OUTER/IMPLICIT/IMPLICIT_OUTER/MERGEON)
     end
 
     JQA->>DB: METHOD → QUERY 관계 저장
@@ -1006,14 +1010,18 @@ sequenceDiagram
 3. **오라클 조인 분석**
    
    - 공통 `SqlJoinAnalyzer` 모듈 사용
-   - EXPLICIT/IMPLICIT JOIN 모두 지원
+   - JOIN_EXPLICIT/EXPLICIT_OUTER/EXPLICIT_FULL_OUTER/IMPLICIT/IMPLICIT_OUTER/MERGEON 모두 지원
    - XML과 동일한 수준의 고품질 분석
 
 4. **테이블 관계 생성**
    
    - USE_TABLE: 쿼리 → 테이블 사용 관계
-   - JOIN_EXPLICIT: 명시적 조인 관계
-   - JOIN_IMPLICIT: 암시적 조인 관계
+   - JOIN_EXPLICIT: `INNER JOIN ... ON ...`
+   - JOIN_EXPLICIT_OUTER: `LEFT/RIGHT OUTER JOIN`
+   - JOIN_EXPLICIT_FULL_OUTER: `FULL OUTER JOIN`
+   - JOIN_IMPLICIT: `WHERE` 기반 조인
+   - JOIN_IMPLICIT_OUTER: Oracle `(+)` 외부 조인
+   - JOIN_MERGEON: `MERGE ... USING ... ON`
 
 5. **MyBatis Mapper 분석**
    

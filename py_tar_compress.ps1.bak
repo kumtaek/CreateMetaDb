@@ -25,7 +25,7 @@ move pys*.* ../
 
 Set-Location $PSScriptRoot
 
-python main.py --project-name sampleSrc --clear-metadb --verbose
+python main.py --project-name sampleSrc --verbose
 
 
 python create_report.py --project-name sampleSrc --report-type backend-mapping --verbose

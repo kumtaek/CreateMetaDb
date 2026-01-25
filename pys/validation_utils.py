@@ -108,7 +108,9 @@ class ValidationUtils:
         """
         valid_types = [
             'CALL_QUERY', 'CALL_METHOD', 'USE_TABLE', 'FK', 'PK',
-            'JOIN_EXPLICIT', 'JOIN_IMPLICIT', 'QUERY_TABLE'
+            'JOIN_EXPLICIT', 'JOIN_EXPLICIT_OUTER', 'JOIN_EXPLICIT_FULL_OUTER',
+            'JOIN_IMPLICIT', 'JOIN_IMPLICIT_OUTER', 'JOIN_MERGEON',
+            'QUERY_TABLE'
         ]
         return rel_type in valid_types
     

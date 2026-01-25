@@ -186,7 +186,7 @@ class ERDDagreReportGenerator:
                 node_data['data']['meta']['columns'] = column_meta_list
                 
                 # 컬럼 메타를 반영한 표시용 라벨 생성
-                display_label = self._build_node_label(table_name, column_meta_list)
+                display_label = self._build_node_label(table_name, table_info.get('table_owner'), column_meta_list)
                 node_data['data']['display_label'] = display_label
                 
                 nodes.append(node_data)
@@ -198,25 +198,33 @@ class ERDDagreReportGenerator:
             handle_error(e, "Cytoscape 노드 생성 실패")
             return []
 
-    def _build_node_label(self, table_name: str, columns: List[Dict[str, Any]]) -> str:
+    def _build_node_label(self, table_name: str, table_owner: Optional[str], columns: List[Dict[str, Any]]) -> str:
         """
         테이블 노드 라벨 생성 (Mermaid ERD와 동일한 포맷)
         
         Args:
             table_name: 테이블명
+            table_owner: 테이블 소유자
             columns: 컬럼 정보 목록
         
         Returns:
             Cytoscape 노드 라벨 문자열
         """
         try:
+            owner_name = (table_owner or "").strip()
+            owner_name = "" if owner_name.upper() == "UNKNOWN" else owner_name
+            prefix_inferred = table_name.startswith("[I]")
+            raw_table_name = table_name[3:] if prefix_inferred else table_name
+            display_name = f"{owner_name}.{raw_table_name}" if owner_name else raw_table_name
+            display_name = f"[I]{display_name}" if prefix_inferred else display_name
+
             if not self.show_attributes:
                 # 속성 비표시 모드에서는 테이블명만 사용
-                return table_name
+                return display_name
 
             # 엔티티 박스 헤더 (테이블명 + 구분선)
-            separator = '-' * max(12, min(36, len(table_name) + 6))
-            lines = [table_name, separator]
+            separator = '-' * max(12, min(36, len(display_name) + 6))
+            lines = [display_name, separator]
 
             for col in columns:
                 raw_name = col.get('column_name') or col.get('name') or ''
@@ -525,6 +533,9 @@ class ERDDagreReportGenerator:
     def _has_other_pk(self, table_name: str, exclude_column: str) -> bool:
         """테이블에 조인 컬럼이 아닌 다른 PK 존재 여부 확인 (Mermaid ERD 로직 정합성)"""
         try:
+            if not exclude_column:
+                # 조인 컬럼 정보가 없으면 판단 불가
+                return False
             query = """
                 SELECT c.column_name
                 FROM columns c
@@ -547,6 +558,8 @@ class ERDDagreReportGenerator:
     def _format_relationship_label(self, src_column: str, dst_column: str) -> str:
         """관계 라벨 포맷팅 - 양방향 관계에서 글자 겹침 방지"""
         try:
+            if not src_column or not dst_column:
+                return "UNKNOWN"
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
                 src_keys = [key.strip() for key in src_column.split(',')]
@@ -572,6 +585,8 @@ class ERDDagreReportGenerator:
     def _format_relationship_label_deduplicated(self, src_column: str, dst_column: str) -> str:
         """관계 라벨 포맷팅 - 중복 제거된 버전"""
         try:
+            if not src_column or not dst_column:
+                return "UNKNOWN"
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
                 src_keys = [key.strip() for key in src_column.split(',')]

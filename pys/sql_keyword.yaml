@@ -631,7 +631,11 @@ relationship_types:
   
   # JOIN 관련 관계
   join_explicit: "JOIN_EXPLICIT"
+  join_explicit_outer: "JOIN_EXPLICIT_OUTER"
+  join_explicit_full_outer: "JOIN_EXPLICIT_FULL_OUTER"
   join_implicit: "JOIN_IMPLICIT"
+  join_implicit_outer: "JOIN_IMPLICIT_OUTER"
+  join_mergeon: "JOIN_MERGEON"
   where_join: "WHERE_JOIN"
   
   # 외래키 관련 관계
@@ -746,25 +750,25 @@ join_patterns:
       join_type: "JOIN_EXPLICIT"
       description: "ANSI INNER JOIN"
     - pattern: "LEFT\\s*JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*ON\\s+([a-zA-Z_][a-zA-Z0-9_.]*\\s*=\\s*[a-zA-Z_][a-zA-Z0-9_.]*)"
-      join_type: "JOIN_EXPLICIT"
+      join_type: "JOIN_EXPLICIT_OUTER"
       description: "ANSI LEFT JOIN"
     - pattern: "RIGHT\\s*JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*ON\\s+([a-zA-Z_][a-zA-Z0-9_.]*\\s*=\\s*[a-zA-Z_][a-zA-Z0-9_.]*)"
-      join_type: "JOIN_EXPLICIT"
+      join_type: "JOIN_EXPLICIT_OUTER"
       description: "ANSI RIGHT JOIN"
     - pattern: "FULL\\s*OUTER\\s*JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*ON\\s+([a-zA-Z_][a-zA-Z0-9_.]*\\s*=\\s*[a-zA-Z_][a-zA-Z0-9_.]*)"
-      join_type: "JOIN_EXPLICIT"
+      join_type: "JOIN_EXPLICIT_FULL_OUTER"
       description: "ANSI FULL OUTER JOIN"
     - pattern: "LEFT\\s*OUTER\\s*JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*ON\\s+([a-zA-Z_][a-zA-Z0-9_.]*\\s*=\\s*[a-zA-Z_][a-zA-Z0-9_.]*)"
-      join_type: "JOIN_EXPLICIT"
+      join_type: "JOIN_EXPLICIT_OUTER"
       description: "ANSI LEFT OUTER JOIN"
     - pattern: "RIGHT\\s*OUTER\\s*JOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*ON\\s+([a-zA-Z_][a-zA-Z0-9_.]*\\s*=\\s*[a-zA-Z_][a-zA-Z0-9_.]*)"
-      join_type: "JOIN_EXPLICIT"
+      join_type: "JOIN_EXPLICIT_OUTER"
       description: "ANSI RIGHT OUTER JOIN"
   
   # Oracle Implicit JOIN 패턴들
   oracle_implicit_join_patterns:
     - pattern: "([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)\\s*\\(\\+\\)"
-      join_type: "JOIN_IMPLICIT"
+      join_type: "JOIN_IMPLICIT_OUTER"
       description: "Oracle OUTER JOIN (+)"
     - pattern: ",\\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?)"
       join_type: "JOIN_IMPLICIT"

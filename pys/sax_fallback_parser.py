@@ -307,8 +307,8 @@ class MyBatisSaxParser:
                             relationship = {
                                 'source_table': base_table,
                                 'target_table': join_table,
-                                'relationship_type': 'JOIN',
-                                'description': f"JOIN relationship from {base_table} to {join_table}",
+                                'relationship_type': 'JOIN_EXPLICIT',
+                                'description': f"JOIN_EXPLICIT relationship from {base_table} to {join_table}",
                                 'source_file': query.get('file_path', ''),
                                 'source_line': query.get('line_start', 1)
                             }

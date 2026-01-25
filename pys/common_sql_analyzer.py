@@ -256,16 +256,12 @@ class CommonSqlAnalyzer:
                 stored_src_col = join.left_column.upper()
                 stored_dst_col = join.right_column.upper()
                 join_cond = f"{join.left_table}.{join.left_column} = {join.right_table}.{join.right_column}"
-                rel_type = f"JOIN_{join.join_type}"
-                if rel_type not in {
-                    'JOIN_LEFT',
-                    'JOIN_RIGHT',
-                    'JOIN_OUTER',
-                    'JOIN_LEFT_JOIN',
-                    'JOIN_INNER_JOIN',
-                    'JOIN_RIGHT_JOIN',
-                    'JOIN_ORACLE_OUTER_JOIN',
-                } and src_comp_id > dst_comp_id:
+                rel_type = self._map_join_type_to_rel_type(join.join_type)
+                directional_rel_types = {
+                    'JOIN_EXPLICIT_OUTER',
+                    'JOIN_IMPLICIT_OUTER',
+                }
+                if rel_type not in directional_rel_types and src_comp_id > dst_comp_id:
                     src_comp_id, dst_comp_id = dst_comp_id, src_comp_id
                     stored_src_col, stored_dst_col = stored_dst_col, stored_src_col
                     join_cond = f"{join.right_table}.{stored_dst_col} = {join.left_table}.{stored_src_col}"
@@ -277,3 +273,18 @@ class CommonSqlAnalyzer:
                 
         except Exception as e:
             handle_error(e, "조인 관계 저장 실패 (inferred 파일 생성 금지 모드)")
+
+    def _map_join_type_to_rel_type(self, join_type: str) -> str:
+        """조인 타입을 relationships.rel_type으로 매핑"""
+        join_type_upper = (join_type or "").upper()
+        if join_type_upper in {'LEFT', 'RIGHT', 'OUTER'}:
+            return 'JOIN_EXPLICIT_OUTER'
+        if join_type_upper in {'FULL', 'FULL_OUTER'}:
+            return 'JOIN_EXPLICIT_FULL_OUTER'
+        if join_type_upper in {'IMPLICIT'}:
+            return 'JOIN_IMPLICIT'
+        if join_type_upper in {'IMPLICIT_OUTER', 'ORACLE_OUTER'}:
+            return 'JOIN_IMPLICIT_OUTER'
+        if join_type_upper in {'MERGE', 'MERGEON'}:
+            return 'JOIN_MERGEON'
+        return 'JOIN_EXPLICIT'

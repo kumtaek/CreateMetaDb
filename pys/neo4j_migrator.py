@@ -329,7 +329,11 @@ class Neo4jMigrator:
                 'USE_TABLE': 'USES',
                 'INHERITANCE': 'INHERITS',
                 'JOIN_EXPLICIT': 'JOINS',
+                'JOIN_EXPLICIT_OUTER': 'OUTER_JOINS',
+                'JOIN_EXPLICIT_FULL_OUTER': 'FULL_OUTER_JOINS',
                 'JOIN_IMPLICIT': 'IMPLICIT_JOINS',
+                'JOIN_IMPLICIT_OUTER': 'IMPLICIT_OUTER_JOINS',
+                'JOIN_MERGEON': 'MERGE_JOINS',
                 'FK': 'FOREIGN_KEY'
             }
             

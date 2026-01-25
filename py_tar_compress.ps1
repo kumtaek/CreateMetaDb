@@ -1,4 +1,3 @@
-
 D:
 cd D:\Analyzer\CreateMetaDb
 Get-ChildItem -Recurse -Filter gitcommit.cmd | Select-Object -Expand FullName > list.txt

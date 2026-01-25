@@ -103,7 +103,7 @@ SourceAnalyzer의 9단계 분석 파이프라인에 대한 상세 구현 문서�
 - HTTP 클라이언트: jQuery, Axios, Fetch API, XMLHttpRequest
 
 **SQL 분석**:
-- Oracle EXPLICIT/IMPLICIT JOIN 분석
+- JOIN_EXPLICIT/EXPLICIT_OUTER/EXPLICIT_FULL_OUTER/IMPLICIT/IMPLICIT_OUTER/MERGEON 분석
 - 테이블/컬럼 추출, 별칭 해석
 
 ## 9단계 분석 파이프라인

@@ -35,7 +35,7 @@ def investigate_issue_1_inferred_orphan(db_path):
         print(f"  comp_id={row[0]:4d} | {row[1]:30s} | file_type={row[3]:10s} | file={row[4]}")
 
     # 1-2. 위 INFERRED 후보 중에서 관계가 있는지 확인
-    print("\n[1-2] INFERRED 후보 테이블의 관계 확인 (JOIN_EXPLICIT, JOIN_IMPLICIT)")
+    print("\n[1-2] INFERRED 후보 테이블의 관계 확인 (JOIN_*)")
     if inferred_candidates:
         comp_ids = [str(row[0]) for row in inferred_candidates[:20]]
         placeholders = ','.join(['?'] * len(comp_ids))
@@ -48,7 +48,7 @@ def investigate_issue_1_inferred_orphan(db_path):
             JOIN components src ON r.src_id = src.component_id
             JOIN components dst ON r.dst_id = dst.component_id
             WHERE (r.src_id IN ({placeholders}) OR r.dst_id IN ({placeholders}))
-              AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+              AND r.rel_type LIKE 'JOIN_%'
               AND r.del_yn = 'N'
             LIMIT 30
         """

@@ -1360,28 +1360,15 @@ class ReportTemplates:
             return ""
     
     def _generate_layer_components_html(self, components: List[Dict[str, Any]]) -> str:
-        """레이어별 컴포넌트 HTML 생성 (30개 이상 시 생략 표시)"""
+        """레이어별 컴포넌트 HTML 생성"""
         if not components:
             return '<div class="empty-layer">컴포넌트가 없습니다.</div>'
-        
-        max_display = 30
-        if len(components) <= max_display:
-            # 모든 컴포넌트 표시
-            component_htmls = []
-            for component in components:
-                component_name = component.get('component_name', 'Unknown')
-                component_htmls.append(f'<div class="component">{component_name}</div>')
-            return ''.join(component_htmls)
-        else:
-            # 처음 30개만 표시하고 나머지는 생략
-            component_htmls = []
-            for component in components[:max_display]:
-                component_name = component.get('component_name', 'Unknown')
-                component_htmls.append(f'<div class="component">{component_name}</div>')
-            
-            remaining_count = len(components) - max_display
-            component_htmls.append(f'<div class="component more-indicator">...외 {remaining_count}건</div>')
-            return ''.join(component_htmls)
+
+        component_htmls = []
+        for component in components:
+            component_name = component.get('component_name', 'Unknown')
+            component_htmls.append(f'<div class="component">{component_name}</div>')
+        return ''.join(component_htmls)
     
     
     def _get_architecture_css(self) -> str:

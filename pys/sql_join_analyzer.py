@@ -51,7 +51,8 @@ class SqlJoinAnalyzer:
                     ],
                     'implicit_joins': [
                         r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)",
-                        r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\+\)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)"
+                        r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\+\)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)",
+                        r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\+\)"
                     ]
                 },
                 'join_type_mapping': {
@@ -78,7 +79,11 @@ class SqlJoinAnalyzer:
     
     def analyze_join_relationships(self, sql_content: str, alias_map: Dict[str, str], file_path: str = "", component_id: int = 0) -> List[Dict[str, Any]]:
         """
-        SQL 조인 관계 분석 (세 가지 유형 분리 처리)
+        SQL 조인 관계 분석
+        - EXPLICIT JOIN: JOIN ... ON
+        - MERGE JOIN: MERGE ... USING ... ON
+        - IMPLICIT JOIN: WHERE ...
+        - CONNECT BY: Oracle 계층형 쿼리(셀프조인 성격) 관계 도출
         """
         try:
             debug(f"SQL 조인 분석 시작: {file_path or 'source'}")
@@ -97,6 +102,10 @@ class SqlJoinAnalyzer:
             # 3. IMPLICIT JOIN 분석 (WHERE ...)
             implicit_joins = self._analyze_implicit_joins(normalized_sql, alias_map)
             relationships.extend(implicit_joins)
+
+            # 4. CONNECT BY 분석 (계층형 쿼리 / 셀프조인 성격)
+            connect_by_joins = self._analyze_connect_by_joins(normalized_sql, alias_map)
+            relationships.extend(connect_by_joins)
             
             unique_relationships = self._remove_duplicate_relationships(relationships)
             final_relationships = self._post_process_relationships(unique_relationships, alias_map)
@@ -112,14 +121,21 @@ class SqlJoinAnalyzer:
         """JOIN ... ON ... 구문에서 명시적 JOIN 관계를 분석합니다."""
         try:
             relationships = []
-            join_pattern = r'\bJOIN\s+[\w\.]+(?:\s+AS)?\s*\w*\s+ON\s*\(([^)]+)\)'
+            join_pattern = r'((?:LEFT|RIGHT|FULL|INNER)\s+(?:OUTER\s+)?JOIN|JOIN)\s+[\w\.]+(?:\s+AS)?\s*\w*\s+ON\s*\(([^)]+)\)'
             on_clauses = re.findall(join_pattern, sql_content, re.IGNORECASE)
             
-            for on_clause in on_clauses:
+            for join_keyword, on_clause in on_clauses:
+                join_keyword_upper = join_keyword.upper()
+                if 'FULL' in join_keyword_upper:
+                    rel_type = 'JOIN_EXPLICIT_FULL_OUTER'
+                elif 'LEFT' in join_keyword_upper or 'RIGHT' in join_keyword_upper:
+                    rel_type = 'JOIN_EXPLICIT_OUTER'
+                else:
+                    rel_type = 'JOIN_EXPLICIT'
                 condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
                 conditions = re.findall(condition_pattern, on_clause)
                 for cond in conditions:
-                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_EXPLICIT')
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, rel_type)
                     if rel:
                         relationships.append(rel)
             return relationships
@@ -145,28 +161,6 @@ class SqlJoinAnalyzer:
         except Exception as e:
             handle_error(e, "MERGE JOIN 분석 실패")
             return []
-
-        def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
-            """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
-            relationships = []
-            try:
-                where_match = re.search(r'\bWHERE\s+(.*?)(?=\bGROUP|\bORDER|\bHAVING|;|$)', sql_content, re.IGNORECASE)
-                if where_match:
-                    where_clause = where_match.group(1)
-    
-                    # Oracle (+) Outer Join 구문 처리
-                    where_clause = re.sub(r'\(\+\)', '', where_clause)
-    
-                    condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
-                    conditions = re.findall(condition_pattern, where_clause)
-                    for cond in conditions:
-                        rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_IMPLICIT')
-                        if rel:
-                            relationships.extend(rel) # Use extend for list of dicts
-                return relationships
-            except Exception as e:
-                handle_error(e, "IMPLICIT JOIN 분석 실패")
-                return []    
     def _normalize_sql_for_analysis(self, sql_content: str, dynamic_patterns: dict) -> str:
         """SQL 정규화 (주석 제거, 동적 태그 처리)"""
         try:
@@ -200,14 +194,21 @@ class SqlJoinAnalyzer:
         try:
             relationships = []
             # JOIN ... ON ... 패턴
-            join_pattern = r'JOIN\s+[\w\.]+\s*(?:AS)?\s*\w*\s+ON\s+([^{;]*?)(?=\bWHERE|\bGROUP|\bORDER|\bJOIN|;|$)'
+            join_pattern = r'((?:LEFT|RIGHT|FULL|INNER)\s+(?:OUTER\s+)?JOIN|JOIN)\s+[\w\.]+\s*(?:AS)?\s*\w*\s+ON\s+([^{;]*?)(?=\bWHERE|\bGROUP|\bORDER|\bJOIN|;|$)'
             on_clauses = re.findall(join_pattern, sql_content, re.IGNORECASE)
             
-            for on_clause in on_clauses:
+            for join_keyword, on_clause in on_clauses:
+                join_keyword_upper = join_keyword.upper()
+                if 'FULL' in join_keyword_upper:
+                    rel_type = 'JOIN_EXPLICIT_FULL_OUTER'
+                elif 'LEFT' in join_keyword_upper or 'RIGHT' in join_keyword_upper:
+                    rel_type = 'JOIN_EXPLICIT_OUTER'
+                else:
+                    rel_type = 'JOIN_EXPLICIT'
                 condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
                 conditions = re.findall(condition_pattern, on_clause)
                 for cond in conditions:
-                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, 'JOIN_EXPLICIT')
+                    rel = self._create_relationship_from_condition(cond[0], cond[1], alias_map, rel_type)
                     if rel:
                         relationships.append(rel)
             return relationships
@@ -216,27 +217,159 @@ class SqlJoinAnalyzer:
             return []
 
 
+    def _analyze_implicit_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """WHERE 절에서 암시적 JOIN 관계를 분석합니다."""
+        relationships: List[Dict[str, Any]] = []
+        try:
+            where_match = re.search(
+                r'\bWHERE\s+(.*?)(?=\bCONNECT\b|\bGROUP\b|\bORDER\b|\bHAVING\b|\bUNION\b|;|$)',
+                sql_content,
+                re.IGNORECASE | re.DOTALL
+            )
+            if not where_match:
+                return relationships
+
+            where_clause = where_match.group(1)
+
+            # Oracle (+) Outer Join 구문 처리
+            has_outer = '(+)' in where_clause
+            where_clause = re.sub(r'\(\+\)', '', where_clause)
+
+            condition_pattern = r'([\w\.]+)\s*=\s*([\w\.]+)'
+            rel_type = 'JOIN_IMPLICIT_OUTER' if has_outer else 'JOIN_IMPLICIT'
+
+            for left_part, right_part in re.findall(condition_pattern, where_clause):
+                rel = self._create_relationship_from_condition(left_part, right_part, alias_map, rel_type)
+                if rel:
+                    relationships.append(rel)
+
+            return relationships
+        except Exception as e:
+            handle_error(e, "IMPLICIT JOIN 분석 실패")
+            return []
+
+    def _analyze_connect_by_joins(self, sql_content: str, alias_map: Dict[str, str]) -> List[Dict[str, Any]]:
+        """
+        Oracle CONNECT BY 절에서 계층형(셀프조인 성격) 관계를 분석합니다.
+
+        예)
+        - CONNECT BY PRIOR E.EMPNO = E.MGR
+        - CONNECT BY PRIOR EMPNO = MGR (단일 테이블일 때 컬럼만 사용되는 케이스)
+
+        주의)
+        - CONNECT BY는 동일 테이블 내 부모/자식 행을 연결하는 구조이므로, source_table == target_table 관계가 정상입니다.
+        """
+        relationships: List[Dict[str, Any]] = []
+        try:
+            connect_by_match = re.search(
+                r'\bCONNECT\s+BY\b\s+(.*?)(?=\bGROUP\b|\bORDER\b|\bHAVING\b|\bUNION\b|;|$)',
+                sql_content,
+                re.IGNORECASE | re.DOTALL
+            )
+            if not connect_by_match:
+                return relationships
+
+            connect_by_clause = connect_by_match.group(1)
+            connect_by_clause = re.sub(r'\bNOCYCLE\b', ' ', connect_by_clause, flags=re.IGNORECASE)
+
+            default_table = self._infer_single_table(alias_map)
+
+            patterns = [
+                r'\bPRIOR\s+([\w\.]+)\s*=\s*([\w\.]+)',
+                r'([\w\.]+)\s*=\s*\bPRIOR\s+([\w\.]+)',
+            ]
+
+            for pat in patterns:
+                for left_token, right_token in re.findall(pat, connect_by_clause, flags=re.IGNORECASE):
+                    left_table, left_col, left_alias = self._resolve_table_and_column(left_token, alias_map, default_table)
+                    right_table, right_col, right_alias = self._resolve_table_and_column(right_token, alias_map, default_table)
+
+                    if not left_table or not right_table or not left_col or not right_col:
+                        continue
+
+                    relationships.append({
+                        'source_table': left_table,
+                        'target_table': right_table,
+                        'source_column': left_col.upper(),
+                        'target_column': right_col.upper(),
+                        'rel_type': 'JOIN_CONNECT_BY',
+                        'confidence': 0.85,
+                        'source_alias': (left_alias or 'PRIOR').upper(),
+                        'target_alias': (right_alias or 'CURRENT').upper(),
+                    })
+
+            return relationships
+        except Exception as e:
+            handle_error(e, "CONNECT BY 분석 실패")
+            return []
+
+    def _infer_single_table(self, alias_map: Dict[str, str]) -> Optional[str]:
+        """alias_map에서 단일 테이블만 존재할 때 기본 테이블명을 반환합니다."""
+        try:
+            tables = {t.upper() for t in alias_map.values() if t}
+            if len(tables) == 1:
+                return next(iter(tables))
+            return None
+        except Exception as e:
+            handle_error(e, "단일 테이블 추론 실패")
+            return None
+
+    def _resolve_table_and_column(
+        self,
+        token: str,
+        alias_map: Dict[str, str],
+        default_table: Optional[str],
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """
+        토큰에서 (테이블, 컬럼, 별칭)을 해석합니다.
+        - 'A.COL' 형태면 A를 alias_map으로 테이블로 해석
+        - 'COL' 형태면 default_table이 있을 때만 테이블을 채움
+        """
+        try:
+            token = token.strip()
+            if not token:
+                return None, None, None
+
+            if '.' in token:
+                alias, col = token.split('.', 1)
+                alias_u = alias.upper()
+                table = alias_map.get(alias_u, alias_u)
+                return table, col, alias_u
+
+            if default_table:
+                return default_table, token, None
+
+            return None, token, None
+        except Exception as e:
+            handle_error(e, "토큰 테이블/컬럼 해석 실패")
+            return None, None, None
+
     def _create_relationship_from_condition(self, part1: str, part2: str, alias_map: Dict[str, str], rel_type: str) -> Optional[List[Dict[str, Any]]]:
         """조인 조건 파트에서 JOIN 관계 1개와 USE_COLUMN 관계 2개를 생성하여 리스트로 반환합니다."""
         part1_has_dot = '.' in part1
         part2_has_dot = '.' in part2
 
         table1, col1, table2, col2 = None, None, None, None
+        alias1_u, alias2_u = None, None
 
         if part1_has_dot:
             alias1, col1 = part1.split('.', 1)
-            table1 = alias_map.get(alias1.upper())
+            alias1_u = alias1.upper()
+            table1 = alias_map.get(alias1_u, alias1_u)
         else:
             col1 = part1
 
         if part2_has_dot:
             alias2, col2 = part2.split('.', 1)
-            table2 = alias_map.get(alias2.upper())
+            alias2_u = alias2.upper()
+            table2 = alias_map.get(alias2_u, alias2_u)
         else:
             col2 = part2
 
         if col1 and col2:
-            if table1 and table2 and table1 == table2:
+            # 같은 테이블이라도(SELF JOIN) alias가 다르면 조인으로 인정합니다.
+            # 단, 동일 alias 내 비교(예: T.A = T.B)는 필터로 취급하여 제외합니다.
+            if table1 and table2 and table1 == table2 and alias1_u and alias2_u and alias1_u == alias2_u:
                 return None
 
             return {
@@ -246,7 +379,9 @@ class SqlJoinAnalyzer:
                 'target_column': col2.upper(),
                 'rel_type': rel_type,
                 'confidence': 0.8,
-                'alias_map': alias_map
+                'alias_map': alias_map,
+                'source_alias': alias1_u,
+                'target_alias': alias2_u,
             }
 
         return None
@@ -270,13 +405,15 @@ class SqlJoinAnalyzer:
                             # 유효한 테이블명인지 확인
                             if (table1 != table2 and table1 and table2 and
                                 self._is_valid_table_name(table1) and self._is_valid_table_name(table2)):
-                                join_type = "ORACLE_OUTER_JOIN" if "(+)" in str(match) else "IMPLICIT_JOIN"
+                                is_outer = '\\(\\+\\)' in pattern
+                                join_type = "ORACLE_OUTER_JOIN" if is_outer else "IMPLICIT_JOIN"
+                                rel_type = 'JOIN_IMPLICIT_OUTER' if is_outer else 'JOIN_IMPLICIT'
                                 relationships.append({
                                     'source_table': table1,
                                     'source_column': col1.upper(),
                                     'target_table': table2,
                                     'target_column': col2.upper(),
-                                    'rel_type': 'JOIN_IMPLICIT',
+                                    'rel_type': rel_type,
                                     'join_type': join_type,
                                     'confidence': 0.9
                                 })
@@ -380,8 +517,21 @@ class SqlJoinAnalyzer:
                 if field not in relationship or not relationship[field]:
                     return False
             
-            # 자기 자신과의 관계는 제외
+            # 자기 자신과의 관계(SELF JOIN)는 기본적으로 제외하되,
+            # - CONNECT BY(계층형) 관계는 허용
+            # - EXPLICIT/IMPLICIT SELF JOIN은 alias가 다를 때만 허용
             if relationship['source_table'] == relationship['target_table']:
+                rel_type = (relationship.get('rel_type') or '').upper()
+                if rel_type == 'JOIN_CONNECT_BY':
+                    src_col = relationship.get('source_column')
+                    dst_col = relationship.get('target_column')
+                    return bool(src_col and dst_col and src_col != dst_col)
+
+                src_alias = relationship.get('source_alias')
+                dst_alias = relationship.get('target_alias')
+                if src_alias and dst_alias and src_alias != dst_alias:
+                    return True
+
                 return False
             
             return True

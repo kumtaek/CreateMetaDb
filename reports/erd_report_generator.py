@@ -133,12 +133,17 @@ class ERDReportGenerator:
                 name: (info.get('table_comments') or '')
                 for name, info in detailed_tables.items()
             }
+            table_owner_map = {
+                name: (info.get('table_owner') or '')
+                for name, info in detailed_tables.items()
+            }
 
             # Mermaid ERD 코드 생성
             mermaid_code = self._generate_mermaid_erd(
                 tables_data,
                 relationships,
                 table_comments_map,
+                table_owner_map,
             )
             
             erd_data = {
@@ -219,10 +224,12 @@ class ERDReportGenerator:
         tables_data: Dict[str, List[Dict[str, Any]]],
         relationships: List[Dict[str, Any]],
         table_comments_map: Optional[Dict[str, str]] = None,
+        table_owner_map: Optional[Dict[str, str]] = None,
     ) -> str:
         """Mermaid ERD 코드 생성"""
         try:
             table_comments_map = table_comments_map or {}
+            table_owner_map = table_owner_map or {}
             mermaid_lines = ["erDiagram"]
             table_label_map: Dict[str, str] = {}
             
@@ -235,6 +242,7 @@ class ERDReportGenerator:
                 label_table_name = self._build_table_label_for_mermaid(
                     table_name,
                     table_comments_map,
+                    table_owner_map,
                 )
                 if not label_table_name:
                     app_logger.warning(f"Mermaid ERD에서 테이블명을 정규화할 수 없어 제외: {table_name}")
@@ -290,18 +298,31 @@ class ERDReportGenerator:
 
             seen_relationships = set()
             relationship_count = 0
-            max_relationships = 50  # Mermaid ERD 렌더링 한계 고려
             
             for rel in relationships:
-                if relationship_count >= max_relationships:
-                    break
                     
                 # 테이블 라벨 확인
                 src_label = self._resolve_table_label_for_mermaid(rel['src_table'], table_label_map)
                 dst_label = self._resolve_table_label_for_mermaid(rel['dst_table'], table_label_map)
                 if not src_label or not dst_label:
+                    src_base = self.metadata_service._normalize_table_name(rel.get('src_table'))
+                    dst_base = self.metadata_service._normalize_table_name(rel.get('dst_table'))
+                    if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                        app_logger.info(
+                            "[ERD DEBUG] 라벨 매핑 실패로 관계 스킵: "
+                            f"src={rel.get('src_table')}, dst={rel.get('dst_table')}, "
+                            f"src_label={src_label}, dst_label={dst_label}"
+                        )
                     continue
                 if not (self._is_valid_identifier(rel['src_column']) and self._is_valid_identifier(rel['dst_column'])):
+                    src_base = self.metadata_service._normalize_table_name(rel.get('src_table'))
+                    dst_base = self.metadata_service._normalize_table_name(rel.get('dst_table'))
+                    if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                        app_logger.info(
+                            "[ERD DEBUG] 컬럼 식별자 불일치로 관계 스킵: "
+                            f"src={rel.get('src_table')}.{rel.get('src_column')}, "
+                            f"dst={rel.get('dst_table')}.{rel.get('dst_column')}"
+                        )
                     continue
                 def _normalize(name: str) -> str:
                     up = name.upper()
@@ -312,6 +333,12 @@ class ERDReportGenerator:
                 rel_key = f"{src_label}-{dst_label}"
                 reverse_key = f"{dst_label}-{src_label}"
                 if rel_key in seen_relationships or reverse_key in seen_relationships:
+                    src_base = self.metadata_service._normalize_table_name(rel.get('src_table'))
+                    dst_base = self.metadata_service._normalize_table_name(rel.get('dst_table'))
+                    if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                        app_logger.info(
+                            f"[ERD DEBUG] 중복 관계로 스킵: {src_label} <-> {dst_label}"
+                        )
                     continue
                 seen_relationships.add(rel_key)
                 
@@ -327,6 +354,15 @@ class ERDReportGenerator:
                 
                 # 관계 불명확한 경우 필터링 (PK-FK 관계가 아니고 신뢰도가 낮은 경우)
                 if not is_pk_fk_relation and rel.get('confidence', 0.8) < 0.7:
+                    src_base = self.metadata_service._normalize_table_name(rel.get('src_table'))
+                    dst_base = self.metadata_service._normalize_table_name(rel.get('dst_table'))
+                    if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                        app_logger.info(
+                            "[ERD DEBUG] 신뢰도 기준으로 관계 스킵: "
+                            f"src={rel.get('src_table')}.{rel.get('src_column')}, "
+                            f"dst={rel.get('dst_table')}.{rel.get('dst_column')}, "
+                            f"confidence={rel.get('confidence', 0.8)}"
+                        )
                     app_logger.debug(f"Mermaid ERD에서 관계 불명확하여 제외: {rel['src_table']}.{rel['src_column']} -> {rel['dst_table']}.{rel['dst_column']} (신뢰도: {rel.get('confidence', 0.8)})")
                     continue
                 
@@ -405,6 +441,9 @@ class ERDReportGenerator:
     def _has_other_pk(self, table_name: str, exclude_column: str) -> bool:
         """테이블에 조인 컬럼이 아닌 다른 PK가 존재하는지 확인"""
         try:
+            if not exclude_column:
+                # 조인 컬럼 정보가 없으면 판단 불가
+                return False
             query = """
                 SELECT c.column_name
                 FROM columns c
@@ -439,6 +478,10 @@ class ERDReportGenerator:
             # HTML 태그 오인식 방지: <, > 문자를 &lt;, &gt;로 변환
             def escape_html_chars(text: str) -> str:
                 return text.replace('<', '&lt;').replace('>', '&gt;')
+
+            if not src_column or not dst_column:
+                label = escape_html_chars("UNKNOWN")
+                return f'"{label}"'
 
             # 복합키(결합키) 처리 - 콤마로 구분된 경우
             if ',' in src_column and ',' in dst_column:
@@ -516,6 +559,7 @@ class ERDReportGenerator:
         self,
         table_name: str,
         table_comments_map: Dict[str, str],
+        table_owner_map: Dict[str, str],
     ) -> str:
         """
         Mermaid ERD용 테이블 라벨 생성
@@ -534,7 +578,12 @@ class ERDReportGenerator:
             if not clean_table_name:
                 return ""
 
+            owner_name = (table_owner_map.get(raw_table_name) or "").strip()
+            owner_name = "" if owner_name.upper() == "UNKNOWN" else owner_name
+            owner_clean = self._truncate_by_bytes(self._sanitize_identifier(owner_name), 30) if owner_name else ""
+
             short_name = self._truncate_by_bytes(clean_table_name, 30)
+            display_name = f"{owner_clean}.{short_name}" if owner_clean else short_name
 
             # [I] 테이블은 테이블 코멘트 표시하지 않음 (메타DB에 명시된 경우만 사용)
             comment = ""
@@ -544,9 +593,9 @@ class ERDReportGenerator:
                     comment = self._truncate_by_bytes(str(comment), 30)
 
             if comment:
-                label_core = f"{short_name}({comment})"
+                label_core = f"{display_name}({comment})"
             else:
-                label_core = short_name
+                label_core = display_name
 
             return f"[I]{label_core}" if prefix_inferred else label_core
         except Exception as e:

@@ -77,7 +77,7 @@ class ERDMetadataService:
                 JOIN components src ON r.src_id = src.component_id
                 JOIN projects p ON src.project_id = p.project_id
                 WHERE p.project_name = ? 
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
             """
             result = self.db_utils.execute_query(query, (self.project_name,))
@@ -273,7 +273,7 @@ class ERDMetadataService:
                 JOIN projects p ON src.project_id = p.project_id
                 LEFT JOIN files f ON src.file_id = f.file_id
                 WHERE p.project_name = ?
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src.del_yn = 'N'
                   AND dst.del_yn = 'N'
@@ -291,7 +291,7 @@ class ERDMetadataService:
                 JOIN projects p ON src.project_id = p.project_id
                 LEFT JOIN files f ON dst.file_id = f.file_id
                 WHERE p.project_name = ?
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src.del_yn = 'N'
                   AND dst.del_yn = 'N'
@@ -334,7 +334,7 @@ class ERDMetadataService:
                 JOIN components dst ON r.dst_id = dst.component_id
                 JOIN projects p ON src.project_id = p.project_id
                 WHERE p.project_name = ?
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src.del_yn = 'N'
                   AND dst.del_yn = 'N'
@@ -428,7 +428,7 @@ class ERDMetadataService:
                   AND t.del_yn = 'N'
                   AND comp.del_yn = 'N'
                   AND r.del_yn = 'N'
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT', 'USE_TABLE')
+                  AND (r.rel_type LIKE 'JOIN_%' OR r.rel_type = 'USE_TABLE')
                 GROUP BY t.table_name
                 HAVING COUNT(c.column_id) = 0
             """
@@ -488,6 +488,11 @@ class ERDMetadataService:
                 allowed_tables.add(src_table)
                 allowed_tables.add(dst_table)
 
+                if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                    app_logger.info(
+                        f"[ERD DEBUG] 필터 단계 관계 유지: src={src_table}, dst={dst_table}, rel_type={rel.get('rel_type')}"
+                    )
+
         # 관계가 하나도 없으면 필터링 결과를 비워서 고아 출력 방지
         if not filtered_relationships:
             app_logger.info("[ERD DEBUG] 필터링 결과 관계가 없어 테이블/관계를 비웁니다.")
@@ -504,6 +509,14 @@ class ERDMetadataService:
             rel for rel in filtered_relationships
             if rel.get('src_table') in allowed_keys and rel.get('dst_table') in allowed_keys
         ]
+
+        for rel in filtered_relationships:
+            src_base = self._normalize_table_name(rel.get('src_table'))
+            dst_base = self._normalize_table_name(rel.get('dst_table'))
+            if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                app_logger.info(
+                    f"[ERD DEBUG] 필터 최종 관계 포함: src={rel.get('src_table')}, dst={rel.get('dst_table')}, rel_type={rel.get('rel_type')}"
+                )
 
         return filtered_tables, filtered_relationships
 
@@ -565,7 +578,7 @@ class ERDMetadataService:
                 JOIN components dst ON r.dst_id = dst.component_id
                 JOIN projects p ON src.project_id = p.project_id
                 WHERE p.project_name = ? 
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src.del_yn = 'N'
                   AND dst.del_yn = 'N'
@@ -787,7 +800,7 @@ class ERDMetadataService:
                 LEFT JOIN files fs ON src.file_id = fs.file_id AND fs.del_yn = 'N'
                 LEFT JOIN files fd ON dst.file_id = fd.file_id AND fd.del_yn = 'N'
                 WHERE p.project_name = ? 
-                  AND r.rel_type IN ('JOIN_EXPLICIT', 'JOIN_IMPLICIT')
+                  AND r.rel_type LIKE 'JOIN_%'
                   AND r.del_yn = 'N'
                   AND src.del_yn = 'N'
                   AND dst.del_yn = 'N'
@@ -836,6 +849,16 @@ class ERDMetadataService:
                     'rel_comment': '',           # ERD Dagre용 기본값
                     'is_pk_fk': False            # ERD Dagre용 기본값 (나중에 계산)
                 })
+
+                src_base = self._normalize_table_name(row['src_table'])
+                dst_base = self._normalize_table_name(row['dst_table'])
+                if {src_base, dst_base} == {'CS_BAS', 'TEL_INF'}:
+                    app_logger.info(
+                        "[ERD DEBUG] 관계 조회 포함: "
+                        f"src={src_table}, dst={dst_table}, "
+                        f"src_col={src_column}, dst_col={dst_column}, "
+                        f"rel_type={row['rel_type']}, join_condition={join_condition}"
+                    )
             
             app_logger.info(f"테이블 간 JOIN 관계 조회 완료: {len(relationships)}개")
             return relationships
@@ -934,6 +957,16 @@ class ERDMetadataService:
     def get_relationship_info(self, src_table: str, src_column: str, dst_table: str, dst_column: str) -> Dict[str, Any]:
         """관계 정보 상세 조회 (PK-FK 여부, nullable 여부 등) - 각 컬럼 별도 조회"""
         try:
+            if not src_column or not dst_column:
+                # 조인 컬럼 정보가 없으면 기본값 반환
+                return {
+                    'src_is_pk': False,
+                    'src_nullable': True,
+                    'dst_is_pk': False,
+                    'dst_nullable': True,
+                    'src_data_type': 'VARCHAR',
+                    'dst_data_type': 'VARCHAR'
+                }
             # 소스 컬럼 정보 조회
             src_query = """
                 SELECT

@@ -38,8 +38,12 @@ def collect_metrics() -> Dict[str, Any]:
         metrics['rel_CALL_QUERY'] = rel_count('CALL_QUERY')
         metrics['rel_USE_TABLE'] = rel_count('USE_TABLE')
         metrics['rel_JOIN_EXPLICIT'] = rel_count('JOIN_EXPLICIT')
+        metrics['rel_JOIN_EXPLICIT_OUTER'] = rel_count('JOIN_EXPLICIT_OUTER')
+        metrics['rel_JOIN_EXPLICIT_FULL_OUTER'] = rel_count('JOIN_EXPLICIT_FULL_OUTER')
         metrics['rel_JOIN_IMPLICIT'] = rel_count('JOIN_IMPLICIT')
-        metrics['rel_JOIN_MERGE'] = rel_count('JOIN_MERGE') if 'JOIN_MERGE' else 0
+        metrics['rel_JOIN_IMPLICIT_OUTER'] = rel_count('JOIN_IMPLICIT_OUTER')
+        metrics['rel_JOIN_MERGEON'] = rel_count('JOIN_MERGEON')
+        metrics['rel_JOIN_MERGE'] = rel_count('JOIN_MERGE')
         metrics['rel_USE_COLUMN'] = rel_count('USE_COLUMN')
 
         # Component by type

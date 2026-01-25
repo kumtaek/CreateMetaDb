@@ -201,14 +201,25 @@ class SimpleRelationshipAnalyzer:
             relationships = []
 
             # JOIN 패턴 검색
-            join_pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*\s+)?(?:LEFT|RIGHT|INNER|OUTER|CROSS|FULL)?\s*JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*\s+)?ON\s+([^WHERE^GROUP^ORDER^HAVING^JOIN]+)'
+            join_pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*\s+)?(?:(LEFT|RIGHT|FULL|INNER|OUTER)\s+)?JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*\s+)?ON\s+([^WHERE^GROUP^ORDER^HAVING^JOIN]+)'
 
             matches = re.findall(join_pattern, normalized_sql, re.IGNORECASE)
 
             for match in matches:
                 table1 = self._normalize_table_name(match[0])
-                table2 = self._normalize_table_name(match[2])
-                condition = match[4].strip()
+                join_keyword = (match[2] or '').strip().upper()
+                table2 = self._normalize_table_name(match[3])
+                condition = match[5].strip()
+
+                if join_keyword == 'FULL':
+                    rel_type = 'JOIN_EXPLICIT_FULL_OUTER'
+                    join_type = 'EXPLICIT_FULL_OUTER_JOIN'
+                elif join_keyword in {'LEFT', 'RIGHT', 'OUTER'}:
+                    rel_type = 'JOIN_EXPLICIT_OUTER'
+                    join_type = 'EXPLICIT_OUTER_JOIN'
+                else:
+                    rel_type = 'JOIN_EXPLICIT'
+                    join_type = 'EXPLICIT_JOIN'
 
                 if (self._is_valid_table_name(table1) and
                     self._is_valid_table_name(table2) and
@@ -217,10 +228,10 @@ class SimpleRelationshipAnalyzer:
                     relationships.append({
                         'source_table': table1.upper(),
                         'target_table': table2.upper(),
-                        'rel_type': 'JOIN_EXPLICIT',
-                        'join_type': 'EXPLICIT_JOIN',
+                        'rel_type': rel_type,
+                        'join_type': join_type,
                         'condition': condition,
-                        'description': f"EXPLICIT JOIN: {table1} ↔ {table2}"
+                        'description': f"{join_type}: {table1} ↔ {table2}"
                     })
 
             return relationships
@@ -248,12 +259,14 @@ class SimpleRelationshipAnalyzer:
             where_clause = where_match.group(1)
 
             # 별칭.컬럼 = 별칭.컬럼 패턴
-            implicit_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)'
+            implicit_pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)(\(\+\))?\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)(\(\+\))?'
 
             matches = re.findall(implicit_pattern, where_clause, re.IGNORECASE)
 
             for match in matches:
-                alias1, col1, alias2, col2 = match
+                alias1, col1, left_plus, alias2, col2, right_plus = match
+                left_has_plus = left_plus is not None
+                right_has_plus = right_plus is not None
 
                 # 별칭에서 테이블명 추정 (단순화)
                 table1 = self._resolve_alias_to_table(alias1, tables)
@@ -263,13 +276,22 @@ class SimpleRelationshipAnalyzer:
                     self._is_valid_table_name(table1) and
                     self._is_valid_table_name(table2)):
 
+                    rel_type = 'JOIN_IMPLICIT_OUTER' if (left_has_plus or right_has_plus) else 'JOIN_IMPLICIT'
+                    join_type = 'IMPLICIT_OUTER_JOIN' if rel_type == 'JOIN_IMPLICIT_OUTER' else 'IMPLICIT_JOIN'
+
+                    # Oracle (+) 방향성 보정: (+)가 왼쪽이면 방향 반전
+                    if rel_type == 'JOIN_IMPLICIT_OUTER' and left_has_plus and not right_has_plus:
+                        table1, table2 = table2, table1
+                        col1, col2 = col2, col1
+                        alias1, alias2 = alias2, alias1
+
                     relationships.append({
                         'source_table': table1.upper(),
                         'target_table': table2.upper(),
-                        'rel_type': 'JOIN_IMPLICIT',
-                        'join_type': 'IMPLICIT_JOIN',
+                        'rel_type': rel_type,
+                        'join_type': join_type,
                         'condition': f"{alias1}.{col1} = {alias2}.{col2}",
-                        'description': f"IMPLICIT JOIN: {table1} ↔ {table2}"
+                        'description': f"{join_type}: {table1} ↔ {table2}"
                     })
 
             return relationships
